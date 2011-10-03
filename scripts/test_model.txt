@@ -1,0 +1,9 @@
+mutIntercept=
+mutSlope=
+decIntercept=
+decSlope
+poisIntercept=
+poisSlope
+trunc1=
+trunc2=
+trunc3=

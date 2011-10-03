@@ -1,0 +1,67 @@
+strangers README file
+
+I. Installation
+II. Usage
+III. Getting help
+IV. Required packages
+V. Output files
+
+I. INSTALLATION
+
+To install, download strangers (which you must have gotten that far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
+
+tar -xzvf strangers-xxx.tar.gz
+cd strangers-xxx/
+./configure
+make
+make install
+
+The last step might require root access in order to have proper permissions. Congratulations, if these steps didn't explode with error messages, you're done. If not, it is probably because you're missing required packages. See section IV for requirements.
+
+II. USAGE
+
+To see usage instructions, just type:
+
+python strangers-xxx/scripts/strangers.py --help
+
+for a list of all command line options.
+
+Basic usage is as follows:
+
+python strangers-xxx/scripts/strangers.py -f<file1, file2> -o<output_prefix> -t<table of STRs> -g<genome.fa> [-d <database allele file> | -N]
+
+Where -f is a comma-separated list of fasta files (or fastq if -q is specified), -o is a string that will be the prefix of all output files, -t is a table of STR loci, which is available in lobSTR-xxx/data directory, and -g is a genome file in fasta format. -d is a database of YSTR alleles to choose from when randomizing the haplotype. See the website for details on this file, and the example given in data/yDatabase.csv.
+
+The STR tables given in the data/ directory are:
+- ystr.bed: Y chromosome STRs used in ysearch.org
+- codis.bed: CODIS STR set used by the FBI
+
+NOTE: THE GENOME BUILD OF THE GENOME FILE MUST MATCH THE COORDINATES OF THE STR TABLE. All files included in this download assume hg18 coordinates.
+
+Genome files for entire genomes or individual chromosomes are available at 
+http://hgdownload.cse.ucsc.edu/downloads.html
+
+III. GETTING HELP
+For more information see the website at http://jura.wi.mit.edu/erlich/strangers/
+
+IV. REQUIREMENTS
+
+Assuming you're using a UNIX environment, the following packages are required, and can be obtained by doing "sudo apt-get install $package_name".
+
+gcc
+g++
+automake
+libtool
+pkg-config
+fftw3-dev
+libboost-dev
+
+V. OUTPUT
+
+The following files are output:
+
+$prefix.aligned.tab: all aligned reads
+$prefix.genotypes.tab: genotypes of profiled STR loci
+$prefix.haplotype: haplotype used in strangers randomization
+$prefix.ids: read ID of all modified reads
+$prefix.filename: each input file with detected reads modified
