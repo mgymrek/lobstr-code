@@ -7,11 +7,11 @@ IV. Required packages
 V. Output files
 
 I. INSTALLATION
+ 
+To install, download lobstr (which you must have gotten that far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
 
-To install, download strangers (which you must have gotten that far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
-
-tar -xzvf strangers-xxx.tar.gz
-cd strangers-xxx/
+tar -xzvf lobstr-xxx.tar.gz
+cd lobstr-xxx/
 ./configure
 make
 make install
@@ -22,19 +22,9 @@ II. USAGE
 
 To see usage instructions, just type:
 
-python strangers-xxx/scripts/strangers.py --help
+lobSTR --help
 
 for a list of all command line options.
-
-Basic usage is as follows:
-
-python strangers-xxx/scripts/strangers.py -f<file1, file2> -o<output_prefix> -t<table of STRs> -g<genome.fa> [-d <database allele file> | -N]
-
-Where -f is a comma-separated list of fasta files (or fastq if -q is specified), -o is a string that will be the prefix of all output files, -t is a table of STR loci, which is available in lobSTR-xxx/data directory, and -g is a genome file in fasta format. -d is a database of YSTR alleles to choose from when randomizing the haplotype. See the website for details on this file, and the example given in data/yDatabase.csv.
-
-The STR tables given in the data/ directory are:
-- ystr.bed: Y chromosome STRs used in ysearch.org
-- codis.bed: CODIS STR set used by the FBI
 
 NOTE: THE GENOME BUILD OF THE GENOME FILE MUST MATCH THE COORDINATES OF THE STR TABLE. All files included in this download assume hg18 coordinates.
 
@@ -62,6 +52,3 @@ The following files are output:
 
 $prefix.aligned.tab: all aligned reads
 $prefix.genotypes.tab: genotypes of profiled STR loci
-$prefix.haplotype: haplotype used in strangers randomization
-$prefix.ids: read ID of all modified reads
-$prefix.filename: each input file with detected reads modified
