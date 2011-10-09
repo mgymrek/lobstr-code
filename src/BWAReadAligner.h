@@ -14,7 +14,6 @@
 #include "bwase.h"
 #include "common.h"
 #include "MSReadRecord.h"
-#include "MSRecord.h"
 #include "SamFileWriter.h"
 #include "TabFileWriter.h"
 

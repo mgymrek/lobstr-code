@@ -71,11 +71,7 @@ am_lobSTR_OBJECTS = lobSTR-main.$(OBJEXT) \
 	lobSTR-MicroSatelliteDetection.$(OBJEXT) \
 	lobSTR-HammingWindowGenerator.$(OBJEXT) \
 	lobSTR-CachedWindowGenerator.$(OBJEXT) \
-	lobSTR-FFT_nuc_vectors.$(OBJEXT) lobSTR-GST.$(OBJEXT) \
-	lobSTR-GSTContainer.$(OBJEXT) lobSTR-SuffixTree.$(OBJEXT) \
-	lobSTR-NodeAlignment.$(OBJEXT) lobSTR-stree.$(OBJEXT) \
-	lobSTR-MSTableFileReader.$(OBJEXT) \
-	lobSTR-GenomeReader.$(OBJEXT) lobSTR-ReadAligner.$(OBJEXT) \
+	lobSTR-FFT_nuc_vectors.$(OBJEXT) \
 	lobSTR-SamFileWriter.$(OBJEXT) \
 	lobSTR-MultithreadData.$(OBJEXT) lobSTR-Genotyper.$(OBJEXT) \
 	lobSTR-AlignmentFileReader.$(OBJEXT) \
@@ -236,24 +232,19 @@ lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h \
 	MicroSatelliteDetection.h MicroSatelliteDetection.cpp \
 	HammingWindowGenerator.h HammingWindowGenerator.cpp \
 	CachedWindowGenerator.h CachedWindowGenerator.cpp \
-	FFT_nuc_vectors.h FFT_nuc_vectors.cpp GST.h GST.cpp \
-	GSTContainer.h GSTContainer.cpp SuffixTree.h SuffixTree.cpp \
-	NodeAlignment.h NodeAlignment.cpp MSRecord.h stree.h stree.cpp \
-	MSTableFileReader.h MSTableFileReader.cpp GenomeReader.h \
-	GenomeReader.cpp ReadAligner.h ReadAligner.cpp \
-	SamFileWriter.cpp SamFileWriter.h MultithreadData.h \
-	MultithreadData.cpp ISatellite.h Genotyper.h Genotyper.cpp \
-	AlignmentFileReader.cpp AlignmentFileReader.h \
-	EntropyDetection.h EntropyDetection.cpp BWAReadAligner.h \
-	BWAReadAligner.cpp bwtaln.h bwtaln.c bwt.h bwt.c bamlite.h \
-	bamlite.c bntseq.h bwtsw2.h stdaln.h stdaln.c bwtgap.h \
-	bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h utils.c \
-	simple_dp.h simple_dp.c kstring.c kstring.h bwtsw2_core.h \
-	bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c bwtsw2_aux.h \
-	bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c bwt_lite.c \
-	bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h \
-	QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c \
-	cs2nt.c
+	FFT_nuc_vectors.h FFT_nuc_vectors.cpp SamFileWriter.cpp \
+	SamFileWriter.h MultithreadData.h MultithreadData.cpp \
+	ISatellite.h Genotyper.h Genotyper.cpp AlignmentFileReader.cpp \
+	AlignmentFileReader.h EntropyDetection.h EntropyDetection.cpp \
+	BWAReadAligner.h BWAReadAligner.cpp bwtaln.h bwtaln.c bwt.h \
+	bwt.c bamlite.h bamlite.c bntseq.h bwtsw2.h stdaln.h stdaln.c \
+	bwtgap.h bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h \
+	utils.c simple_dp.h simple_dp.c kstring.c kstring.h \
+	bwtsw2_core.h bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c \
+	bwtsw2_aux.h bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c \
+	bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c \
+	bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h \
+	is.c cs2nt.c
 all: all-am
 
 .SUFFIXES:
@@ -343,21 +334,14 @@ include ./$(DEPDIR)/lobSTR-FFT_four_nuc_vectors.Po
 include ./$(DEPDIR)/lobSTR-FFT_nuc_vectors.Po
 include ./$(DEPDIR)/lobSTR-FastaFileReader.Po
 include ./$(DEPDIR)/lobSTR-FastqFileReader.Po
-include ./$(DEPDIR)/lobSTR-GST.Po
-include ./$(DEPDIR)/lobSTR-GSTContainer.Po
-include ./$(DEPDIR)/lobSTR-GenomeReader.Po
 include ./$(DEPDIR)/lobSTR-Genotyper.Po
 include ./$(DEPDIR)/lobSTR-HammingWindowGenerator.Po
-include ./$(DEPDIR)/lobSTR-MSTableFileReader.Po
 include ./$(DEPDIR)/lobSTR-MainLobeDetection.Po
 include ./$(DEPDIR)/lobSTR-MicroSatelliteDetection.Po
 include ./$(DEPDIR)/lobSTR-MultithreadData.Po
-include ./$(DEPDIR)/lobSTR-NodeAlignment.Po
 include ./$(DEPDIR)/lobSTR-QSufSort.Po
-include ./$(DEPDIR)/lobSTR-ReadAligner.Po
 include ./$(DEPDIR)/lobSTR-STRDetector.Po
 include ./$(DEPDIR)/lobSTR-SamFileWriter.Po
-include ./$(DEPDIR)/lobSTR-SuffixTree.Po
 include ./$(DEPDIR)/lobSTR-TabFileWriter.Po
 include ./$(DEPDIR)/lobSTR-TextFileReader.Po
 include ./$(DEPDIR)/lobSTR-TextFileWriter.Po
@@ -387,7 +371,6 @@ include ./$(DEPDIR)/lobSTR-main.Po
 include ./$(DEPDIR)/lobSTR-runtime_parameters.Po
 include ./$(DEPDIR)/lobSTR-simple_dp.Po
 include ./$(DEPDIR)/lobSTR-stdaln.Po
-include ./$(DEPDIR)/lobSTR-stree.Po
 include ./$(DEPDIR)/lobSTR-utils.Po
 
 .c.o:
@@ -977,118 +960,6 @@ lobSTR-FFT_nuc_vectors.obj: FFT_nuc_vectors.cpp
 #	source='FFT_nuc_vectors.cpp' object='lobSTR-FFT_nuc_vectors.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-FFT_nuc_vectors.obj `if test -f 'FFT_nuc_vectors.cpp'; then $(CYGPATH_W) 'FFT_nuc_vectors.cpp'; else $(CYGPATH_W) '$(srcdir)/FFT_nuc_vectors.cpp'; fi`
-
-lobSTR-GST.o: GST.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-GST.o -MD -MP -MF $(DEPDIR)/lobSTR-GST.Tpo -c -o lobSTR-GST.o `test -f 'GST.cpp' || echo '$(srcdir)/'`GST.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-GST.Tpo $(DEPDIR)/lobSTR-GST.Po
-#	source='GST.cpp' object='lobSTR-GST.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-GST.o `test -f 'GST.cpp' || echo '$(srcdir)/'`GST.cpp
-
-lobSTR-GST.obj: GST.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-GST.obj -MD -MP -MF $(DEPDIR)/lobSTR-GST.Tpo -c -o lobSTR-GST.obj `if test -f 'GST.cpp'; then $(CYGPATH_W) 'GST.cpp'; else $(CYGPATH_W) '$(srcdir)/GST.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-GST.Tpo $(DEPDIR)/lobSTR-GST.Po
-#	source='GST.cpp' object='lobSTR-GST.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-GST.obj `if test -f 'GST.cpp'; then $(CYGPATH_W) 'GST.cpp'; else $(CYGPATH_W) '$(srcdir)/GST.cpp'; fi`
-
-lobSTR-GSTContainer.o: GSTContainer.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-GSTContainer.o -MD -MP -MF $(DEPDIR)/lobSTR-GSTContainer.Tpo -c -o lobSTR-GSTContainer.o `test -f 'GSTContainer.cpp' || echo '$(srcdir)/'`GSTContainer.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-GSTContainer.Tpo $(DEPDIR)/lobSTR-GSTContainer.Po
-#	source='GSTContainer.cpp' object='lobSTR-GSTContainer.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-GSTContainer.o `test -f 'GSTContainer.cpp' || echo '$(srcdir)/'`GSTContainer.cpp
-
-lobSTR-GSTContainer.obj: GSTContainer.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-GSTContainer.obj -MD -MP -MF $(DEPDIR)/lobSTR-GSTContainer.Tpo -c -o lobSTR-GSTContainer.obj `if test -f 'GSTContainer.cpp'; then $(CYGPATH_W) 'GSTContainer.cpp'; else $(CYGPATH_W) '$(srcdir)/GSTContainer.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-GSTContainer.Tpo $(DEPDIR)/lobSTR-GSTContainer.Po
-#	source='GSTContainer.cpp' object='lobSTR-GSTContainer.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-GSTContainer.obj `if test -f 'GSTContainer.cpp'; then $(CYGPATH_W) 'GSTContainer.cpp'; else $(CYGPATH_W) '$(srcdir)/GSTContainer.cpp'; fi`
-
-lobSTR-SuffixTree.o: SuffixTree.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-SuffixTree.o -MD -MP -MF $(DEPDIR)/lobSTR-SuffixTree.Tpo -c -o lobSTR-SuffixTree.o `test -f 'SuffixTree.cpp' || echo '$(srcdir)/'`SuffixTree.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-SuffixTree.Tpo $(DEPDIR)/lobSTR-SuffixTree.Po
-#	source='SuffixTree.cpp' object='lobSTR-SuffixTree.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-SuffixTree.o `test -f 'SuffixTree.cpp' || echo '$(srcdir)/'`SuffixTree.cpp
-
-lobSTR-SuffixTree.obj: SuffixTree.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-SuffixTree.obj -MD -MP -MF $(DEPDIR)/lobSTR-SuffixTree.Tpo -c -o lobSTR-SuffixTree.obj `if test -f 'SuffixTree.cpp'; then $(CYGPATH_W) 'SuffixTree.cpp'; else $(CYGPATH_W) '$(srcdir)/SuffixTree.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-SuffixTree.Tpo $(DEPDIR)/lobSTR-SuffixTree.Po
-#	source='SuffixTree.cpp' object='lobSTR-SuffixTree.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-SuffixTree.obj `if test -f 'SuffixTree.cpp'; then $(CYGPATH_W) 'SuffixTree.cpp'; else $(CYGPATH_W) '$(srcdir)/SuffixTree.cpp'; fi`
-
-lobSTR-NodeAlignment.o: NodeAlignment.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-NodeAlignment.o -MD -MP -MF $(DEPDIR)/lobSTR-NodeAlignment.Tpo -c -o lobSTR-NodeAlignment.o `test -f 'NodeAlignment.cpp' || echo '$(srcdir)/'`NodeAlignment.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-NodeAlignment.Tpo $(DEPDIR)/lobSTR-NodeAlignment.Po
-#	source='NodeAlignment.cpp' object='lobSTR-NodeAlignment.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-NodeAlignment.o `test -f 'NodeAlignment.cpp' || echo '$(srcdir)/'`NodeAlignment.cpp
-
-lobSTR-NodeAlignment.obj: NodeAlignment.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-NodeAlignment.obj -MD -MP -MF $(DEPDIR)/lobSTR-NodeAlignment.Tpo -c -o lobSTR-NodeAlignment.obj `if test -f 'NodeAlignment.cpp'; then $(CYGPATH_W) 'NodeAlignment.cpp'; else $(CYGPATH_W) '$(srcdir)/NodeAlignment.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-NodeAlignment.Tpo $(DEPDIR)/lobSTR-NodeAlignment.Po
-#	source='NodeAlignment.cpp' object='lobSTR-NodeAlignment.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-NodeAlignment.obj `if test -f 'NodeAlignment.cpp'; then $(CYGPATH_W) 'NodeAlignment.cpp'; else $(CYGPATH_W) '$(srcdir)/NodeAlignment.cpp'; fi`
-
-lobSTR-stree.o: stree.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-stree.o -MD -MP -MF $(DEPDIR)/lobSTR-stree.Tpo -c -o lobSTR-stree.o `test -f 'stree.cpp' || echo '$(srcdir)/'`stree.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-stree.Tpo $(DEPDIR)/lobSTR-stree.Po
-#	source='stree.cpp' object='lobSTR-stree.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-stree.o `test -f 'stree.cpp' || echo '$(srcdir)/'`stree.cpp
-
-lobSTR-stree.obj: stree.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-stree.obj -MD -MP -MF $(DEPDIR)/lobSTR-stree.Tpo -c -o lobSTR-stree.obj `if test -f 'stree.cpp'; then $(CYGPATH_W) 'stree.cpp'; else $(CYGPATH_W) '$(srcdir)/stree.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-stree.Tpo $(DEPDIR)/lobSTR-stree.Po
-#	source='stree.cpp' object='lobSTR-stree.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-stree.obj `if test -f 'stree.cpp'; then $(CYGPATH_W) 'stree.cpp'; else $(CYGPATH_W) '$(srcdir)/stree.cpp'; fi`
-
-lobSTR-MSTableFileReader.o: MSTableFileReader.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-MSTableFileReader.o -MD -MP -MF $(DEPDIR)/lobSTR-MSTableFileReader.Tpo -c -o lobSTR-MSTableFileReader.o `test -f 'MSTableFileReader.cpp' || echo '$(srcdir)/'`MSTableFileReader.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-MSTableFileReader.Tpo $(DEPDIR)/lobSTR-MSTableFileReader.Po
-#	source='MSTableFileReader.cpp' object='lobSTR-MSTableFileReader.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-MSTableFileReader.o `test -f 'MSTableFileReader.cpp' || echo '$(srcdir)/'`MSTableFileReader.cpp
-
-lobSTR-MSTableFileReader.obj: MSTableFileReader.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-MSTableFileReader.obj -MD -MP -MF $(DEPDIR)/lobSTR-MSTableFileReader.Tpo -c -o lobSTR-MSTableFileReader.obj `if test -f 'MSTableFileReader.cpp'; then $(CYGPATH_W) 'MSTableFileReader.cpp'; else $(CYGPATH_W) '$(srcdir)/MSTableFileReader.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-MSTableFileReader.Tpo $(DEPDIR)/lobSTR-MSTableFileReader.Po
-#	source='MSTableFileReader.cpp' object='lobSTR-MSTableFileReader.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-MSTableFileReader.obj `if test -f 'MSTableFileReader.cpp'; then $(CYGPATH_W) 'MSTableFileReader.cpp'; else $(CYGPATH_W) '$(srcdir)/MSTableFileReader.cpp'; fi`
-
-lobSTR-GenomeReader.o: GenomeReader.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-GenomeReader.o -MD -MP -MF $(DEPDIR)/lobSTR-GenomeReader.Tpo -c -o lobSTR-GenomeReader.o `test -f 'GenomeReader.cpp' || echo '$(srcdir)/'`GenomeReader.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-GenomeReader.Tpo $(DEPDIR)/lobSTR-GenomeReader.Po
-#	source='GenomeReader.cpp' object='lobSTR-GenomeReader.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-GenomeReader.o `test -f 'GenomeReader.cpp' || echo '$(srcdir)/'`GenomeReader.cpp
-
-lobSTR-GenomeReader.obj: GenomeReader.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-GenomeReader.obj -MD -MP -MF $(DEPDIR)/lobSTR-GenomeReader.Tpo -c -o lobSTR-GenomeReader.obj `if test -f 'GenomeReader.cpp'; then $(CYGPATH_W) 'GenomeReader.cpp'; else $(CYGPATH_W) '$(srcdir)/GenomeReader.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-GenomeReader.Tpo $(DEPDIR)/lobSTR-GenomeReader.Po
-#	source='GenomeReader.cpp' object='lobSTR-GenomeReader.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-GenomeReader.obj `if test -f 'GenomeReader.cpp'; then $(CYGPATH_W) 'GenomeReader.cpp'; else $(CYGPATH_W) '$(srcdir)/GenomeReader.cpp'; fi`
-
-lobSTR-ReadAligner.o: ReadAligner.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-ReadAligner.o -MD -MP -MF $(DEPDIR)/lobSTR-ReadAligner.Tpo -c -o lobSTR-ReadAligner.o `test -f 'ReadAligner.cpp' || echo '$(srcdir)/'`ReadAligner.cpp
-	$(am__mv) $(DEPDIR)/lobSTR-ReadAligner.Tpo $(DEPDIR)/lobSTR-ReadAligner.Po
-#	source='ReadAligner.cpp' object='lobSTR-ReadAligner.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-ReadAligner.o `test -f 'ReadAligner.cpp' || echo '$(srcdir)/'`ReadAligner.cpp
-
-lobSTR-ReadAligner.obj: ReadAligner.cpp
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-ReadAligner.obj -MD -MP -MF $(DEPDIR)/lobSTR-ReadAligner.Tpo -c -o lobSTR-ReadAligner.obj `if test -f 'ReadAligner.cpp'; then $(CYGPATH_W) 'ReadAligner.cpp'; else $(CYGPATH_W) '$(srcdir)/ReadAligner.cpp'; fi`
-	$(am__mv) $(DEPDIR)/lobSTR-ReadAligner.Tpo $(DEPDIR)/lobSTR-ReadAligner.Po
-#	source='ReadAligner.cpp' object='lobSTR-ReadAligner.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-ReadAligner.obj `if test -f 'ReadAligner.cpp'; then $(CYGPATH_W) 'ReadAligner.cpp'; else $(CYGPATH_W) '$(srcdir)/ReadAligner.cpp'; fi`
 
 lobSTR-SamFileWriter.o: SamFileWriter.cpp
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-SamFileWriter.o -MD -MP -MF $(DEPDIR)/lobSTR-SamFileWriter.Tpo -c -o lobSTR-SamFileWriter.o `test -f 'SamFileWriter.cpp' || echo '$(srcdir)/'`SamFileWriter.cpp

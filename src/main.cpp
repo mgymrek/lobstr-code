@@ -35,7 +35,6 @@ trimming
 #include "HammingWindowGenerator.h"
 #include "IFileReader.h"
 #include "MSReadRecord.h"
-#include "MSTableFileReader.h"
 #include "MultithreadData.h"
 #include "SamFileWriter.h"
 #include "STRDetector.h"

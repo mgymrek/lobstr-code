@@ -194,7 +194,7 @@ configure: failed program was:
 configure:4340: result: no
 configure:4243: checking whether pthreads work without any flags
 configure:4331: gcc -o conftest -g -O2    conftest.c   >&5
-/tmp/cce5WI5h.o: In function `main':
+/tmp/ccWIVGCO.o: In function `main':
 /data/melissa/scripts/projects/lobstr-code/conftest.c:15: undefined reference to `pthread_join'
 /data/melissa/scripts/projects/lobstr-code/conftest.c:16: undefined reference to `__pthread_register_cancel'
 /data/melissa/scripts/projects/lobstr-code/conftest.c:17: undefined reference to `pthread_create'
@@ -226,7 +226,7 @@ configure:4340: result: no
 configure:4248: checking whether pthreads work with -Kthread
 configure:4331: gcc -o conftest -g -O2 -Kthread   conftest.c   >&5
 gcc: unrecognized option '-Kthread'
-/tmp/ccxE6AHs.o: In function `main':
+/tmp/ccgYW2IW.o: In function `main':
 /data/melissa/scripts/projects/lobstr-code/conftest.c:15: undefined reference to `pthread_join'
 /data/melissa/scripts/projects/lobstr-code/conftest.c:16: undefined reference to `__pthread_register_cancel'
 /data/melissa/scripts/projects/lobstr-code/conftest.c:17: undefined reference to `pthread_create'
@@ -258,7 +258,7 @@ configure:4340: result: no
 configure:4248: checking whether pthreads work with -kthread
 configure:4331: gcc -o conftest -g -O2 -kthread   conftest.c   >&5
 gcc: unrecognized option '-kthread'
-/tmp/ccqceW1z.o: In function `main':
+/tmp/ccVUb9gV.o: In function `main':
 /data/melissa/scripts/projects/lobstr-code/conftest.c:15: undefined reference to `pthread_join'
 /data/melissa/scripts/projects/lobstr-code/conftest.c:16: undefined reference to `__pthread_register_cancel'
 /data/melissa/scripts/projects/lobstr-code/conftest.c:17: undefined reference to `pthread_create'
