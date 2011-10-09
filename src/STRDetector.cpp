@@ -256,12 +256,14 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   read->left_flank_nuc = (nuc_start>0) ? read->nucleotides.substr(0, read->ms_start) : "-" ;
   read->right_flank_nuc = read->nucleotides.substr(read->ms_end+1); // changed mgymrek
   read->detected_ms_region_nuc = detected_microsatellite_nucleotides;
+
+  /*
   // adjust for max flank region lengths
   read->left_flank_index_from_start = 0;
   if (read->left_flank_nuc.size() > max_flank_len) {
     string left_flank = read->left_flank_nuc;
     read->left_flank_nuc = left_flank.substr(left_flank.length()-max_flank_len,
-					     max_flank_len);
+   					     max_flank_len);
     read->left_flank_index_from_start = left_flank.length() - max_flank_len;
   }
   read->right_flank_index_from_end = 0;
@@ -269,7 +271,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     string right_flank = read->right_flank_nuc;
     read->right_flank_nuc = right_flank.substr(0, max_flank_len);
     read->right_flank_index_from_end = right_flank.length() - max_flank_len;
-  }
+    }*/
   
   read->detected_ms_nuc = ms_period_nuc;
   return ((read->left_flank_nuc.length() >= min_flank_len) & (read->right_flank_nuc.length() >= min_flank_len));

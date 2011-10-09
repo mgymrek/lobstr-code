@@ -66,6 +66,7 @@ extern int max_align;
 extern int max_diff_ref;
 extern int extend;
 extern int min_length_to_allow_mismatches;
+extern std::string bwa_ref_prefix;
 
 // genotyping params
 extern bool rmdup;

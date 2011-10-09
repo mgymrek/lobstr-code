@@ -12,8 +12,8 @@
  *       unique identifiers that can be put in the 23 bits allocated
  *       to the "id" field of the nodes.
  */
-#define NUMSTRBITS 16
-#define STRLENBITS 16
+#define NUMSTRBITS 17
+#define STRLENBITS 15
 
 #define MAXNUMSTR (1 << NUMSTRBITS)
 #define MAXSTRLEN (1 << STRLENBITS)

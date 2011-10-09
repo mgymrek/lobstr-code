@@ -51,6 +51,7 @@ int max_align = 10;
 int max_diff_ref = 10;
 int extend = 100;
 int min_length_to_allow_mismatches = 10;
+std::string bwa_ref_prefix = "";
 
 // genotyping params
 bool rmdup = false;

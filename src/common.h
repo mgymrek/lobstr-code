@@ -15,10 +15,25 @@
 #include <sstream>
 #include <vector>
 
+#include "bwtaln.h"
+#include "bwase.h"
 #include "IFileReader.h"
 
+struct  BWT{
+  bwt_t *bwt[2];
+};
+
+struct BNT {
+  bntseq_t *bns;
+  bntseq_t *ntbns;
+};
+
+
 // get the canonicalized form of the repeat
-//void getMSSeq(const std::string& nucs, int k, std::string* repeat);
+void getMSSeq(const std::string& nucs, int k, std::string* repeat);
+
+// compare seqs lexicographically
+std::string getFirstString(const std::string& seq1, const std::string& seq2);
 
 // determine if sequence is perfect repeat
 bool IsPerfectRepeat(const std::string& sequence, const std::string& repeat);

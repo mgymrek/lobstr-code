@@ -46,7 +46,7 @@ build_triplet = x86_64-unknown-linux-gnu
 host_triplet = x86_64-unknown-linux-gnu
 bin_PROGRAMS = lobSTR$(EXEEXT) strangers$(EXEEXT)
 subdir = src
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in TODO
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/configure.ac
@@ -79,7 +79,20 @@ am_lobSTR_OBJECTS = lobSTR-main.$(OBJEXT) \
 	lobSTR-SamFileWriter.$(OBJEXT) \
 	lobSTR-MultithreadData.$(OBJEXT) lobSTR-Genotyper.$(OBJEXT) \
 	lobSTR-AlignmentFileReader.$(OBJEXT) \
-	lobSTR-EntropyDetection.$(OBJEXT)
+	lobSTR-EntropyDetection.$(OBJEXT) \
+	lobSTR-BWAReadAligner.$(OBJEXT) lobSTR-bwtaln.$(OBJEXT) \
+	lobSTR-bwt.$(OBJEXT) lobSTR-bamlite.$(OBJEXT) \
+	lobSTR-stdaln.$(OBJEXT) lobSTR-bwtgap.$(OBJEXT) \
+	lobSTR-bwaseqio.$(OBJEXT) lobSTR-bwtindex.$(OBJEXT) \
+	lobSTR-bwtio.$(OBJEXT) lobSTR-utils.$(OBJEXT) \
+	lobSTR-simple_dp.$(OBJEXT) lobSTR-kstring.$(OBJEXT) \
+	lobSTR-bwtsw2_core.$(OBJEXT) lobSTR-bwtsw2_main.$(OBJEXT) \
+	lobSTR-bwtsw2_aux.$(OBJEXT) lobSTR-bwtsw2_chain.$(OBJEXT) \
+	lobSTR-bwt_lite.$(OBJEXT) lobSTR-bwape.$(OBJEXT) \
+	lobSTR-bwase.$(OBJEXT) lobSTR-bwt_gen.$(OBJEXT) \
+	lobSTR-QSufSort.$(OBJEXT) lobSTR-bntseq.$(OBJEXT) \
+	lobSTR-bwtmisc.$(OBJEXT) lobSTR-is.$(OBJEXT) \
+	lobSTR-cs2nt.$(OBJEXT)
 lobSTR_OBJECTS = $(am_lobSTR_OBJECTS)
 lobSTR_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
@@ -96,15 +109,15 @@ DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(lobSTR_SOURCES) $(strangers_SOURCES)
 DIST_SOURCES = $(lobSTR_SOURCES) $(strangers_SOURCES)
 ETAGS = etags
@@ -239,12 +252,21 @@ lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h \
 	SamFileWriter.cpp SamFileWriter.h MultithreadData.h \
 	MultithreadData.cpp ISatellite.h Genotyper.h Genotyper.cpp \
 	AlignmentFileReader.cpp AlignmentFileReader.h \
-	EntropyDetection.h EntropyDetection.cpp
+	EntropyDetection.h EntropyDetection.cpp BWAReadAligner.h \
+	BWAReadAligner.cpp bwtaln.h bwtaln.c bwt.h bwt.c bamlite.h \
+	bamlite.c bntseq.h bwtsw2.h stdaln.h stdaln.c bwtgap.h \
+	bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h utils.c \
+	simple_dp.h simple_dp.c kstring.c kstring.h bwtsw2_core.h \
+	bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c bwtsw2_aux.h \
+	bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c bwt_lite.c \
+	bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h \
+	QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c \
+	cs2nt.c
 strangers_SOURCES = main_strangers.cpp FastaFileReader.h FastaFileReader.cpp FastqFileReader.h FastqFileReader.cpp IFileReader.h AnonymizerMultiThreadData.h AnonymizerMultiThreadData.cpp runtime_parameters.h runtime_parameters.cpp TextFileReader.h TextFileReader.cpp common.h common.cpp Anonymizer.h Anonymizer.cpp TextFileWriter.h TextFileWriter.cpp
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -333,6 +355,7 @@ include ./$(DEPDIR)/TextFileReader.Po
 include ./$(DEPDIR)/TextFileWriter.Po
 include ./$(DEPDIR)/common.Po
 include ./$(DEPDIR)/lobSTR-AlignmentFileReader.Po
+include ./$(DEPDIR)/lobSTR-BWAReadAligner.Po
 include ./$(DEPDIR)/lobSTR-CachedWindowGenerator.Po
 include ./$(DEPDIR)/lobSTR-EntropyDetection.Po
 include ./$(DEPDIR)/lobSTR-FFT_four_nuc_vectors.Po
@@ -349,6 +372,7 @@ include ./$(DEPDIR)/lobSTR-MainLobeDetection.Po
 include ./$(DEPDIR)/lobSTR-MicroSatelliteDetection.Po
 include ./$(DEPDIR)/lobSTR-MultithreadData.Po
 include ./$(DEPDIR)/lobSTR-NodeAlignment.Po
+include ./$(DEPDIR)/lobSTR-QSufSort.Po
 include ./$(DEPDIR)/lobSTR-ReadAligner.Po
 include ./$(DEPDIR)/lobSTR-STRDetector.Po
 include ./$(DEPDIR)/lobSTR-SamFileWriter.Po
@@ -357,12 +381,385 @@ include ./$(DEPDIR)/lobSTR-TabFileWriter.Po
 include ./$(DEPDIR)/lobSTR-TextFileReader.Po
 include ./$(DEPDIR)/lobSTR-TextFileWriter.Po
 include ./$(DEPDIR)/lobSTR-TukeyWindowGenerator.Po
+include ./$(DEPDIR)/lobSTR-bamlite.Po
+include ./$(DEPDIR)/lobSTR-bntseq.Po
+include ./$(DEPDIR)/lobSTR-bwape.Po
+include ./$(DEPDIR)/lobSTR-bwase.Po
+include ./$(DEPDIR)/lobSTR-bwaseqio.Po
+include ./$(DEPDIR)/lobSTR-bwt.Po
+include ./$(DEPDIR)/lobSTR-bwt_gen.Po
+include ./$(DEPDIR)/lobSTR-bwt_lite.Po
+include ./$(DEPDIR)/lobSTR-bwtaln.Po
+include ./$(DEPDIR)/lobSTR-bwtgap.Po
+include ./$(DEPDIR)/lobSTR-bwtindex.Po
+include ./$(DEPDIR)/lobSTR-bwtio.Po
+include ./$(DEPDIR)/lobSTR-bwtmisc.Po
+include ./$(DEPDIR)/lobSTR-bwtsw2_aux.Po
+include ./$(DEPDIR)/lobSTR-bwtsw2_chain.Po
+include ./$(DEPDIR)/lobSTR-bwtsw2_core.Po
+include ./$(DEPDIR)/lobSTR-bwtsw2_main.Po
 include ./$(DEPDIR)/lobSTR-common.Po
+include ./$(DEPDIR)/lobSTR-cs2nt.Po
+include ./$(DEPDIR)/lobSTR-is.Po
+include ./$(DEPDIR)/lobSTR-kstring.Po
 include ./$(DEPDIR)/lobSTR-main.Po
 include ./$(DEPDIR)/lobSTR-runtime_parameters.Po
+include ./$(DEPDIR)/lobSTR-simple_dp.Po
+include ./$(DEPDIR)/lobSTR-stdaln.Po
 include ./$(DEPDIR)/lobSTR-stree.Po
+include ./$(DEPDIR)/lobSTR-utils.Po
 include ./$(DEPDIR)/main_strangers.Po
 include ./$(DEPDIR)/runtime_parameters.Po
+
+.c.o:
+	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+#	source='$<' object='$@' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(COMPILE) -c $<
+
+.c.obj:
+	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+#	source='$<' object='$@' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+lobSTR-bwtaln.o: bwtaln.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtaln.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtaln.Tpo -c -o lobSTR-bwtaln.o `test -f 'bwtaln.c' || echo '$(srcdir)/'`bwtaln.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtaln.Tpo $(DEPDIR)/lobSTR-bwtaln.Po
+#	source='bwtaln.c' object='lobSTR-bwtaln.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtaln.o `test -f 'bwtaln.c' || echo '$(srcdir)/'`bwtaln.c
+
+lobSTR-bwtaln.obj: bwtaln.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtaln.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtaln.Tpo -c -o lobSTR-bwtaln.obj `if test -f 'bwtaln.c'; then $(CYGPATH_W) 'bwtaln.c'; else $(CYGPATH_W) '$(srcdir)/bwtaln.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtaln.Tpo $(DEPDIR)/lobSTR-bwtaln.Po
+#	source='bwtaln.c' object='lobSTR-bwtaln.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtaln.obj `if test -f 'bwtaln.c'; then $(CYGPATH_W) 'bwtaln.c'; else $(CYGPATH_W) '$(srcdir)/bwtaln.c'; fi`
+
+lobSTR-bwt.o: bwt.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwt.o -MD -MP -MF $(DEPDIR)/lobSTR-bwt.Tpo -c -o lobSTR-bwt.o `test -f 'bwt.c' || echo '$(srcdir)/'`bwt.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwt.Tpo $(DEPDIR)/lobSTR-bwt.Po
+#	source='bwt.c' object='lobSTR-bwt.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwt.o `test -f 'bwt.c' || echo '$(srcdir)/'`bwt.c
+
+lobSTR-bwt.obj: bwt.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwt.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwt.Tpo -c -o lobSTR-bwt.obj `if test -f 'bwt.c'; then $(CYGPATH_W) 'bwt.c'; else $(CYGPATH_W) '$(srcdir)/bwt.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwt.Tpo $(DEPDIR)/lobSTR-bwt.Po
+#	source='bwt.c' object='lobSTR-bwt.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwt.obj `if test -f 'bwt.c'; then $(CYGPATH_W) 'bwt.c'; else $(CYGPATH_W) '$(srcdir)/bwt.c'; fi`
+
+lobSTR-bamlite.o: bamlite.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bamlite.o -MD -MP -MF $(DEPDIR)/lobSTR-bamlite.Tpo -c -o lobSTR-bamlite.o `test -f 'bamlite.c' || echo '$(srcdir)/'`bamlite.c
+	$(am__mv) $(DEPDIR)/lobSTR-bamlite.Tpo $(DEPDIR)/lobSTR-bamlite.Po
+#	source='bamlite.c' object='lobSTR-bamlite.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bamlite.o `test -f 'bamlite.c' || echo '$(srcdir)/'`bamlite.c
+
+lobSTR-bamlite.obj: bamlite.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bamlite.obj -MD -MP -MF $(DEPDIR)/lobSTR-bamlite.Tpo -c -o lobSTR-bamlite.obj `if test -f 'bamlite.c'; then $(CYGPATH_W) 'bamlite.c'; else $(CYGPATH_W) '$(srcdir)/bamlite.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bamlite.Tpo $(DEPDIR)/lobSTR-bamlite.Po
+#	source='bamlite.c' object='lobSTR-bamlite.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bamlite.obj `if test -f 'bamlite.c'; then $(CYGPATH_W) 'bamlite.c'; else $(CYGPATH_W) '$(srcdir)/bamlite.c'; fi`
+
+lobSTR-stdaln.o: stdaln.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-stdaln.o -MD -MP -MF $(DEPDIR)/lobSTR-stdaln.Tpo -c -o lobSTR-stdaln.o `test -f 'stdaln.c' || echo '$(srcdir)/'`stdaln.c
+	$(am__mv) $(DEPDIR)/lobSTR-stdaln.Tpo $(DEPDIR)/lobSTR-stdaln.Po
+#	source='stdaln.c' object='lobSTR-stdaln.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-stdaln.o `test -f 'stdaln.c' || echo '$(srcdir)/'`stdaln.c
+
+lobSTR-stdaln.obj: stdaln.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-stdaln.obj -MD -MP -MF $(DEPDIR)/lobSTR-stdaln.Tpo -c -o lobSTR-stdaln.obj `if test -f 'stdaln.c'; then $(CYGPATH_W) 'stdaln.c'; else $(CYGPATH_W) '$(srcdir)/stdaln.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-stdaln.Tpo $(DEPDIR)/lobSTR-stdaln.Po
+#	source='stdaln.c' object='lobSTR-stdaln.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-stdaln.obj `if test -f 'stdaln.c'; then $(CYGPATH_W) 'stdaln.c'; else $(CYGPATH_W) '$(srcdir)/stdaln.c'; fi`
+
+lobSTR-bwtgap.o: bwtgap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtgap.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtgap.Tpo -c -o lobSTR-bwtgap.o `test -f 'bwtgap.c' || echo '$(srcdir)/'`bwtgap.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtgap.Tpo $(DEPDIR)/lobSTR-bwtgap.Po
+#	source='bwtgap.c' object='lobSTR-bwtgap.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtgap.o `test -f 'bwtgap.c' || echo '$(srcdir)/'`bwtgap.c
+
+lobSTR-bwtgap.obj: bwtgap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtgap.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtgap.Tpo -c -o lobSTR-bwtgap.obj `if test -f 'bwtgap.c'; then $(CYGPATH_W) 'bwtgap.c'; else $(CYGPATH_W) '$(srcdir)/bwtgap.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtgap.Tpo $(DEPDIR)/lobSTR-bwtgap.Po
+#	source='bwtgap.c' object='lobSTR-bwtgap.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtgap.obj `if test -f 'bwtgap.c'; then $(CYGPATH_W) 'bwtgap.c'; else $(CYGPATH_W) '$(srcdir)/bwtgap.c'; fi`
+
+lobSTR-bwaseqio.o: bwaseqio.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwaseqio.o -MD -MP -MF $(DEPDIR)/lobSTR-bwaseqio.Tpo -c -o lobSTR-bwaseqio.o `test -f 'bwaseqio.c' || echo '$(srcdir)/'`bwaseqio.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwaseqio.Tpo $(DEPDIR)/lobSTR-bwaseqio.Po
+#	source='bwaseqio.c' object='lobSTR-bwaseqio.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwaseqio.o `test -f 'bwaseqio.c' || echo '$(srcdir)/'`bwaseqio.c
+
+lobSTR-bwaseqio.obj: bwaseqio.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwaseqio.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwaseqio.Tpo -c -o lobSTR-bwaseqio.obj `if test -f 'bwaseqio.c'; then $(CYGPATH_W) 'bwaseqio.c'; else $(CYGPATH_W) '$(srcdir)/bwaseqio.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwaseqio.Tpo $(DEPDIR)/lobSTR-bwaseqio.Po
+#	source='bwaseqio.c' object='lobSTR-bwaseqio.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwaseqio.obj `if test -f 'bwaseqio.c'; then $(CYGPATH_W) 'bwaseqio.c'; else $(CYGPATH_W) '$(srcdir)/bwaseqio.c'; fi`
+
+lobSTR-bwtindex.o: bwtindex.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtindex.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtindex.Tpo -c -o lobSTR-bwtindex.o `test -f 'bwtindex.c' || echo '$(srcdir)/'`bwtindex.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtindex.Tpo $(DEPDIR)/lobSTR-bwtindex.Po
+#	source='bwtindex.c' object='lobSTR-bwtindex.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtindex.o `test -f 'bwtindex.c' || echo '$(srcdir)/'`bwtindex.c
+
+lobSTR-bwtindex.obj: bwtindex.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtindex.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtindex.Tpo -c -o lobSTR-bwtindex.obj `if test -f 'bwtindex.c'; then $(CYGPATH_W) 'bwtindex.c'; else $(CYGPATH_W) '$(srcdir)/bwtindex.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtindex.Tpo $(DEPDIR)/lobSTR-bwtindex.Po
+#	source='bwtindex.c' object='lobSTR-bwtindex.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtindex.obj `if test -f 'bwtindex.c'; then $(CYGPATH_W) 'bwtindex.c'; else $(CYGPATH_W) '$(srcdir)/bwtindex.c'; fi`
+
+lobSTR-bwtio.o: bwtio.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtio.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtio.Tpo -c -o lobSTR-bwtio.o `test -f 'bwtio.c' || echo '$(srcdir)/'`bwtio.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtio.Tpo $(DEPDIR)/lobSTR-bwtio.Po
+#	source='bwtio.c' object='lobSTR-bwtio.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtio.o `test -f 'bwtio.c' || echo '$(srcdir)/'`bwtio.c
+
+lobSTR-bwtio.obj: bwtio.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtio.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtio.Tpo -c -o lobSTR-bwtio.obj `if test -f 'bwtio.c'; then $(CYGPATH_W) 'bwtio.c'; else $(CYGPATH_W) '$(srcdir)/bwtio.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtio.Tpo $(DEPDIR)/lobSTR-bwtio.Po
+#	source='bwtio.c' object='lobSTR-bwtio.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtio.obj `if test -f 'bwtio.c'; then $(CYGPATH_W) 'bwtio.c'; else $(CYGPATH_W) '$(srcdir)/bwtio.c'; fi`
+
+lobSTR-utils.o: utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-utils.o -MD -MP -MF $(DEPDIR)/lobSTR-utils.Tpo -c -o lobSTR-utils.o `test -f 'utils.c' || echo '$(srcdir)/'`utils.c
+	$(am__mv) $(DEPDIR)/lobSTR-utils.Tpo $(DEPDIR)/lobSTR-utils.Po
+#	source='utils.c' object='lobSTR-utils.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-utils.o `test -f 'utils.c' || echo '$(srcdir)/'`utils.c
+
+lobSTR-utils.obj: utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-utils.obj -MD -MP -MF $(DEPDIR)/lobSTR-utils.Tpo -c -o lobSTR-utils.obj `if test -f 'utils.c'; then $(CYGPATH_W) 'utils.c'; else $(CYGPATH_W) '$(srcdir)/utils.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-utils.Tpo $(DEPDIR)/lobSTR-utils.Po
+#	source='utils.c' object='lobSTR-utils.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-utils.obj `if test -f 'utils.c'; then $(CYGPATH_W) 'utils.c'; else $(CYGPATH_W) '$(srcdir)/utils.c'; fi`
+
+lobSTR-simple_dp.o: simple_dp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-simple_dp.o -MD -MP -MF $(DEPDIR)/lobSTR-simple_dp.Tpo -c -o lobSTR-simple_dp.o `test -f 'simple_dp.c' || echo '$(srcdir)/'`simple_dp.c
+	$(am__mv) $(DEPDIR)/lobSTR-simple_dp.Tpo $(DEPDIR)/lobSTR-simple_dp.Po
+#	source='simple_dp.c' object='lobSTR-simple_dp.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-simple_dp.o `test -f 'simple_dp.c' || echo '$(srcdir)/'`simple_dp.c
+
+lobSTR-simple_dp.obj: simple_dp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-simple_dp.obj -MD -MP -MF $(DEPDIR)/lobSTR-simple_dp.Tpo -c -o lobSTR-simple_dp.obj `if test -f 'simple_dp.c'; then $(CYGPATH_W) 'simple_dp.c'; else $(CYGPATH_W) '$(srcdir)/simple_dp.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-simple_dp.Tpo $(DEPDIR)/lobSTR-simple_dp.Po
+#	source='simple_dp.c' object='lobSTR-simple_dp.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-simple_dp.obj `if test -f 'simple_dp.c'; then $(CYGPATH_W) 'simple_dp.c'; else $(CYGPATH_W) '$(srcdir)/simple_dp.c'; fi`
+
+lobSTR-kstring.o: kstring.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-kstring.o -MD -MP -MF $(DEPDIR)/lobSTR-kstring.Tpo -c -o lobSTR-kstring.o `test -f 'kstring.c' || echo '$(srcdir)/'`kstring.c
+	$(am__mv) $(DEPDIR)/lobSTR-kstring.Tpo $(DEPDIR)/lobSTR-kstring.Po
+#	source='kstring.c' object='lobSTR-kstring.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-kstring.o `test -f 'kstring.c' || echo '$(srcdir)/'`kstring.c
+
+lobSTR-kstring.obj: kstring.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-kstring.obj -MD -MP -MF $(DEPDIR)/lobSTR-kstring.Tpo -c -o lobSTR-kstring.obj `if test -f 'kstring.c'; then $(CYGPATH_W) 'kstring.c'; else $(CYGPATH_W) '$(srcdir)/kstring.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-kstring.Tpo $(DEPDIR)/lobSTR-kstring.Po
+#	source='kstring.c' object='lobSTR-kstring.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-kstring.obj `if test -f 'kstring.c'; then $(CYGPATH_W) 'kstring.c'; else $(CYGPATH_W) '$(srcdir)/kstring.c'; fi`
+
+lobSTR-bwtsw2_core.o: bwtsw2_core.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_core.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_core.Tpo -c -o lobSTR-bwtsw2_core.o `test -f 'bwtsw2_core.c' || echo '$(srcdir)/'`bwtsw2_core.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_core.Tpo $(DEPDIR)/lobSTR-bwtsw2_core.Po
+#	source='bwtsw2_core.c' object='lobSTR-bwtsw2_core.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_core.o `test -f 'bwtsw2_core.c' || echo '$(srcdir)/'`bwtsw2_core.c
+
+lobSTR-bwtsw2_core.obj: bwtsw2_core.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_core.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_core.Tpo -c -o lobSTR-bwtsw2_core.obj `if test -f 'bwtsw2_core.c'; then $(CYGPATH_W) 'bwtsw2_core.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_core.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_core.Tpo $(DEPDIR)/lobSTR-bwtsw2_core.Po
+#	source='bwtsw2_core.c' object='lobSTR-bwtsw2_core.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_core.obj `if test -f 'bwtsw2_core.c'; then $(CYGPATH_W) 'bwtsw2_core.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_core.c'; fi`
+
+lobSTR-bwtsw2_main.o: bwtsw2_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_main.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_main.Tpo -c -o lobSTR-bwtsw2_main.o `test -f 'bwtsw2_main.c' || echo '$(srcdir)/'`bwtsw2_main.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_main.Tpo $(DEPDIR)/lobSTR-bwtsw2_main.Po
+#	source='bwtsw2_main.c' object='lobSTR-bwtsw2_main.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_main.o `test -f 'bwtsw2_main.c' || echo '$(srcdir)/'`bwtsw2_main.c
+
+lobSTR-bwtsw2_main.obj: bwtsw2_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_main.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_main.Tpo -c -o lobSTR-bwtsw2_main.obj `if test -f 'bwtsw2_main.c'; then $(CYGPATH_W) 'bwtsw2_main.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_main.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_main.Tpo $(DEPDIR)/lobSTR-bwtsw2_main.Po
+#	source='bwtsw2_main.c' object='lobSTR-bwtsw2_main.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_main.obj `if test -f 'bwtsw2_main.c'; then $(CYGPATH_W) 'bwtsw2_main.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_main.c'; fi`
+
+lobSTR-bwtsw2_aux.o: bwtsw2_aux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_aux.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_aux.Tpo -c -o lobSTR-bwtsw2_aux.o `test -f 'bwtsw2_aux.c' || echo '$(srcdir)/'`bwtsw2_aux.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_aux.Tpo $(DEPDIR)/lobSTR-bwtsw2_aux.Po
+#	source='bwtsw2_aux.c' object='lobSTR-bwtsw2_aux.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_aux.o `test -f 'bwtsw2_aux.c' || echo '$(srcdir)/'`bwtsw2_aux.c
+
+lobSTR-bwtsw2_aux.obj: bwtsw2_aux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_aux.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_aux.Tpo -c -o lobSTR-bwtsw2_aux.obj `if test -f 'bwtsw2_aux.c'; then $(CYGPATH_W) 'bwtsw2_aux.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_aux.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_aux.Tpo $(DEPDIR)/lobSTR-bwtsw2_aux.Po
+#	source='bwtsw2_aux.c' object='lobSTR-bwtsw2_aux.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_aux.obj `if test -f 'bwtsw2_aux.c'; then $(CYGPATH_W) 'bwtsw2_aux.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_aux.c'; fi`
+
+lobSTR-bwtsw2_chain.o: bwtsw2_chain.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_chain.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_chain.Tpo -c -o lobSTR-bwtsw2_chain.o `test -f 'bwtsw2_chain.c' || echo '$(srcdir)/'`bwtsw2_chain.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_chain.Tpo $(DEPDIR)/lobSTR-bwtsw2_chain.Po
+#	source='bwtsw2_chain.c' object='lobSTR-bwtsw2_chain.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_chain.o `test -f 'bwtsw2_chain.c' || echo '$(srcdir)/'`bwtsw2_chain.c
+
+lobSTR-bwtsw2_chain.obj: bwtsw2_chain.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtsw2_chain.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtsw2_chain.Tpo -c -o lobSTR-bwtsw2_chain.obj `if test -f 'bwtsw2_chain.c'; then $(CYGPATH_W) 'bwtsw2_chain.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_chain.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtsw2_chain.Tpo $(DEPDIR)/lobSTR-bwtsw2_chain.Po
+#	source='bwtsw2_chain.c' object='lobSTR-bwtsw2_chain.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtsw2_chain.obj `if test -f 'bwtsw2_chain.c'; then $(CYGPATH_W) 'bwtsw2_chain.c'; else $(CYGPATH_W) '$(srcdir)/bwtsw2_chain.c'; fi`
+
+lobSTR-bwt_lite.o: bwt_lite.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwt_lite.o -MD -MP -MF $(DEPDIR)/lobSTR-bwt_lite.Tpo -c -o lobSTR-bwt_lite.o `test -f 'bwt_lite.c' || echo '$(srcdir)/'`bwt_lite.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwt_lite.Tpo $(DEPDIR)/lobSTR-bwt_lite.Po
+#	source='bwt_lite.c' object='lobSTR-bwt_lite.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwt_lite.o `test -f 'bwt_lite.c' || echo '$(srcdir)/'`bwt_lite.c
+
+lobSTR-bwt_lite.obj: bwt_lite.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwt_lite.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwt_lite.Tpo -c -o lobSTR-bwt_lite.obj `if test -f 'bwt_lite.c'; then $(CYGPATH_W) 'bwt_lite.c'; else $(CYGPATH_W) '$(srcdir)/bwt_lite.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwt_lite.Tpo $(DEPDIR)/lobSTR-bwt_lite.Po
+#	source='bwt_lite.c' object='lobSTR-bwt_lite.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwt_lite.obj `if test -f 'bwt_lite.c'; then $(CYGPATH_W) 'bwt_lite.c'; else $(CYGPATH_W) '$(srcdir)/bwt_lite.c'; fi`
+
+lobSTR-bwape.o: bwape.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwape.o -MD -MP -MF $(DEPDIR)/lobSTR-bwape.Tpo -c -o lobSTR-bwape.o `test -f 'bwape.c' || echo '$(srcdir)/'`bwape.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwape.Tpo $(DEPDIR)/lobSTR-bwape.Po
+#	source='bwape.c' object='lobSTR-bwape.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwape.o `test -f 'bwape.c' || echo '$(srcdir)/'`bwape.c
+
+lobSTR-bwape.obj: bwape.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwape.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwape.Tpo -c -o lobSTR-bwape.obj `if test -f 'bwape.c'; then $(CYGPATH_W) 'bwape.c'; else $(CYGPATH_W) '$(srcdir)/bwape.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwape.Tpo $(DEPDIR)/lobSTR-bwape.Po
+#	source='bwape.c' object='lobSTR-bwape.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwape.obj `if test -f 'bwape.c'; then $(CYGPATH_W) 'bwape.c'; else $(CYGPATH_W) '$(srcdir)/bwape.c'; fi`
+
+lobSTR-bwase.o: bwase.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwase.o -MD -MP -MF $(DEPDIR)/lobSTR-bwase.Tpo -c -o lobSTR-bwase.o `test -f 'bwase.c' || echo '$(srcdir)/'`bwase.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwase.Tpo $(DEPDIR)/lobSTR-bwase.Po
+#	source='bwase.c' object='lobSTR-bwase.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwase.o `test -f 'bwase.c' || echo '$(srcdir)/'`bwase.c
+
+lobSTR-bwase.obj: bwase.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwase.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwase.Tpo -c -o lobSTR-bwase.obj `if test -f 'bwase.c'; then $(CYGPATH_W) 'bwase.c'; else $(CYGPATH_W) '$(srcdir)/bwase.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwase.Tpo $(DEPDIR)/lobSTR-bwase.Po
+#	source='bwase.c' object='lobSTR-bwase.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwase.obj `if test -f 'bwase.c'; then $(CYGPATH_W) 'bwase.c'; else $(CYGPATH_W) '$(srcdir)/bwase.c'; fi`
+
+lobSTR-bwt_gen.o: bwt_gen.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwt_gen.o -MD -MP -MF $(DEPDIR)/lobSTR-bwt_gen.Tpo -c -o lobSTR-bwt_gen.o `test -f 'bwt_gen.c' || echo '$(srcdir)/'`bwt_gen.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwt_gen.Tpo $(DEPDIR)/lobSTR-bwt_gen.Po
+#	source='bwt_gen.c' object='lobSTR-bwt_gen.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwt_gen.o `test -f 'bwt_gen.c' || echo '$(srcdir)/'`bwt_gen.c
+
+lobSTR-bwt_gen.obj: bwt_gen.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwt_gen.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwt_gen.Tpo -c -o lobSTR-bwt_gen.obj `if test -f 'bwt_gen.c'; then $(CYGPATH_W) 'bwt_gen.c'; else $(CYGPATH_W) '$(srcdir)/bwt_gen.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwt_gen.Tpo $(DEPDIR)/lobSTR-bwt_gen.Po
+#	source='bwt_gen.c' object='lobSTR-bwt_gen.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwt_gen.obj `if test -f 'bwt_gen.c'; then $(CYGPATH_W) 'bwt_gen.c'; else $(CYGPATH_W) '$(srcdir)/bwt_gen.c'; fi`
+
+lobSTR-QSufSort.o: QSufSort.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-QSufSort.o -MD -MP -MF $(DEPDIR)/lobSTR-QSufSort.Tpo -c -o lobSTR-QSufSort.o `test -f 'QSufSort.c' || echo '$(srcdir)/'`QSufSort.c
+	$(am__mv) $(DEPDIR)/lobSTR-QSufSort.Tpo $(DEPDIR)/lobSTR-QSufSort.Po
+#	source='QSufSort.c' object='lobSTR-QSufSort.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-QSufSort.o `test -f 'QSufSort.c' || echo '$(srcdir)/'`QSufSort.c
+
+lobSTR-QSufSort.obj: QSufSort.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-QSufSort.obj -MD -MP -MF $(DEPDIR)/lobSTR-QSufSort.Tpo -c -o lobSTR-QSufSort.obj `if test -f 'QSufSort.c'; then $(CYGPATH_W) 'QSufSort.c'; else $(CYGPATH_W) '$(srcdir)/QSufSort.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-QSufSort.Tpo $(DEPDIR)/lobSTR-QSufSort.Po
+#	source='QSufSort.c' object='lobSTR-QSufSort.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-QSufSort.obj `if test -f 'QSufSort.c'; then $(CYGPATH_W) 'QSufSort.c'; else $(CYGPATH_W) '$(srcdir)/QSufSort.c'; fi`
+
+lobSTR-bntseq.o: bntseq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bntseq.o -MD -MP -MF $(DEPDIR)/lobSTR-bntseq.Tpo -c -o lobSTR-bntseq.o `test -f 'bntseq.c' || echo '$(srcdir)/'`bntseq.c
+	$(am__mv) $(DEPDIR)/lobSTR-bntseq.Tpo $(DEPDIR)/lobSTR-bntseq.Po
+#	source='bntseq.c' object='lobSTR-bntseq.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bntseq.o `test -f 'bntseq.c' || echo '$(srcdir)/'`bntseq.c
+
+lobSTR-bntseq.obj: bntseq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bntseq.obj -MD -MP -MF $(DEPDIR)/lobSTR-bntseq.Tpo -c -o lobSTR-bntseq.obj `if test -f 'bntseq.c'; then $(CYGPATH_W) 'bntseq.c'; else $(CYGPATH_W) '$(srcdir)/bntseq.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bntseq.Tpo $(DEPDIR)/lobSTR-bntseq.Po
+#	source='bntseq.c' object='lobSTR-bntseq.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bntseq.obj `if test -f 'bntseq.c'; then $(CYGPATH_W) 'bntseq.c'; else $(CYGPATH_W) '$(srcdir)/bntseq.c'; fi`
+
+lobSTR-bwtmisc.o: bwtmisc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtmisc.o -MD -MP -MF $(DEPDIR)/lobSTR-bwtmisc.Tpo -c -o lobSTR-bwtmisc.o `test -f 'bwtmisc.c' || echo '$(srcdir)/'`bwtmisc.c
+	$(am__mv) $(DEPDIR)/lobSTR-bwtmisc.Tpo $(DEPDIR)/lobSTR-bwtmisc.Po
+#	source='bwtmisc.c' object='lobSTR-bwtmisc.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtmisc.o `test -f 'bwtmisc.c' || echo '$(srcdir)/'`bwtmisc.c
+
+lobSTR-bwtmisc.obj: bwtmisc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-bwtmisc.obj -MD -MP -MF $(DEPDIR)/lobSTR-bwtmisc.Tpo -c -o lobSTR-bwtmisc.obj `if test -f 'bwtmisc.c'; then $(CYGPATH_W) 'bwtmisc.c'; else $(CYGPATH_W) '$(srcdir)/bwtmisc.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-bwtmisc.Tpo $(DEPDIR)/lobSTR-bwtmisc.Po
+#	source='bwtmisc.c' object='lobSTR-bwtmisc.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-bwtmisc.obj `if test -f 'bwtmisc.c'; then $(CYGPATH_W) 'bwtmisc.c'; else $(CYGPATH_W) '$(srcdir)/bwtmisc.c'; fi`
+
+lobSTR-is.o: is.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-is.o -MD -MP -MF $(DEPDIR)/lobSTR-is.Tpo -c -o lobSTR-is.o `test -f 'is.c' || echo '$(srcdir)/'`is.c
+	$(am__mv) $(DEPDIR)/lobSTR-is.Tpo $(DEPDIR)/lobSTR-is.Po
+#	source='is.c' object='lobSTR-is.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-is.o `test -f 'is.c' || echo '$(srcdir)/'`is.c
+
+lobSTR-is.obj: is.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-is.obj -MD -MP -MF $(DEPDIR)/lobSTR-is.Tpo -c -o lobSTR-is.obj `if test -f 'is.c'; then $(CYGPATH_W) 'is.c'; else $(CYGPATH_W) '$(srcdir)/is.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-is.Tpo $(DEPDIR)/lobSTR-is.Po
+#	source='is.c' object='lobSTR-is.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-is.obj `if test -f 'is.c'; then $(CYGPATH_W) 'is.c'; else $(CYGPATH_W) '$(srcdir)/is.c'; fi`
+
+lobSTR-cs2nt.o: cs2nt.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-cs2nt.o -MD -MP -MF $(DEPDIR)/lobSTR-cs2nt.Tpo -c -o lobSTR-cs2nt.o `test -f 'cs2nt.c' || echo '$(srcdir)/'`cs2nt.c
+	$(am__mv) $(DEPDIR)/lobSTR-cs2nt.Tpo $(DEPDIR)/lobSTR-cs2nt.Po
+#	source='cs2nt.c' object='lobSTR-cs2nt.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-cs2nt.o `test -f 'cs2nt.c' || echo '$(srcdir)/'`cs2nt.c
+
+lobSTR-cs2nt.obj: cs2nt.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lobSTR-cs2nt.obj -MD -MP -MF $(DEPDIR)/lobSTR-cs2nt.Tpo -c -o lobSTR-cs2nt.obj `if test -f 'cs2nt.c'; then $(CYGPATH_W) 'cs2nt.c'; else $(CYGPATH_W) '$(srcdir)/cs2nt.c'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-cs2nt.Tpo $(DEPDIR)/lobSTR-cs2nt.Po
+#	source='cs2nt.c' object='lobSTR-cs2nt.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTR-cs2nt.obj `if test -f 'cs2nt.c'; then $(CYGPATH_W) 'cs2nt.c'; else $(CYGPATH_W) '$(srcdir)/cs2nt.c'; fi`
 
 .cpp.o:
 	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -783,6 +1180,20 @@ lobSTR-EntropyDetection.obj: EntropyDetection.cpp
 #	source='EntropyDetection.cpp' object='lobSTR-EntropyDetection.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-EntropyDetection.obj `if test -f 'EntropyDetection.cpp'; then $(CYGPATH_W) 'EntropyDetection.cpp'; else $(CYGPATH_W) '$(srcdir)/EntropyDetection.cpp'; fi`
+
+lobSTR-BWAReadAligner.o: BWAReadAligner.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-BWAReadAligner.o -MD -MP -MF $(DEPDIR)/lobSTR-BWAReadAligner.Tpo -c -o lobSTR-BWAReadAligner.o `test -f 'BWAReadAligner.cpp' || echo '$(srcdir)/'`BWAReadAligner.cpp
+	$(am__mv) $(DEPDIR)/lobSTR-BWAReadAligner.Tpo $(DEPDIR)/lobSTR-BWAReadAligner.Po
+#	source='BWAReadAligner.cpp' object='lobSTR-BWAReadAligner.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-BWAReadAligner.o `test -f 'BWAReadAligner.cpp' || echo '$(srcdir)/'`BWAReadAligner.cpp
+
+lobSTR-BWAReadAligner.obj: BWAReadAligner.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTR-BWAReadAligner.obj -MD -MP -MF $(DEPDIR)/lobSTR-BWAReadAligner.Tpo -c -o lobSTR-BWAReadAligner.obj `if test -f 'BWAReadAligner.cpp'; then $(CYGPATH_W) 'BWAReadAligner.cpp'; else $(CYGPATH_W) '$(srcdir)/BWAReadAligner.cpp'; fi`
+	$(am__mv) $(DEPDIR)/lobSTR-BWAReadAligner.Tpo $(DEPDIR)/lobSTR-BWAReadAligner.Po
+#	source='BWAReadAligner.cpp' object='lobSTR-BWAReadAligner.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTR_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTR-BWAReadAligner.obj `if test -f 'BWAReadAligner.cpp'; then $(CYGPATH_W) 'BWAReadAligner.cpp'; else $(CYGPATH_W) '$(srcdir)/BWAReadAligner.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

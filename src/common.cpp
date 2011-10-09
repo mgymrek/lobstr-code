@@ -13,7 +13,7 @@
 
 using namespace std;
 
-/*void getMSSeq(const string& nucs, int k, string* repeat) {
+void getMSSeq(const string& nucs, int k, string* repeat) {
   map<string,int> countKMers;
   size_t i;
   string subseq;
@@ -29,7 +29,15 @@ using namespace std;
     }
   }
   getCanonicalMS(kmer, repeat);
-  }*/
+}
+
+string getFirstString(const std::string& seq1, const std::string& seq2) {
+  for (int i = 0; i < seq1.size(); i++) {
+    if (nucToNumber(seq1[i]) < nucToNumber(seq2[i])) return seq1;
+    if (nucToNumber(seq1[i]) > nucToNumber(seq2[i])) return seq2;
+  }
+  return seq1;
+}
 
 bool IsPerfectRepeat(const std::string& sequence,
 		     const std::string& repeat) {

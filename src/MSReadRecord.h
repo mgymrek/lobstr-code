@@ -18,6 +18,9 @@ public:
   // quality scores of the read
   std::string quality_scores;
 
+  // detected rep seq
+  std::string repseq;
+
   // detection data
   // location in the read where the STR starts
   int	ms_start;
