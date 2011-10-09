@@ -44,7 +44,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = lobSTR$(EXEEXT) strangers$(EXEEXT)
+bin_PROGRAMS = lobSTR$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -97,14 +97,6 @@ lobSTR_OBJECTS = $(am_lobSTR_OBJECTS)
 lobSTR_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 lobSTR_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_strangers_OBJECTS = main_strangers.$(OBJEXT) \
-	FastaFileReader.$(OBJEXT) FastqFileReader.$(OBJEXT) \
-	AnonymizerMultiThreadData.$(OBJEXT) \
-	runtime_parameters.$(OBJEXT) TextFileReader.$(OBJEXT) \
-	common.$(OBJEXT) Anonymizer.$(OBJEXT) TextFileWriter.$(OBJEXT)
-strangers_OBJECTS = $(am_strangers_OBJECTS)
-strangers_LDADD = $(LDADD)
-strangers_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -118,8 +110,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(lobSTR_SOURCES) $(strangers_SOURCES)
-DIST_SOURCES = $(lobSTR_SOURCES) $(strangers_SOURCES)
+SOURCES = $(lobSTR_SOURCES)
+DIST_SOURCES = $(lobSTR_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -262,7 +254,6 @@ lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h \
 	bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h \
 	QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c \
 	cs2nt.c
-strangers_SOURCES = main_strangers.cpp FastaFileReader.h FastaFileReader.cpp FastqFileReader.h FastqFileReader.cpp IFileReader.h AnonymizerMultiThreadData.h AnonymizerMultiThreadData.cpp runtime_parameters.h runtime_parameters.cpp TextFileReader.h TextFileReader.cpp common.h common.cpp Anonymizer.h Anonymizer.cpp TextFileWriter.h TextFileWriter.cpp
 all: all-am
 
 .SUFFIXES:
@@ -337,9 +328,6 @@ clean-binPROGRAMS:
 lobSTR$(EXEEXT): $(lobSTR_OBJECTS) $(lobSTR_DEPENDENCIES) 
 	@rm -f lobSTR$(EXEEXT)
 	$(CXXLINK) $(lobSTR_OBJECTS) $(lobSTR_LDADD) $(LIBS)
-strangers$(EXEEXT): $(strangers_OBJECTS) $(strangers_DEPENDENCIES) 
-	@rm -f strangers$(EXEEXT)
-	$(CXXLINK) $(strangers_OBJECTS) $(strangers_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -347,13 +335,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Anonymizer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnonymizerMultiThreadData.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastaFileReader.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastqFileReader.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileReader.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileWriter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-AlignmentFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-BWAReadAligner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-CachedWindowGenerator.Po@am__quote@
@@ -408,8 +389,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-stdaln.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-stree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main_strangers.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runtime_parameters.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

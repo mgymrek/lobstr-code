@@ -44,7 +44,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = x86_64-unknown-linux-gnu
 host_triplet = x86_64-unknown-linux-gnu
-bin_PROGRAMS = lobSTR$(EXEEXT) strangers$(EXEEXT)
+bin_PROGRAMS = lobSTR$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -97,14 +97,6 @@ lobSTR_OBJECTS = $(am_lobSTR_OBJECTS)
 lobSTR_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 lobSTR_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_strangers_OBJECTS = main_strangers.$(OBJEXT) \
-	FastaFileReader.$(OBJEXT) FastqFileReader.$(OBJEXT) \
-	AnonymizerMultiThreadData.$(OBJEXT) \
-	runtime_parameters.$(OBJEXT) TextFileReader.$(OBJEXT) \
-	common.$(OBJEXT) Anonymizer.$(OBJEXT) TextFileWriter.$(OBJEXT)
-strangers_OBJECTS = $(am_strangers_OBJECTS)
-strangers_LDADD = $(LDADD)
-strangers_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -118,8 +110,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(lobSTR_SOURCES) $(strangers_SOURCES)
-DIST_SOURCES = $(lobSTR_SOURCES) $(strangers_SOURCES)
+SOURCES = $(lobSTR_SOURCES)
+DIST_SOURCES = $(lobSTR_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -262,7 +254,6 @@ lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h \
 	bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h \
 	QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c \
 	cs2nt.c
-strangers_SOURCES = main_strangers.cpp FastaFileReader.h FastaFileReader.cpp FastqFileReader.h FastqFileReader.cpp IFileReader.h AnonymizerMultiThreadData.h AnonymizerMultiThreadData.cpp runtime_parameters.h runtime_parameters.cpp TextFileReader.h TextFileReader.cpp common.h common.cpp Anonymizer.h Anonymizer.cpp TextFileWriter.h TextFileWriter.cpp
 all: all-am
 
 .SUFFIXES:
@@ -337,9 +328,6 @@ clean-binPROGRAMS:
 lobSTR$(EXEEXT): $(lobSTR_OBJECTS) $(lobSTR_DEPENDENCIES) 
 	@rm -f lobSTR$(EXEEXT)
 	$(CXXLINK) $(lobSTR_OBJECTS) $(lobSTR_LDADD) $(LIBS)
-strangers$(EXEEXT): $(strangers_OBJECTS) $(strangers_DEPENDENCIES) 
-	@rm -f strangers$(EXEEXT)
-	$(CXXLINK) $(strangers_OBJECTS) $(strangers_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -347,13 +335,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/Anonymizer.Po
-include ./$(DEPDIR)/AnonymizerMultiThreadData.Po
-include ./$(DEPDIR)/FastaFileReader.Po
-include ./$(DEPDIR)/FastqFileReader.Po
-include ./$(DEPDIR)/TextFileReader.Po
-include ./$(DEPDIR)/TextFileWriter.Po
-include ./$(DEPDIR)/common.Po
 include ./$(DEPDIR)/lobSTR-AlignmentFileReader.Po
 include ./$(DEPDIR)/lobSTR-BWAReadAligner.Po
 include ./$(DEPDIR)/lobSTR-CachedWindowGenerator.Po
@@ -408,8 +389,6 @@ include ./$(DEPDIR)/lobSTR-simple_dp.Po
 include ./$(DEPDIR)/lobSTR-stdaln.Po
 include ./$(DEPDIR)/lobSTR-stree.Po
 include ./$(DEPDIR)/lobSTR-utils.Po
-include ./$(DEPDIR)/main_strangers.Po
-include ./$(DEPDIR)/runtime_parameters.Po
 
 .c.o:
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
