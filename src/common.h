@@ -25,7 +25,6 @@ struct  BWT{
 
 struct BNT {
   bntseq_t *bns;
-  bntseq_t *ntbns;
 };
 
 

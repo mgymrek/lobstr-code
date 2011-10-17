@@ -44,7 +44,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = lobSTR$(EXEEXT)
+bin_PROGRAMS = lobSTR$(EXEEXT) lobSTRIndex$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,6 +93,18 @@ lobSTR_OBJECTS = $(am_lobSTR_OBJECTS)
 lobSTR_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 lobSTR_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_lobSTRIndex_OBJECTS = main.$(OBJEXT) bwtaln.$(OBJEXT) bwt.$(OBJEXT) \
+	bamlite.$(OBJEXT) stdaln.$(OBJEXT) bwtgap.$(OBJEXT) \
+	bwaseqio.$(OBJEXT) bwtindex.$(OBJEXT) bwtio.$(OBJEXT) \
+	utils.$(OBJEXT) simple_dp.$(OBJEXT) kstring.$(OBJEXT) \
+	bwtsw2_core.$(OBJEXT) bwtsw2_main.$(OBJEXT) \
+	bwtsw2_aux.$(OBJEXT) bwtsw2_chain.$(OBJEXT) bwt_lite.$(OBJEXT) \
+	bwape.$(OBJEXT) bwase.$(OBJEXT) bwt_gen.$(OBJEXT) \
+	QSufSort.$(OBJEXT) bntseq.$(OBJEXT) bwtmisc.$(OBJEXT) \
+	is.$(OBJEXT) cs2nt.$(OBJEXT)
+lobSTRIndex_OBJECTS = $(am_lobSTRIndex_OBJECTS)
+lobSTRIndex_LDADD = $(LDADD)
+lobSTRIndex_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -106,8 +118,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(lobSTR_SOURCES)
-DIST_SOURCES = $(lobSTR_SOURCES)
+SOURCES = $(lobSTR_SOURCES) $(lobSTRIndex_SOURCES)
+DIST_SOURCES = $(lobSTR_SOURCES) $(lobSTRIndex_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -245,6 +257,7 @@ lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h \
 	bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c \
 	bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h \
 	is.c cs2nt.c
+lobSTRIndex_SOURCES = main.c main.h bwtaln.h bwtaln.c bwt.h bwt.c bamlite.h bamlite.c bntseq.h   bwtsw2.h stdaln.h stdaln.c bwtgap.h bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h utils.c simple_dp.h simple_dp.c kstring.c kstring.h bwtsw2_core.h bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c bwtsw2_aux.h bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c cs2nt.c
 all: all-am
 
 .SUFFIXES:
@@ -319,6 +332,9 @@ clean-binPROGRAMS:
 lobSTR$(EXEEXT): $(lobSTR_OBJECTS) $(lobSTR_DEPENDENCIES) 
 	@rm -f lobSTR$(EXEEXT)
 	$(CXXLINK) $(lobSTR_OBJECTS) $(lobSTR_LDADD) $(LIBS)
+lobSTRIndex$(EXEEXT): $(lobSTRIndex_OBJECTS) $(lobSTRIndex_DEPENDENCIES) 
+	@rm -f lobSTRIndex$(EXEEXT)
+	$(LINK) $(lobSTRIndex_OBJECTS) $(lobSTRIndex_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -326,6 +342,27 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QSufSort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bamlite.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bntseq.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwape.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwaseqio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwt_gen.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwt_lite.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtaln.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtgap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtindex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtmisc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_aux.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_chain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_core.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cs2nt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/is.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kstring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-AlignmentFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-BWAReadAligner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-CachedWindowGenerator.Po@am__quote@
@@ -372,6 +409,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-simple_dp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-stdaln.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_dp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stdaln.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

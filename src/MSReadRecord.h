@@ -20,6 +20,8 @@ public:
 
   // detected rep seq
   std::string repseq;
+  // is canonical repseq the reverse of how it appears?
+  bool repseq_reverse;
 
   // detection data
   // location in the read where the STR starts

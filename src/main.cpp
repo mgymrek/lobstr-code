@@ -3,8 +3,6 @@
 /*
 TODO:
 use cigar score
-get rid of other unneeded GST code
-trimming
  */
 
 
@@ -61,6 +59,7 @@ map<string, int> chrom_sizes;
 
 // alignment references, keep global
 void LoadReference(const std::string& repseq);
+void DestroyReferences();
 map<std::string, BWT> bwt_references;
 map<std::string, BNT> bnt_annotations;
 gap_opt_t *opts;
@@ -71,6 +70,7 @@ void show_help(){
   const char* help = "lobSTR [OPTIONS] -f <file1[,file2,...]> --bwa-ref-prefix <bwa ref prefix> -o <output prefix>\n" \
 "-f,--files     file or comma-separated list of files containing reads in fasta or fastq format\n" \
 "-o,--out       prefix for out put files. will output:\n" \
+"--bwa-ref-prefix     prefix for bwa reference (must run lobstr_index.py to create index)\n" \
 "                      <prefix>.<filename>.fast(a/q): file of raw reads with detected reads modified for each <filename>\n" \
 "                      <prefix>.msalign: file of alignments\n" \
 "\n\nOptions:\n" \
@@ -80,8 +80,8 @@ void show_help(){
 "-p,--threads <int>         number of threads (default: 1)\n" \
 "-b,--bam                   output aligned reads in .bam format\n" \
 "\n\nAdvanced options - general:\n" \
-"--min-read-length    minimum number of nucleotides for a read to be processed. This should be at least two times fft-window-size (default: 48)\n"
-"--max-read-length    maximum number of nucleotides for a read to be processed. (default: 1000)\n"
+"--min-read-length    minimum number of nucleotides for a read to be processed. This should be at least two times fft-window-size (default: 48)\n" \
+"--max-read-length    maximum number of nucleotides for a read to be processed. (default: 1000)\n" \
 "\n\nAdvanced options - detection:\n" \
 "--fft-window-size    size of fft window (default: 24)\n" \
 "--fft-window-step    step size of sliding window (default: 12)\n" \
@@ -91,10 +91,12 @@ void show_help(){
 "--minflank           minimum length of flanking region to try to align (default: 10)\n" \
 "--maxflank           length to trim flanking regions to if they exceed that length (default: 1000)\n" \
 "\n\nAdvanced options - alignment:\n" \
-"--bwa-ref-prefix     prefix for bwa reference\n" \
-"--extend             length of flanking regions in the genome to align against (default: 100)\n" \
 "--max-diff-ref       maximum difference in length from the reference sequence to allow for alignment (default 50) (will take the absolute value)\n" \
-"This program takes in raw reads, detects and aligns reads containing microsatellites, and genotypes STR locations.";
+    "-m,--mismatch <int>  edit distance allowed during alignment of each flanking region (default: 0)\n" \
+    "-g <int>             maximum number of gap opens allowed in each flanking region (default: 0)\n" \
+    "-e <int>             maximum number of gap extensions allowed in each flanking region (default: 0)\n" \ 
+    "-r <float>           edit distance allowed during alignment of each flanking region (ignored if -m is set) (default 0)\n" \
+"This program takes in raw reads, detects and aligns reads containing microsatellites, and genotypes STR locations.\n\n";
 	cout << help;
 	exit(1);
 }
@@ -144,6 +146,9 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_DEBUG_ENTROPY,
 	  OPT_PROFILE,
 	  OPT_BWA_REF,
+	  OPT_GAP_OPEN,
+	  OPT_GAP_EXTEND,
+	  OPT_FPR,
 	};
 
 	int ch;
@@ -190,7 +195,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"profile", 0, 0, OPT_PROFILE},
 	  {"bwa-ref-prefix", 1, 0, OPT_BWA_REF},
 	};
-	while ((ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:",
+	while ((ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:",
 				 long_options,&option_index))!= -1) { 
 	  switch(ch){
 	  case OPT_PROFILE:
@@ -211,6 +216,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case 'q':
 	  case OPT_FASTQ:
 	    input_type = INPUT_FASTQ;
+	  fastq++;
 	    break;
 	  case 'p':
 	  case OPT_THREADS:
@@ -221,14 +227,6 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case 'f':
 	  case OPT_FILES:
 	    input_files_string = optarg;
-	    break;
-	  case 't':
-	  case OPT_TABLE:
-	    table_file = string(optarg);
-	    break;
-	  case 'g':
-	  case OPT_GENOME:
-	    genome_file = string(optarg);
 	    break;
 	  case 'o':
 	  case OPT_OUTPUT:
@@ -336,6 +334,18 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case OPT_BWA_REF:
 	    bwa_ref_prefix = string(optarg);
 	    break;
+	  case OPT_GAP_OPEN:
+	  case 'g':
+	    gap_open = atoi(optarg);
+	    break;
+	  case OPT_GAP_EXTEND:
+	  case 'e':
+	    gap_extend = atoi(optarg);
+	    break;
+	  case OPT_FPR:
+	  case 'r':
+	    fpr = atof(optarg);
+	    break;
 	  default:
 	    show_help();
 	    exit(1);
@@ -368,33 +378,23 @@ void parse_commandline_options(int argc,char* argv[]) {
 	}
 }
 
-bntseq_t *bwa_open_nt(const char *prefix)
-{
-	bntseq_t *ntbns;
-	char *str;
-	str = (char*)calloc(strlen(prefix) + 10, 1);
-	strcat(strcpy(str, prefix), "");
-	ntbns = bns_restore(str);
-	free(str);
-	return ntbns;
-}
-
 void LoadReference(const std::string& repseq) {
   // Load BWT index
   char* prefix = (char*)calloc(strlen(bwa_ref_prefix.c_str()) +
-			       strlen(repseq.c_str()) + 10, 1);
+			       strlen(repseq.c_str()) + 20, 1);
   strcpy(prefix, bwa_ref_prefix.c_str()); strcat(prefix, repseq.c_str());
   strcat(prefix, ".fa");
-  if (!fexists(prefix)) {
-    throw 20;
-  }
   cout << "loading ref " << repseq << endl;
   bwt_t *bwt[2];
   char *str = (char*)calloc(strlen(prefix) + 10, 1);
-  strcpy(str, prefix); strcat(str, ".bwt");  bwt[0] = bwt_restore_bwt(str);
-  strcpy(str, prefix); strcat(str, ".rbwt"); bwt[1] = bwt_restore_bwt(str);
-  strcpy(str, prefix); strcat(str, ".sa"); bwt_restore_sa(str, bwt[0]);
-  strcpy(str, prefix); strcat(str, ".rsa"); bwt_restore_sa(str, bwt[1]);
+  strcpy(str, prefix); strcat(str, ".bwt");
+  bwt[0] = bwt_restore_bwt(str);
+  strcpy(str, prefix); strcat(str, ".rbwt");
+  bwt[1] = bwt_restore_bwt(str);
+  strcpy(str, prefix); strcat(str, ".sa");
+  bwt_restore_sa(str, bwt[0]);
+  strcpy(str, prefix); strcat(str, ".rsa");
+  bwt_restore_sa(str, bwt[1]);
 
   BWT bwt_ref;
   bwt_ref.bwt[0] = bwt[0];
@@ -405,13 +405,24 @@ void LoadReference(const std::string& repseq) {
   BNT bnt;
   bntseq_t *bns, *ntbns = 0;
   bns = bns_restore(prefix);
-  ntbns = bwa_open_nt(prefix);
   bnt.bns = bns;
-  bnt.ntbns = ntbns;
   bnt_annotations.insert(pair<string, BNT>(repseq,bnt));
   free(str);
   free(prefix);
 }
+
+void DestroyReferences() {
+  for (map<string, BWT>::iterator it = bwt_references.begin();
+       it != bwt_references.end(); ++it) {
+    bwt_destroy(it->second.bwt[0]);
+    bwt_destroy(it->second.bwt[1]);
+  }
+  for (map<string, BNT>::iterator it = bnt_annotations.begin();
+       it != bnt_annotations.end(); ++it) {
+    bns_destroy(it->second.bns);
+  }
+}
+
 
 /*
  * process read in single thread
@@ -446,20 +457,27 @@ void single_thread_process_loop(const vector<string>& files) {
 	getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
 	repseq = getFirstString(repseqfw, repseqrev);
 	msread.repseq = repseq;
+	msread.repseq_reverse = (repseq==repseqrev);
 	// alignment
 	if (pAligner->ProcessRead(&msread)) {
 	  aligned = true;
 	} else if (msread.ms_repeat_next_best_period != 0) {
 	  msread.ms_repeat_best_period = msread.ms_repeat_next_best_period;
+	  getMSSeq(msread.detected_ms_region_nuc, msread.ms_repeat_best_period, &repseqfw);
+	  getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
+	  repseq = getFirstString(repseqfw, repseqrev);
+	  msread.repseq = repseq;
+	  msread.repseq_reverse = (repseq==repseqrev);
 	  if (pAligner->ProcessRead(&msread)) {
 	    aligned = true;
 	  }
-	}
+	} 
 	if (aligned) {
+	  //	  cout << "aligned! " << msread.name << endl;
 	  genotyper.AddRead(&msread);
 	  pWriter.WriteRecord(msread);
 	  if (sam) samWriter.WriteRecord(msread);
-	} 
+	}
       }
       delete pReader;
     } else {
@@ -489,11 +507,16 @@ void* satellite_process_consumer_thread(void *arg) {
 	getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
 	repseq = getFirstString(repseqfw, repseqrev);
 	pReadRecord->repseq = repseq;
+	pReadRecord->repseq_reverse = (repseq == repseqrev);
 	// alignment
 	if (pAligner->ProcessRead(pReadRecord)) {
 	  aligned = true;
 	} else if (pReadRecord->ms_repeat_next_best_period != 0) {
 	  pReadRecord->ms_repeat_best_period = pReadRecord->ms_repeat_next_best_period;
+	  getMSSeq(pReadRecord->detected_ms_region_nuc, pReadRecord->ms_repeat_best_period, &repseqfw);
+	  getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
+	  repseq = getFirstString(repseqfw, repseqrev);
+	  pReadRecord->repseq = repseq;	pReadRecord->repseq_reverse = (repseq == repseqrev);
 	  if (pAligner->ProcessRead(pReadRecord)) {
 	    aligned = true;
 	  }
@@ -589,20 +612,33 @@ int main(int argc,char* argv[]) {
   TextFileReader tReader(bwa_ref_prefix+"strdict.txt");
   string line;
   while(tReader.GetNextLine(&line)) {
-    LoadReference(line);
+    // set chrom sizes
+    if (line.substr(0,3) == "REF") {
+      vector<string> items;
+      split(line,'\t', items);
+      chrom_sizes[items[1]] = atoi(items[2].c_str());
+    } else {
+      LoadReference(line);
+    }
   }
   // set up options
   opts = gap_init_opt();
   // edit distance per flank
-  opts->fnr = -1.0;
+  //opts->fnr = 0.1;
   opts->max_diff = allowed_mismatches;
+  if (allowed_mismatches == 0) {
+    opts->fnr = fpr;
+  } else {
+    opts->fnr = -1.0;
+  }
   // only 1 indel per flank
-  opts->max_gape=1;
+  opts->max_gapo=gap_open;
+  opts->max_gape=gap_extend;
   // take the first INT subsequence as seed
-  opts->seed_len = 8;
+  opts->seed_len = 5;
   // all hits with no more than maxdiff found
   // maybe remove, supposed to be slow
-  opts->mode |= BWA_MODE_NONSTOP; opts->max_top2 = 0x7fffffff;
+  //opts->mode |= BWA_MODE_NONSTOP; opts->max_top2 = 0x7fffffff;
 
 
 

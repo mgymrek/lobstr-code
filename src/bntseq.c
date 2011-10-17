@@ -93,6 +93,7 @@ bntseq_t *bns_restore_core(const char *ann_filename, const char* amb_filename, c
 	long long xx;
 	int i;
 	bns = (bntseq_t*)calloc(1, sizeof(bntseq_t));
+
 	{ // read .ann
 		fp = xopen(ann_filename, "r");
 		fscanf(fp, "%lld%d%u", &xx, &bns->n_seqs, &bns->seed);
@@ -114,6 +115,7 @@ bntseq_t *bns_restore_core(const char *ann_filename, const char* amb_filename, c
 			fscanf(fp, "%lld%d%d", &xx, &p->len, &p->n_ambs);
 			p->offset = xx;
 		}
+
 		fclose(fp);
 	}
 	{ // read .amb
@@ -132,9 +134,9 @@ bntseq_t *bns_restore_core(const char *ann_filename, const char* amb_filename, c
 		}
 		fclose(fp);
 	}
-	{ // open .pac
-		bns->fp_pac = xopen(pac_filename, "rb");
-	}
+	//	{ // open .pac
+	//	bns->fp_pac = xopen(pac_filename, "rb");
+	//}
 	return bns;
 }
 

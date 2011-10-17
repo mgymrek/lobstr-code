@@ -12,6 +12,7 @@ bool verbose = false;
 bool sam = false;
 bool debug = false;
 bool genotype_only = false;
+bool fastq = false;
 
 // threading
 size_t threads = 1;
@@ -28,7 +29,7 @@ std::string sam_file = "";
 
 // detection params
 int min_read_length = 50;
-int max_read_length = 1000;
+int max_read_length = 1024;
 int fft_window_size = 24;
 int fft_window_step = 12;
 float fft_lobe_threshold = 3;
@@ -36,22 +37,26 @@ float period_energy_threshold = 100;
 int max_period = 8;
 int min_period = 1;
 int min_flank_len = 10;
-int max_flank_len = 25;
+int max_flank_len = 50;
 float closeness = 0.5;
 float percent_N_discard = 0.2;
 float tukey_alpha = 0.5;
 bool use_entropy = true;
 float entropy_threshold = 0.3;
 int entropy_k = 2;
-int extend_flank = 5; //8
+int extend_flank = 10;
 
 // alignment params
 int allowed_mismatches = 0;
 int max_align = 10;
 int max_diff_ref = 10;
-int extend = 100;
+int extend = 200;
 int min_length_to_allow_mismatches = 10;
 std::string bwa_ref_prefix = "";
+int gap_open = 0;
+int gap_extend = 0;
+float fpr = 0;
+
 
 // genotyping params
 bool rmdup = false;
@@ -65,7 +70,7 @@ float mu_1 = 0.5;
 float mu_2 = 0.01;
 bool male = true;
 // Note to self: couldn't figure out if it was sexist to have male as default...
-int min_coverage = 2;
+int min_coverage = 1;
 float percent_reads_for_homozygous = 0.95;
 std::string aligned_file = "";
 

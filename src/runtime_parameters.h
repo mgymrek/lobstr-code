@@ -27,6 +27,7 @@ extern bool verbose;
 extern bool sam;
 extern bool debug;
 extern bool genotype_only;
+extern bool fastq;
 
 // threading
 extern size_t threads;
@@ -67,6 +68,9 @@ extern int max_diff_ref;
 extern int extend;
 extern int min_length_to_allow_mismatches;
 extern std::string bwa_ref_prefix;
+extern int gap_open;
+extern int gap_extend;
+extern float fpr;
 
 // genotyping params
 extern bool rmdup;
