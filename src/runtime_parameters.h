@@ -67,7 +67,7 @@ extern int max_align;
 extern int max_diff_ref;
 extern int extend;
 extern int min_length_to_allow_mismatches;
-extern std::string bwa_ref_prefix;
+extern std::string index_prefix;
 extern int gap_open;
 extern int gap_extend;
 extern float fpr;

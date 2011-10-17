@@ -26,13 +26,18 @@ lobSTR --help
 
 for a list of all command line options.
 
-NOTE: THE GENOME BUILD OF THE GENOME FILE MUST MATCH THE COORDINATES OF THE STR TABLE. All files included in this download assume hg18 coordinates.
+NOTE: All files included in this download assume hg18 coordinates.
 
-Genome files for entire genomes or individual chromosomes are available at 
-http://hgdownload.cse.ucsc.edu/downloads.html
+Required inputs are:
+* -f: comma separated list of files containing raw reads in fasta or fastq format (for fastq you must add the argument -q)
+* -o: prefix to name all output files
+* --index: path and prefix of lobSTR index: The lobSTR download comes with a precompiled STR index (hg18), in lobstr-xxx/index/. To specify this as the index, use:
+--index-prefix lobstr-xxx/index/lobSTR_
+
+change the path accordingly to match the path where the index is stored
 
 III. GETTING HELP
-For more information see the website at http://jura.wi.mit.edu/erlich/strangers/
+For more information see the website at http://jura.wi.mit.edu/erlich/lobSTR/
 
 IV. REQUIREMENTS
 
@@ -48,7 +53,9 @@ libboost-dev
 
 V. OUTPUT
 
-The following files are output:
+The following files are output from lobSTR:
 
 $prefix.aligned.tab: all aligned reads
-$prefix.genotypes.tab: genotypes of profiled STR loci
+$prefix.aligned.bam: aligned reads in bam format
+$prefix.genotypes.tab: genotype called at each locus
+

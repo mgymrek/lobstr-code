@@ -217,7 +217,7 @@ void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
   } else {
     refid->end = atoi(items.at(4).c_str())-extend;
   }
-  refid->copynum = atof(items.at(5).c_str());
+  refid->copynum = atof(items.at(6).c_str());
   if (items.size() > 7)
     refid->name = items.at(7);
 }

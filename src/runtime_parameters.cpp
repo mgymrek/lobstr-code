@@ -9,7 +9,7 @@ std::map<std::string, std::string> canonicalMSTable;
 
 // flags
 bool verbose = false;
-bool sam = false;
+bool sam = true;
 bool debug = false;
 bool genotype_only = false;
 bool fastq = false;
@@ -52,7 +52,7 @@ int max_align = 10;
 int max_diff_ref = 10;
 int extend = 200;
 int min_length_to_allow_mismatches = 10;
-std::string bwa_ref_prefix = "";
+std::string index_prefix = "";
 int gap_open = 0;
 int gap_extend = 0;
 float fpr = 0;

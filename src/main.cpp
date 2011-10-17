@@ -67,10 +67,10 @@ gap_opt_t *opts;
 static pthread_mutex_t g_seq_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void show_help(){
-  const char* help = "lobSTR [OPTIONS] -f <file1[,file2,...]> --bwa-ref-prefix <bwa ref prefix> -o <output prefix>\n" \
+  const char* help = "lobSTR [OPTIONS] -f <file1[,file2,...]> --index-prefix <index prefix> -o <output prefix>\n" \
 "-f,--files     file or comma-separated list of files containing reads in fasta or fastq format\n" \
 "-o,--out       prefix for out put files. will output:\n" \
-"--bwa-ref-prefix     prefix for bwa reference (must run lobstr_index.py to create index)\n" \
+"--index-prefix     prefix for bwa reference (must run lobstr_index.py to create index)\n" \
 "                      <prefix>.<filename>.fast(a/q): file of raw reads with detected reads modified for each <filename>\n" \
 "                      <prefix>.msalign: file of alignments\n" \
 "\n\nOptions:\n" \
@@ -145,7 +145,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_ENTROPY_THRESHOLD,
 	  OPT_DEBUG_ENTROPY,
 	  OPT_PROFILE,
-	  OPT_BWA_REF,
+	  OPT_INDEX,
 	  OPT_GAP_OPEN,
 	  OPT_GAP_EXTEND,
 	  OPT_FPR,
@@ -193,7 +193,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
 	  {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
 	  {"profile", 0, 0, OPT_PROFILE},
-	  {"bwa-ref-prefix", 1, 0, OPT_BWA_REF},
+	  {"index-prefix", 1, 0, OPT_INDEX},
 	};
 	while ((ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:",
 				 long_options,&option_index))!= -1) { 
@@ -331,8 +331,8 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case OPT_DEBUG_ENTROPY:
 	    entropy_debug++;
 	    break;
-	  case OPT_BWA_REF:
-	    bwa_ref_prefix = string(optarg);
+	  case OPT_INDEX:
+	    index_prefix = string(optarg);
 	    break;
 	  case OPT_GAP_OPEN:
 	  case 'g':
@@ -369,7 +369,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	}
 	// check that we have the mandatory parameters
 	if ((input_files_string.empty()||  output_prefix.empty() ||
-	     bwa_ref_prefix.empty()) &&
+	     index_prefix.empty()) &&
 	    !genotype_only) {
 	  errx(1, "Required arguments are mising");
 	} else if (genotype_only && (aligned_file.empty()
@@ -380,9 +380,9 @@ void parse_commandline_options(int argc,char* argv[]) {
 
 void LoadReference(const std::string& repseq) {
   // Load BWT index
-  char* prefix = (char*)calloc(strlen(bwa_ref_prefix.c_str()) +
+  char* prefix = (char*)calloc(strlen(index_prefix.c_str()) +
 			       strlen(repseq.c_str()) + 20, 1);
-  strcpy(prefix, bwa_ref_prefix.c_str()); strcat(prefix, repseq.c_str());
+  strcpy(prefix, index_prefix.c_str()); strcat(prefix, repseq.c_str());
   strcat(prefix, ".fa");
   cout << "loading ref " << repseq << endl;
   bwt_t *bwt[2];
@@ -609,7 +609,7 @@ int main(int argc,char* argv[]) {
   
   if (verbose) cout << "Initializing..." << endl;
   // open file with all names
-  TextFileReader tReader(bwa_ref_prefix+"strdict.txt");
+  TextFileReader tReader(index_prefix+"strdict.txt");
   string line;
   while(tReader.GetNextLine(&line)) {
     // set chrom sizes

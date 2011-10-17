@@ -26,6 +26,7 @@ from  genotyper_utils import *
 try:
     command = sys.argv[1]
 except: command = "--help"
+
 if command not in ["train", "classify", "both"]:
     usage()
     if command != "--help":
