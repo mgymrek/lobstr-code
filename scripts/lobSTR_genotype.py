@@ -45,11 +45,15 @@ if command == "train":
     if (not("--bam" in args and "--out" in args)):
         usage()
         sys.exit(2)
-if command == "classify" or command == "both":
+if command == "classify":
     if (not("--bam" in args and "--noise_model" in args and "--out" in args and "--sex" in args)):
         usage()
         sys.exit(2)
-    
+if command == "both":
+    if (not("--bam" in args and "--out" in args and "--sex" in args)):
+        usage()
+        sys.exit(2)
+
 # initialize variables
 bam_file = ""
 noise_model = NoiseModel()
@@ -86,6 +90,7 @@ if command == "train" or command == "both":
         sys.exit(2)
 
 def main():
+    print "Running allelotyping with command %s"%command
     nm = noise_model
     # 1. Add reads to read container
     if verbose:
@@ -106,13 +111,10 @@ def main():
         nm = NoiseModel(read_container = read_container)
         nm.train()
         nm.WriteToFile("%s.noisemodel.txt"%prefix)
-    elif command == "classify":
+    if command == "classify" or command == "both":
         if verbose:
             print "Classifying genotypes..."
         genotyper = Genotyper(nm, sex)
         genotyper.genotype(read_container, "%s.genotypes.tab"%prefix)
-    else:
-        print "Invalid command"
-        sys.exit(2)
 
 main()

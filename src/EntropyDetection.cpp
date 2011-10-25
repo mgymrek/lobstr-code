@@ -78,13 +78,16 @@ void EntropyDetection::CalculateEntropyWindow() {
   for (size_t i = 0; i < _nucs.length() - fft_window_size; i += fft_window_step) {
     window_nucleotides = _nucs.substr(i, fft_window_size);
     double entropy = EntropyOneWindowDinuc(window_nucleotides);
+    if (entropy > 0.8)
+      entropy = 0; // get rid of homopolymer runs messing it up
+    //     cout << window_nucleotides << " " << entropy << endl;
     _entropy_window.push_back(entropy);
   }
 }
 
 bool EntropyDetection::EntropyIsAboveThreshold() {
   CalculateEntropyWindow();
-  return *max_element(_entropy_window.begin(), _entropy_window.end()) >
+  return *max_element(_entropy_window.begin(), _entropy_window.end()) > 
     entropy_threshold;
 }
 
@@ -93,20 +96,26 @@ void EntropyDetection::FindStartEnd(size_t& start, size_t & end) {
   vector<double>::const_iterator  it = max_element(entropy_window.begin(),
 						   entropy_window.end());
   size_t index_of_max = distance(entropy_window.begin(), it);
-
+  float max_entropy = *it;
+  //cout << "max entropy " << max_entropy << endl;
   // Go backwards (to the left)
   int starti;
   for (starti = index_of_max ; starti>=0; starti--)
-    if (entropy_window[starti] < entropy_threshold)
+    //if (entropy_window[starti] < entropy_threshold)
+    // break;
+    if (entropy_window[starti] < 0.8*max_entropy)
       break;
   start = starti+1;
-  
+  if (start == 0) {start += 1;}
   // Go forwards (to the right)
   for (end = index_of_max ; end < entropy_window.size(); end++)  {
-    if ( entropy_window[end] < entropy_threshold )
+    //if ( entropy_window[end] < entropy_threshold )
+    //  break;
+    if (entropy_window[end] < 0.8*max_entropy)
       break;
   }
   end--;
+  if (end == entropy_window.size() -1) {end-=1;}
   /*  if (entropy_debug) {
     cerr << "Entropy debug: " << "start: " << start
 	 << " end: " << end << " length: " << entropy_window.size() << endl;

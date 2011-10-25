@@ -14,6 +14,7 @@ TODO!
  */
 
 extern unsigned char nst_nt4_table[256];
+int pad=50;
 
 BWAReadAligner::BWAReadAligner(map<std::string, BWT>* bwt_references,
 			       map<std::string, BNT>* bnt_annotations,
@@ -140,13 +141,19 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
 
   // get the desired info out of seqs and put it back into the MSReadRecord
   read->chrom = left_refid.chrom;
-  read->msStart = left_refid.start;
-  read->msEnd = left_refid.end;
+  //  cout << left_refid.left << " " << left_refid.start << " " << left_refid.end << " " << right_refid.start << " " << right_refid.end << endl;
+  if (left_refid.left) {
+    read->msStart = left_refid.start;
+    read->msEnd = left_refid.end;
+  } else {
+    read->msStart = right_refid.start;
+    read->msEnd = right_refid.end;
+  }
   read->msRepeat = repseq;
   read->refCopyNum = left_refid.copynum;
   read->lDist = seq_left->score;
   read->rDist = seq_right->score;
-  read->reverse = !left_refid.strand;
+  read->reverse = !left_refid.left;
   read->lStart = left_refid.pos;
   read->lEnd = left_refid.pos + strlen(left_flank);
   read->rStart = right_refid.pos;
@@ -154,7 +161,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   read->name = left_refid.name;
   int read_len_at_locus = read->nucleotides.size();
   int ref_len_at_locus = abs(read->rEnd - read->lStart);
-  if (!left_refid.strand) {
+  if (!left_refid.left) {
     ref_len_at_locus = abs(read->lEnd - read->rStart);
   }
   read->diffFromRef = read_len_at_locus - ref_len_at_locus;
@@ -163,6 +170,18 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   // complement back again
   read->left_flank_nuc = reverseComplement(read->left_flank_nuc);
   read->right_flank_nuc = reverseComplement(read->right_flank_nuc);
+  if (align_debug) {
+    cout << "lstart " << read->lStart << " lend " << read->lEnd 
+	 << " rstart " << read->rStart << " rend " << read->rEnd << endl;
+    cout << "strand " << read->reverse << endl;
+    cout << "chrom " << read->chrom << endl;
+    cout << "ref " << ref_len_at_locus  << " read " << read_len_at_locus << endl;
+    cout << "diff from ref " << read->diffFromRef << endl;
+  }
+  if (unit) {
+    if (read->diffFromRef % read->ms_repeat_best_period != 0)
+      return false;
+  }
   return abs(read->diffFromRef) <= max_diff_ref;
 }
 
@@ -207,16 +226,16 @@ void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
   refid->id = atoi(items.at(0).c_str());
   refid->left = (items.at(1) == "L");
   refid->chrom = items.at(2);
-  if (left) {
+  //  if (left) {
     refid->start = atoi(items.at(3).c_str())+extend;
-  } else {
-    refid->start = atoi(items.at(3).c_str());
-  }
-  if (left) {
+    //} else {
+    //refid->start = atoi(items.at(3).c_str());
+    //}
+    //if (left) {
     refid->end = atoi(items.at(4).c_str());
-  } else {
-    refid->end = atoi(items.at(4).c_str())-extend;
-  }
+    //} else {
+    //refid->end = atoi(items.at(4).c_str())-extend;
+    //}
   refid->copynum = atof(items.at(6).c_str());
   if (items.size() > 7)
     refid->name = items.at(7);
@@ -272,7 +291,7 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
     int k, j, nn, seqid; 
     j = pos_end_multi(q, aligned_seqs->len) - q->pos;
     if (q->pos >= _bnt_annotations->at(repseq).bns->l_pac) {
-      cout << "ERROR" << endl;
+      //      cout << "ERROR" << endl;
       continue;
     }
     nn = bns_coor_pac2real(_bnt_annotations->at(repseq).bns, q->pos, j, &seqid);
@@ -283,11 +302,14 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
       cout << "adding " << _bnt_annotations->at(repseq).bns->anns[seqid].name << endl;
     }    
     refid.strand = q->strand;
+    if (align_debug) {
+      cout << "start " << refid.start << " qpos " << q->pos << " annotation " << _bnt_annotations->at(repseq).bns->anns[seqid].offset << endl;
+    }
     if (q->strand) {
-      refid.pos = (refid.start-extend) + (int)(q->pos - _bnt_annotations->at(repseq).bns->anns[seqid].offset) + 1;
+      refid.pos = (refid.start-extend-pad) + (int)(q->pos - _bnt_annotations->at(repseq).bns->anns[seqid].offset) + 1;
     } else {
       refid.pos = (int)(q->pos - _bnt_annotations->at(repseq).bns->anns[seqid].offset - 2*j)
-	+ (refid.start-extend);
+	+ (refid.start-extend-pad);
     }
     alignments->push_back(refid);
   }

@@ -33,7 +33,7 @@ TabFileWriter::TabFileWriter(const string& filename):
     "diffFromRef\t"<<
     "reverse\t"<<
     "mismatch\t"<<
-    "name"<<
+    //    "name"<<
     endl;
 }
 
@@ -60,7 +60,7 @@ void TabFileWriter::WriteRecord(const MSReadRecord& read) {
 		<< read.rEnd << "\t"
 		<< read.diffFromRef << "\t"
 		<< read.reverse << "\t"
-		<< read.lDist << "," << read.rDist << "\t"
+    //		<< read.lDist << "," << read.rDist << "\t"
 		<< read.name
 		<< endl;
 }

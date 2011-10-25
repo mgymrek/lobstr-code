@@ -28,7 +28,7 @@ std::string output_prefix = "";
 std::string sam_file = "";
 
 // detection params
-int min_read_length = 50;
+int min_read_length = 45;
 int max_read_length = 1024;
 int fft_window_size = 24;
 int fft_window_step = 12;
@@ -36,26 +36,27 @@ float fft_lobe_threshold = 3;
 float period_energy_threshold = 100;
 int max_period = 8;
 int min_period = 1;
-int min_flank_len = 10;
-int max_flank_len = 50;
-float closeness = 0.5;
-float percent_N_discard = 0.2;
+int min_flank_len = 8;
+int max_flank_len = 100;
+float closeness = 0.7;
+float percent_N_discard = 0.1;
 float tukey_alpha = 0.5;
 bool use_entropy = true;
-float entropy_threshold = 0.3;
+float entropy_threshold = 0.45;
 int entropy_k = 2;
-int extend_flank = 10;
+int extend_flank = 7;
 
 // alignment params
 int allowed_mismatches = 0;
 int max_align = 10;
 int max_diff_ref = 10;
-int extend = 200;
-int min_length_to_allow_mismatches = 10;
+bool unit = false;
+int extend = 150;
+int min_length_to_allow_mismatches = 8;
 std::string index_prefix = "";
 int gap_open = 0;
 int gap_extend = 0;
-float fpr = 0;
+float fpr = 0.1;
 
 
 // genotyping params

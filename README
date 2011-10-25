@@ -5,6 +5,8 @@ II. Usage
 III. Getting help
 IV. Required packages
 V. Output files
+VI. Known Bugs
+VII. Building a lobSTR index
 
 I. INSTALLATION
  
@@ -26,15 +28,13 @@ lobSTR --help
 
 for a list of all command line options.
 
-NOTE: All files included in this download assume hg18 coordinates.
-
 Required inputs are:
 * -f: comma separated list of files containing raw reads in fasta or fastq format (for fastq you must add the argument -q)
 * -o: prefix to name all output files
-* --index: path and prefix of lobSTR index: The lobSTR download comes with a precompiled STR index (hg18), in lobstr-xxx/index/. To specify this as the index, use:
---index-prefix lobstr-xxx/index/lobSTR_
+* --index: path and prefix of lobSTR index: You can download the lobSTR index form the lobSTR downloads page. Unzip the index to an folder PATH-TO-INDEX. To specify this as the index, use:
+--index-prefix PATH-TO-INDEX/lobSTR_
 
-change the path accordingly to match the path where the index is stored
+change the path accordingly to match the path where the index is stored. An index for hg18 is available in the index_trf/ directory of the lobSTR download.
 
 III. GETTING HELP
 For more information see the website at http://jura.wi.mit.edu/erlich/lobSTR/
@@ -50,6 +50,8 @@ libtool
 pkg-config
 fftw3-dev
 libboost-dev
+bamtools
+
 
 V. OUTPUT
 
@@ -59,3 +61,18 @@ $prefix.aligned.tab: all aligned reads
 $prefix.aligned.bam: aligned reads in bam format
 $prefix.genotypes.tab: genotype called at each locus
 
+
+VI. KNOWN BUGS
+Cigar scores in the bam format do not take into account indels in the flanking regions, so bam alignments for those reads will be incorrect. This does not affect the genotyping result.
+
+The alignment score is not currently reported in the aligned.tab file
+
+VII. Building a lobSTR index
+An index built using the Tandem Repeat Finder table from UCSC is included in the index_trf/ directory of the lobSTR download.
+
+You can build your own lobSTR index using the lobstr_index.py script provided in the scripts/ directory of the lobSTR download. 
+Usage:
+python PATH-TO-LOBSTR/scripts/lobstr_index.py --str <path to trf table> --ref <reference genome in fasta format> --out_dir <path to output index> 
+
+Where --str is the table resulting from running the Tandem Repeat Finder tool.
+The resulting argument to --index-prefix for lobSTR will then be $out_dir/lobSTR_

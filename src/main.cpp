@@ -92,6 +92,7 @@ void show_help(){
 "--maxflank           length to trim flanking regions to if they exceed that length (default: 1000)\n" \
 "\n\nAdvanced options - alignment:\n" \
 "--max-diff-ref       maximum difference in length from the reference sequence to allow for alignment (default 50) (will take the absolute value)\n" \
+"-u                   require length difference to be a multiple of the repeat unit\n" \
     "-m,--mismatch <int>  edit distance allowed during alignment of each flanking region (default: 0)\n" \
     "-g <int>             maximum number of gap opens allowed in each flanking region (default: 0)\n" \
     "-e <int>             maximum number of gap extensions allowed in each flanking region (default: 0)\n" \ 
@@ -195,9 +196,11 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"profile", 0, 0, OPT_PROFILE},
 	  {"index-prefix", 1, 0, OPT_INDEX},
 	};
-	while ((ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:",
+	while ((ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:u",
 				 long_options,&option_index))!= -1) { 
 	  switch(ch){
+	  case 'u':
+	    unit++;
 	  case OPT_PROFILE:
 	    profile++;
 	    break;
@@ -448,6 +451,7 @@ void single_thread_process_loop(const vector<string>& files) {
 	  bases += msread.nucleotides.length();
 	}
 	if (!pDetector->ProcessRead(&msread)) {
+	  //	  	   cout << "not aligned (not detected) " << msread.nucleotides << endl;
 	  continue;
 	}
 	string repseqfw;
@@ -477,6 +481,8 @@ void single_thread_process_loop(const vector<string>& files) {
 	  genotyper.AddRead(&msread);
 	  pWriter.WriteRecord(msread);
 	  if (sam) samWriter.WriteRecord(msread);
+	} else {
+	  //	  	  cout << "not aligned " << msread.nucleotides << " " << msread.repseq << " " << msread.left_flank_nuc << " " << msread.right_flank_nuc << endl;
 	}
       }
       delete pReader;
@@ -544,7 +550,7 @@ void* output_writer_thread(void *arg) {
   while (1) {
     MSReadRecord *pReadRecord = pMT_DATA->get_new_output();
     pWriter->WriteRecord(*pReadRecord);
-    if (sam) samWriter.WriteRecord(*pReadRecord);
+    samWriter.WriteRecord(*pReadRecord);
     delete pReadRecord;
     pMT_DATA->increment_output_counter();
   }

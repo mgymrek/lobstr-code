@@ -31,7 +31,11 @@ SamFileWriter::SamFileWriter(const std::string& _filename,
 
 void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
   BamAlignment bam_alignment;
-  lpos = msread.lStart;
+  if (msread.reverse) {
+    lpos = msread.rStart;
+  } else {
+    lpos = msread.lStart;
+  }
   bam_alignment.Name = msread.ID;
   bam_alignment.SetIsPaired(false);
   bam_alignment.SetIsDuplicate(false);
@@ -108,9 +112,9 @@ void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
   // XC: ref copy number
   bam_alignment.AddTag("XC", "f", msread.refCopyNum);
   // XA: mismatch in left flank
-  bam_alignment.AddTag("XA", "i", msread.lDist);
+  //bam_alignment.AddTag("XA", "i", msread.lDist);
   // XB: mismatch in right flank
-  bam_alignment.AddTag("XB", "i", msread.rDist);
+  //bam_alignment.AddTag("XB", "i", msread.rDist);
   // XN: name of STR repeat
   if (!msread.name.empty()) {
     bam_alignment.AddTag("XN", "Z", msread.name);

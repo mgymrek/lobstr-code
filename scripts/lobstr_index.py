@@ -96,10 +96,6 @@ def reverseComplement(seq):
         if char == "T": newseq += "A"
     return newseq
 
-def IsAllSame(nucs):
-    if len(nucs) == 0: return True
-    return nucs.count(nucs[0]) == len(nucs)
-
 def PadFlank(seq, n):
     return "N"*n+seq+"N"*n
 
@@ -117,7 +113,7 @@ def processTRF(strfile, outdir, genome):
     ident = 0
     while line !="":
         items = line.strip().split("\t")
-        chrom, start, end, copynum, repseq = items[0], int(items[1]), int(items[2]), items[5], items[15]
+        chrom, start, end, copynum, repseq = items[0], int(items[1]), int(items[2]), items[4], items[14]
         try: 
             name = items[-1]
             if len(name) > 15: name = ""
@@ -129,7 +125,7 @@ def processTRF(strfile, outdir, genome):
         revrepseq = getCanonicalMS(reverseComplement(repseq))
         repseq = compareString(repseq, revrepseq)
         
-        if len(repseq) <= 6 and len(repseq) >= 2 and not IsAllSame(repseq):
+        if len(repseq) <= 6 and len(repseq) >= 2:
             # write fasta entries
             lident = ">"+"_".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
             rident = ">"+"_".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))

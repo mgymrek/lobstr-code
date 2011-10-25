@@ -1,5 +1,5 @@
 import math
-import scikits.statsmodels.api as sm
+import statsmodels.api as sm
 from numpy import array
 import pysam
 import sys
@@ -7,7 +7,7 @@ import sys
 # used to prevent problems coverting to log scale 
 SMALL_CONST = 1e-100
 # used as a guess for the maximal length. not critical
-MAX_STR_LEN = 100
+MAX_STR_LEN = 500
 # other consts
 CHR_Y = "chrY"
 CHR_X = "chrX"
@@ -186,6 +186,8 @@ class NoiseModel:
         for i in XY_indices: chrD[self.chrs[i]] = chrD.get(self.chrs[i],0)+1
         
         # create data for training
+        # training data format:
+        # [mode, period, copy number]
         trainingData = []
         modeD = {}
         for XY_index in XY_indices:
@@ -193,8 +195,8 @@ class NoiseModel:
             for read in self.reads[XY_index]:
                 trainingData.append([mode,self.unitSize[XY_index],math.floor(read)])
         self.trainingData = trainingData
-        self.fitMutProb()
-        self.fitDecProb()
+        self.fitMutProb() # probability to mutate based on STR unit length
+        #self.fitDecProb() # think removing this step
         self.fitPois()
         
     def hasUniqueMode(self,readSet):
@@ -219,23 +221,25 @@ class NoiseModel:
     def fitMutProb(self):
         """
         fit a logistic model for the noise/no noise decision
+        based on the repeat periods
         """
         # read the relevant data
         data = [(x[0]==x[2],x[0]) for x in self.trainingData if x[0] < TRAIN_MAX_LEN]
-        Y = array([int(x[0]) for x in data])
-        X = array([x[1] for x in data])
+        Y = array([int(x[0]) for x in data]) # array of 1/0 if mutated or not
+        X = array([x[1] for x in data]) # array of repeat periods
         res = sm.Logit(Y, sm.add_constant(X, prepend=True)).fit()
         self.mutIntercept = res.params[0]
         self.mutSlope = res.params[1]
 
+        # for periods, don't need truncation?
         # fit trunc1 - a contant probability of mutatation for reads >= TRAIN_MAX_LEN
-        data = [int(x[0]==x[2]) for x in self.trainingData if x[0] >= TRAIN_MAX_LEN]
-
-        if(len(data) > MINIMAL_OBS_FOR_TRUNC):
-            self.trunc1 = sum(data)*1./len(data)
-        else:
-            data = [int(x[0]==x[2]) for x in self.trainingData]
-            self.trunc1 = sum(data)*1./len(data)
+        #data = [int(x[0]==x[2]) for x in self.trainingData if x[0] >= TRAIN_MAX_LEN]
+        
+        #if(len(data) > MINIMAL_OBS_FOR_TRUNC):
+        #    self.trunc1 = sum(data)*1./len(data)
+        #else:
+        #    data = [int(x[0]==x[2]) for x in self.trainingData]
+        #    self.trunc1 = sum(data)*1./len(data)
             
     def fitDecProb(self):
         """
@@ -257,46 +261,62 @@ class NoiseModel:
             data = [int(x[0]>x[2]) for x in self.trainingData if x[0]!=x[2]]
             self.trunc2 = sum(data)*1./len(data)
 
+    def fitStepProb():
+        stepCounts = [10,10,10] # add pseudocounts (1, 2, 3+)
+        data = [(abs(x[0]-x[2])-1) for x in self.trainingData if x[0] < TRAIN_MAX_LEN\
+            and x[0]!=x[2]]
+        for item in data:
+            if item > 2: 
+                stepCounts[2] += 1
+            else:
+                stepCounts[item] += 1
+        stepCounts = stepCounts/sum(stepCounts)
+        self.step1 = stepCounts[0]
+        self.step2 = stepCounts[1]
+        self.step3 = stepCounts[2]
+
     def fitPois(self):
         """
         fit a Poisson model for the number of noise steps
         """
         data = [(abs(x[0]-x[2])-1,x[0]) for x in self.trainingData if x[0] < TRAIN_MAX_LEN\
                 and x[0]!=x[2]]
-        Y = array([int(x[0]) for x in data])
-        X = array([x[1] for x in data])
+        Y = array([int(x[0]) for x in data]) # diff from ref
+        X = array([x[1] for x in data]) # STR unit length
         res = sm.Poisson(Y, sm.add_constant(X, prepend=True)).fit()
         self.poisIntercept = res.params[0]
         self.poisSlope = res.params[1]
 
         # fit trunc3 - a contant mean of mutation for reads >= TRAIN_MAX_LEN
-        data = [abs(x[0]-x[2])-1 for x in self.trainingData if x[0] >= TRAIN_MAX_LEN\
-                and x[0]!=x[2]]
-        if(len(data) > MINIMAL_OBS_FOR_TRUNC):
-            self.trunc3 = sum(data)*1./len(data)
-        else:
-            data = [abs(x[0]-x[2])-1 for x in self.trainingData if x[0]!=x[2]]
-            self.trunc3 = sum(data)*1./len(data)
+        #data = [abs(x[0]-x[2])-1 for x in self.trainingData if x[0] >= TRAIN_MAX_LEN\
+        #        and x[0]!=x[2]]
+        #if(len(data) > MINIMAL_OBS_FOR_TRUNC):
+        #    self.trunc3 = sum(data)*1./len(data)
+        #else:
+        #    data = [abs(x[0]-x[2])-1 for x in self.trainingData if x[0]!=x[2]]
+        #    self.trunc3 = sum(data)*1./len(data)
 
-    def getTransProb(self,a,b):
+    def getTransProb(self,a,b,L):
         """
         given the noise model, what is the probability of observing
         STR=b when the true value is a?
         """
-        mutProb = invLogit(self.mutIntercept + self.mutSlope * a)
-        decProb = invLogit(self.decIntercept + self.decSlope * a) 
-        poisMean= math.exp(self.poisIntercept + self.poisSlope * a)
+        mutProb = invLogit(self.mutIntercept + self.mutSlope * L)
+        #decProb = invLogit(self.decIntercept + self.decSlope * a) 
+        poisMean= math.exp(self.poisIntercept + self.poisSlope * L)
         # use the truncation values
-        mutProb = max(mutProb,self.trunc1)
-        decProb = min(decProb,self.trunc2)
-        poisMean = min(poisMean,self.trunc3)
+        #mutProb = max(mutProb,self.trunc1)
+        #decProb = min(decProb,self.trunc2)
+        #poisMean = min(poisMean,self.trunc3)
         if(a==b): return mutProb
         if(a!=b):
             diff = abs(a-b)
-            if(a>b): # decrement
-                return (1-mutProb) * decProb * ppois(diff-1,poisMean)
-            else: # increment
-                return (1- mutProb) * (1-decProb) * ppois(diff-1,poisMean)
+            #if(a>b): # decrement
+                #return (1-mutProb) * decProb * ppois(diff-1,poisMean)
+            return (1-mutProb)*ppois(diff-1,poisMean)
+            #else: # increment
+                #return (1- mutProb) * (1-decProb) * ppois(diff-1,poisMean)
+                 
         
     def ReadFromFile(self,filename):
         """
@@ -307,13 +327,13 @@ class NoiseModel:
         d = dict([ (line[0],float(line[1])) for line in f])
         self.mutIntercept = d["mutIntercept"]
         self.mutSlope     = d["mutSlope"]
-        self.decIntercept = d["decIntercept"]
-        self.decSlope = d["decSlope"]
+        #self.decIntercept = d["decIntercept"]
+        #self.decSlope = d["decSlope"]
         self.poisIntercept = d["poisIntercept"]
         self.poisSlope = d["poisSlope"]
-        self.trunc1 = d["trunc1"]
-        self.trunc2 = d["trunc2"]
-        self.trunc3 = d["trunc3"]
+        #self.trunc1 = d["trunc1"]
+        #self.trunc2 = d["trunc2"]
+        #self.trunc3 = d["trunc3"]
         
 
     def WriteToFile(self,filename):
@@ -322,18 +342,26 @@ class NoiseModel:
         """
         skel = """mutIntercept=%s
 mutSlope=%s
-decIntercept=%s
-decSlope=%s
 poisIntercept=%s
 poisSlope=%s
-trunc1=%s
-trunc2=%s
-trunc3=%s
 """
-        f = skel%(self.mutIntercept,self.mutSlope,self.decIntercept,\
-                  self.decSlope,self.poisIntercept,self.poisSlope,\
-                  self.trunc1,self.trunc2,self.trunc3)
+        f = skel%(self.mutIntercept, self.mutSlope, self.poisIntercept,\
+                      self.poisSlope)
         file(filename,"wb").write(f)
+#        skel = """mutIntercept=%s
+#mutSlope=%s
+#decIntercept=%s
+#decSlope=%s
+#poisIntercept=%s
+#poisSlope=%s
+#trunc1=%s
+#trunc2=%s
+#trunc3=%s
+#"""
+#        f = skel%(self.mutIntercept,self.mutSlope,self.decIntercept,\
+#                  self.decSlope,self.poisIntercept,self.poisSlope,\
+#                  self.trunc1,self.trunc2,self.trunc3)
+#        file(filename,"wb").write(f)
 
 class Genotyper:
     def __init__(self,noiseModel,sex):
@@ -346,59 +374,76 @@ class Genotyper:
         """
         prepare the transition matrix based on the given noise model
         """
-
-        self.transMat = [[math.log(SMALL_CONST + self.noiseModel.getTransProb(i,j))\
-                          for j in xrange(self.currMatSize)] for i in xrange(self.currMatSize)]
-                         
+        self.transMat = [[[math.log(SMALL_CONST + self.noiseModel.getTransProb(i,j,L))\
+                          for j in xrange(self.currMatSize)] for i in xrange(self.currMatSize)] for L in range(2,8)]
         
-    def calcLogLik(self,STRa,STRb,reads):
+    def calcLogLik(self,STRa,STRb,reads,L):
         """
         calculate the likelihood of the (STRa,STRb) genotype given the reads
-        and the noise model
+        and the noise model and the STR period
         """
-        probsA = self.transMat[STRa]
-        probsB = self.transMat[STRb]
+        #probsA = [self.noiseModel.getTransProb(STRa,k,L) for k in range(500)]
+        probsA = self.transMat[L-2][STRa]
+        #probsB = [self.noiseModel.getTransProb(STRb,k,L) for k in range(500)]
+        probsB = self.transMat[L-2][STRb]
         joint = map(lambda x,y: math.log((math.exp(x)+math.exp(y))/2) , probsA,probsB)
         logLik = sum([joint[read] for read in reads])
         return(logLik)
 
-    def findMLE(self,reads):
+    def findMLE(self,reads,L):
         """
         find the MLE for the given set of reads
         """
         possible = list(set(reads))
-        if(len(possible)==1): return([possible[0],possible[0]])
+        if(len(possible)==1):
+            try:
+                score = self.calcLogLik(possible[0],possible[0],reads,L)
+            except: score = 0
+            return([[possible[0],possible[0]],score])
         currBest = [possible[0],possible[0]]
-        currBestScore = self.calcLogLik(possible[0],possible[0],reads)
+        try:
+            currBestScore = self.calcLogLik(possible[0],possible[0],reads,L)
+        except: currBestScore = 0
         for i in range(len(possible)):
             for j in range(i+1):
                 candidA = possible[i]
                 candidB = possible[j]
-                currScore = self.calcLogLik(candidA,candidB,reads)
+                try:
+                    currScore = self.calcLogLik(candidA,candidB,reads,L)
+                except: currScore = 0
                 if(currScore > currBestScore):
                     currBestScore = currScore
                     currBest = [candidA,candidB]
         currBest.sort()
-        return(currBest)
+        return [currBest,currBestScore]
     
 
-    def findMLE_single(self,reads):
+    def findMLE_single(self,reads,L):
         """
         find the MLE for the given set of reads, assuming there's
         only one STR
         """
         possible = list(set(reads))
-        if(len(possible)==1): return([possible[0]])
+        if(len(possible)==1):
+            try:
+                score = self.calcLogLik(possible[0],possible[0],reads,L)
+            except: score = 0
+            return([[possible[0]],score])
         currBest = [possible[0],possible[0]]
-        currBestScore = self.calcLogLik(possible[0],possible[0],reads)
+        try:
+            currBestScore = self.calcLogLik(possible[0],possible[0],reads,L)
+        except: currBestScore = 0
         for i in range(len(possible)):
             candidA = possible[i]
-            currScore = self.calcLogLik(candidA,candidA,reads)
+            try:
+                currScore = self.calcLogLik(candidA,candidA,reads,L)
+            except:
+                currScore = 0
             if(currScore > currBestScore):
                 currBestScore = currScore
                 currBest = [candidA]
         currBest.sort()
-        return(currBest)
+        return [currBest,currBestScore]
 
     def genotype(self,read_container,output_file):
         """
@@ -407,6 +452,7 @@ class Genotyper:
         """
         f = open(output_file, "w")
         isMale = (self.sex == "M")
+        locus = 0
         for str_locus in read_container.aligned_str_map_:
             currReads = GetCopyNumbers(read_container.aligned_str_map_[str_locus])
             currReads.sort()
@@ -414,10 +460,10 @@ class Genotyper:
             # floor the reads 
             currReads = map(int,currReads)
             # check that the current transition matrix is large enough
-            if max(currReads) > self.currMatSize:
-                # if not - enlarge it 
-                self.currMatSize = max(currReads)
-                self.prepareTransMat()
+#            if max(currReads) > self.currMatSize:
+#                # if not - enlarge it 
+#                self.currMatSize = max(currReads)
+#                self.prepareTransMat()
           
             currChr = str_locus[0]
             start = str_locus[1]
@@ -425,14 +471,16 @@ class Genotyper:
             repeat = read_container.aligned_str_map_[str_locus][0].opt("XR")
             ref = int(read_container.aligned_str_map_[str_locus][0].opt("XC"))
             if isMale and currChr in [CHR_Y,CHR_X]:
-                genotypes  = self.findMLE_single(currReads)
+                genotypes  = self.findMLE_single(currReads,len(repeat))
             else:
                 try:
-                    genotypes = self.findMLE(currReads)
-                except: genotypes = []
+                    genotypes = self.findMLE(currReads,len(repeat))
+                except: genotypes = [],0
             #genotypes = [x+resid for x in genotypes]
+            score = genotypes[1]
+            genotypes = genotypes[0]
             if len(genotypes) > 0:
                 conflicting = len([item for item in currReads if item not in genotypes])
                 not_conflicting = len(currReads) - conflicting
-                f.write("\t".join(map(str,[currChr, start, stop, repeat, len(repeat), ref, ",".join(map(str, genotypes)), len(currReads), not_conflicting, conflicting, "/".join(map(str,currReads)) ])) + "\n")
+                f.write("\t".join(map(str,[currChr, start, stop, repeat, len(repeat), ref, ",".join(map(str, genotypes)), len(currReads), not_conflicting, conflicting, "/".join(map(str,currReads)), round(score,2) ])) + "\n")
 

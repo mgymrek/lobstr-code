@@ -10,7 +10,8 @@
 
 #include "MSReadRecord.h"
 // #include "TextFileWriter.h"
-#include <api/BamWriter.h>
+#include <api/BamWr
+iter.h>
 
 using namespace std;
 

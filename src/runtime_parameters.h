@@ -65,6 +65,7 @@ extern int extend_flank;
 extern int allowed_mismatches;
 extern int max_align;
 extern int max_diff_ref;
+extern bool unit;
 extern int extend;
 extern int min_length_to_allow_mismatches;
 extern std::string index_prefix;

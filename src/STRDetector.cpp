@@ -160,6 +160,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   
   ms.destroy_plan();
   
+
   /*
     Step 4 -
     Period Detection
@@ -168,7 +169,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   size_t next_best_period = 0;
   string ms_period_nuc;
   
-  char over_abundtant_nuc = OneAbundantNucleotide(detected_microsatellite_nucleotides, 0.875);
+  char over_abundtant_nuc = OneAbundantNucleotide(detected_microsatellite_nucleotides, 1);
   
   if (over_abundtant_nuc != 0) {
     best_period = 1 ;
