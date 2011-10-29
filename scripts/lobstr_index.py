@@ -8,7 +8,7 @@ OPTIONS:
 --out_dir: path to write results to
 -h, --help: print this usage screen
 -v: verbose
---extend
+--extend: the length of flanking region to include on either side of the STR. (default 150). Note, if you change this paramter, YOU MUST USE THE SAME --extend OPTION WHEN YOU CALL lobSTR
 
 In $out_dir, creates:
 Creates BWT references for each repeat unit

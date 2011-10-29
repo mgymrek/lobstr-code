@@ -7,6 +7,8 @@ IV. Required packages
 V. Output files
 VI. Known Bugs
 VII. Building a lobSTR index
+VIII. Allelotyping a bam file not created using lobSTR
+
 
 I. INSTALLATION
  
@@ -22,6 +24,8 @@ The last step might require root access in order to have proper permissions. Con
 
 II. USAGE
 
+Part I: creating an STR alignment
+
 To see usage instructions, just type:
 
 lobSTR --help
@@ -35,6 +39,25 @@ Required inputs are:
 --index-prefix PATH-TO-INDEX/lobSTR_
 
 change the path accordingly to match the path where the index is stored. An index for hg18 is available in the index_trf/ directory of the lobSTR download.
+
+Part II: allelotyping
+
+To see usage instructions, type:
+pyton $PATH_TO_LOBSTR/scripts/lobSTR_allelotype.py --help
+
+for a list of all command line options.
+
+Required inputs are:
+* command:
+  - "train" builds a stutter noise model using given alignment data. This only works on male samples with a sizable number of reads aligned to the sex chromosomes.
+  - "classify" takes in a pre made noise model and produces an allelotype file
+  - "both" performs both training and classification
+* --bam: a bam file consisting of aligned reads. The bam file MUST be sorted and indexed before calling this script. If the bam file was not produced by lobSTR, you must run converBam.py first (see below)
+* --out: a prefix to name output files
+
+Optional:
+* --rmdup: remove PCR duplicates
+
 
 III. GETTING HELP
 For more information see the website at http://jura.wi.mit.edu/erlich/lobSTR/
@@ -52,6 +75,10 @@ fftw3-dev
 libboost-dev
 bamtools
 
+Python libraries:
+pysam
+Biopython
+numpy
 
 V. OUTPUT
 
@@ -76,3 +103,16 @@ python PATH-TO-LOBSTR/scripts/lobstr_index.py --str <path to trf table> --ref <r
 
 Where --str is the table resulting from running the Tandem Repeat Finder tool.
 The resulting argument to --index-prefix for lobSTR will then be $out_dir/lobSTR_
+
+
+VIII. Allelotyping bam alignment files not created using lobSTR.
+Because lobSTR adds its own custom fields to bam files, you must first convert the bam file you want to profile to the lobSTR bam format.
+
+First you must ensure that the bam file is sorted and indexed:
+samtools sort test.bam test.sorted
+samtools index test.sorted.bam
+
+Then run convertBam.py, available in $PATH_TO_LOBSTR/scripts/convertBam.py:
+python convertBam.py $PATH_LOBSTR/data/trf.ucsc.hg18.filtered.bed test.sorted.bam test.sorted.converted.bam
+
+To create the lobSTR-formatted bam file test.sorted.converted.bam. This file is now ready to be allelotyped by lobSTR_allelotype.py 

@@ -1,9 +1,0 @@
-mutIntercept=3.88846598975
-mutSlope=-0.107645360814
-decIntercept=-0.836426907318
-decSlope=0.0836294703977
-poisIntercept=-1.49405034135
-poisSlope=0.0385524513366
-trunc1=0.895833333333
-trunc2=0.8
-trunc3=0.25

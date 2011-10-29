@@ -84,16 +84,26 @@ void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
 			       + rseq.length());
     cigar_data.push_back(cigar_op);
   } else if (msread.diffFromRef > 0) {
-    BamTools::CigarOp cigar_op_l('M', msread.msStart - lpos + 1);
-    BamTools::CigarOp cigar_op_m('I', msread.diffFromRef);
-    BamTools::CigarOp cigar_op_r('M', (read.length() - msread.diffFromRef - (msread.msStart-lpos+1)));
+    int m1 = msread.msStart - lpos + 1;
+    int ins = msread.diffFromRef;
+    int m2 = (read.length() - msread.diffFromRef - (msread.msStart-lpos+1));
+    if (m1 + ins + m2 != read.length() || m1 < 0 || m2 < 0)
+      return;
+    BamTools::CigarOp cigar_op_l('M', m1);
+    BamTools::CigarOp cigar_op_m('I', ins);
+    BamTools::CigarOp cigar_op_r('M', m2);
     cigar_data.push_back(cigar_op_l);
     cigar_data.push_back(cigar_op_m);
     cigar_data.push_back(cigar_op_r);
   } else {
-    BamTools::CigarOp cigar_op_l('M', (msread.msStart-lpos +1));
-    BamTools::CigarOp cigar_op_m('D', (-1*msread.diffFromRef));
-    BamTools::CigarOp cigar_op_r('M', (read.length() - (msread.msStart-lpos+1)));
+    int m1 = (msread.msStart-lpos +1);
+    int del = (-1*msread.diffFromRef);
+    int m2 = (read.length() - (msread.msStart-lpos+1));
+    if (m1+m2 != read.length() || m1 < 0 || m2 < 0)
+      return;
+    BamTools::CigarOp cigar_op_l('M', m1);
+    BamTools::CigarOp cigar_op_m('D', del);
+    BamTools::CigarOp cigar_op_r('M', m2);
     cigar_data.push_back(cigar_op_l);
     cigar_data.push_back(cigar_op_m);
     cigar_data.push_back(cigar_op_r);
@@ -119,7 +129,9 @@ void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
   if (!msread.name.empty()) {
     bam_alignment.AddTag("XN", "Z", msread.name);
   }
-  writer.SaveAlignment(bam_alignment);
+  if ((msread.msStart-lpos +1) <= (msread.nucleotides.length())) {
+    writer.SaveAlignment(bam_alignment);
+  }
 }
 
 SamFileWriter::~SamFileWriter() {

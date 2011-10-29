@@ -14,9 +14,9 @@
 #include "bwase.h"
 #include "common.h"
 #include "MSReadRecord.h"
-#include "SamFileWriter.h"
 #include "TabFileWriter.h"
 
+using namespace std;
 
 struct ALIGNMENT {
   int id;
@@ -56,7 +56,7 @@ class BWAReadAligner {
   void ParseRefid(const std::string& refstring, ALIGNMENT* refid);
   
   bool GetAlignmentCoordinates(bwa_seq_t* aligned_seqs, const std::string& repseq,
-			       list<ALIGNMENT>* alignments);
+			       std::list<ALIGNMENT>* alignments);
 
   static bool GetSharedAln(const list<ALIGNMENT>& map1,
 			   const list<ALIGNMENT>& map2,

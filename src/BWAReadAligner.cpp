@@ -182,7 +182,27 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
     if (read->diffFromRef % read->ms_repeat_best_period != 0)
       return false;
   }
-  return abs(read->diffFromRef) <= max_diff_ref;
+  // check sam 
+  int lpos = 0;
+  if (read->reverse) {
+    lpos = read->rStart;
+  } else {
+    lpos = read->lStart;
+  }
+  if ((read->msStart - lpos + 1) > read->nucleotides.length() || (read->msStart - lpos + 1)  < 0) {
+    return false;
+  }
+  if (read->diffFromRef > 0) {
+    if ((read->nucleotides.length() - read->diffFromRef - (read->msStart-lpos+1)) < 0) {
+      return false;
+    }
+  }
+  if (read->diffFromRef < 0) {
+    if ((read->nucleotides.length() - (read->msStart-lpos+1))<0) {
+      return false;
+    }
+  }
+  return (abs(read->diffFromRef) <= max_diff_ref & read->msStart > 0);
 }
 
 bool BWAReadAligner::GetSharedAln(const list<ALIGNMENT>& map1,
@@ -194,6 +214,7 @@ bool BWAReadAligner::GetSharedAln(const list<ALIGNMENT>& map1,
   bool found = false;
   for (list<ALIGNMENT>::const_iterator it = map1.begin();
        it != map1.end(); ++it) {
+    // TODO get rid of things that map in multiple places at same ID!!
     left_id_to_ref[(*it).id] = *it;
   }
   for (list<ALIGNMENT>::const_iterator it = map2.begin();

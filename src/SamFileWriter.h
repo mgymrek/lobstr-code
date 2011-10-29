@@ -2,6 +2,10 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
+/* TODO 
+check that cigar score is valid
+ */
+
 #ifndef SAMFILEWRITER_H_
 #define SAMFILEWRITER_H_
 
@@ -10,8 +14,7 @@
 
 #include "MSReadRecord.h"
 // #include "TextFileWriter.h"
-#include <api/BamWr
-iter.h>
+#include <api/BamWriter.h>
 
 using namespace std;
 

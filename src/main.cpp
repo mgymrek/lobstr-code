@@ -49,7 +49,7 @@ vector<string> input_files;
 STRDetector str_detector;
 
 // keep track of genotypes
-Genotyper genotyper;
+// Genotyper genotyper;
 
 // keep track of # bases so we can calculate coverage
 long bases = 0;
@@ -78,7 +78,6 @@ void show_help(){
 "-v,--verbose               print out useful progress messages\n" \
 "-q,--fastq                 reads are in fastq format (default: fasta)\n" \
 "-p,--threads <int>         number of threads (default: 1)\n" \
-"-b,--bam                   output aligned reads in .bam format\n" \
 "\n\nAdvanced options - general:\n" \
 "--min-read-length    minimum number of nucleotides for a read to be processed. This should be at least two times fft-window-size (default: 48)\n" \
 "--max-read-length    maximum number of nucleotides for a read to be processed. (default: 1000)\n" \
@@ -95,7 +94,7 @@ void show_help(){
 "-u                   require length difference to be a multiple of the repeat unit\n" \
     "-m,--mismatch <int>  edit distance allowed during alignment of each flanking region (default: 0)\n" \
     "-g <int>             maximum number of gap opens allowed in each flanking region (default: 0)\n" \
-    "-e <int>             maximum number of gap extensions allowed in each flanking region (default: 0)\n" \ 
+    "-e <int>             maximum number of gap extensions allowed in each flanking region (default: 0)\n" \
     "-r <float>           edit distance allowed during alignment of each flanking region (ignored if -m is set) (default 0)\n" \
 "This program takes in raw reads, detects and aligns reads containing microsatellites, and genotypes STR locations.\n\n";
 	cout << help;
@@ -477,12 +476,9 @@ void single_thread_process_loop(const vector<string>& files) {
 	  }
 	} 
 	if (aligned) {
-	  //	  cout << "aligned! " << msread.name << endl;
-	  genotyper.AddRead(&msread);
+	  // genotyper.AddRead(&msread);
 	  pWriter.WriteRecord(msread);
 	  if (sam) samWriter.WriteRecord(msread);
-	} else {
-	  //	  	  cout << "not aligned " << msread.nucleotides << " " << msread.repseq << " " << msread.left_flank_nuc << " " << msread.right_flank_nuc << endl;
 	}
       }
       delete pReader;
@@ -530,7 +526,7 @@ void* satellite_process_consumer_thread(void *arg) {
       }
     }	  
     if (aligned) {
-      genotyper.AddRead(pReadRecord);
+      //genotyper.AddRead(pReadRecord);
       pMT_DATA->post_new_output_read(pReadRecord);
     } else {
       //Don't pass this read on to the output thread,
@@ -670,7 +666,7 @@ int main(int argc,char* argv[]) {
     }
     delete hamgen;
     delete tukgen;
-  } else {
+  } /*else {
     // read alignment file and add reads to genotyper
     AlignmentFileReader alignment_reader(aligned_file);
     MSReadRecord aligned_read_record;
@@ -695,66 +691,10 @@ int main(int argc,char* argv[]) {
     pi_1 = atof(pi_values.at(1).c_str());
     pi_2 = atof(pi_values.at(2).c_str());
     genotyper.ResetPi(pi_1, pi_1, pi_2);
-  }
+    }
 
   // run genotyping and write output
-  genotyper.WriteOutput(output_prefix + ".genotypes.tab");
+  genotyper.WriteOutput(output_prefix + ".genotypes.tab");*/
 
   return 0;
 }
-
-// old code, delete this eventually
-/*
-"\n\nAdvanced options - genotyping:\n" \
-"--genotype-only      input an aligned.tab file and only perform genotyping step\n" \
-"--aligned-file       aligned.tab file to genotype. Only used if --genotype-only is specified\n" \
-"--pi<pi0, pi1, pi2>  priors for genotype values aa, ab, bb, where a = reference and b = non-reference\n" \
-"--mu<mu0, mu1, mu2>  probability of read coming from reference allele for genotypes aa, ab, and bb\n" \
-"--female             The sample is from a female. Used in genotyping steps for genotyping STRs from the X and Y chromosomes (default false)\n" \
-"--min-coverage       Minimum required coverage of an STR locus to return a genotyper prediction. (default 2)\n" \
-*/
-		// TODO remove
-	/*
-	if (msread.detected_ms_nuc.empty()) {
-	  cout << msread.ID << "\t"
-	       << msread.nucleotides << "\t"
-	       << msread.ms_repeat_best_period << "\t"
-	       << msread.ms_repeat_next_best_period << "\t"
-	       << "-" << endl;
-	} else {
-	  cout << msread.ID << "\t"
-	       << msread.nucleotides << "\t"
-	       << msread.ms_repeat_best_period << "\t"
-	       << msread.ms_repeat_next_best_period << "\t"
-	       << msread.detected_ms_nuc << endl;
-	       }*/
-
-
-  /*
-  // init priors
-  if (!mu_string.empty()) {
-    vector<string> mu_values;
-    boost::split(mu_values, mu_string, boost::is_any_of(","));
-    mu_0 = atof(mu_values.at(0).c_str());
-    mu_1 = atof(mu_values.at(1).c_str());
-    mu_2 = atof(mu_values.at(2).c_str());
-    genotyper.ResetMu(mu_0, mu_1, mu_2);
-  }
-  if (!pi_string.empty()) {
-    vector<string> pi_values;
-    boost::split(pi_values, pi_string, boost::is_any_of(","));
-    pi_0 = atof(pi_values.at(0).c_str());
-    pi_1 = atof(pi_values.at(1).c_str());
-    pi_2 = atof(pi_values.at(2).c_str());
-    genotyper.ResetPi(pi_1, pi_1, pi_2);
-  }
-
-  // run genotyping and write output
-  genotyper.WriteOutput(output_prefix + ".genotypes.tab");
-
-  // print out coverage stats
-  if (!genotype_only) {
-    cout << "********************************" << endl;
-    cout << "Bases processed: " << bases << endl;
-    cout << "********************************" << endl;
-    }*/

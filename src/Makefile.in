@@ -44,7 +44,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = lobSTR$(EXEEXT) lobSTRIndex$(EXEEXT)
+bin_PROGRAMS = lobSTR$(EXEEXT) lobSTRIndex$(EXEEXT) strangers$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,6 +105,32 @@ am_lobSTRIndex_OBJECTS = main.$(OBJEXT) bwtaln.$(OBJEXT) bwt.$(OBJEXT) \
 lobSTRIndex_OBJECTS = $(am_lobSTRIndex_OBJECTS)
 lobSTRIndex_LDADD = $(LDADD)
 lobSTRIndex_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_strangers_OBJECTS = main_strangers.$(OBJEXT) \
+	runtime_parameters.$(OBJEXT) FastqFileReader.$(OBJEXT) \
+	FastaFileReader.$(OBJEXT) TextFileReader.$(OBJEXT) \
+	common.$(OBJEXT) TabFileWriter.$(OBJEXT) \
+	TextFileWriter.$(OBJEXT) STRDetector.$(OBJEXT) \
+	MainLobeDetection.$(OBJEXT) TukeyWindowGenerator.$(OBJEXT) \
+	FFT_four_nuc_vectors.$(OBJEXT) \
+	MicroSatelliteDetection.$(OBJEXT) \
+	HammingWindowGenerator.$(OBJEXT) \
+	CachedWindowGenerator.$(OBJEXT) FFT_nuc_vectors.$(OBJEXT) \
+	SamFileWriter.$(OBJEXT) MultithreadData.$(OBJEXT) \
+	Genotyper.$(OBJEXT) AlignmentFileReader.$(OBJEXT) \
+	EntropyDetection.$(OBJEXT) BWAReadAligner.$(OBJEXT) \
+	bwtaln.$(OBJEXT) bwt.$(OBJEXT) bamlite.$(OBJEXT) \
+	stdaln.$(OBJEXT) bwtgap.$(OBJEXT) bwaseqio.$(OBJEXT) \
+	bwtindex.$(OBJEXT) bwtio.$(OBJEXT) utils.$(OBJEXT) \
+	simple_dp.$(OBJEXT) kstring.$(OBJEXT) bwtsw2_core.$(OBJEXT) \
+	bwtsw2_main.$(OBJEXT) bwtsw2_aux.$(OBJEXT) \
+	bwtsw2_chain.$(OBJEXT) bwt_lite.$(OBJEXT) bwape.$(OBJEXT) \
+	bwase.$(OBJEXT) bwt_gen.$(OBJEXT) QSufSort.$(OBJEXT) \
+	bntseq.$(OBJEXT) bwtmisc.$(OBJEXT) is.$(OBJEXT) \
+	cs2nt.$(OBJEXT) Anonymizer.$(OBJEXT) \
+	AnonymizerMultiThreadData.$(OBJEXT)
+strangers_OBJECTS = $(am_strangers_OBJECTS)
+strangers_LDADD = $(LDADD)
+strangers_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -118,8 +144,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(lobSTR_SOURCES) $(lobSTRIndex_SOURCES)
-DIST_SOURCES = $(lobSTR_SOURCES) $(lobSTRIndex_SOURCES)
+SOURCES = $(lobSTR_SOURCES) $(lobSTRIndex_SOURCES) \
+	$(strangers_SOURCES)
+DIST_SOURCES = $(lobSTR_SOURCES) $(lobSTRIndex_SOURCES) \
+	$(strangers_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -229,7 +257,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lobSTR_CPPFLAGS = -I/usr/include/bamtools  -L/lib
+lobSTR_CPPFLAGS = -L/lib #-I/usr/include/bamtools  -L/lib
 AM_CPPFLAGS = $(FFTW_CFLAGS)
 LDADD = $(FFTW_LIBS) -lbamtools
 lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h \
@@ -258,6 +286,32 @@ lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h \
 	bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h \
 	is.c cs2nt.c
 lobSTRIndex_SOURCES = main.c main.h bwtaln.h bwtaln.c bwt.h bwt.c bamlite.h bamlite.c bntseq.h   bwtsw2.h stdaln.h stdaln.c bwtgap.h bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h utils.c simple_dp.h simple_dp.c kstring.c kstring.h bwtsw2_core.h bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c bwtsw2_aux.h bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c cs2nt.c
+strangers_SOURCES = main_strangers.cpp runtime_parameters.cpp \
+	runtime_parameters.h MSReadRecord.h IFileReader.h \
+	FastqFileReader.h FastqFileReader.cpp FastaFileReader.h \
+	FastaFileReader.cpp TextFileReader.h TextFileReader.cpp \
+	common.h common.cpp TabFileWriter.h TabFileWriter.cpp \
+	TextFileWriter.h TextFileWriter.cpp STRDetector.h \
+	STRDetector.cpp MainLobeDetection.h MainLobeDetection.cpp \
+	TukeyWindowGenerator.h TukeyWindowGenerator.cpp \
+	FFT_four_nuc_vectors.h FFT_four_nuc_vectors.cpp \
+	MicroSatelliteDetection.h MicroSatelliteDetection.cpp \
+	HammingWindowGenerator.h HammingWindowGenerator.cpp \
+	CachedWindowGenerator.h CachedWindowGenerator.cpp \
+	FFT_nuc_vectors.h FFT_nuc_vectors.cpp SamFileWriter.cpp \
+	SamFileWriter.h MultithreadData.h MultithreadData.cpp \
+	ISatellite.h Genotyper.h Genotyper.cpp AlignmentFileReader.cpp \
+	AlignmentFileReader.h EntropyDetection.h EntropyDetection.cpp \
+	BWAReadAligner.h BWAReadAligner.cpp bwtaln.h bwtaln.c bwt.h \
+	bwt.c bamlite.h bamlite.c bntseq.h bwtsw2.h stdaln.h stdaln.c \
+	bwtgap.h bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h \
+	utils.c simple_dp.h simple_dp.c kstring.c kstring.h \
+	bwtsw2_core.h bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c \
+	bwtsw2_aux.h bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c \
+	bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c \
+	bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h \
+	is.c cs2nt.c Anonymizer.h Anonymizer.cpp \
+	AnonymizerMultiThreadData.h AnonymizerMultiThreadData.cpp
 all: all-am
 
 .SUFFIXES:
@@ -335,6 +389,9 @@ lobSTR$(EXEEXT): $(lobSTR_OBJECTS) $(lobSTR_DEPENDENCIES)
 lobSTRIndex$(EXEEXT): $(lobSTRIndex_OBJECTS) $(lobSTRIndex_DEPENDENCIES) 
 	@rm -f lobSTRIndex$(EXEEXT)
 	$(LINK) $(lobSTRIndex_OBJECTS) $(lobSTRIndex_LDADD) $(LIBS)
+strangers$(EXEEXT): $(strangers_OBJECTS) $(strangers_DEPENDENCIES) 
+	@rm -f strangers$(EXEEXT)
+	$(CXXLINK) $(strangers_OBJECTS) $(strangers_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -342,7 +399,28 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AlignmentFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Anonymizer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnonymizerMultiThreadData.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BWAReadAligner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CachedWindowGenerator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EntropyDetection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FFT_four_nuc_vectors.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FFT_nuc_vectors.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastaFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastqFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Genotyper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HammingWindowGenerator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MainLobeDetection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MicroSatelliteDetection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultithreadData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QSufSort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/STRDetector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamFileWriter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TabFileWriter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileWriter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TukeyWindowGenerator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bamlite.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bntseq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwape.Po@am__quote@
@@ -360,6 +438,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_chain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_core.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cs2nt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/is.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kstring.Po@am__quote@
@@ -410,6 +489,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-stdaln.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main_strangers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runtime_parameters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_dp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stdaln.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@

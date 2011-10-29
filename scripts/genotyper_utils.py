@@ -13,6 +13,7 @@ CHR_Y = "chrY"
 CHR_X = "chrX"
 TRAIN_MAX_LEN = 25 
 MINIMAL_OBS_FOR_TRUNC = 10
+MIN_HET_FREQ = 0.20
 
 ######## methods ############
 def GetTagValue(aligned_read, tag):
@@ -78,7 +79,8 @@ class ReadContainer:
             chrom = samfile.getrname(read.rname)
             start = read.opt("XS")
             end = read.opt("XE")
-            self.AddRead(chrom, start, end, read)
+            if int(end) > int(start):
+                self.AddRead(chrom, start, end, read)
 
     def AddRead(self, chrom, start, end, aligned_read):
         """ read a line from the bam file and add to the genotyper """
@@ -412,6 +414,14 @@ class Genotyper:
                     currScore = self.calcLogLik(candidA,candidB,reads,L)
                 except: currScore = 0
                 if(currScore > currBestScore):
+                    # check if too few minor allele reads
+                    # for the heterozygote
+                    if candidA != candidB:
+                        if reads.count(candidA) > reads.count(candidB):
+                            maf = reads.count(candidB)*1.0/len(reads)
+                        else:
+                            maf = reads.count(candidA)*1.0/len(reads)
+                        if maf < MIN_HET_FREQ: continue
                     currBestScore = currScore
                     currBest = [candidA,candidB]
         currBest.sort()
