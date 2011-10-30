@@ -101,7 +101,9 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     ed.FindStartEnd(start, end);
     nuc_start = start * fft_window_step + extend_flank; // added extend each by window step size
     nuc_end = (end + 2) * fft_window_step - extend_flank;
-    if (nuc_end > read->nucleotides.length() || nuc_start > nuc_end || nuc_start < 0 ) return false;
+    if (nuc_start >= read->nucleotides.length() ||
+	nuc_end-nuc_start + 1 <= 0 || nuc_start >= nuc_end) 
+      return false;
     detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start,nuc_end - nuc_start+1);      
   } else {
     MainLobeDetection mld;
@@ -261,21 +263,20 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   
   // adjust for max flank region lengths
   read->left_flank_index_from_start = 0;
+  read->right_flank_index_from_end = 0;
   if (read->left_flank_nuc.size() > max_flank_len) {
     string left_flank = read->left_flank_nuc;
     read->left_flank_nuc = left_flank.substr(left_flank.length()-max_flank_len,
-   					     max_flank_len);
+					     max_flank_len);
     read->left_flank_index_from_start = left_flank.length() - max_flank_len;
   }
-  read->right_flank_index_from_end = 0;
   if (read->right_flank_nuc.size() > max_flank_len) {
     string right_flank = read->right_flank_nuc;
     read->right_flank_nuc = right_flank.substr(0, max_flank_len);
     read->right_flank_index_from_end = right_flank.length() - max_flank_len;
-  }
+    }
   read->nucleotides = read->left_flank_nuc + read->detected_ms_region_nuc+read->right_flank_nuc;
   read->quality_scores = read->quality_scores.substr(read->left_flank_index_from_start,read->nucleotides.size());
-  
   read->detected_ms_nuc = ms_period_nuc;
   return ((read->left_flank_nuc.length() >= min_flank_len) & (read->right_flank_nuc.length() >= min_flank_len));
 }

@@ -10,7 +10,6 @@
 TODO!
 
 - cigar strings incorrect for flanking regions with indels
-- check strands for complimentary matches
  */
 
 extern unsigned char nst_nt4_table[256];
@@ -49,6 +48,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   
   const char* left_flank = read->left_flank_nuc.c_str();
   const char* left_qual =  read->quality_scores.substr(0, strlen(left_flank)).c_str();
+
   seq_left->bc[0] = 0;
   seq_left->tid = -1;
   seq_left->qual = 0;
@@ -141,7 +141,6 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
 
   // get the desired info out of seqs and put it back into the MSReadRecord
   read->chrom = left_refid.chrom;
-  //  cout << left_refid.left << " " << left_refid.start << " " << left_refid.end << " " << right_refid.start << " " << right_refid.end << endl;
   if (left_refid.left) {
     read->msStart = left_refid.start;
     read->msEnd = left_refid.end;
@@ -182,6 +181,16 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
     if (read->diffFromRef % read->ms_repeat_best_period != 0)
       return false;
   }
+
+  //***** checks to make sure the alignment is reasonable***//
+  // check that coordinates encompass the STR region
+  if (!read->reverse & (read->lStart >= read->msStart | read->rEnd <= read->msEnd)) {
+    return false;
+  }
+  if (read->reverse & (read->rStart >= read->msStart | read->lEnd <= read->msEnd)) {
+    return false;
+  }
+
   // check sam 
   int lpos = 0;
   if (read->reverse) {
@@ -189,7 +198,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   } else {
     lpos = read->lStart;
   }
-  if ((read->msStart - lpos + 1) > read->nucleotides.length() || (read->msStart - lpos + 1)  < 0) {
+  if ((read->msStart - lpos + 1) < 0 || (read->msStart - lpos + 1)  < 0) {
     return false;
   }
   if (read->diffFromRef > 0) {
@@ -214,8 +223,11 @@ bool BWAReadAligner::GetSharedAln(const list<ALIGNMENT>& map1,
   bool found = false;
   for (list<ALIGNMENT>::const_iterator it = map1.begin();
        it != map1.end(); ++it) {
-    // TODO get rid of things that map in multiple places at same ID!!
-    left_id_to_ref[(*it).id] = *it;
+    if (left_id_to_ref.find((*it).id) == left_id_to_ref.end()) {
+      left_id_to_ref[(*it).id] = *it;
+    } else {
+      left_id_to_ref.erase((*it).id);
+    }
   }
   for (list<ALIGNMENT>::const_iterator it = map2.begin();
        it != map2.end(); ++it) {

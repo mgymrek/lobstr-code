@@ -33,30 +33,30 @@ int max_read_length = 1024;
 int fft_window_size = 24;
 int fft_window_step = 12;
 float fft_lobe_threshold = 3;
-float period_energy_threshold = 100;
-int max_period = 8;
+float period_energy_threshold = 500;
+int max_period = 7;
 int min_period = 1;
 int min_flank_len = 8;
-int max_flank_len = 100;
-float closeness = 0.7;
-float percent_N_discard = 0.1;
+int max_flank_len = 25; // 50
+float closeness = 0.3;
+float percent_N_discard = 0.05;
 float tukey_alpha = 0.5;
 bool use_entropy = true;
 float entropy_threshold = 0.45;
 int entropy_k = 2;
-int extend_flank = 7;
+int extend_flank = 6;
 
 // alignment params
 int allowed_mismatches = 0;
 int max_align = 10;
-int max_diff_ref = 10;
+int max_diff_ref = 30;
 bool unit = false;
 int extend = 150;
 int min_length_to_allow_mismatches = 8;
 std::string index_prefix = "";
-int gap_open = 0;
-int gap_extend = 0;
-float fpr = 0.1;
+int gap_open = 1;
+int gap_extend = 1;
+float fpr = 0.01;
 
 
 // genotyping params
