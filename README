@@ -1,6 +1,4 @@
-strangers README file
-
-I. Installation
+I. Installation from source
 II. Usage
 III. Getting help
 IV. Required packages
@@ -10,9 +8,9 @@ VII. Building a lobSTR index
 VIII. Allelotyping a bam file not created using lobSTR
 
 
-I. INSTALLATION
+I. INSTALLATION FROM SOURCE
  
-To install, download lobstr (which you must have gotten that far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
+To install from source, download lobstr (which you must have gotten that far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
 
 tar -xzvf lobstr-xxx.tar.gz
 cd lobstr-xxx/
@@ -33,12 +31,12 @@ lobSTR --help
 for a list of all command line options.
 
 Required inputs are:
-* -f: comma separated list of files containing raw reads in fasta or fastq format (for fastq you must add the argument -q)
+* -f: comma separated list of files containing raw reads in fasta, fastq, or bam format (for fastq you must add the argument -q, for bam you must add the argument --bam)
 * -o: prefix to name all output files
-* --index: path and prefix of lobSTR index: You can download the lobSTR index form the lobSTR downloads page. Unzip the index to an folder PATH-TO-INDEX. To specify this as the index, use:
+* --index-prefix: path and prefix of lobSTR index: You can download the lobSTR index from the lobSTR downloads page. Unzip the index to an folder PATH-TO-INDEX. To specify this as the index, use:
 --index-prefix PATH-TO-INDEX/lobSTR_
 
-change the path accordingly to match the path where the index is stored. An index for hg18 is available in the index_trf/ directory of the lobSTR download.
+change the path accordingly to match the path where the index is stored. An index for hg18 and hg19 is available for download on the lobSTR website
 
 Part II: allelotyping
 
@@ -54,6 +52,7 @@ Required inputs are:
   - "both" performs both training and classification
 * --bam: a bam file consisting of aligned reads. The bam file MUST be sorted and indexed before calling this script. If the bam file was not produced by lobSTR, you must run converBam.py first (see below)
 * --out: a prefix to name output files
+* --noise_model: an example noisemodel is given in $PATH_TO_LOBSTR/scripts/illumina.noisemodel.txt. Or you can create your own using the "train" command described above. 
 
 Optional:
 * --rmdup: remove PCR duplicates
@@ -73,7 +72,6 @@ libtool
 pkg-config
 fftw3-dev
 libboost-dev
-bamtools
 
 Python libraries:
 pysam
@@ -94,6 +92,10 @@ Cigar scores in the bam format do not take into account indels in the flanking r
 
 The alignment score is not currently reported in the aligned.tab file
 
+In convertBam.py, reads differing by a negative number of copies from reference end up with strange XD tag values. This seems to be a pysam bug I am looking into. In general it is recommended to run lobSTR on raw reads to create a lobSTR-custom bam file before allelotyping.
+
+BAM input not yet supported. Coming soon...
+
 VII. Building a lobSTR index
 An index built using the Tandem Repeat Finder table from UCSC is included in the index_trf/ directory of the lobSTR download.
 
@@ -113,6 +115,8 @@ samtools sort test.bam test.sorted
 samtools index test.sorted.bam
 
 Then run convertBam.py, available in $PATH_TO_LOBSTR/scripts/convertBam.py:
-python convertBam.py $PATH_LOBSTR/data/trf.ucsc.hg18.filtered.bed test.sorted.bam test.sorted.converted.bam
+python convertBam.py trf.ucsc.hg18.filtered.bed test.sorted.bam test.sorted.converted.bam
+
+trf.ucsc.hg18.filtered.bed and trf.ucsc.hg18.filtered.bed are available from the lobSTR website.
 
 To create the lobSTR-formatted bam file test.sorted.converted.bam. This file is now ready to be allelotyped by lobSTR_allelotype.py 
