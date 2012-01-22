@@ -3,7 +3,8 @@ lobSTR wish list... some day these features will be added
 - make allelotyper part of the c++ program
 - deal with paired end reads (might incorporate stitching, need to get rid of duplicate read pairs in genotyping step)
 - consensus sequence at genotyping stage
-
+- add conversion automatically in allelotype program
+- move indexer to c++
 
 Done:
 *- deal properly with indels in the flanking region to return accurate cigar scores. This currently can affect the STR region length and cigar score.

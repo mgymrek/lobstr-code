@@ -27,12 +27,9 @@ void show_help(){
 "Options:\n" \
 "--no-rmdup: don't remove pcr duplicates before allelotyping\n" \
 "-h: display this message\n" \
-"-v: print out helpful progress messages\n\n" \
-"***NOTE*** bam file MUST be sorted and indexed using:\n" \
-"samtools sort <in.bam> <out.prefix>\n" \
-    "samtools index <out.prefix.bam>\n";
-	cout << help;
-	exit(1);
+    "-v: print out helpful progress messages\n\n";
+  cout << help;
+  exit(1);
 }
 
 /*

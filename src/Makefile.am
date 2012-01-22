@@ -1,3 +1,4 @@
+
 # Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 #  
 # This file is free software; as a special exception the author gives
@@ -8,16 +9,315 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-bin_PROGRAMS = lobSTR lobSTRIndex strangers
+bin_PROGRAMS = lobSTR lobSTRIndex allelotype
 
-lobSTR_CPPFLAGS = -L/lib #-I/usr/include/bamtools  -L/lib
+
 
 AM_CPPFLAGS = $(FFTW_CFLAGS)
 
-LDADD = $(FFTW_LIBS) -lbamtools
+AM_LDADD = $(FFTW_LIBS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 
-lobSTR_SOURCES = main.cpp runtime_parameters.cpp runtime_parameters.h MSReadRecord.h IFileReader.h FastqFileReader.h FastqFileReader.cpp FastaFileReader.h FastaFileReader.cpp TextFileReader.h TextFileReader.cpp common.h common.cpp TabFileWriter.h TabFileWriter.cpp TextFileWriter.h TextFileWriter.cpp STRDetector.h STRDetector.cpp MainLobeDetection.h MainLobeDetection.cpp TukeyWindowGenerator.h TukeyWindowGenerator.cpp FFT_four_nuc_vectors.h FFT_four_nuc_vectors.cpp MicroSatelliteDetection.h MicroSatelliteDetection.cpp HammingWindowGenerator.h HammingWindowGenerator.cpp CachedWindowGenerator.h CachedWindowGenerator.cpp FFT_nuc_vectors.h FFT_nuc_vectors.cpp SamFileWriter.cpp SamFileWriter.h MultithreadData.h MultithreadData.cpp ISatellite.h Genotyper.h Genotyper.cpp AlignmentFileReader.cpp AlignmentFileReader.h EntropyDetection.h EntropyDetection.cpp BWAReadAligner.h BWAReadAligner.cpp bwtaln.h bwtaln.c bwt.h bwt.c bamlite.h bamlite.c bntseq.h   bwtsw2.h stdaln.h stdaln.c bwtgap.h bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h utils.c simple_dp.h simple_dp.c kstring.c kstring.h bwtsw2_core.h bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c bwtsw2_aux.h bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c cs2nt.c
+lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
+lobSTR_LDADD = $(AM_LDADD)
+lobSTR_LDFLAGS = $(AM_LDFLAGS)
 
-lobSTRIndex_SOURCES = main.c main.h bwtaln.h bwtaln.c bwt.h bwt.c bamlite.h bamlite.c bntseq.h   bwtsw2.h stdaln.h stdaln.c bwtgap.h bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h utils.c simple_dp.h simple_dp.c kstring.c kstring.h bwtsw2_core.h bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c bwtsw2_aux.h bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c cs2nt.c
+lobSTR_SOURCES = \
+	main.cpp \
+	BamFileReader.h \
+	BamFileReader.cpp \
+	BWAReadAligner.h \
+	BWAReadAligner.cpp \
+	CachedWindowGenerator.h \
+	CachedWindowGenerator.cpp \
+	cigar.h \
+	common.h \
+	common.cpp \
+	EntropyDetection.h \
+	EntropyDetection.cpp \
+	FastaFileReader.h \
+	FastaFileReader.cpp \
+	FastqFileReader.h \
+	FastqFileReader.cpp \
+	FFT_four_nuc_vectors.h \
+	FFT_four_nuc_vectors.cpp \
+	FFT_nuc_vectors.h \
+	FFT_nuc_vectors.cpp \
+	HammingWindowGenerator.h \
+	HammingWindowGenerator.cpp \
+	IFileReader.h \
+	ISatellite.h \
+	MSReadRecord.h \
+	MultithreadData.h \
+	MultithreadData.cpp \
+	nw.h \
+	nw.cpp \
+	runtime_parameters.cpp \
+	runtime_parameters.h \
+	SamFileWriter.cpp \
+	SamFileWriter.h \
+	STRDetector.h \
+	STRDetector.cpp \
+	TabFileWriter.h \
+	TabFileWriter.cpp \
+	TextFileReader.h \
+	TextFileReader.cpp \
+	TextFileWriter.h \
+	TextFileWriter.cpp \
+	TukeyWindowGenerator.h \
+	TukeyWindowGenerator.cpp \
+	bamlite.h \
+	bamlite.c \
+	bntseq.h \
+	bntseq.c \
+	bwaseqio.c \
+	bwape.c \
+	bwase.c \
+	bwase.h \
+	bwt.h \
+	bwt.c \
+	bwtaln.h \
+	bwtaln.c \
+	bwtgap.h \
+	bwtgap.c \
+	bwtindex.c \
+	bwtio.c \
+	bwtmisc.c \
+	bwtsw2_aux.c \
+	bwtsw2_chain.c \
+	bwtsw2_core.c \
+	bwtsw2_main.c \
+	bwt_gen.c \
+	bwt_gen.h \
+	bwt_lite.c \
+	bwt_lite.h \
+	cs2nt.c \
+	is.c \
+	kstring.c \
+	kstring.h \
+	QSufSort.c \
+	simple_dp.c \
+	stdaln.h \
+	stdaln.c \
+	utils.h \
+	utils.c  \
+	api/algorithms/Sort.h \
+	api/api_global.h \
+	api/BamReader.h \
+	api/BamReader.cpp \
+	api/BamMultiReader.h \
+	api/BamMultiReader.cpp \
+	api/BamConstants.h \
+	api/BamWriter.h \
+	api/BamWriter.cpp \
+	api/BamAlignment.h \
+	api/BamAlignment.cpp \
+	api/BamAux.h \
+	api/IBamIODevice.h \
+	api/SamHeader.h \
+	api/SamHeader.cpp \
+	api/SamProgram.cpp \
+	api/SamProgram.h \
+	api/SamProgramChain.cpp \
+	api/SamProgramChain.h \
+	api/SamSequence.cpp \
+	api/SamSequence.h \
+	api/SamSequenceDictionary.h \
+	api/SamSequenceDictionary.cpp \
+	api/SamReadGroup.h \
+	api/SamReadGroup.cpp \
+	api/SamReadGroupDictionary.h \
+	api/SamReadGroupDictionary.cpp \
+	api/internal/BamWriter_p.h \
+	api/internal/BamWriter_p.cpp \
+	api/internal/SamFormatPrinter_p.h \
+	api/internal/SamFormatPrinter_p.cpp \
+	api/internal/BamException_p.h \
+	api/internal/BamException_p.cpp \
+	api/internal/BamDeviceFactory_p.h \
+	api/internal/BamDeviceFactory_p.cpp \
+	api/internal/BamHeader_p.h \
+	api/internal/BamHeader_p.cpp \
+	api/internal/BamRandomAccessController_p.cpp \
+	api/internal/BamRandomAccessController_p.h \
+	api/internal/BamReader_p.cpp \
+	api/internal/BamReader_p.h \
+	api/internal/ILocalIODevice_p.h \
+	api/internal/ILocalIODevice_p.cpp \
+	api/internal/BgzfStream_p.cpp \
+	api/internal/BgzfStream_p.h \
+	api/internal/BamFile_p.h \
+	api/internal/BamFile_p.cpp \
+	api/internal/SamFormatParser_p.h \
+	api/internal/SamFormatParser_p.cpp \
+	api/internal/SamHeaderValidator_p.h \
+	api/internal/SamHeaderValidator_p.cpp \
+	api/internal/BamFtp_p.h \
+	api/internal/BamFtp_p.cpp \
+	api/internal/BamHttp_p.h \
+	api/internal/BamHttp_p.cpp \
+	api/internal/BamIndexFactory_p.h \
+	api/internal/BamIndexFactory_p.cpp \
+	api/internal/BamMultiMerger_p.h \
+	api/internal/BamPipe_p.h \
+	api/internal/BamPipe_p.cpp \
+	api/internal/BamStandardIndex_p.cpp \
+	api/internal/BamStandardIndex_p.h \
+	api/internal/BamToolsIndex_p.h \
+	api/internal/BamToolsIndex_p.cpp \
+	api/internal/SamHeaderVersion_p.h \
+	api/internal/BamMultiReader_p.h \
+	api/internal/BamMultiReader_p.cpp \
+	shared/bamtools_global.h \
+	utils/bamtools_utilities.h \
+	utils/bamtools_utilities.cpp  \
+	utils/bamtools_fasta.cpp \
+	utils/bamtools_fasta.h \
+	utils/bamtools_filter_engine.h \
+	utils/bamtools_filter_properties.h \
+	utils/bamtools_filter_ruleparser.h \
+	utils/bamtools_options.h \
+	utils/bamtools_options.cpp \
+	utils/bamtools_pileup_engine.h \
+	utils/bamtools_pileup_engine.cpp \
+	utils/bamtools_variant.h \
+	utils/utils_global.h
 
-strangers_SOURCES = main_strangers.cpp runtime_parameters.cpp runtime_parameters.h MSReadRecord.h IFileReader.h FastqFileReader.h FastqFileReader.cpp FastaFileReader.h FastaFileReader.cpp TextFileReader.h TextFileReader.cpp common.h common.cpp TabFileWriter.h TabFileWriter.cpp TextFileWriter.h TextFileWriter.cpp STRDetector.h STRDetector.cpp MainLobeDetection.h MainLobeDetection.cpp TukeyWindowGenerator.h TukeyWindowGenerator.cpp FFT_four_nuc_vectors.h FFT_four_nuc_vectors.cpp MicroSatelliteDetection.h MicroSatelliteDetection.cpp HammingWindowGenerator.h HammingWindowGenerator.cpp CachedWindowGenerator.h CachedWindowGenerator.cpp FFT_nuc_vectors.h FFT_nuc_vectors.cpp SamFileWriter.cpp SamFileWriter.h MultithreadData.h MultithreadData.cpp ISatellite.h Genotyper.h Genotyper.cpp AlignmentFileReader.cpp AlignmentFileReader.h EntropyDetection.h EntropyDetection.cpp BWAReadAligner.h BWAReadAligner.cpp bwtaln.h bwtaln.c bwt.h bwt.c bamlite.h bamlite.c bntseq.h   bwtsw2.h stdaln.h stdaln.c bwtgap.h bwtgap.c bwaseqio.c bwtindex.c bwtio.c utils.h utils.c simple_dp.h simple_dp.c kstring.c kstring.h bwtsw2_core.h bwtsw2_core.c bwtsw2_main.h bwtsw2_main.c bwtsw2_aux.h bwtsw2_aux.c bwtsw2_chain.h bwtsw2_chain.c bwt_lite.c bwt_lite.h bwape.c bwase.c bwase.h bwt_gen.c bwt_gen.h QSufSort.c SQufSort.h bntseq.c bwtmisc.c bwtmisc.h is.c cs2nt.c Anonymizer.h Anonymizer.cpp AnonymizerMultiThreadData.h AnonymizerMultiThreadData.cpp
+lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
+lobSTRIndex_LDADD = $(AM_LDADD)
+lobSTRIndex_LDFLAGS = $(AM_LDFLAGS)
+
+lobSTRIndex_SOURCES = \
+	main.c main.h \
+	bwtaln.h \
+	bwtaln.c \
+	bwt.h bwt.c \
+	bamlite.h \
+	bamlite.c \
+	bntseq.h \
+	bwtsw2.h \
+	stdaln.h \
+	stdaln.c \
+	bwtgap.h \
+	bwtgap.c \
+	bwaseqio.c \
+	bwtindex.c \
+	bwtio.c \
+	utils.h \
+	utils.c \
+	simple_dp.c \
+	kstring.c \
+	kstring.h \
+	bwtsw2_core.c \
+	bwtsw2_main.c \
+	bwtsw2_aux.c \
+	bwtsw2_chain.c \
+	bwt_lite.c \
+	bwt_lite.h \
+	bwape.c \
+	bwase.c \
+	bwase.h \
+	bwt_gen.c \
+	bwt_gen.h \
+	QSufSort.c \
+	bntseq.c \
+	bwtmisc.c \
+	is.c \
+	cs2nt.c
+
+allelotype_CPPFLAGS = $(AM_CPPFLAGS)
+allelotype_LDADD = $(AM_LDADD)
+allelotype_LDFLAGS = $(AM_LDFLAGS)
+
+allelotype_SOURCES = main_allelotype.cpp \
+	Genotyper.h \
+	Genotyper.cpp \
+	NoiseModel.h \
+	NoiseModel.cpp \
+	ReadContainer.h \
+	ReadContainer.cpp \
+	runtime_parameters.h \
+	runtime_parameters.cpp \
+	TextFileWriter.h \
+	TextFileWriter.cpp \
+	api/algorithms/Sort.h \
+	api/api_global.h \
+	api/BamReader.h \
+	api/BamReader.cpp \
+	api/BamMultiReader.h \
+	api/BamMultiReader.cpp \
+	api/BamConstants.h \
+	api/BamWriter.h \
+	api/BamWriter.cpp \
+	api/BamAlignment.h \
+	api/BamAlignment.cpp \
+	api/BamAux.h \
+	api/IBamIODevice.h \
+	api/SamHeader.h \
+	api/SamHeader.cpp \
+	api/SamProgram.cpp \
+	api/SamProgram.h \
+	api/SamProgramChain.cpp \
+	api/SamProgramChain.h \
+	api/SamSequence.cpp \
+	api/SamSequence.h \
+	api/SamSequenceDictionary.h \
+	api/SamSequenceDictionary.cpp \
+	api/SamReadGroup.h \
+	api/SamReadGroup.cpp \
+	api/SamReadGroupDictionary.h \
+	api/SamReadGroupDictionary.cpp \
+	api/internal/BamWriter_p.h \
+	api/internal/BamWriter_p.cpp \
+	api/internal/SamFormatPrinter_p.h \
+	api/internal/SamFormatPrinter_p.cpp \
+	api/internal/BamException_p.h \
+	api/internal/BamException_p.cpp \
+	api/internal/BamDeviceFactory_p.h \
+	api/internal/BamDeviceFactory_p.cpp \
+	api/internal/BamHeader_p.h \
+	api/internal/BamHeader_p.cpp \
+	api/internal/BamRandomAccessController_p.cpp \
+	api/internal/BamRandomAccessController_p.h \
+	api/internal/BamReader_p.cpp \
+	api/internal/BamReader_p.h \
+	api/internal/ILocalIODevice_p.h \
+	api/internal/ILocalIODevice_p.cpp \
+	api/internal/BgzfStream_p.cpp \
+	api/internal/BgzfStream_p.h \
+	api/internal/BamFile_p.h \
+	api/internal/BamFile_p.cpp \
+	api/internal/SamFormatParser_p.h \
+	api/internal/SamFormatParser_p.cpp \
+	api/internal/SamHeaderValidator_p.h \
+	api/internal/SamHeaderValidator_p.cpp \
+	api/internal/BamFtp_p.h \
+	api/internal/BamFtp_p.cpp \
+	api/internal/BamHttp_p.h \
+	api/internal/BamHttp_p.cpp \
+	api/internal/BamIndexFactory_p.h \
+	api/internal/BamIndexFactory_p.cpp \
+	api/internal/BamMultiMerger_p.h \
+	api/internal/BamPipe_p.h \
+	api/internal/BamPipe_p.cpp \
+	api/internal/BamStandardIndex_p.cpp \
+	api/internal/BamStandardIndex_p.h \
+	api/internal/BamToolsIndex_p.h \
+	api/internal/BamToolsIndex_p.cpp \
+	api/internal/SamHeaderVersion_p.h \
+	api/internal/BamMultiReader_p.h \
+	api/internal/BamMultiReader_p.cpp \
+	shared/bamtools_global.h \
+	utils/bamtools_utilities.h \
+	utils/bamtools_utilities.cpp  \
+	utils/bamtools_fasta.cpp \
+	utils/bamtools_fasta.h \
+	utils/bamtools_filter_engine.h \
+	utils/bamtools_filter_properties.h \
+	utils/bamtools_filter_ruleparser.h \
+	utils/bamtools_options.h \
+	utils/bamtools_options.cpp \
+	utils/bamtools_pileup_engine.h \
+	utils/bamtools_pileup_engine.cpp \
+	utils/bamtools_variant.h \
+	utils/utils_global.h

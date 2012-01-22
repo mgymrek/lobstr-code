@@ -11,7 +11,17 @@
 /* 
 TODO!
 
-- cigar strings incorrect for flanking regions with indels
+ - alignment shifted by one sometimes
+ ex: -CAAGCTAGC
+     CCAAGCTAG-
+
+ - alignment with gap in aligned seq at start of repseq counted as 0 
+TTTTTGTGTGTGTGTGGTTTGGTATTTATTTATTTATTTATTTATTTATTTATTTTGGATGCTTTTTATAATGCC
+TTTTTGTTTGTGTGTGGTTTGG----TATTTATTTATTTATTTATTTATTTATTTTGGATGCTTTTTATAATGCC
+132
+0 diff from ref
+
+- if start with "D" in cigar score, get rid of it and change start pos
  */
 
 extern unsigned char nst_nt4_table[256];
@@ -379,6 +389,8 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   // get reference sequence
   int reglen = !aligned_read->reverse ? (aligned_read->rEnd - aligned_read->lStart) :
     (aligned_read->lEnd - aligned_read->rStart);
+  if (_ref_sequences->find(aligned_read->strid) == 
+      _ref_sequences->end()) return false;
   REFSEQ refseq = _ref_sequences->at(aligned_read->strid);
   int start_pos = !aligned_read->reverse ? aligned_read->lStart-1 : aligned_read->rStart;
   const string& rseq = refseq.sequence.substr(start_pos - refseq.start, reglen);
@@ -393,18 +405,45 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   int sw_score;
   CIGAR_LIST cigar_list;
   nw(aligned_seq, rseq, aligned_seq_sw, ref_seq_sw, false, &sw_score, &cigar_list);
+  
+  // Fix off by one alignment problem
+  if (cigar_list.cigars.at(0).num == 1) {
+    if (cigar_list.cigars.at(0).cigar_type == 'I' &&
+	cigar_list.cigars.at(cigar_list.cigars.size()-1).cigar_type == 'D') {
+      aligned_read->read_start--;
+      cigar_list.cigars.at(1).num++;
+      cigar_list.cigars.erase(cigar_list.cigars.begin());
+      cigar_list.cigars.erase(cigar_list.cigars.end()-1);
+      cigar_list.ResetString();
+    } else if (cigar_list.cigars.at(0).cigar_type == 'D' &&
+	       cigar_list.cigars.at(cigar_list.cigars.size()-1).cigar_type == 'I') {
+      aligned_read->read_start++;
+      cigar_list.cigars.erase(cigar_list.cigars.begin());
+      cigar_list.cigars.erase(cigar_list.cigars.end()-1);  
+      cigar_list.ResetString();
+    }
+  }
+  if (cigar_list.cigars.at(0).cigar_type == 'D') {
+    int num = cigar_list.cigars.at(0).num;
+    aligned_read->read_start += num;
+    cigar_list.cigars.erase(cigar_list.cigars.begin());
+    cigar_list.ResetString();
+  }
+
   aligned_read->sw_score = sw_score;
   aligned_read->cigar = cigar_list.cigars;
+  aligned_read->cigar_string = cigar_list.cigar_string;
   /*
+  cout << aligned_read->ID << endl;
   cout << aligned_seq_sw << endl;
   cout << ref_seq_sw << endl;
-  cout << sw_score/float(aligned_seq.length()) << endl;
-  cout << cigar_list.cigar_string << endl;
-  */
+  cout << sw_score << endl;
+  cout << cigar_list.cigar_string << endl;*/
   // Update diffFromRef
   if (sw_score < min_sw_score) return false;
   GetSTRAllele(aligned_read, cigar_list);
-  //cout << aligned_read->diffFromRef << " " << aligned_read->detected_ms_region_nuc << endl << endl;
+  //cout << aligned_read->diffFromRef << " " << aligned_read->detected_ms_region_nuc << " "
+  //   << aligned_read->reverse << endl << endl;
 
   return true;
 }
@@ -429,13 +468,13 @@ void BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& 
     bp = cigar_list.cigars.at(cigar_index).num;
     cigar_type = cigar_list.cigars.at(cigar_index).cigar_type;
     if (cigar_type == 'M' || cigar_type == 'D') pos += bp;
-    diff = pos - str_start_in_cigar;
+    diff = pos - str_start_in_cigar + 1;
     if (diff == 0) {
       new_cigar_list.cigars.resize(cigar_list.cigars.size() - cigar_index);
       copy(cigar_list.cigars.begin()+cigar_index+1, cigar_list.cigars.end(), new_cigar_list.cigars.begin());
       break;
     }
-    if (diff > 0) {
+    if (diff >= 0) {
       newbp = diff;
       new_cigar_list.cigars.resize(cigar_list.cigars.size() - cigar_index);
       copy(cigar_list.cigars.begin()+cigar_index, cigar_list.cigars.end(), new_cigar_list.cigars.begin());
@@ -445,6 +484,7 @@ void BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& 
     cigar_index += 1;
   }
   str_cigar_list.cigars = new_cigar_list.cigars;
+  str_cigar_list.ResetString();
   new_cigar_list.cigars.clear();
   // get rid of cigar scores covering msend:end
   total_cigar_pos = ms_length;
@@ -480,7 +520,7 @@ void BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& 
     if (str_cigar_list.cigars.at(i).cigar_type == 'D') {
       diff_from_ref -= str_cigar_list.cigars.at(i).num;
     }
-    }
+  }
   // set STR region
   string ms_nuc;
   if (aligned_read->reverse) {

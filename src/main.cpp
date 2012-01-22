@@ -613,10 +613,12 @@ int main(int argc,char* argv[]) {
     vector<string> items;
     string refstring = ref_record.ID;;
     split(refstring, '_', items);
-    refseq.sequence = ref_record.orig_nucleotides;
-    refseq.start = atoi(items.at(2).c_str());
-    int refid = atoi(items.at(0).c_str());
-    ref_sequences.insert(pair<int,REFSEQ>(refid, refseq));
+    if (items.size() == 7) { // else must be _random_, _cox_hap1, etc.
+      refseq.sequence = ref_record.orig_nucleotides;
+      refseq.start = atoi(items.at(2).c_str());
+      int refid = atoi(items.at(0).c_str());
+      ref_sequences.insert(pair<int,REFSEQ>(refid, refseq));
+    }
   }
 
   // set up options

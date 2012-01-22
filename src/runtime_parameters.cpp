@@ -50,7 +50,7 @@ int extend_flank = 6;
 
 // alignment params
 bool adjust = true;
-int min_sw_score = 10;
+int min_sw_score = 75;
 int allowed_mismatches = -1;
 int max_align = 10;
 int max_diff_ref = 30;

@@ -332,20 +332,6 @@ class NoiseModel:
             data = [int(x[0]>x[2]) for x in self.trainingData if x[0]!=x[2]]
             self.trunc2 = sum(data)*1./len(data)
 
-    def fitStepProb():
-        stepCounts = [10,10,10] # add pseudocounts (1, 2, 3+)
-        data = [(abs(x[0]-x[2])-1) for x in self.trainingData if x[0] < TRAIN_MAX_LEN\
-            and x[0]!=x[2]]
-        for item in data:
-            if item > 2: 
-                stepCounts[2] += 1
-            else:
-                stepCounts[item] += 1
-        stepCounts = stepCounts/sum(stepCounts)
-        self.step1 = stepCounts[0]
-        self.step2 = stepCounts[1]
-        self.step3 = stepCounts[2]
-
     def fitPois(self):
         """
         fit a Poisson model for the number of noise steps

@@ -25,10 +25,10 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-pkgdatadir = $(datadir)/STRanger
-pkgincludedir = $(includedir)/STRanger
-pkglibdir = $(libdir)/STRanger
-pkglibexecdir = $(libexecdir)/STRanger
+pkgdatadir = $(datadir)/lobSTR
+pkgincludedir = $(includedir)/lobSTR
+pkglibdir = $(libdir)/lobSTR
+pkglibexecdir = $(libexecdir)/lobSTR
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 install_sh_DATA = $(install_sh) -c -m 644
 install_sh_PROGRAM = $(install_sh) -c
@@ -47,10 +47,11 @@ subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
-	THANKS config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing
+	config/compile config/config.guess config/config.sub \
+	config/depcomp config/install-sh config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
+	$(top_srcdir)/ax_boost_base.m4 $(top_srcdir)/ax_check_zlib.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -113,16 +114,19 @@ DIST_ARCHIVES = $(distdir).tar.gz $(distdir).tar.bz2
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /data/melissa/scripts/projects/lobstr-code/config/missing --run aclocal-1.11
-AMTAR = ${SHELL} /data/melissa/scripts/projects/lobstr-code/config/missing --run tar
-AUTOCONF = ${SHELL} /data/melissa/scripts/projects/lobstr-code/config/missing --run autoconf
-AUTOHEADER = ${SHELL} /data/melissa/scripts/projects/lobstr-code/config/missing --run autoheader
-AUTOMAKE = ${SHELL} /data/melissa/scripts/projects/lobstr-code/config/missing --run automake-1.11
+ACLOCAL = ${SHELL} /data/melissa/scripts/projects/lobstr-code-production/config/missing --run aclocal-1.11
+AMTAR = ${SHELL} /data/melissa/scripts/projects/lobstr-code-production/config/missing --run tar
+AUTOCONF = ${SHELL} /data/melissa/scripts/projects/lobstr-code-production/config/missing --run autoconf
+AUTOHEADER = ${SHELL} /data/melissa/scripts/projects/lobstr-code-production/config/missing --run autoheader
+AUTOMAKE = ${SHELL} /data/melissa/scripts/projects/lobstr-code-production/config/missing --run automake-1.11
 AWK = gawk
+BOOST_CPPFLAGS = -I/usr/include
+BOOST_LDFLAGS = -L/usr/lib
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2 -pthread
-CPPFLAGS = 
+CPP = gcc -E
+CPPFLAGS =  -I/usr/include
 CPPUNIT_CFLAGS = 
 CPPUNIT_CONFIG = /usr/bin/cppunit-config
 CPPUNIT_LIBS = -lcppunit -ldl
@@ -135,28 +139,30 @@ DEPDIR = .deps
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
+EGREP = /bin/grep -E
 EXEEXT = 
 FFTW_CFLAGS =  
 FFTW_LIBS = -lfftw3 -lm  
+GREP = /bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
-LDFLAGS = 
+LDFLAGS =  -L/usr/lib
 LIBOBJS = 
-LIBS =  
+LIBS = -lz  
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /data/melissa/scripts/projects/lobstr-code/config/missing --run makeinfo
+MAKEINFO = ${SHELL} /data/melissa/scripts/projects/lobstr-code-production/config/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
-PACKAGE = STRanger
+PACKAGE = lobSTR
 PACKAGE_BUGREPORT = Melissa Gymrek mgymrek@mit.edu
-PACKAGE_NAME = STRanger
-PACKAGE_STRING = STRanger 0.0.1
-PACKAGE_TARNAME = STRanger
+PACKAGE_NAME = lobSTR
+PACKAGE_STRING = lobSTR 1.0.4
+PACKAGE_TARNAME = lobSTR
 PACKAGE_URL = 
-PACKAGE_VERSION = 0.0.1
+PACKAGE_VERSION = 1.0.4
 PATH_SEPARATOR = :
 PKG_CONFIG = /usr/bin/pkg-config
 PTHREAD_CC = gcc
@@ -166,11 +172,12 @@ RANLIB = ranlib
 SET_MAKE = 
 SHELL = /bin/bash
 STRIP = 
-VERSION = 0.0.1
-abs_builddir = /data/melissa/scripts/projects/lobstr-code
-abs_srcdir = /data/melissa/scripts/projects/lobstr-code
-abs_top_builddir = /data/melissa/scripts/projects/lobstr-code
-abs_top_srcdir = /data/melissa/scripts/projects/lobstr-code
+VERSION = 1.0.4
+ZLIB = -lz
+abs_builddir = /data/melissa/scripts/projects/lobstr-code-production
+abs_srcdir = /data/melissa/scripts/projects/lobstr-code-production
+abs_top_builddir = /data/melissa/scripts/projects/lobstr-code-production
+abs_top_srcdir = /data/melissa/scripts/projects/lobstr-code-production
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 acx_pthread_config = 
@@ -199,7 +206,7 @@ host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /data/melissa/scripts/projects/lobstr-code/config/install-sh
+install_sh = ${SHELL} /data/melissa/scripts/projects/lobstr-code-production/config/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale

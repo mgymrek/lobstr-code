@@ -7,11 +7,13 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+m4_include([ax_boost_base.m4])
+m4_include([ax_check_zlib.m4])
 
-AC_INIT([STRanger],
-        [0.0.1],
+AC_INIT([lobSTR],
+        [1.0.4],
         [Melissa Gymrek mgymrek@mit.edu],
-        [STRanger])
+        [lobSTR])
 AC_CONFIG_AUX_DIR(config)
 AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([dist-bzip2])
@@ -21,6 +23,7 @@ LF_CONFIGURE_CC
 #AC_PROG_CPP
 #AC_AIX
 #AC_ISC_POSIX
+AM_PROG_CC_C_O
 #AC_MINIX
 #AC_HEADER_STDC
 LF_CONFIGURE_CXX
@@ -40,6 +43,19 @@ LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS "
 CC="$PTHREAD_CC"
+
+AX_CHECK_ZLIB()
+AX_BOOST_BASE([1.38.0])
+
+AC_SYS_LARGEFILE
+AC_FUNC_FSEEKO
+AC_CHECK_FUNCS(fseek64, xpdf_cv_func_fseek64=yes, xpdf_cv_func_fseek64=no)
+AC_CHECK_FUNCS(ftell64, xpdf_cv_func_ftell64=yes, xpdf_cv_func_ftell64=no)
+if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
+  AC_DEFINE(HAVE_FSEEK64)
+fi
+
+
 
 AM_PATH_CPPUNIT(1.12.1)
 

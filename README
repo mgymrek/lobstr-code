@@ -41,7 +41,7 @@ change the path accordingly to match the path where the index is stored. An inde
 Part II: allelotyping
 
 To see usage instructions, type:
-pyton $PATH_TO_LOBSTR/scripts/lobSTR_allelotype.py --help
+allelotype --help
 
 for a list of all command line options.
 
@@ -50,12 +50,13 @@ Required inputs are:
   - "train" builds a stutter noise model using given alignment data. This only works on male samples with a sizable number of reads aligned to the sex chromosomes.
   - "classify" takes in a pre made noise model and produces an allelotype file
   - "both" performs both training and classification
+  - "simple" performs allelotyping without using a noise model
 * --bam: a bam file consisting of aligned reads. The bam file MUST be sorted and indexed before calling this script. If the bam file was not produced by lobSTR, you must run converBam.py first (see below)
 * --out: a prefix to name output files
-* --noise_model: an example noisemodel is given in $PATH_TO_LOBSTR/scripts/illumina.noisemodel.txt. Or you can create your own using the "train" command described above. 
+* --noise_model: an example noisemodel is given in $PATH_TO_LOBSTR/models/illumina.noisemodel.txt. Or you can create your own using the "train" command described above. 
 
 Optional:
-* --rmdup: remove PCR duplicates
+* --no-rmdup: do not remove PCR duplicates
 
 
 III. GETTING HELP
@@ -73,10 +74,9 @@ pkg-config
 fftw3-dev
 libboost-dev
 
-Python libraries:
+Python libraries (required only for indexing or converting previously aligned BAM files to lobSTR format):
 pysam
 Biopython
-numpy
 
 V. OUTPUT
 
@@ -88,19 +88,15 @@ $prefix.genotypes.tab: genotype called at each locus
 
 
 VI. KNOWN BUGS
-Cigar scores in the bam format do not take into account indels in the flanking regions, so bam alignments for those reads will be incorrect. This does not affect the genotyping result.
-
-The alignment score is not currently reported in the aligned.tab file
-
-In convertBam.py, reads differing by a negative number of copies from reference end up with strange XD tag values. This seems to be a pysam bug I am looking into. In general it is recommended to run lobSTR on raw reads to create a lobSTR-custom bam file before allelotyping.
-
-BAM input not yet supported. Coming soon...
+covertBam.py will not produce accurate allelotypes for reads with indels in the flanking regions. At this point it is highly recommended that if you want to use a previously aligned BAM file for allelotyping, that you first run lobSTR alignment on the BAM file and then proceed with the regular instructions. Better support for converting foreign BAM files to contain lobSTR_specific tags is coming soon.
 
 VII. Building a lobSTR index
 An index built using the Tandem Repeat Finder table from UCSC is included in the index_trf/ directory of the lobSTR download.
 
 You can build your own lobSTR index using the lobstr_index.py script provided in the scripts/ directory of the lobSTR download. 
+
 Usage:
+
 python PATH-TO-LOBSTR/scripts/lobstr_index.py --str <path to trf table> --ref <reference genome in fasta format> --out_dir <path to output index> 
 
 Where --str is the table resulting from running the Tandem Repeat Finder tool.
@@ -120,3 +116,5 @@ python convertBam.py trf.ucsc.hg18.filtered.bed test.sorted.bam test.sorted.conv
 trf.ucsc.hg18.filtered.bed and trf.ucsc.hg18.filtered.bed are available from the lobSTR website.
 
 To create the lobSTR-formatted bam file test.sorted.converted.bam. This file is now ready to be allelotyped by lobSTR_allelotype.py 
+
+Note, this step is sometimes unreliable. See "KNOWN BUGS" for more information.

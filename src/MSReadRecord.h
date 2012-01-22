@@ -88,6 +88,7 @@ public:
   int sw_score;
   // cigar score for sam format
   std::vector<CIGAR> cigar;
+  std::string cigar_string;
   // three prime pos
   int read_start;
   // five prime pos

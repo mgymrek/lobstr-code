@@ -47,9 +47,10 @@ TabFileWriter::TabFileWriter(const string& filename):
 		<< "str_start" << "\t"
 		<< "str_end" << "\t"
 		<< "read_start" << "\t"
-		<< "read_end" << "\t"
 		<< "diffFromRef" << "\t"
+		<< "refCopyNum" << "\t"
 		<< "reverse" << "\t"
+		<< "cigar" << "\t"
 		<< "score" << "\t" << endl;
 }
 
@@ -57,8 +58,8 @@ TabFileWriter::~TabFileWriter(){}
 
 void TabFileWriter::WriteRecord(const MSReadRecord& read) {
   output_stream << read.ID << "\t"
-		<< read.orig_nucleotides << "\t"
-		<< read.orig_qual << "\t"
+		<< read.nucleotides << "\t"
+		<< read.quality_scores << "\t"
 		<< read.detected_ms_region_nuc << "\t"
 		<< read.ms_repeat_best_period << "\t"
 		<< read.msRepeat << "\t"
@@ -66,9 +67,10 @@ void TabFileWriter::WriteRecord(const MSReadRecord& read) {
 		<< read.msStart << "\t"
 		<< read.msEnd << "\t"
 		<< read.read_start << "\t"
-		<< read.read_end << "\t"
 		<< read.diffFromRef << "\t"
+		<< read.refCopyNum << "\t"
 		<< read.reverse << "\t"
+		<< read.cigar_string << "\t"
 		<< read.sw_score << "\t"
 		<< endl;
   /*

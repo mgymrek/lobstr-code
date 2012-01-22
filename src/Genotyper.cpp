@@ -233,14 +233,14 @@ void Genotyper::Genotype(const ReadContainer& read_container,
 	  << stop << "\t"
 	  << repseq << "\t"
 	  << period << "\t"
+	  << refcopy << "\t"
 	  << allele1 + refcopy << ","
 	  << allele2 + refcopy << "\t"
 	  << coverage << "\t"
 	  << agreeing << "\t"
 	  << conflicting << "\t"
 	  << readstring.str() << "\t"
-	  << score << "\t"
-	  << endl;
+	  << score;
     gWriter.Write(gLine.str());
   }
 }

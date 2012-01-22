@@ -6,6 +6,7 @@
 #define __CIGAR_H__
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 struct CIGAR {
@@ -16,6 +17,15 @@ struct CIGAR {
 struct CIGAR_LIST {
   std::vector<CIGAR> cigars;
   std::string cigar_string;
+  void ResetString() {
+    std::stringstream new_cigar;
+    for (std::vector<CIGAR>::const_iterator it = cigars.begin();
+	 it != cigars.end(); it++) {
+      new_cigar << it->num << it->cigar_type;
+    }
+    cigar_string = new_cigar.str();
+  }
 };
+
 
 #endif /* __CIGAR_H__ */
