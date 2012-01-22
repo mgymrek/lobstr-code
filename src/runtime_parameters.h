@@ -28,6 +28,7 @@ extern bool sam;
 extern bool debug;
 extern bool genotype_only;
 extern bool fastq;
+extern bool bam;
 
 // threading
 extern size_t threads;
@@ -51,6 +52,7 @@ extern float fft_lobe_threshold;
 extern float period_energy_threshold;
 extern int max_period;
 extern int min_period;
+extern int max_period_to_try;
 extern int min_flank_len;
 extern int max_flank_len;
 extern float closeness;
@@ -62,6 +64,8 @@ extern int entropy_k;
 extern int extend_flank;
 
 // alignment params
+extern bool adjust;
+extern int min_sw_score;
 extern int allowed_mismatches;
 extern int max_align;
 extern int max_diff_ref;
@@ -74,20 +78,16 @@ extern int gap_extend;
 extern float fpr;
 
 // genotyping params
+extern std::string bam_file;
+extern std::string command;
+extern std::string noise_model;
 extern bool rmdup;
-extern float homozygous_entropy_threshold;
-extern std::string mu_string;
-extern std::string pi_string;
-extern float pi_0;
-extern float pi_1;
-extern float pi_2;
-extern float mu_0;
-extern float mu_1;
-extern float mu_2;
+extern float min_het_freq;
 extern bool male;
+extern bool sex_set;
 extern int min_coverage;
-extern float percent_reads_for_homozygous;
 extern std::string aligned_file;
+extern bool non_lobstr_file_detectd;
 
 // anonymization params
 extern std::string str_alignment_file;

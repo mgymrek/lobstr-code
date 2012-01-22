@@ -67,7 +67,8 @@ double EntropyDetection::EntropyOneWindowK(const std::string& window_nucs, int k
     float p = float(it->second)/float(subseqs);
     entropy += MinusPlogP(p);
   }
-  float max_entropy = pow(2,k);
+  float max_entropy = pow(2.0,float(k));
+  //float max_entropy = 4;
   float percent_max = (max_entropy - entropy)/max_entropy;
   return percent_max;
 }

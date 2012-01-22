@@ -5,7 +5,12 @@
 #ifndef MSREADRECORD_H_
 #define MSREADRECORD_H_
 
+#include <iostream>
+#include <istream>
 #include <string>
+#include <vector>
+#include <stdlib.h>
+#include "cigar.h"
 
 class MSReadRecord {
 public:
@@ -17,6 +22,10 @@ public:
   std::string nucleotides;
   // quality scores of the read
   std::string quality_scores;
+  // keep original nucleotides and qualities for printing at the end
+  std::string orig_nucleotides;
+  std::string orig_qual;
+  int orig_start;
 
   // detected rep seq
   std::string repseq;
@@ -49,6 +58,8 @@ public:
   // output data
   // chromosome of STR
   std::string chrom;
+  // ID of str
+  int strid;
   // start position of STR
   int msStart;
   // end position of STR
@@ -73,7 +84,15 @@ public:
   int rDist;
   // name of this STR locus
   std::string name;
-
+  // alignment score
+  int sw_score;
+  // cigar score for sam format
+  std::vector<CIGAR> cigar;
+  // three prime pos
+  int read_start;
+  // five prime pos
+  int read_end;
+  // did we say this read is aligned?
   bool accepted;
 };
 

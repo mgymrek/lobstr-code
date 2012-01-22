@@ -23,19 +23,18 @@
 #include <algorithm>
 #include <iterator>
 #include <cmath>
+#include <fftw3.h>
 
+#include "FFT_four_nuc_vectors.h"
 #include "ISatellite.h"
 #include "STRDetector.h"
 #include "runtime_parameters.h"
 
-#include <fftw3.h>
 
 #include "EntropyDetection.h"
 #include "runtime_parameters.h"
-#include "MainLobeDetection.h"
 #include "TukeyWindowGenerator.h"
 #include "HammingWindowGenerator.h"
-#include "MicroSatelliteDetection.h"
 
 #include "common.h"
 #include "runtime_parameters.h"
@@ -94,37 +93,16 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   int nuc_start;
   int nuc_end;
   string detected_microsatellite_nucleotides;
-  if (use_entropy) {
-    EntropyDetection ed(read->nucleotides);
-    if (!ed.EntropyIsAboveThreshold()) return false;
-    size_t start, end;
-    ed.FindStartEnd(start, end);
-    nuc_start = start * fft_window_step + extend_flank; // added extend each by window step size
-    nuc_end = (end + 2) * fft_window_step - extend_flank;
-    if (nuc_start >= read->nucleotides.length() ||
-	nuc_end-nuc_start + 1 <= 0 || nuc_start >= nuc_end) 
-      return false;
-    detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start,nuc_end - nuc_start+1);      
-  } else {
-    MainLobeDetection mld;
-    mld.calculate_lobe_detection_window(read->nucleotides, window_lobe_detection);
-  
-    MicroSatelliteDetection ms_detect(window_lobe_detection);
-  
-    if (!ms_detect.is_above_threshold()) {
-      return false;
-    }
-  
-    size_t lobe_vector_start;
-    size_t lobe_vector_end;
-    ms_detect.find_start_end(lobe_vector_start,lobe_vector_end);
-    
-    nuc_start = lobe_vector_start * fft_window_step; // add mgymrek to add fft_window_step
-    nuc_end   = lobe_vector_end * fft_window_step + fft_window_size; // add mgymrek to subtract fft_window_step
-    detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start, nuc_end - nuc_start+1);
-    
-  }
-
+  EntropyDetection ed(read->nucleotides);
+  if (!ed.EntropyIsAboveThreshold()) return false;
+  size_t start, end;
+  ed.FindStartEnd(start, end);
+  nuc_start = start * fft_window_step + extend_flank; // added extend each by window step size
+  nuc_end = (end + 2) * fft_window_step - extend_flank;
+  if (nuc_start >= read->nucleotides.length() ||
+      nuc_end-nuc_start + 1 <= 0 || nuc_start >= nuc_end) 
+    return false;
+  detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start,nuc_end - nuc_start+1);      
   /*
     Step 3 -
     Do FFT on the newly extract microsatellite region
@@ -180,7 +158,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     
     std::vector<double> &fft_vec = ms.summed_matrix;
     
-    size_t min_period=2; // mgymrek changed from 1 made these runtime params
+    min_period=2;
     size_t lobe_width = round( 1024.0 / ((double)detected_microsatellite_nucleotides.length()) );
     HammingWindowGenerator *pHammingWindowGenerator = HammingWindowGenerator::GetHammingWindowSingleton();
     const WindowVector *pHamming_Noise = pHammingWindowGenerator->GetWindow( lobe_width );
@@ -188,14 +166,15 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     std::vector<double> noise;
     noise.resize(lobe_width);
     for (size_t i = 0 ; i<noise.size(); ++i) {
-      noise[i] = fft_vec [ rand()%1024 ] ;
+      srand(1);
+      noise[i] = fft_vec [ rand()%1024 ] ; 
       noise_y += noise[i] *  pHamming_Noise->at(i);
     }
     std::vector<double> energy;
     
     const WindowVector *pHamming_roi = pHammingWindowGenerator->GetWindow( lobe_width * 2 + 1 );
     
-    for (size_t period = min_period; period<=max_period; period++) {
+    for (size_t period = min_period; period<=max_period_to_try; period++) {
       
       double period_energy = 0 ;
       
@@ -278,6 +257,8 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   read->nucleotides = read->left_flank_nuc + read->detected_ms_region_nuc+read->right_flank_nuc;
   read->quality_scores = read->quality_scores.substr(read->left_flank_index_from_start,read->nucleotides.size());
   read->detected_ms_nuc = ms_period_nuc;
-  return ((read->left_flank_nuc.length() >= min_flank_len) & (read->right_flank_nuc.length() >= min_flank_len));
+
+  return ((read->left_flank_nuc.length() >= min_flank_len) & (read->right_flank_nuc.length() >= min_flank_len) &
+	  best_period <= max_period & best_period >= min_period);
 }
 

@@ -7,13 +7,28 @@ import sys
 # used to prevent problems coverting to log scale 
 SMALL_CONST = 1e-100
 # used as a guess for the maximal length. not critical
-MAX_STR_LEN = 500
+MAX_STR_LEN = 200
 # other consts
 CHR_Y = "chrY"
 CHR_X = "chrX"
 TRAIN_MAX_LEN = 25 
 MINIMAL_OBS_FOR_TRUNC = 10
 MIN_HET_FREQ = 0.20
+
+# using conversions here
+# http://www.smgf.org/ychromosome/marker_standards.jspx
+conversions = {
+"DYS441": -1,
+"DYS442": -5,
+"GATA-A10": -2,
+"GATA-H4": -1,
+"DYS565": 1,
+"DYS450": -1,
+"DYS640": 2,
+"DYS568": 1,
+"DYS576": 1,
+"DYS492": 1,
+}
 
 ######## methods ############
 def GetTagValue(aligned_read, tag):
@@ -43,7 +58,12 @@ def GetCopyNumbers(aligned_read_list):
             copy_numbers.append(GetTagValue(aligned_read, "XC")+
                                 GetTagValue(aligned_read, "XD")*1.0/
                                 len(GetTagValue(aligned_read, "XR")))
-        except: pass
+        except:
+            print "exception finding copy number"
+            print GetTagValue(aligned_read, "XC")
+            print GetTagValue(aligned_read, "XD")
+            print len(GetTagValue(aligned_read, "XR"))
+                      
     return copy_numbers
 
 def ppois(x, mean):
@@ -65,6 +85,28 @@ def ppois(x, mean):
     return p
 
 
+class MockAlignedRead:
+    def __init__(self):
+        self.query = ""
+        self.qual = ""
+        self.pos = 0
+        self.qend = 0
+        self.tags = []
+
+    def opt(self,key):
+        return dict(self.tags).get(key,None)
+    
+    def PrettyPrint(self):
+        print "Mock aligned read:"
+        print "Query: %s" % self.query
+        print "Qual: %s"% self.qual
+        print "Pos: %s"% self.pos
+        print "Qend: %s"%self.qend
+        print "Tags: %s"%self.tags
+        print "\n\n"
+        
+
+
 class ReadContainer:
     """ Keep track of aligned reads """
     def __init__(self):
@@ -72,23 +114,50 @@ class ReadContainer:
         # map of (chrom, start) -> list of AlignedReads
         self.aligned_str_map_ = {}
 
-    def AddReadsFromFile(self, bamfile):
+    def AddReadsFromFile(self, bamfile, unit = False):
         """ add each read from a bam file """
         samfile = pysam.Samfile( bamfile, "rb" )
         for read in samfile.fetch():
+            tags = dict(read.tags)
+            name = tags.get("XN","")
             chrom = samfile.getrname(read.rname)
             start = read.opt("XS")
             end = read.opt("XE")
             if int(end) > int(start):
-                self.AddRead(chrom, start, end, read)
+                self.AddRead(chrom, start, end, read, name = name, unit = unit)
 
-    def AddRead(self, chrom, start, end, aligned_read):
+    def AddRead(self, chrom, start, end, aligned_read, name="", unit = False):
         """ read a line from the bam file and add to the genotyper """
-        key = (chrom, start, end)
+        key = (chrom, start, end, name)
+        if unit:
+            diff = GetTagValue(aligned_read,"XD")
+            period = len(GetTagValue(aligned_read,"XR"))
+            if diff%period != 0:
+                return
         if key in self.aligned_str_map_:
             self.aligned_str_map_[key].append(aligned_read)
         else:
             self.aligned_str_map_[key] = [aligned_read]
+
+    def AddRead2(self, aligned_file_line):
+        """ add read from aligned file line """
+        aligned_read = MockAlignedRead()
+        items = aligned_file_line.strip().split("\t")
+        aligned_read.query = items[1]
+        aligned_read.qual = items[2]
+        aligned_read.pos = min(int(items[15]),int(items[17]))
+        aligned_read.qend = aligned_read.pos + len(items[1])
+        tags = []
+        tags.append(("XD", int(items[-4]))) # diff from ref
+        tags.append(("XR", (items[12]))) # repseq
+        name = items[20]
+        tags.append(("XN", name)) # name
+        if name not in conversions:
+            tags.append(("XC", float(items[13]))) # ref copy number
+        else:
+            tags.append(("XC",float(items[13]) + conversions[name]))    
+        aligned_read.tags = tags
+        self.AddRead(items[9],items[10],items[11],aligned_read,name=name)
 
     def RemovePCRDuplicates(self):
         """ remove pcr duplicates from self.aligned_str_map_"""
@@ -226,7 +295,7 @@ class NoiseModel:
         based on the repeat periods
         """
         # read the relevant data
-        data = [(x[0]==x[2],x[0]) for x in self.trainingData if x[0] < TRAIN_MAX_LEN]
+        data = [(x[0]==x[2],x[1]) for x in self.trainingData if x[0] < TRAIN_MAX_LEN] # CHANGED 11/30/11
         Y = array([int(x[0]) for x in data]) # array of 1/0 if mutated or not
         X = array([x[1] for x in data]) # array of repeat periods
         res = sm.Logit(Y, sm.add_constant(X, prepend=True)).fit()
@@ -281,8 +350,8 @@ class NoiseModel:
         """
         fit a Poisson model for the number of noise steps
         """
-        data = [(abs(x[0]-x[2])-1,x[0]) for x in self.trainingData if x[0] < TRAIN_MAX_LEN\
-                and x[0]!=x[2]]
+        data = [(abs(x[0]-x[2])-1,x[1]) for x in self.trainingData if x[0] < TRAIN_MAX_LEN\
+                and x[0]!=x[2]]  # CHANGED 11/30/11
         Y = array([int(x[0]) for x in data]) # diff from ref
         X = array([x[1] for x in data]) # STR unit length
         res = sm.Poisson(Y, sm.add_constant(X, prepend=True)).fit()
@@ -366,10 +435,11 @@ poisSlope=%s
 #        file(filename,"wb").write(f)
 
 class Genotyper:
-    def __init__(self,noiseModel,sex):
+    def __init__(self,noiseModel,sex, simple = False):
         self.noiseModel = noiseModel
         self.currMatSize = MAX_STR_LEN
-        self.prepareTransMat()
+        if not simple:
+            self.prepareTransMat()
         self.sex = sex
 
     def prepareTransMat(self):
@@ -398,14 +468,15 @@ class Genotyper:
         """
         possible = list(set(reads))
         if(len(possible)==1):
-            try:
-                score = self.calcLogLik(possible[0],possible[0],reads,L)
-            except: score = 0
-            return([[possible[0],possible[0]],score])
+            #try:
+            #    score = self.calcLogLik(possible[0],possible[0],reads,L)
+            #except: score = 1
+            return([[possible[0],possible[0]],1])
         currBest = [possible[0],possible[0]]
         try:
             currBestScore = self.calcLogLik(possible[0],possible[0],reads,L)
         except: currBestScore = 0
+        totalscore = 0
         for i in range(len(possible)):
             for j in range(i+1):
                 candidA = possible[i]
@@ -413,6 +484,7 @@ class Genotyper:
                 try:
                     currScore = self.calcLogLik(candidA,candidB,reads,L)
                 except: currScore = 0
+                totalscore += math.exp(currScore)
                 if(currScore > currBestScore):
                     # check if too few minor allele reads
                     # for the heterozygote
@@ -425,7 +497,8 @@ class Genotyper:
                     currBestScore = currScore
                     currBest = [candidA,candidB]
         currBest.sort()
-        return [currBest,currBestScore]
+        if (totalscore == 0): totalscore = 1 # shouldn't happen
+        return [currBest,math.exp(currBestScore)*1.0/totalscore]
     
 
     def findMLE_single(self,reads,L):
@@ -435,27 +508,51 @@ class Genotyper:
         """
         possible = list(set(reads))
         if(len(possible)==1):
-            try:
-                score = self.calcLogLik(possible[0],possible[0],reads,L)
-            except: score = 0
-            return([[possible[0]],score])
+            #try:
+            #    score = self.calcLogLik(possible[0],possible[0],reads,L)
+            #except: score = 1
+            return([[possible[0]],1])
         currBest = [possible[0],possible[0]]
         try:
             currBestScore = self.calcLogLik(possible[0],possible[0],reads,L)
         except: currBestScore = 0
+        totalscore = 0
         for i in range(len(possible)):
             candidA = possible[i]
             try:
                 currScore = self.calcLogLik(candidA,candidA,reads,L)
             except:
                 currScore = 0
+            totalscore += math.exp(currScore)
             if(currScore > currBestScore):
                 currBestScore = currScore
-                currBest = [candidA]
+                currBest = [candidA,candidA]
         currBest.sort()
-        return [currBest,currBestScore]
+        if (totalscore == 0): totalscore = 1 # shouldn't happen
+        return [currBest,math.exp(currBestScore)*1.0/totalscore]
+    
+    def SimpleGenotype_single(self, reads):
+        """ Simple genotyping on homozygous locus: return the modal allele"""
+        readcounts = [(reads.count(item), item) for item in set(reads)]
+        readcounts.sort(reverse=True)
+        return [[readcounts[0][1]], readcounts[0][0]*1.0/len(reads)]
 
-    def genotype(self,read_container,output_file):
+    def SimpleGenotype(self, reads):
+        """ Simple genotyping for a diploid locus"""
+        readcounts = [(reads.count(item), item) for item in set(reads)]
+        readcounts.sort(reverse=True)
+        if len(readcounts) == 0:
+            return [],0
+        elif len(readcounts) == 1:
+            return [[readcounts[0][1],readcounts[0][1]], readcounts[0][0]*1.0/len(reads)]
+        else:
+            if readcounts[1][0]*1.0/len(reads) >= MIN_HET_FREQ:
+                return [[readcounts[0][1],readcounts[1][1]], (readcounts[0][0]+readcounts[1][0])*1.0/len(reads)]
+            else:
+                return [[readcounts[0][1],readcounts[0][1]], readcounts[0][0]*1.0/len(reads)]
+
+
+    def genotype(self,read_container,output_file, simple = False):
         """
         genotype the whole file. For each str locus 
         determine the genotype. Then write to a new file.
@@ -466,31 +563,34 @@ class Genotyper:
         for str_locus in read_container.aligned_str_map_:
             currReads = GetCopyNumbers(read_container.aligned_str_map_[str_locus])
             currReads.sort()
-            resid = currReads[0] - int(currReads[0])
+            resid = [read-int(read) for read in currReads]
             # floor the reads 
-            currReads = map(int,currReads)
+            currReads = map(int, currReads)
             # check that the current transition matrix is large enough
-#            if max(currReads) > self.currMatSize:
-#                # if not - enlarge it 
-#                self.currMatSize = max(currReads)
-#                self.prepareTransMat()
-          
             currChr = str_locus[0]
             start = str_locus[1]
             stop = str_locus[2]
+            name = str_locus[3]
             repeat = read_container.aligned_str_map_[str_locus][0].opt("XR")
-            ref = int(read_container.aligned_str_map_[str_locus][0].opt("XC"))
+            ref = int(float((read_container.aligned_str_map_[str_locus][0].opt("XC"))))
             if isMale and currChr in [CHR_Y,CHR_X]:
-                genotypes  = self.findMLE_single(currReads,len(repeat))
+                if not simple:
+                    genotypes  = self.findMLE_single(currReads,len(repeat))
+                else:
+                    genotypes = self.SimpleGenotype_single(currReads)
             else:
                 try:
-                    genotypes = self.findMLE(currReads,len(repeat))
+                    if not simple:
+                        genotypes = self.findMLE(currReads,len(repeat))
+                    else:
+                        genotypes = self.SimpleGenotype(currReads)
                 except: genotypes = [],0
-            #genotypes = [x+resid for x in genotypes]
             score = genotypes[1]
             genotypes = genotypes[0]
+            genotypes.sort()
+#            currReads = [currReads[i] + resid[i] for i in range(len(currReads))]
             if len(genotypes) > 0:
                 conflicting = len([item for item in currReads if item not in genotypes])
                 not_conflicting = len(currReads) - conflicting
-                f.write("\t".join(map(str,[currChr, start, stop, repeat, len(repeat), ref, ",".join(map(str, genotypes)), len(currReads), not_conflicting, conflicting, "/".join(map(str,currReads)), round(score,2) ])) + "\n")
+                f.write("\t".join(map(str,[currChr, start, stop, repeat, len(repeat), ref, ",".join(map(str, genotypes)), len(currReads), not_conflicting, conflicting, "/".join(map(str,currReads)), round(score,2) ,name])) + "\n")
 

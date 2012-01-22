@@ -14,12 +14,14 @@ check that cigar score is valid
 
 #include "MSReadRecord.h"
 // #include "TextFileWriter.h"
-#include <api/BamWriter.h>
+#include "api/BamWriter.h"
+#include "api/BamAlignment.h"
 
 using namespace std;
 
 namespace BamTools {
   class BamWriter;
+  class BamAlignment;
 }
 
 class SamFileWriter {//: public TextFileWriter {
@@ -27,6 +29,7 @@ class SamFileWriter {//: public TextFileWriter {
   SamFileWriter(const std::string& _filename,
 		const std::map<string, int>& _chrom_sizes);
   void WriteRecord(const MSReadRecord& msread);
+  void WriteAdjustedRecord(const MSReadRecord& msread);
   virtual ~SamFileWriter();
  private:
   std::map<string, int> chrom_sizes;

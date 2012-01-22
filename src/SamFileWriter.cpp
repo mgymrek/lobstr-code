@@ -3,6 +3,7 @@
 */
 
 #include "common.h"
+#include "runtime_parameters.h"
 #include "SamFileWriter.h"
 
 using BamTools::BamWriter;
@@ -20,7 +21,7 @@ SamFileWriter::SamFileWriter(const std::string& _filename,
        it != chrom_sizes.end(); ++it) {
     const string& name = it->first;
     int length = it->second;
-    RefData ref_data(length);
+    RefData ref_data(name, length);
     ref_data.RefName = name;
     ref_vector.push_back(ref_data);
   }
@@ -29,7 +30,83 @@ SamFileWriter::SamFileWriter(const std::string& _filename,
   }
 }
 
+void SamFileWriter::WriteAdjustedRecord(const MSReadRecord &msread) {
+  BamAlignment bam_alignment;
+  lpos = msread.read_start;
+  bam_alignment.Name = msread.ID;
+  bam_alignment.SetIsPaired(false);
+  bam_alignment.SetIsDuplicate(false);
+  bam_alignment.SetIsFailedQC(false);
+  bam_alignment.SetIsFirstMate(false);
+  bam_alignment.SetIsMateMapped(false);
+  bam_alignment.SetIsMateReverseStrand(false);
+  bam_alignment.SetIsProperPair(false);
+  bam_alignment.SetIsSecondMate(false);
+  bam_alignment.SetIsMapped(true);
+  bam_alignment.SetIsMateMapped(true);
+  bam_alignment.SetIsPrimaryAlignment(true);
+  if (msread.reverse) {
+    bam_alignment.SetIsReverseStrand(true);
+  }
+  bam_alignment.Position = msread.read_start;
+  bam_alignment.MapQuality = 255;
+  bam_alignment.Qualities = msread.quality_scores;
+  if (msread.reverse) {
+    bam_alignment.QueryBases = reverseComplement(msread.nucleotides);
+  } else {
+    bam_alignment.QueryBases = msread.nucleotides;
+  }
+    // rname (ref id)
+  int ref_id;
+  int i = 0;
+  for (map<string, int>::const_iterator it = chrom_sizes.begin();
+       it != chrom_sizes.end(); ++it) {
+    if (it->first == msread.chrom) {
+      ref_id = i;
+    }
+    ++i;
+  }
+  bam_alignment.RefID = ref_id;
+  // cigar
+  vector<BamTools::CigarOp> cigar_data;
+  for (i = 0; i < msread.cigar.size(); i++) {
+    char cigar_type = msread.cigar.at(i).cigar_type;
+    int num = msread.cigar.at(i).num;
+    BamTools::CigarOp cigar_op(cigar_type,num);
+    cigar_data.push_back(cigar_op);
+  }
+  bam_alignment.CigarData = cigar_data;
+
+  // write user flags giving repeat information
+  // XS: start pos of matching STR
+  bam_alignment.AddTag("XS", "i", msread.msStart);
+  // XE: end pos of matching STR
+  bam_alignment.AddTag("XE", "i", msread.msEnd);
+  // XR: STR repeat
+  bam_alignment.AddTag("XR", "Z", msread.msRepeat);
+  // XD: nuc diff compared to ref
+  bam_alignment.AddTag("XD", "i", msread.diffFromRef);
+  // XC: ref copy number
+  bam_alignment.AddTag("XC", "f", msread.refCopyNum);
+  // XA: mismatch in left flank
+  //bam_alignment.AddTag("XA", "i", msread.lDist);
+  // XB: mismatch in right flank
+  //bam_alignment.AddTag("XB", "i", msread.rDist);
+  // XN: name of STR repeat
+  if (!msread.name.empty()) {
+    bam_alignment.AddTag("XN", "Z", msread.name);
+  }
+  if ((msread.msStart-lpos +1) <= (msread.nucleotides.length())) {
+    writer.SaveAlignment(bam_alignment);
+  }
+}
+
+
 void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
+  if (adjust) {
+    WriteAdjustedRecord(msread);
+    return;
+  }
   BamAlignment bam_alignment;
   if (msread.reverse) {
     lpos = msread.rStart;
@@ -46,7 +123,7 @@ void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
   bam_alignment.SetIsProperPair(false);
   bam_alignment.SetIsSecondMate(false);
   bam_alignment.SetIsMapped(true);
-  bam_alignment.SetIsMateUnmapped(false);
+  bam_alignment.SetIsMateMapped(true);
   bam_alignment.SetIsPrimaryAlignment(true);
   if (msread.reverse) {
     bam_alignment.SetIsReverseStrand(true);

@@ -46,6 +46,7 @@ class BWAReadAligner {
  public:
   BWAReadAligner(map<std::string, BWT>* bwt_references,
 		 map<std::string, BNT>* bnt_annotations,
+		 map<int, REFSEQ>* ref_sequences,
 		 gap_opt_t *opts);
   virtual ~BWAReadAligner();
 
@@ -63,8 +64,17 @@ class BWAReadAligner {
 			   ALIGNMENT* left_refid,
 			   ALIGNMENT* right_refid);
 
+  // Perform local realignment, adjust exact STR boundaries
+  // update cigar score.
+  bool AdjustAlignment(MSReadRecord* aligned_read);
+
+  // Get the number of repeat units using the adjusted cigar score
+  // Also refine position of flanking regions
+  void GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list);
+
   map<std::string, BWT>* _bwt_references;
   map<std::string, BNT>* _bnt_annotations;
+  map<int, REFSEQ>* _ref_sequences;
   gap_opt_t *_opts;
 };
 

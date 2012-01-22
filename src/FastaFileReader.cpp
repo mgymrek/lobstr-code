@@ -20,9 +20,9 @@ bool FastaFileReader::GetNextRecord(MSReadRecord* read) {
   
   //If no more lines, this is EOF
   current_line++;
-  if (!getline(input_stream, ID))
+  if (!getline(input_stream, ID)) {
     return false;
-  
+  }
   //Minimal input validation
   if (ID.empty())
     errx(1,"Error: found empty ID in FASTA file '%s' line %zu",
@@ -55,5 +55,7 @@ bool FastaFileReader::GetNextRecord(MSReadRecord* read) {
   read->ID = ID.substr(1);
   read->nucleotides = nuc;
   read->quality_scores = string(nuc.length(),'N');
+  read->orig_nucleotides = nuc;
+  read->orig_qual = read->quality_scores;
   return true;
 }

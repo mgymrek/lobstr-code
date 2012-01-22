@@ -1,11 +1,5 @@
 //============================================================================
 // Author      : Melissa Gymrek
-/*
-TODO:
-use cigar score
- */
-
-
 //============================================================================
 
 #include <boost/algorithm/string.hpp>
@@ -20,7 +14,6 @@ use cigar score
 #include <string>
 #include <unistd.h>
 
-#include "AlignmentFileReader.h"
 #include "BWAReadAligner.h"
 #include "bwtaln.h"
 #include "bwase.h"
@@ -29,7 +22,6 @@ use cigar score
 #include "FastqFileReader.h"
 #include "FFT_nuc_vectors.h"
 #include "FFT_four_nuc_vectors.h"
-#include "Genotyper.h"
 #include "HammingWindowGenerator.h"
 #include "IFileReader.h"
 #include "MSReadRecord.h"
@@ -48,14 +40,14 @@ vector<string> input_files;
 // Perform STRDetection
 STRDetector str_detector;
 
-// keep track of genotypes
-// Genotyper genotyper;
-
 // keep track of # bases so we can calculate coverage
 long bases = 0;
 
 // keep track of reference genome to use for sam format
 map<string, int> chrom_sizes;
+
+// Keep track of reference sequences for alignment readjustment
+map<int, REFSEQ> ref_sequences;
 
 // alignment references, keep global
 void LoadReference(const std::string& repseq);
@@ -67,35 +59,39 @@ gap_opt_t *opts;
 static pthread_mutex_t g_seq_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void show_help(){
-  const char* help = "lobSTR [OPTIONS] -f <file1[,file2,...]> --index-prefix <index prefix> -o <output prefix>\n" \
-"-f,--files     file or comma-separated list of files containing reads in fasta or fastq format\n" \
+  const char* help = "\n\nlobSTR [OPTIONS] -f <file1[,file2,...]> --index-prefix <index prefix> -o <output prefix>\n" \
+"-f,--files     file or comma-separated list of files containing reads in fasta, fastq, or bam format (default: fasta)\n" \
 "-o,--out       prefix for out put files. will output:\n" \
+"                      <prefix>.aligned.tab: tab delimited file of alignments\n" \
+"                      <prefix>.aligned.bam: bam file of alignments\n" \
 "--index-prefix     prefix for bwa reference (must run lobstr_index.py to create index)\n" \
-"                      <prefix>.<filename>.fast(a/q): file of raw reads with detected reads modified for each <filename>\n" \
-"                      <prefix>.msalign: file of alignments\n" \
+"                   If the index is downloaded to PATH_TO_INDEX, this argument is PATH_TO_INDEX/lobSTR_\n" \
+
 "\n\nOptions:\n" \
 "-h,--help                  display this help screen\n" \
 "-v,--verbose               print out useful progress messages\n" \
 "-q,--fastq                 reads are in fastq format (default: fasta)\n" \
-"-p,--threads <int>         number of threads (default: 1)\n" \
+"--bam                      reads are in bam format (default: fasta)\n" \
+"-p,--threads <INT>         number of threads (default: 1)\n" \
 "\n\nAdvanced options - general:\n" \
-"--min-read-length    minimum number of nucleotides for a read to be processed. This should be at least two times fft-window-size (default: 48)\n" \
-"--max-read-length    maximum number of nucleotides for a read to be processed. (default: 1000)\n" \
+"--min-read-length <INT>    minimum number of nucleotides for a read to be processed. This should be at least two times fft-window-size (default: 45)\n" \
+"--max-read-length <INT>   maximum number of nucleotides for a read to be processed. (default: 1024)\n" \
 "\n\nAdvanced options - detection:\n" \
 "--fft-window-size    size of fft window (default: 24)\n" \
 "--fft-window-step    step size of sliding window (default: 12)\n" \
-"--entropy-threshold     threshold score to call a window periodic (defualt: 0.3)\n" \
-"--minperiod          minimum period to attempt to detect (default: 1)\n" \
-"--maxperiod          maximum period to attempt to detect (default: 8)\n" \
-"--minflank           minimum length of flanking region to try to align (default: 10)\n" \
-"--maxflank           length to trim flanking regions to if they exceed that length (default: 1000)\n" \
+"--entropy-threshold     threshold score to call a window periodic (defualt: 0.45)\n" \
+"--minperiod          minimum period to attempt to detect (default: 2)\n" \
+"--maxperiod          maximum period to attempt to detect (default: 6)\n" \
+"--minflank <INT>          minimum length of flanking region to try to align (default: 10)\n" \
+"--maxflank <INT>          length to trim the ends of flanking regions to if they exceed that length (default: 25)\n" \
+"--extend-flank  <INT>     length to extend flanking regions (default: 6)\n" \
 "\n\nAdvanced options - alignment:\n" \
-"--max-diff-ref       maximum difference in length from the reference sequence to allow for alignment (default 50) (will take the absolute value)\n" \
+"--max-diff-ref       maximum difference in length from the reference sequence to allow for alignment (default: 30) (will take the absolute value)\n" \
 "-u                   require length difference to be a multiple of the repeat unit\n" \
-    "-m,--mismatch <int>  edit distance allowed during alignment of each flanking region (default: 0)\n" \
-    "-g <int>             maximum number of gap opens allowed in each flanking region (default: 0)\n" \
-    "-e <int>             maximum number of gap extensions allowed in each flanking region (default: 0)\n" \
-    "-r <float>           edit distance allowed during alignment of each flanking region (ignored if -m is set) (default 0)\n" \
+    "-m,--mismatch <int>  edit distance allowed during alignment of each flanking region (default: -1)\n" \
+    "-g <int>             maximum number of gap opens allowed in each flanking region (default: 1)\n" \
+    "-e <int>             maximum number of gap extensions allowed in each flanking region (default: 1)\n" \
+    "-r <float>           edit distance allowed during alignment of each flanking region (ignored if -m is set) (default: 0.01)\n" \
 "This program takes in raw reads, detects and aligns reads containing microsatellites, and genotypes STR locations.\n\n";
 	cout << help;
 	exit(1);
@@ -115,6 +111,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_DEBUG,
 	  OPT_ALIGN_DEBUG,
 	  OPT_FASTQ,
+	  OPT_BAM,
 	  OPT_THREADS,
 	  OPT_MISMATCH,
 	  OPT_SAM,
@@ -130,18 +127,11 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_MAX_DIFF_REF,
 	  OPT_FFTW_DEBUG,
 	  OPT_LOBE_DEBUG,
-	  OPT_GENOTYPER_DEBUG,
-	  OPT_PI,
-	  OPT_MU,
 	  OPT_MIN_READ_LENGTH,
 	  OPT_MAX_READ_LENGTH,
 	  OPT_ERROR_RATE,
-	  OPT_FEMALE,
 	  OPT_MIN_COVERAGE,
-	  OPT_GENOTYPE_ONLY,
-	  OPT_ALIGNED_FILE,
 	  OPT_WHY_NOT,
-	  OPT_USE_ENTROPY,
 	  OPT_ENTROPY_THRESHOLD,
 	  OPT_DEBUG_ENTROPY,
 	  OPT_PROFILE,
@@ -149,6 +139,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_GAP_OPEN,
 	  OPT_GAP_EXTEND,
 	  OPT_FPR,
+	  OPT_EXTEND_FLANK,
 	};
 
 	int ch;
@@ -161,7 +152,6 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"out", 1, 0, OPT_OUTPUT},
 	  {"threads", 1, 0, OPT_THREADS},
 	  {"mismatch", 1, 0, OPT_MISMATCH},
-	  {"bam", 0, 0, OPT_SAM},
 	  {"fft-window-size", 1, 0, OPT_FFT_WINDOW_SIZE},
 	  {"fft-window-step", 1, 0, OPT_FFT_WINDOW_STEP},
 	  {"lobe-threshold", 1, 0, OPT_LOBE_THRESHOLD},
@@ -171,35 +161,31 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"minflank", 1, 0, OPT_MIN_FLANK_LEN},
 	  {"maxflank", 1, 0, OPT_MAX_FLANK_LEN},
 	  {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
-	  {"pi", 1, 0, OPT_PI},
-	  {"mu", 1, 0, OPT_MU},
 	  {"help", 0, 0, OPT_HELP},
 	  {"verbose", 0, 0, OPT_VERBOSE},
 	  {"debug", 0, 0, OPT_DEBUG},
 	  {"fastq", 0, 0, OPT_FASTQ},
-	  {"rmdup", 0, 0, OPT_RMDUP},
+	  {"bam", 0, 0, OPT_BAM},
 	  {"fftw-debug", 0, 0, OPT_FFTW_DEBUG},
 	  {"lobe-debug", 0, 0, OPT_LOBE_DEBUG},
 	  {"align-debug", 0, 0, OPT_ALIGN_DEBUG},
-	  {"genotyper-debug", 0, 0, OPT_GENOTYPER_DEBUG},
 	  {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
 	  {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
 	  {"min-coverage", 1, 0, OPT_MIN_COVERAGE},
-	  {"female", 0, 0, OPT_FEMALE},
-	  {"genotype-only", 0, 0, OPT_GENOTYPE_ONLY},
-	  {"aligned-file", 1, 0, OPT_ALIGNED_FILE},
-	  {"why-not", 0, 0, OPT_WHY_NOT},
-	  {"use-entropy", 0, 0, OPT_USE_ENTROPY},
 	  {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
 	  {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
 	  {"profile", 0, 0, OPT_PROFILE},
 	  {"index-prefix", 1, 0, OPT_INDEX},
+	  {"extend-flank", 1, 0, OPT_EXTEND_FLANK},
+	  {NULL, no_argument, NULL, 0},
 	};
-	while ((ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:u",
-				 long_options,&option_index))!= -1) { 
+	ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:u?",
+			 long_options,&option_index);
+	while (ch != -1) { 
 	  switch(ch){
 	  case 'u':
 	    unit++;
+	    break;
 	  case OPT_PROFILE:
 	    profile++;
 	    break;
@@ -219,6 +205,10 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case OPT_FASTQ:
 	    input_type = INPUT_FASTQ;
 	  fastq++;
+	    break;
+	  case OPT_BAM:
+	    input_type = INPUT_BAM;
+	    bam++;
 	    break;
 	  case 'p':
 	  case OPT_THREADS:
@@ -250,11 +240,6 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case OPT_FFT_WINDOW_STEP:
 	    fft_window_step = atoi(optarg);
 	    break;
-	  case OPT_LOBE_THRESHOLD:
-	    fft_lobe_threshold = atof(optarg);
-	    if (fft_lobe_threshold <=0)
-	      errx(1,"Error: invalid lobe threshold");
-	    break;
 	  case OPT_EXTEND:
 	    extend = atoi(optarg);
 	    if (extend <=0)
@@ -285,23 +270,11 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    if (max_diff_ref <=0 )
 	      errx(1, "Error: invalid max diff ref");
 	    break;
-	  case OPT_RMDUP:
-	    rmdup++;
-	    break;
 	  case OPT_FFTW_DEBUG:
 	    fftw_debug = true;
 	    break;
 	  case OPT_LOBE_DEBUG:
 	    lobe_debug = true;
-	    break;
-	  case OPT_GENOTYPER_DEBUG:
-	    genotyper_debug = true;
-	    break;
-	  case OPT_PI:
-	    pi_string = string(optarg);
-	    break;
-	  case OPT_MU:
-	    mu_string = string(optarg);
 	    break;
 	  case OPT_MIN_READ_LENGTH:
 	    min_read_length = atoi(optarg);
@@ -311,21 +284,6 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    break;
 	  case OPT_MIN_COVERAGE:
 	    min_coverage = atoi(optarg);
-	    break;
-	  case OPT_FEMALE:
-	    male = false;
-	    break;
-	  case OPT_GENOTYPE_ONLY:
-	    genotype_only++;
-	    break;
-	  case OPT_ALIGNED_FILE:
-	    aligned_file = string(optarg);
-	    break;
-	  case OPT_WHY_NOT:
-	    why_not_debug++;
-	    break;
-	  case OPT_USE_ENTROPY:
-	    use_entropy++;
 	    break;
 	  case OPT_ENTROPY_THRESHOLD:
 	    entropy_threshold = atof(optarg);
@@ -348,11 +306,22 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case 'r':
 	    fpr = atof(optarg);
 	    break;
+	  case OPT_EXTEND_FLANK:
+	    extend_flank = atoi(optarg);
+	    break;
+	  case '?':
+	    show_help();
+	    exit(1);
+	    break;
 	  default:
 	    show_help();
 	    exit(1);
 	  }
-	}
+	  ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:u?",
+			   long_options,&option_index);
+
+	} 
+
 	// any arguments left over are extra
 	if (optind < argc) {
 	  cout << "Unnecessary leftover arguments...\n";
@@ -386,7 +355,7 @@ void LoadReference(const std::string& repseq) {
 			       strlen(repseq.c_str()) + 20, 1);
   strcpy(prefix, index_prefix.c_str()); strcat(prefix, repseq.c_str());
   strcat(prefix, ".fa");
-  cout << "loading ref " << repseq << endl;
+  //  cout << "loading ref " << repseq << endl;
   bwt_t *bwt[2];
   char *str = (char*)calloc(strlen(prefix) + 10, 1);
   strcpy(str, prefix); strcat(str, ".bwt");
@@ -426,6 +395,7 @@ void DestroyReferences() {
 }
 
 
+
 /*
  * process read in single thread
  */
@@ -434,14 +404,16 @@ void single_thread_process_loop(const vector<string>& files) {
   TabFileWriter pWriter(output_prefix + ".aligned.tab");
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   STRDetector *pDetector = new STRDetector();
-  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references, &bnt_annotations, opts);
+  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references, &bnt_annotations, &ref_sequences, opts);
   for (vector<string>::const_iterator it = files.begin(); it != files.end(); it++) {
     if (fexists((*it).c_str())) {
       cout << "processing file " <<  *it << " ...\n";
       IFileReader* pReader = create_file_reader(*it);
       int aligned = false;
+      int num_reads_processed = 0;
       while (pReader->GetNextRecord(&msread)) {
 	aligned = false;
+	num_reads_processed += 1;
 	msread.msRepeat = "";
 	if (!(msread.nucleotides.length() >= min_read_length &&
 	      msread.nucleotides.length() <= max_read_length)) {
@@ -450,9 +422,12 @@ void single_thread_process_loop(const vector<string>& files) {
 	  bases += msread.nucleotides.length();
 	}
 	if (!pDetector->ProcessRead(&msread)) {
-	  //	  	   cout << "not aligned (not detected) " << msread.nucleotides << endl;
+	  if (profile) {
+	    cout << msread.ID << "\t" << msread.orig_nucleotides << "\t" << "-" << endl;
+	  }
 	  continue;
 	}
+
 	string repseqfw;
 	string repseqrev;
 	string repseq;
@@ -461,6 +436,11 @@ void single_thread_process_loop(const vector<string>& files) {
 	repseq = getFirstString(repseqfw, repseqrev);
 	msread.repseq = repseq;
 	msread.repseq_reverse = (repseq==repseqrev);
+
+	if (profile) {
+	  cout << msread.ID << "\t" << msread.orig_nucleotides << "\t" << repseq << endl;
+	}
+
 	// alignment
 	if (pAligner->ProcessRead(&msread)) {
 	  aligned = true;
@@ -482,6 +462,7 @@ void single_thread_process_loop(const vector<string>& files) {
 	}
       }
       delete pReader;
+      cout << "Processed " << num_reads_processed << " reads" << endl;
     } else {
       cerr << "Warning: file " << *it << " does not exist" << endl;
     }
@@ -493,7 +474,7 @@ void single_thread_process_loop(const vector<string>& files) {
 void* satellite_process_consumer_thread(void *arg) {
   MultithreadData *pMT_DATA = (MultithreadData*)(arg);
   STRDetector *pDetector = new STRDetector();
-  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references, &bnt_annotations,opts);
+  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references, &bnt_annotations, &ref_sequences, opts);
   int aligned = false;
   while (1) {
     aligned = false;
@@ -623,12 +604,25 @@ int main(int argc,char* argv[]) {
       LoadReference(line);
     }
   }
+
+  // Load fasta reference with all STR sequences
+  FastaFileReader faReader(index_prefix+"ref.fa");
+  MSReadRecord ref_record;
+  while(faReader.GetNextRecord(&ref_record)) {
+    REFSEQ refseq;
+    vector<string> items;
+    string refstring = ref_record.ID;;
+    split(refstring, '_', items);
+    refseq.sequence = ref_record.orig_nucleotides;
+    refseq.start = atoi(items.at(2).c_str());
+    int refid = atoi(items.at(0).c_str());
+    ref_sequences.insert(pair<int,REFSEQ>(refid, refseq));
+  }
+
   // set up options
   opts = gap_init_opt();
-  // edit distance per flank
-  //opts->fnr = 0.1;
   opts->max_diff = allowed_mismatches;
-  if (allowed_mismatches == 0) {
+  if (allowed_mismatches == -1) {
     opts->fnr = fpr;
   } else {
     opts->fnr = -1.0;
@@ -639,62 +633,27 @@ int main(int argc,char* argv[]) {
   // take the first INT subsequence as seed
   opts->seed_len = 5;
   // all hits with no more than maxdiff found
-  // maybe remove, supposed to be slow
-  //opts->mode |= BWA_MODE_NONSTOP; opts->max_top2 = 0x7fffffff;
 
-
-
-  if (!genotype_only) {
-    // get the input files
-    boost::split(input_files, input_files_string, boost::is_any_of(","));
-    // Initialize fft  
-    // Create the singleton HammingWindow (before starting any threads)
-    HammingWindowGenerator* hamgen =
-      HammingWindowGenerator::GetHammingWindowSingleton();
-    TukeyWindowGenerator* tukgen =
-      TukeyWindowGenerator::GetTukeyWindowSingleton();
-    
-    // Initialize global FFTW plans
-    FFT_NUC_VECTOR::initialize_fftw_plans();
-    
-    // run detection/alignment
-   if (verbose) {cerr << "Running detection/alignment..." << endl;}
-    if (threads == 1) {
-      single_thread_process_loop(input_files);
-    } else {
-      multi_thread_process_loop(input_files);
-    }
-    delete hamgen;
-    delete tukgen;
-  } /*else {
-    // read alignment file and add reads to genotyper
-    AlignmentFileReader alignment_reader(aligned_file);
-    MSReadRecord aligned_read_record;
-    // get rid of header
-    while(alignment_reader.GetNextRecord(&aligned_read_record)) {
-      genotyper.AddRead(&aligned_read_record);
-    }
+  // get the input files
+  boost::split(input_files, input_files_string, boost::is_any_of(","));
+  // Initialize fft  
+  // Create the singleton HammingWindow (before starting any threads)
+  HammingWindowGenerator* hamgen =
+    HammingWindowGenerator::GetHammingWindowSingleton();
+  TukeyWindowGenerator* tukgen =
+    TukeyWindowGenerator::GetTukeyWindowSingleton();
+  
+  // Initialize global FFTW plans
+  FFT_NUC_VECTOR::initialize_fftw_plans();
+  
+  // run detection/alignment
+  if (verbose) {cerr << "Running detection/alignment..." << endl;}
+  if (threads == 1) {
+    single_thread_process_loop(input_files);
+  } else {
+    multi_thread_process_loop(input_files);
   }
-  // init priors
-  if (!mu_string.empty()) {
-    vector<string> mu_values;
-    boost::split(mu_values, mu_string, boost::is_any_of(","));
-    mu_0 = atof(mu_values.at(0).c_str());
-    mu_1 = atof(mu_values.at(1).c_str());
-    mu_2 = atof(mu_values.at(2).c_str());
-    genotyper.ResetMu(mu_0, mu_1, mu_2);
-  }
-  if (!pi_string.empty()) {
-    vector<string> pi_values;
-    boost::split(pi_values, pi_string, boost::is_any_of(","));
-    pi_0 = atof(pi_values.at(0).c_str());
-    pi_1 = atof(pi_values.at(1).c_str());
-    pi_2 = atof(pi_values.at(2).c_str());
-    genotyper.ResetPi(pi_1, pi_1, pi_2);
-    }
-
-  // run genotyping and write output
-  genotyper.WriteOutput(output_prefix + ".genotypes.tab");*/
-
+  delete hamgen;
+  delete tukgen;
   return 0;
 }

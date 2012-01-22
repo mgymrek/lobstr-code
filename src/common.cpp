@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sstream>
 
+#include "BamFileReader.h"
 #include "common.h"
 #include "FastaFileReader.h"
 #include "FastqFileReader.h"
@@ -52,7 +53,7 @@ bool IsPerfectRepeat(const std::string& sequence,
     string test_seq = sequence.substr(i, repeat.length());
     if (test_seq != repeat) return false;
   }
-  // check the part after TODO
+  // check the part after
   return true;
 }
 
@@ -256,7 +257,7 @@ IFileReader* create_file_reader(const string& filename) {
     case INPUT_FASTQ:
       return new FastqFileReader(filename);
     case INPUT_BAM:
-      errx(1,"BAM input is not implemented (yet)");
+      return new BamFileReader(filename);
     default:
       //This should really never happen
       errx(1,"Internal error, unknown 'input_type' (%d)", (int)input_type);

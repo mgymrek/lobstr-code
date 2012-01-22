@@ -83,5 +83,7 @@ bool FastqFileReader::GetNextRecord(MSReadRecord* read) {
   read->ID = ID.substr(1);
   read->nucleotides = nuc;
   read->quality_scores = quality;
+  read->orig_nucleotides = nuc;
+  read->orig_qual = quality;
   return true;
 }

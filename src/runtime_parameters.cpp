@@ -13,6 +13,7 @@ bool sam = true;
 bool debug = false;
 bool genotype_only = false;
 bool fastq = false;
+bool bam = false;
 
 // threading
 size_t threads = 1;
@@ -34,10 +35,11 @@ int fft_window_size = 24;
 int fft_window_step = 12;
 float fft_lobe_threshold = 3;
 float period_energy_threshold = 500;
-int max_period = 7;
-int min_period = 1;
+int max_period = 6;
+int min_period = 2;
+int max_period_to_try = 8;
 int min_flank_len = 8;
-int max_flank_len = 25; // 50
+int max_flank_len = 25;
 float closeness = 0.3;
 float percent_N_discard = 0.05;
 float tukey_alpha = 0.5;
@@ -47,7 +49,9 @@ int entropy_k = 2;
 int extend_flank = 6;
 
 // alignment params
-int allowed_mismatches = 0;
+bool adjust = true;
+int min_sw_score = 10;
+int allowed_mismatches = -1;
 int max_align = 10;
 int max_diff_ref = 30;
 bool unit = false;
@@ -60,20 +64,16 @@ float fpr = 0.01;
 
 
 // genotyping params
-bool rmdup = false;
-std::string mu_string;
-std::string pi_string;
-float pi_0 = 0.80;
-float pi_1 = 0.15;
-float pi_2 = 0.05;
-float mu_0 = 0.99;
-float mu_1 = 0.5;
-float mu_2 = 0.01;
+std::string bam_file = "";
+std::string command = "";
+std::string noise_model = "";
+bool rmdup = true;
+float min_het_freq = 0.25;
 bool male = true;
-// Note to self: couldn't figure out if it was sexist to have male as default...
-int min_coverage = 1;
-float percent_reads_for_homozygous = 0.95;
+bool sex_set = false;
+int min_coverage = 2;
 std::string aligned_file = "";
+bool not_lobstr_file_detected = false;
 
 // anonymizing params
 std::string str_alignment_file = "";

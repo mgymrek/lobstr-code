@@ -1,6 +1,8 @@
 #include "BWAReadAligner.h"
 #include <algorithm>
+#include "cigar.h"
 #include "common.h"
+#include "nw.h"
 #include "runtime_parameters.h"
 #include <stdio.h>
 #include <string.h>
@@ -17,10 +19,12 @@ int pad=50;
 
 BWAReadAligner::BWAReadAligner(map<std::string, BWT>* bwt_references,
 			       map<std::string, BNT>* bnt_annotations,
+			       map<int, REFSEQ>* ref_sequences,
 			       gap_opt_t *opts) {
   bwase_initialize();
   _bwt_references = bwt_references;
   _bnt_annotations = bnt_annotations;
+  _ref_sequences = ref_sequences;
   _opts = opts;
 }
 
@@ -28,7 +32,14 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   if (align_debug)
     cout << endl << "processing " << read->ID << " " << read->nucleotides << " repseq " << read->repseq << endl;
   const string& repseq = read->repseq;
+
+  // check that we have that repseq
   if (_bwt_references->find(repseq) == _bwt_references->end()) {
+    return false;
+  }
+  // check that it'snot a perect repeat
+  if (IsPerfectRepeat(read->left_flank_nuc, read->repseq) ||
+      IsPerfectRepeat(read->right_flank_nuc, read->repseq)) {
     return false;
   }
 
@@ -36,7 +47,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
 
   // get bwa_seq_t *seqs
   bwa_seq_t *seqs, *seq_left, *seq_right;
-  seqs=(bwa_seq_t*)calloc(2, sizeof(bwa_seq_t)); // TODO memory leak here?
+  seqs=(bwa_seq_t*)calloc(2, sizeof(bwa_seq_t));
   seq_left = &seqs[0];
   seq_right= &seqs[1];
 
@@ -141,6 +152,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
 
   // get the desired info out of seqs and put it back into the MSReadRecord
   read->chrom = left_refid.chrom;
+  read->strid = left_refid.id;
   if (left_refid.left) {
     read->msStart = left_refid.start;
     read->msEnd = left_refid.end;
@@ -160,8 +172,10 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   read->name = left_refid.name;
   int read_len_at_locus = read->nucleotides.size();
   int ref_len_at_locus = abs(read->rEnd - read->lStart);
+  read->orig_start = read->lStart - read->left_flank_index_from_start;
   if (!left_refid.left) {
     ref_len_at_locus = abs(read->lEnd - read->rStart);
+    read->orig_start = read->rStart - read->right_flank_index_from_end;
   }
   read->diffFromRef = read_len_at_locus - ref_len_at_locus;
   bwa_free_read_seq(2, seqs);
@@ -190,6 +204,9 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   if (read->reverse & (read->rStart >= read->msStart | read->lEnd <= read->msEnd)) {
     return false;
   }
+  if (read->rStart <0 | read->lStart <0 | read->rEnd <0 | read->lEnd < 0) {
+    return false;
+  }
 
   // check sam 
   int lpos = 0;
@@ -207,9 +224,13 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
     }
   }
   if (read->diffFromRef < 0) {
-    if ((read->nucleotides.length() - (read->msStart-lpos+1))<0) {
+    if ((read->nucleotides.length() - (read->msStart-lpos+1))< min_sw_score) {
       return false;
     }
+  }
+  // adjust alignment and set cigar score
+  if ((abs(read->diffFromRef) <= max_diff_ref & read->msStart > 0) & adjust) {
+    if (!AdjustAlignment(read)) return false;
   }
   return (abs(read->diffFromRef) <= max_diff_ref & read->msStart > 0);
 }
@@ -254,7 +275,7 @@ bool BWAReadAligner::GetSharedAln(const list<ALIGNMENT>& map1,
  }
 
 void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
-    vector<string> items;
+  vector<string> items;
   split(refstring, '_', items);
   refid->id = atoi(items.at(0).c_str());
   refid->left = (items.at(1) == "L");
@@ -349,6 +370,126 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
   return true;
 }
 
+/*
+Perform local realignment
+Adjust exact STR boundaries
+Update cigar score
+ */
+bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
+  // get reference sequence
+  int reglen = !aligned_read->reverse ? (aligned_read->rEnd - aligned_read->lStart) :
+    (aligned_read->lEnd - aligned_read->rStart);
+  REFSEQ refseq = _ref_sequences->at(aligned_read->strid);
+  int start_pos = !aligned_read->reverse ? aligned_read->lStart-1 : aligned_read->rStart;
+  const string& rseq = refseq.sequence.substr(start_pos - refseq.start, reglen);
+  const string& aligned_seq = !aligned_read->reverse ? aligned_read->nucleotides : reverseComplement(aligned_read->nucleotides);
+  // update coords
+  aligned_read->read_start = start_pos;
+  aligned_read->read_end = start_pos + reglen;
+  //cout << rseq << " " << aligned_seq << endl;
+  // Global alignment read vs. region aligned to 
+  string aligned_seq_sw;
+  string ref_seq_sw;
+  int sw_score;
+  CIGAR_LIST cigar_list;
+  nw(aligned_seq, rseq, aligned_seq_sw, ref_seq_sw, false, &sw_score, &cigar_list);
+  aligned_read->sw_score = sw_score;
+  aligned_read->cigar = cigar_list.cigars;
+  /*
+  cout << aligned_seq_sw << endl;
+  cout << ref_seq_sw << endl;
+  cout << sw_score/float(aligned_seq.length()) << endl;
+  cout << cigar_list.cigar_string << endl;
+  */
+  // Update diffFromRef
+  if (sw_score < min_sw_score) return false;
+  GetSTRAllele(aligned_read, cigar_list);
+  //cout << aligned_read->diffFromRef << " " << aligned_read->detected_ms_region_nuc << endl << endl;
 
+  return true;
+}
+void BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list) {
+  int str_index = aligned_read->msStart-aligned_read->read_start;
+  int ms_length = aligned_read->msEnd - aligned_read->msStart;
 
+  if (cigar_list.cigars.size() == 0) {  // same as reference
+    aligned_read->detected_ms_region_nuc =
+      aligned_read->nucleotides.substr(str_index, ms_length);
+    aligned_read->diffFromRef = 0;
+    return;
+  }
+
+  // get rid of the cigar score covering the left flanking region
+  int str_start_in_cigar = aligned_read->msStart - aligned_read->read_start + 1;
+  int pos, cigar_index, bp, diff, newbp, total_cigar_pos,diff_from_ref;
+  char cigar_type;
+  CIGAR_LIST new_cigar_list;
+  CIGAR_LIST str_cigar_list;
+  while (pos <= str_start_in_cigar) {
+    bp = cigar_list.cigars.at(cigar_index).num;
+    cigar_type = cigar_list.cigars.at(cigar_index).cigar_type;
+    if (cigar_type == 'M' || cigar_type == 'D') pos += bp;
+    diff = pos - str_start_in_cigar;
+    if (diff == 0) {
+      new_cigar_list.cigars.resize(cigar_list.cigars.size() - cigar_index);
+      copy(cigar_list.cigars.begin()+cigar_index+1, cigar_list.cigars.end(), new_cigar_list.cigars.begin());
+      break;
+    }
+    if (diff > 0) {
+      newbp = diff;
+      new_cigar_list.cigars.resize(cigar_list.cigars.size() - cigar_index);
+      copy(cigar_list.cigars.begin()+cigar_index, cigar_list.cigars.end(), new_cigar_list.cigars.begin());
+      new_cigar_list.cigars.at(0).num = newbp+1;
+      break;
+    }
+    cigar_index += 1;
+  }
+  str_cigar_list.cigars = new_cigar_list.cigars;
+  new_cigar_list.cigars.clear();
+  // get rid of cigar scores covering msend:end
+  total_cigar_pos = ms_length;
+  cigar_index = 0;
+  pos = 0;
+  while(pos < total_cigar_pos) {
+    bp = str_cigar_list.cigars.at(cigar_index).num;
+    cigar_type = str_cigar_list.cigars.at(cigar_index).cigar_type;
+    if (cigar_type == 'M' || cigar_type == 'D') pos += bp;
+    diff = pos-total_cigar_pos;
+    if (diff == 0) {
+      new_cigar_list.cigars.resize(cigar_index+1);
+      copy(str_cigar_list.cigars.begin(), str_cigar_list.cigars.begin()+cigar_index+1, new_cigar_list.cigars.begin());
+      break;
+    }
+    if (diff > 0) {
+      newbp = bp-diff+1;
+      new_cigar_list.cigars.resize(cigar_index+1);
+      copy(str_cigar_list.cigars.begin(), str_cigar_list.cigars.begin()+cigar_index+1, new_cigar_list.cigars.begin());
+      new_cigar_list.cigars.at(new_cigar_list.cigars.size()-1).num = newbp;
+      break;
+    }
+    cigar_index += 1;
+  }
+  str_cigar_list.cigars.clear();
+  str_cigar_list.cigars = new_cigar_list.cigars;
+  // set diff from ref
+  diff_from_ref = 0;
+  for (int i = 0; i < str_cigar_list.cigars.size(); i++) {
+    if (str_cigar_list.cigars.at(i).cigar_type == 'I') {
+      diff_from_ref += str_cigar_list.cigars.at(i).num;
+    }
+    if (str_cigar_list.cigars.at(i).cigar_type == 'D') {
+      diff_from_ref -= str_cigar_list.cigars.at(i).num;
+    }
+    }
+  // set STR region
+  string ms_nuc;
+  if (aligned_read->reverse) {
+    string rev_read = reverseComplement(aligned_read->nucleotides);
+    ms_nuc =  rev_read.substr(str_index, ms_length+diff_from_ref);
+  } else {
+    ms_nuc =  aligned_read->nucleotides.substr(str_index, ms_length+diff_from_ref);
+  }
+  aligned_read->diffFromRef = diff_from_ref;
+  aligned_read->detected_ms_region_nuc = ms_nuc;
+}
 BWAReadAligner::~BWAReadAligner(){}

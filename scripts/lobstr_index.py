@@ -109,6 +109,7 @@ def processTRF(strfile, outdir, genome):
         g.write("\t".join(["REF",chrom, str(len(genome[chrom]))])+"\n")
 
     f = open(strfile, "r")
+    allfasta = open(outdir+"/lobSTR_ref.fa", "w")
     line = f.readline()
     ident = 0
     while line !="":
@@ -121,14 +122,16 @@ def processTRF(strfile, outdir, genome):
         # extract flanking regions
         leftFlank = str(genome[chrom][max(start-extend,0):end].seq).upper()
         rightFlank = str(genome[chrom][start:min(end+extend,len(genome[chrom]))].seq).upper()
+        strregion = str(genome[chrom][max(start-extend,0):min(end+extend,len(genome[chrom]))].seq).upper()
         repseq = getCanonicalMS(repseq)
         revrepseq = getCanonicalMS(reverseComplement(repseq))
         repseq = compareString(repseq, revrepseq)
         
-        if len(repseq) <= 6 and len(repseq) >= 2:
+        if len(repseq) <= 6 and len(repseq) >= 2 and (start-extend) > 0:
             # write fasta entries
             lident = ">"+"_".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
             rident = ">"+"_".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
+            strident = ">"+"_".join(map(str,[ident,chrom,start-extend,end+extend,repseq,copynum,name]))
             try:
                 repToFile[repseq].write(rident+"\n")
                 repToFile[repseq].write(PadFlank(rightFlank,pad)+"\n")
@@ -142,6 +145,9 @@ def processTRF(strfile, outdir, genome):
                 repToFile[repseq].write(PadFlank(leftFlank,pad)+"\n")
                 # write ms dict entry
                 g.write(repseq + "\n")
+            # write whole region to master fasta reference
+            allfasta.write(strident+"\n")
+            allfasta.write(strregion+"\n")
             ident = ident + 1
         elif len(repseq) == 7:
              # write fasta entries
@@ -169,6 +175,7 @@ def processTRF(strfile, outdir, genome):
         f = open(outdir+"/lobSTR_%s.fa"%item,"w")
         f.write(sevenmerdict[item])
         f.close()
+    allfasta.close()
     print "Processed %s records"%ident
     return repToFile, sevenmerdict
 

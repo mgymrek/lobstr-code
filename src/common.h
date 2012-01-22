@@ -27,6 +27,10 @@ struct BNT {
   bntseq_t *bns;
 };
 
+struct REFSEQ {
+  std::string sequence;
+  int start;
+};
 
 // get the canonicalized form of the repeat
 void getMSSeq(const std::string& nucs, int k, std::string* repeat);
@@ -112,5 +116,6 @@ void debug_print_matlab_vector(const std::vector<TYPE> &v, const std::string& va
 }
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
+
 
 #endif /* __COMMON_FUNCIONS_H__ */
