@@ -51,7 +51,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/ax_boost_base.m4 $(top_srcdir)/ax_check_zlib.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/ax_check_rinside.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -64,6 +64,7 @@ am_allelotype_OBJECTS = allelotype-main_allelotype.$(OBJEXT) \
 	allelotype-Genotyper.$(OBJEXT) allelotype-NoiseModel.$(OBJEXT) \
 	allelotype-ReadContainer.$(OBJEXT) \
 	allelotype-runtime_parameters.$(OBJEXT) \
+	allelotype-TextFileReader.$(OBJEXT) \
 	allelotype-TextFileWriter.$(OBJEXT) \
 	allelotype-BamReader.$(OBJEXT) \
 	allelotype-BamMultiReader.$(OBJEXT) \
@@ -255,6 +256,12 @@ PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
+RCPPCPPFLAGS = @RCPPCPPFLAGS@
+RCPPFLAGS = @RCPPFLAGS@
+RCPPLDFLAGS = @RCPPLDFLAGS@
+RINSIDECPPFLAGS = @RINSIDECPPFLAGS@
+RINSIDELDFLAGS = @RINSIDELDFLAGS@
+RLDFLAGS = @RLDFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -520,9 +527,21 @@ lobSTRIndex_SOURCES = \
 	is.c \
 	cs2nt.c
 
-allelotype_CPPFLAGS = $(AM_CPPFLAGS)
-allelotype_LDADD = $(AM_LDADD)
-allelotype_LDFLAGS = $(AM_LDFLAGS)
+
+# Required for R (R CMD config --cppflags, --ldflags)
+#RCPPFLAGS = -I/usr/share/R/include 
+#RLDFLAGS = -L/usr/lib64/R/lib -lR
+
+# Required for Rcpp (echo 'Rcpp:::LdFlags()' | R --vanilla --slave)
+#RCPPCPPFLAGS = -I/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/include
+#RCPPLDFLAGS = -L/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/lib -lRcpp -Wl,-rpath,/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/lib
+
+# Required for RInside (echo 'RInside:::CxxFlags()' | R --vanilla --slave)
+#RINSIDECPPFLAGS = -I/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/include
+#RINSIDELDFLAGS = -L/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/lib -lRInside -Wl,-rpath,/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/lib
+allelotype_CPPFLAGS = $(AM_CPPFLAGS) $(RCPPFLAGS) $(RCPPCPPFLAGS) $(RINSIDECPPFLAGS)
+allelotype_LDADD = $(AM_LDADD) 
+allelotype_LDFLAGS = $(AM_LDFLAGS) $(RLDFLAGS) $(RCPPLDFLAGS) $(RINSIDELDFLAGS)
 allelotype_SOURCES = main_allelotype.cpp \
 	Genotyper.h \
 	Genotyper.cpp \
@@ -532,6 +551,8 @@ allelotype_SOURCES = main_allelotype.cpp \
 	ReadContainer.cpp \
 	runtime_parameters.h \
 	runtime_parameters.cpp \
+	TextFileReader.h \
+	TextFileReader.cpp \
 	TextFileWriter.h \
 	TextFileWriter.cpp \
 	api/algorithms/Sort.h \
@@ -736,6 +757,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-SamReadGroupDictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-SamSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-SamSequenceDictionary.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-TextFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-TextFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-bamtools_fasta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-bamtools_options.Po@am__quote@
@@ -1630,6 +1652,20 @@ allelotype-runtime_parameters.obj: runtime_parameters.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='runtime_parameters.cpp' object='allelotype-runtime_parameters.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(allelotype_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o allelotype-runtime_parameters.obj `if test -f 'runtime_parameters.cpp'; then $(CYGPATH_W) 'runtime_parameters.cpp'; else $(CYGPATH_W) '$(srcdir)/runtime_parameters.cpp'; fi`
+
+allelotype-TextFileReader.o: TextFileReader.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(allelotype_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT allelotype-TextFileReader.o -MD -MP -MF $(DEPDIR)/allelotype-TextFileReader.Tpo -c -o allelotype-TextFileReader.o `test -f 'TextFileReader.cpp' || echo '$(srcdir)/'`TextFileReader.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/allelotype-TextFileReader.Tpo $(DEPDIR)/allelotype-TextFileReader.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TextFileReader.cpp' object='allelotype-TextFileReader.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(allelotype_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o allelotype-TextFileReader.o `test -f 'TextFileReader.cpp' || echo '$(srcdir)/'`TextFileReader.cpp
+
+allelotype-TextFileReader.obj: TextFileReader.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(allelotype_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT allelotype-TextFileReader.obj -MD -MP -MF $(DEPDIR)/allelotype-TextFileReader.Tpo -c -o allelotype-TextFileReader.obj `if test -f 'TextFileReader.cpp'; then $(CYGPATH_W) 'TextFileReader.cpp'; else $(CYGPATH_W) '$(srcdir)/TextFileReader.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/allelotype-TextFileReader.Tpo $(DEPDIR)/allelotype-TextFileReader.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TextFileReader.cpp' object='allelotype-TextFileReader.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(allelotype_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o allelotype-TextFileReader.obj `if test -f 'TextFileReader.cpp'; then $(CYGPATH_W) 'TextFileReader.cpp'; else $(CYGPATH_W) '$(srcdir)/TextFileReader.cpp'; fi`
 
 allelotype-TextFileWriter.o: TextFileWriter.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(allelotype_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT allelotype-TextFileWriter.o -MD -MP -MF $(DEPDIR)/allelotype-TextFileWriter.Tpo -c -o allelotype-TextFileWriter.o `test -f 'TextFileWriter.cpp' || echo '$(srcdir)/'`TextFileWriter.cpp

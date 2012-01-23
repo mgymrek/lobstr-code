@@ -20,6 +20,11 @@ make install
 
 The last step might require root access in order to have proper permissions. Congratulations, if these steps didn't explode with error messages, you're done. If not, it is probably because you're missing required packages. See section IV for requirements.
 
+Note, it is required that R be installed for installation to complete successfully. The configuration process will attempt to install the R packages Rcpp and RInside. This might require you to be the root user. If you get errors regarding these packages, you can just install them inside of the R environment with the commands:
+
+>install.packages("Rcpp")
+>install.packages("RInside")
+
 II. USAGE
 
 Part I: creating an STR alignment
@@ -73,6 +78,7 @@ libtool
 pkg-config
 fftw3-dev
 libboost-dev
+r-base
 
 Python libraries (required only for indexing or converting previously aligned BAM files to lobSTR format):
 pysam

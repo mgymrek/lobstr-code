@@ -77,6 +77,9 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   bool is_haploid = ((aligned_reads.front().chrom == "chrX" ||
 		      aligned_reads.front().chrom == "chrY" ) &&
 		     male);
+  if (debug) {
+    cerr << "In findMLE " << is_haploid << endl;
+  }
   // Get all possible alleles
   set<float> possible;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
@@ -109,14 +112,14 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 	total_score += exp(currScore);
 	// get minor allele freq
 	maf = counta == countb ? 1 : 
-	  max(counta,countb)/(counta+countb);
+	  (float)max(counta,countb)/(float)(counta+countb);
 	if (currScore > currBestScore &&
 	    maf >= min_het_freq) {
 	  currBestScore = currScore;
 	  *allele1 = candidA;
 	  *allele2 = candidB;
 	  *score = currScore;
-	}
+	} 
       }
     }
   }
@@ -143,7 +146,13 @@ void Genotyper::SimpleGenotype(const list<AlignedRead>& aligned_reads,
   map<float, int> str_to_counts;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
-    str_to_counts[(*it).diffFromRef/period]++;
+    if (str_to_counts.find((*it).diffFromRef/period) == 
+	str_to_counts.end()) {
+      str_to_counts.insert(pair<float,int>((*it).diffFromRef/period,1));
+    } else{
+      str_to_counts.at((*it).diffFromRef/period) = 
+	str_to_counts.at((*it).diffFromRef/period)+1;
+    }
   }
   int top_str_count = 0;
   float top_str_allele;
@@ -154,26 +163,29 @@ void Genotyper::SimpleGenotype(const list<AlignedRead>& aligned_reads,
     float allele = it->first;
     int count = it->second;
     if (count > top_str_count) {
-      top_str_count = count;
-      top_str_allele = allele;
       second_str_count = top_str_count;
       second_str_allele = top_str_allele;
+      top_str_count = count;
+      top_str_allele = allele;
     } else if (count > second_str_count) {
       second_str_count = count;
       second_str_allele = allele;
     }
   }
+  if (debug) {
+    cerr << top_str_count << " " << top_str_allele << " " << second_str_count << " " << second_str_allele << endl;
+  }
   if (is_haploid || 
-      second_str_count/aligned_reads.size() 
+      (float)second_str_count/(float)aligned_reads.size() 
       < min_het_freq) {
     *allele1 = top_str_allele;
     *allele2 = top_str_allele;
-    *score = top_str_count/aligned_reads.size();
+    *score = (float)top_str_count/(float)aligned_reads.size();
   } else {
     *allele1 = top_str_allele;
     *allele2 = second_str_allele;
-    *score = (top_str_count + second_str_count) / 
-      aligned_reads.size();
+    *score = (float)(top_str_count + second_str_count) / 
+      (float)aligned_reads.size();
   }
 }
 
@@ -209,24 +221,29 @@ void Genotyper::Genotype(const ReadContainer& read_container,
     // get read string
     agreeing = 0;
     conflicting = 0;
-    stringstream readstring;
+    map<int, int> all_reads;
     for (list<AlignedRead>::const_iterator it2 = 
 	   it->second.begin(); it2 != it->second.end(); it2++) {
-      if (it2 != it->second.begin()) {
-	readstring << "/";
-      }
-      chrom = it2->chrom;
+       chrom = it2->chrom;
       start = it2->msStart;
       stop = it2->msEnd;
       repseq = it2->repseq;
       refcopy = it2->refCopyNum;
-      float allele = it2->diffFromRef/period; 
-      readstring << allele+refcopy;
+      float allele = it2->diffFromRef/(float)period; 
       if (allele == allele1 || allele == allele2) {
 	agreeing++;
       } else {
 	conflicting++;
       }
+      all_reads[it2->diffFromRef]++;
+    }
+    stringstream readstring;
+    for (map<int,int>::const_iterator vi = all_reads.begin();
+	 vi != all_reads.end(); vi++) {
+      if (vi != all_reads.begin()) {
+	readstring << "/";
+      }
+      readstring << vi->first << ":" << vi->second;
     }
     // write to file
     stringstream gLine;

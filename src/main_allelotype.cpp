@@ -5,6 +5,7 @@
 #include <error.h>
 #include <getopt.h>
 #include <iostream>
+#include <RInside.h>
 #include <stdlib.h>
 #include <string>
 
@@ -17,7 +18,7 @@ using namespace std;
 
 void show_help(){
   const char* help = "\n\nTo train the genotyping noise model from a set of aligned reads:\n" \
-"allelotype --command train [OPTIONS] --bam <input.bam> --out <output_prefix>\n\n" \
+"allelotype --command train [OPTIONS] --bam <input.bam> --noise_model <noisemodel.txt>\n\n" \
 "To run str profiling on a set of aligned reads:\n" \
 "allelotype --command classify [OPTIONS] --bam <input.bam> --noise_model <noisemodel.txt> [--no-rmdup] --out <output_prefix> --sex [M|F]\n\n" \
 "To run training and classification on a set of aligned reads:\n" \
@@ -58,7 +59,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"out", 1, 0, OPT_OUTPUT},
 	  {"no-rmdup", 0, 0, OPT_NORMDUP},
 	  {"sex", 1, 0, OPT_SEX},
-	  {"noisemodel", 1, 0, OPT_NOISEMODEL},
+	  {"noise_model", 1, 0, OPT_NOISEMODEL},
 	  {"unit", 0, 0, OPT_UNIT},
 	  {"help", 1, 0, OPT_HELP},
 	  {"debug", 0, 0, OPT_DEBUG},
@@ -138,29 +139,30 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  exit(1);
 	}
 	if (command == "train") {
-	  if (bam_file.empty() or output_prefix.empty()) {
+	  if (bam_file.empty() || noise_model.empty()) {
 	    cerr << "\n\nERROR: Required arguments are missing. Please specify a bam file and an output prefix";
 	    show_help();
 	    exit(1);
 	  }
+	  male = true;
 	}
 	if (command == "classify") {
-	  if (bam_file.empty() or noise_model.empty()
-	      or output_prefix.empty() or !sex_set) {
+	  if (bam_file.empty() || noise_model.empty()
+	      or output_prefix.empty() || !sex_set) {
 	    cerr << "\n\nERROR: Required arguments are missing. Please specify a bam file, output prefix, noise model, and gender";
 	    show_help();
 	    exit(1);
 	  }
 	}
 	if (command == "both" || command == "simple") {
-	  if (bam_file.empty() or output_prefix.empty() or !sex_set)  {
+	  if (bam_file.empty() || output_prefix.empty() || !sex_set)  {
 	    cerr << "\n\nERROR: Required arguments are missing. Please specify a bam file, output prefix, and gender";
 	    show_help();
 	    exit(1);
 	  }
 	}
 	// check that parameters make sense
-	if (command == "train" or command == "both" and !male) {
+	if ((command == "train" || command == "both") && !male) {
 	  cerr << "\n\nERROR: Cannot train on female sample";
 	  show_help();
 	  exit(1);
@@ -176,7 +178,8 @@ int main(int argc,char* argv[]) {
 		    << command << endl;
 
   /* initialize noise model */
-  NoiseModel nm;
+  RInside R(argc, argv);
+  NoiseModel nm(&R);
 
   /* Add reads to read container */
   if (verbose) cout << "Adding reads to read container" << endl;
@@ -194,19 +197,23 @@ int main(int argc,char* argv[]) {
     if (verbose) cout << "Training noise model..." << endl;
     nm.Train(&read_container);
     nm.WriteNoiseModelToFile(noise_model);
+  } else if (command == "classify") {
+    if (!nm.ReadNoiseModelFromFile(noise_model)) {
+      errx(1,"Error reading noise file");
+    }
   }
+
   if (command == "classify" or command == "both") {
     if (verbose) cout << "Classifying allelotypes..." << endl;
-    Genotyper genotyper(nm, male, false);
+    Genotyper genotyper(&nm, male, false);
     genotyper.Genotype(read_container,
 		       output_prefix + ".genotypes.tab");
   }
   if (command == "simple") {
     if (verbose) cout << "Classifying allelotypes..." << endl;
-    Genotyper genotyper(nm, male, true);
+    Genotyper genotyper(&nm, male, true);
     genotyper.Genotype(read_container,
 		       output_prefix + ".genotypes.tab");
-   }
-
+  }
   return 0;
 }

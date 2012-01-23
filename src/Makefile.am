@@ -225,9 +225,21 @@ lobSTRIndex_SOURCES = \
 	is.c \
 	cs2nt.c
 
-allelotype_CPPFLAGS = $(AM_CPPFLAGS)
-allelotype_LDADD = $(AM_LDADD)
-allelotype_LDFLAGS = $(AM_LDFLAGS)
+# Required for R (R CMD config --cppflags, --ldflags)
+#RCPPFLAGS = -I/usr/share/R/include 
+#RLDFLAGS = -L/usr/lib64/R/lib -lR
+
+# Required for Rcpp (echo 'Rcpp:::LdFlags()' | R --vanilla --slave)
+#RCPPCPPFLAGS = -I/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/include
+#RCPPLDFLAGS = -L/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/lib -lRcpp -Wl,-rpath,/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/lib
+
+# Required for RInside (echo 'RInside:::CxxFlags()' | R --vanilla --slave)
+#RINSIDECPPFLAGS = -I/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/include
+#RINSIDELDFLAGS = -L/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/lib -lRInside -Wl,-rpath,/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/lib
+
+allelotype_CPPFLAGS = $(AM_CPPFLAGS) $(RCPPFLAGS) $(RCPPCPPFLAGS) $(RINSIDECPPFLAGS)
+allelotype_LDADD = $(AM_LDADD) 
+allelotype_LDFLAGS = $(AM_LDFLAGS) $(RLDFLAGS) $(RCPPLDFLAGS) $(RINSIDELDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp \
 	Genotyper.h \
@@ -238,6 +250,8 @@ allelotype_SOURCES = main_allelotype.cpp \
 	ReadContainer.cpp \
 	runtime_parameters.h \
 	runtime_parameters.cpp \
+	TextFileReader.h \
+	TextFileReader.cpp \
 	TextFileWriter.h \
 	TextFileWriter.cpp \
 	api/algorithms/Sort.h \

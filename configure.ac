@@ -9,9 +9,10 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 m4_include([ax_boost_base.m4])
 m4_include([ax_check_zlib.m4])
+m4_include([ax_check_rinside.m4])
 
 AC_INIT([lobSTR],
-        [1.0.4],
+        [1.0.6],
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
@@ -41,11 +42,14 @@ ACX_PTHREAD()
 
 LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS "
+CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 AX_CHECK_ZLIB()
+AX_CHECK_RINSIDE()
 AX_BOOST_BASE([1.38.0])
+
+
 
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
