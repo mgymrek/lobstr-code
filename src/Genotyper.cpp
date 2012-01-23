@@ -15,7 +15,7 @@ const int MIN_PERIOD = 2;
 const int MAX_PERIOD = 6;
 const float SMALL_CONST = 1e-100;
 
-Genotyper::Genotyper(const NoiseModel& _noise_model,
+Genotyper::Genotyper(NoiseModel* _noise_model,
 		     bool _male, bool _simple) {
   noise_model = _noise_model;
   male = _male;
@@ -43,7 +43,7 @@ void Genotyper::PrepareTransitionMatrices() {
 	  cerr << "i " << i << " j " << j << endl;
 	}
 	transition_matrices.at(period).at(i*MAX_STR_LEN+j-1) = 
-	  log(SMALL_CONST + noise_model.GetTransitionProb(i, j, period));
+	  log(SMALL_CONST + noise_model->GetTransitionProb(i, j, period));
       }
     }
   }
@@ -52,6 +52,8 @@ void Genotyper::PrepareTransitionMatrices() {
 float Genotyper::CalcLogLik(int a, int b,
 			    const list<AlignedRead>& aligned_reads,
 			    int period, int* counta, int* countb ) {
+  // check if in range first
+  if (a > MAX_STR_LEN || b > MAX_STR_LEN) return 0;
   vector<float> joint;
   for (int i = 0; i < MAX_STR_LEN; i++) {
     float x = transition_matrices.at(period-2).at(a*MAX_STR_LEN+i-1);

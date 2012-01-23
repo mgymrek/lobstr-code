@@ -22,9 +22,6 @@ void ReadContainer::AddReadsFromFile(string bamfile) {
 
   BamTools::BamAlignment aln;
   while (reader.GetNextAlignment(aln)) {
-    if (debug) {
-      cerr << "Aligning " << aln.Name << endl;
-    }
     AlignedRead aligned_read;
     // get nucleotides
     aligned_read.nucleotides = aln.QueryBases;

@@ -20,7 +20,7 @@ const int MAX_STR_LEN = 100;
 
 class Genotyper {
  public:
-  Genotyper(const NoiseModel& _noise_model,
+  Genotyper(NoiseModel* _noise_model,
 	    bool _male, bool _simple);
   ~Genotyper();
 
@@ -46,7 +46,7 @@ class Genotyper {
 		      float* allele1, float* allele2, float* score);
   bool male;
   bool simple;
-  NoiseModel noise_model;
+  NoiseModel* noise_model;
 
   // store transition matrices for each period
   map<int, vector<float> > transition_matrices;

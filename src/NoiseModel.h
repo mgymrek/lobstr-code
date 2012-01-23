@@ -6,8 +6,23 @@
 #define NOISE_MODEL_H_
 
 #include "ReadContainer.h"
+#include <RInside.h>
 
 using namespace std;
+
+struct RTrainingData {
+  Rcpp::NumericVector mode;
+  Rcpp::NumericVector period;
+  Rcpp::NumericVector copynum;
+  Rcpp::NumericVector mutated;
+};
+
+struct TrainingData {
+  vector<float> mode;
+  vector<int> period;
+  vector<float> copynum;
+  vector<bool> mutated;
+};
 
 /*
   Class to fit PCR stutter noise
@@ -18,7 +33,7 @@ using namespace std;
 
 class NoiseModel {
  public:
-  NoiseModel();
+  NoiseModel(RInside* _r);
   ~NoiseModel();
 
   /* Train from a set of aligned reads */
@@ -35,7 +50,7 @@ class NoiseModel {
      
  private:
   /* Check if a set of reads has a unique mode */
-  bool HasUniqueMode(list<BamTools::BamAlignment> aligned_reads,
+  bool HasUniqueMode(const list<AlignedRead>& aligned_reads,
 		     float* mode);
 
   /* Fit logistic model for noise/no noise decision */
@@ -43,6 +58,19 @@ class NoiseModel {
 
   /* Fit Poisson model for number of noise steps */
   void FitStepProb();
+
+  /* hold the training data */
+  TrainingData training_data;
+  RTrainingData r_training_data;
+
+  /* embed an R instance */
+  RInside* R;
+
+  /* model data */
+  float mutIntercept;
+  float mutSlope;
+  float poisIntercept;
+  float poisSlope;
 };
 
 #endif /* NOISE_MODEL_H_ */
