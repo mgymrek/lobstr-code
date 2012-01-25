@@ -66,17 +66,17 @@ void  dpm_init( std::vector<int >* F, std::vector<char>* traceback, int L1, int 
 
         for( j = 1; j <= L1; j++ )
         {
-	  F->at(0*(L1)+j)=  -j * d ;
+	  F->at(0*(L1+1)+j)=  -j * d ;
 	  //	  F->at(0).at(j)=  -j * d ;
 	  //traceback[ 0 ][ j ] =  '-' ;
-	  traceback->at(0*(L1)+j) = '-';
+	  traceback->at(0*(L1+1)+j) = '-';
         }
         for( i = 1; i <= L2; i++ )
         {
-	  F->at( i*(L1)+0) =  -i * d ;
+	  F->at( i*(L1+1)+0) =  -i * d ;
 	  //	  F->at( i).at(0) =  -i * d ;
 	  //	  traceback[ i ][ 0 ] =  '|' ;
-	  traceback->at(i*(L1)+0) = '|';
+	  traceback->at(i*(L1+1)+0) = '|';
         }
 }
 
@@ -234,28 +234,28 @@ int nw_align_ag(                  // Needleman-Wunsch algorithm with affine gap 
                                 case 'T':  y = 3 ;
                         }
 
-			mD1 = M->at((i-1)*L1+(j-1))+s[x][y];
-			mD2 = I->at((i-1)*L1+(j-1))+s[x][y];
-			M->at(i*(L1)+j) = maxM(mD1,mD2,&ptrM);
+			mD1 = M->at((i-1)*(L1+1)+(j-1))+s[x][y];
+			mD2 = I->at((i-1)*(L1+1)+(j-1))+s[x][y];
+			M->at(i*(L1+1)+j) = maxM(mD1,mD2,&ptrM);
 
-			iU1 = M->at(i*L1+(j-1))-GAPOPEN;
-			iU2 = I->at(i*L1+(j-1))-GAPEXTEND;
-			iL1 = M->at((i-1)*L1+j) - GAPOPEN;
-			iL2 = I->at((i-1)*L1+j) - GAPEXTEND;
-			I->at(i*L1+j) = maxI(iU1,iU2,iL1,iL2,&ptrI);
+			iU1 = M->at(i*(L1+1)+(j-1))-GAPOPEN;
+			iU2 = I->at(i*(L1+1)+(j-1))-GAPEXTEND;
+			iL1 = M->at((i-1)*(L1+1)+j) - GAPOPEN;
+			iL2 = I->at((i-1)*(L1+1)+j) - GAPEXTEND;
+			I->at(i*(L1+1)+j) = maxI(iU1,iU2,iL1,iL2,&ptrI);
 			
-			tracebackM->at(i*L1+j) = ptrM;
-			tracebackI->at(i*L1+j) = ptrI;
+			tracebackM->at(i*(L1+1)+j) = ptrM;
+			tracebackI->at(i*(L1+1)+j) = ptrI;
                 }
         }
 	// get score
         i-- ; j-- ;
 	bool inMatchMatrix;
-	if (M->at(i*L1+j) >= I->at(i*L1+j)) {
-	  *score = M->at( i*(L1)+j);
+	if (M->at(i*(L1+1)+j) >= I->at(i*(L1+1)+j)) {
+	  *score = M->at( i*(L1+1)+j);
 	  inMatchMatrix = true;
 	} else {
-	  *score = I->at( i*(L1)+j);
+	  *score = I->at( i*(L1+1)+j);
 	  inMatchMatrix = false;
 	}
 	
@@ -264,13 +264,13 @@ int nw_align_ag(                  // Needleman-Wunsch algorithm with affine gap 
         while( i > 0 || j > 0 )
         {
 	  /*
-	  cout << "tb " << i << " " << j << endl;
 	  if (inMatchMatrix ) {
-	    cout << tracebackM->at(i*L1+j) << endl;
+	    cout << tracebackM->at(i*(L1+1)+j) << endl;
 	  } else {
-	    cout << tracebackI->at(i*L1+j)  << endl;
-	    }*/
-	  switch( inMatchMatrix ? tracebackM->at(i*L1+j) : tracebackI->at(i*L1+j)  )
+	    cout << tracebackI->at(i*(L1+1)+j)  << endl;
+	  }
+	  cout << "tb " << i << " " << j << endl;*/
+	  switch( inMatchMatrix ? tracebackM->at(i*(L1+1)+j) : tracebackI->at(i*(L1+1)+j)  )
                 {
 		case 'a' :      
 		  seq_1_al += seq_1[j-1];

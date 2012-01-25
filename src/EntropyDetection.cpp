@@ -19,8 +19,11 @@ static double MinusPlogP(double value) {
 }
 
 
-EntropyDetection::EntropyDetection(const string& nucleotides) {
+EntropyDetection::EntropyDetection(const string& nucleotides,
+				   int size, int step) {
   _nucs = nucleotides;
+  _window_size = size;
+  _window_step = step;
 }
 
 EntropyDetection::~EntropyDetection() {}
@@ -76,8 +79,8 @@ double EntropyDetection::EntropyOneWindowK(const std::string& window_nucs, int k
 void EntropyDetection::CalculateEntropyWindow() {
   _entropy_window.clear();
   string window_nucleotides;
-  for (size_t i = 0; i < _nucs.length() - fft_window_size; i += fft_window_step) {
-    window_nucleotides = _nucs.substr(i, fft_window_size);
+  for (size_t i = 0; i < _nucs.length() - _window_size; i += _window_step) {
+    window_nucleotides = _nucs.substr(i, _window_size);
     double entropy = EntropyOneWindowDinuc(window_nucleotides);
     if (entropy > 0.8)
       entropy = 0; // get rid of homopolymer runs messing it up

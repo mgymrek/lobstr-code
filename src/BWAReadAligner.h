@@ -70,7 +70,7 @@ class BWAReadAligner {
 
   // Get the number of repeat units using the adjusted cigar score
   // Also refine position of flanking regions
-  void GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list);
+  bool GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list);
 
   map<std::string, BWT>* _bwt_references;
   map<std::string, BNT>* _bnt_annotations;

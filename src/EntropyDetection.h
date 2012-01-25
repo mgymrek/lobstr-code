@@ -13,9 +13,11 @@ class EntropyDetection {
  private:
   std::string _nucs;
   std::vector<double> _entropy_window;
+  int _window_size;
+  int _window_step;
 
  public:
-  EntropyDetection(const std::string& nucleotides);
+  EntropyDetection(const std::string& nucleotides, int size, int step);
   ~EntropyDetection();
   // dinuc entropy, not generalized but optimized
   double EntropyOneWindowDinuc(const std::string& window_nucs);

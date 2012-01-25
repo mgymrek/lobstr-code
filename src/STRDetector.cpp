@@ -41,6 +41,8 @@
 
 using namespace std;
 
+int new_window_size = fft_window_size;
+int new_window_step = fft_window_step;
 
 STRDetector::STRDetector(){}
 
@@ -93,16 +95,25 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   int nuc_start;
   int nuc_end;
   string detected_microsatellite_nucleotides;
-  EntropyDetection ed(read->nucleotides);
-  if (!ed.EntropyIsAboveThreshold()) return false;
+  EntropyDetection ed_filter(read->nucleotides, fft_window_size, fft_window_step);
+  if (!ed_filter.EntropyIsAboveThreshold()) return false;
+  // Added 01/25/12 refine the windows using smaller resolution
+  //EntropyDetection ed(read->nucleotides, new_window_size, new_window_step);
+  //if (!ed.EntropyIsAboveThreshold()) return false;
   size_t start, end;
-  ed.FindStartEnd(start, end);
-  nuc_start = start * fft_window_step + extend_flank; // added extend each by window step size
-  nuc_end = (end + 2) * fft_window_step - extend_flank;
+  ed_filter.FindStartEnd(start, end);
+  nuc_start = start * new_window_step + extend_flank; // added extend each by window step size
+  nuc_end = (end + 2) * new_window_step - extend_flank;
   if (nuc_start >= read->nucleotides.length() ||
-      nuc_end-nuc_start + 1 <= 0 || nuc_start >= nuc_end) 
+      nuc_end-nuc_start + 1 <= 0 || nuc_start >= nuc_end || nuc_end-nuc_start+1 >= read->nucleotides.size() ||
+      nuc_end >= read->nucleotides.size()) 
     return false;
-  detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start,nuc_end - nuc_start+1);      
+  // allow more nucleotides in detection step
+  if (nuc_start-extend_flank >= 0 && nuc_end - extend_flank +1 <= read->nucleotides.size()) {
+    detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start-extend_flank,nuc_end - nuc_start+1);      
+  } else {
+    detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start,nuc_end - nuc_start+1);     
+  }
   /*
     Step 3 -
     Do FFT on the newly extract microsatellite region

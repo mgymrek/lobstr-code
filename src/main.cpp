@@ -87,6 +87,7 @@ void show_help(){
 "--extend-flank  <INT>     length to extend flanking regions (default: 6)\n" \
 "\n\nAdvanced options - alignment:\n" \
 "--max-diff-ref       maximum difference in length from the reference sequence to allow for alignment (default: 30) (will take the absolute value)\n" \
+"--sw-score           minimum required smith waterman score (maximum is 2*read length)\n" \
 "-u                   require length difference to be a multiple of the repeat unit\n" \
     "-m,--mismatch <int>  edit distance allowed during alignment of each flanking region (default: -1)\n" \
     "-g <int>             maximum number of gap opens allowed in each flanking region (default: 1)\n" \
@@ -140,6 +141,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_GAP_EXTEND,
 	  OPT_FPR,
 	  OPT_EXTEND_FLANK,
+	  OPT_SW,
 	};
 
 	int ch;
@@ -177,6 +179,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"profile", 0, 0, OPT_PROFILE},
 	  {"index-prefix", 1, 0, OPT_INDEX},
 	  {"extend-flank", 1, 0, OPT_EXTEND_FLANK},
+	  {"sw-score", 1, 0, OPT_SW},
 	  {NULL, no_argument, NULL, 0},
 	};
 	ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:u?",
@@ -308,6 +311,9 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    break;
 	  case OPT_EXTEND_FLANK:
 	    extend_flank = atoi(optarg);
+	    break;
+	  case OPT_SW:
+	    min_sw_score = atoi(optarg);
 	    break;
 	  case '?':
 	    show_help();
@@ -451,6 +457,10 @@ void single_thread_process_loop(const vector<string>& files) {
 	  repseq = getFirstString(repseqfw, repseqrev);
 	  msread.repseq = repseq;
 	  msread.repseq_reverse = (repseq==repseqrev);
+	  if (profile) {
+	    cout << msread.ID << "\t" << msread.orig_nucleotides << "\t" << repseq << endl;
+	  }
+
 	  if (pAligner->ProcessRead(&msread)) {
 	    aligned = true;
 	  }
