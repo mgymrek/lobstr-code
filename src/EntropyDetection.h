@@ -32,7 +32,7 @@ class EntropyDetection {
   bool EntropyIsAboveThreshold();
 
   // determine start and end region
-  void FindStartEnd(size_t& start, size_t & end);
+  void FindStartEnd(size_t& start, size_t & end, bool* repetitive_end);
 };
 
 #endif // __ENTROPY_DETECTION_H__

@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <list>
+#include "cigar.h"
 #include "api/BamReader.h"
 
 using namespace std;
@@ -15,7 +16,7 @@ using BamTools::BamAlignment;
 using BamTools::SamHeader;
 using BamTools::RefData;
 using BamTools::RefVector;
-
+using BamTools::CigarOp;
 struct AlignedRead {
   std::string chrom;
   int msStart;
@@ -28,6 +29,7 @@ struct AlignedRead {
   int period;
   int diffFromRef;
   float refCopyNum;
+  int partial;
 };
 
 /*
@@ -59,6 +61,9 @@ class ReadContainer {
 
   /* Get quality core for a single read */
   float GetScore(const std::string& quality_string);
+
+  /* Adjust diff from ref based on cigar */
+  int GetSTRAllele(const AlignedRead& aligned_read, const CIGAR_LIST& cigar_list);
 
   BamTools::BamReader reader;
 };

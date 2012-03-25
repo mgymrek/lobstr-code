@@ -29,6 +29,7 @@ extern bool debug;
 extern bool genotype_only;
 extern bool fastq;
 extern bool bam;
+extern bool notab;
 
 // threading
 extern size_t threads;
@@ -65,6 +66,7 @@ extern int extend_flank;
 
 // alignment params
 extern bool adjust;
+extern bool debug_adjust;
 extern int min_sw_score;
 extern int allowed_mismatches;
 extern int max_align;
@@ -76,6 +78,7 @@ extern std::string index_prefix;
 extern int gap_open;
 extern int gap_extend;
 extern float fpr;
+extern bool partial_debug;
 
 // genotyping params
 extern std::string bam_file;
@@ -84,16 +87,21 @@ extern std::string noise_model;
 extern bool rmdup;
 extern float min_het_freq;
 extern bool male;
+extern bool sex_unknown;
 extern bool sex_set;
 extern int min_coverage;
 extern std::string aligned_file;
-extern bool non_lobstr_file_detectd;
+extern bool non_lobstr_file_detected;
+extern bool include_flank;
+extern bool print_reads;
+
 
 // anonymization params
 extern std::string str_alignment_file;
 extern std::string database_file;
 extern bool mask_n;
 extern float error_rate;
+extern bool include_orig_read_start;
 
 // debug
 extern bool profile;

@@ -16,8 +16,6 @@ using namespace std;
   Class to determine allelotypes at each locus
  */
 
-const int MAX_STR_LEN = 100;
-
 class Genotyper {
  public:
   Genotyper(NoiseModel* _noise_model,
@@ -28,9 +26,6 @@ class Genotyper {
   void Genotype(const ReadContainer& read_container,
 		const std::string& output_file);
  private:
-  /* Prepare the transition matrix */
-  void PrepareTransitionMatrices();
-
   /* Get log likelihood of an allelotype */
   float CalcLogLik(int a, int b,
 		   const list<AlignedRead>& aligned_reads,
@@ -44,12 +39,14 @@ class Genotyper {
   void SimpleGenotype(const list<AlignedRead>& aligned_reads,
 		      int period,
 		      float* allele1, float* allele2, float* score);
+  /* the sample is male */
   bool male;
-  bool simple;
-  NoiseModel* noise_model;
 
-  // store transition matrices for each period
-  map<int, vector<float> > transition_matrices;
+  /* use the simple genotyper with no noise model */
+  bool simple;
+
+  /* store the noise model parameters */
+  NoiseModel* noise_model;
 };
 
 #endif /* NOISE_MODEL_H_ */

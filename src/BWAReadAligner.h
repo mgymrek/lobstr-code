@@ -66,11 +66,11 @@ class BWAReadAligner {
 
   // Perform local realignment, adjust exact STR boundaries
   // update cigar score.
-  bool AdjustAlignment(MSReadRecord* aligned_read);
+  bool AdjustAlignment(MSReadRecord* aligned_read, bool partial, bool left_aligned, bool right_aligned);
 
   // Get the number of repeat units using the adjusted cigar score
   // Also refine position of flanking regions
-  bool GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list);
+  bool GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list, bool* partial);
 
   map<std::string, BWT>* _bwt_references;
   map<std::string, BNT>* _bnt_annotations;

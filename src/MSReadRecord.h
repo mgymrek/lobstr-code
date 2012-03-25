@@ -78,6 +78,8 @@ public:
   int rEnd;
   // difference in length from reference
   int diffFromRef;
+  // partially covered
+  bool partial;
   // mismatches in left flank
   int lDist;
   // micmatches in right flank
