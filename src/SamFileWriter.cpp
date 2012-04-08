@@ -6,6 +6,7 @@
 #include "runtime_parameters.h"
 #include "SamFileWriter.h"
 
+using namespace std;
 using BamTools::BamWriter;
 using BamTools::RefData;
 using BamTools::RefVector;
@@ -14,8 +15,8 @@ using BamTools::BamAlignment;
 SamFileWriter::SamFileWriter(const std::string& _filename,
 			     const map<string, int>& _chrom_sizes) {//:TextFileWriter(_filename) {
   chrom_sizes = _chrom_sizes;
-  // open bam writer
-  const string header = "";
+  std::string header="@CO\t";
+  header += user_defined_arguments;
   RefVector ref_vector;
   for (map<string, int>::const_iterator it = chrom_sizes.begin();
        it != chrom_sizes.end(); ++it) {
@@ -47,6 +48,8 @@ void SamFileWriter::WriteAdjustedRecord(const MSReadRecord &msread) {
   bam_alignment.SetIsPrimaryAlignment(true);
   if (msread.reverse) {
     bam_alignment.SetIsReverseStrand(true);
+  } else {
+    bam_alignment.SetIsReverseStrand(false);
   }
   bam_alignment.Position = msread.read_start;
   bam_alignment.MapQuality = 255;
@@ -88,10 +91,16 @@ void SamFileWriter::WriteAdjustedRecord(const MSReadRecord &msread) {
   bam_alignment.AddTag("XD", "i", msread.diffFromRef);
   // XC: ref copy number
   bam_alignment.AddTag("XC", "f", msread.refCopyNum);
+  // XG: repeat region
+  bam_alignment.AddTag("XG","Z",msread.detected_ms_region_nuc);
+  // XW: sw score
+  bam_alignment.AddTag("XW", "i", msread.sw_score);
   // XA: mismatch in left flank
   //bam_alignment.AddTag("XA", "i", msread.lDist);
   // XB: mismatch in right flank
   //bam_alignment.AddTag("XB", "i", msread.rDist);
+  // XP: partial alignment
+  bam_alignment.AddTag("XP", "i", (int)msread.partial);
   // XN: name of STR repeat
   if (!msread.name.empty()) {
     bam_alignment.AddTag("XN", "Z", msread.name);

@@ -127,9 +127,6 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CPPUNIT_CFLAGS = @CPPUNIT_CFLAGS@
-CPPUNIT_CONFIG = @CPPUNIT_CONFIG@
-CPPUNIT_LIBS = @CPPUNIT_LIBS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
@@ -172,12 +169,16 @@ RANLIB = @RANLIB@
 RCPPCPPFLAGS = @RCPPCPPFLAGS@
 RCPPFLAGS = @RCPPFLAGS@
 RCPPLDFLAGS = @RCPPLDFLAGS@
+RCPP_CFLAGS = @RCPP_CFLAGS@
+RCPP_LIBS = @RCPP_LIBS@
 RINSIDECPPFLAGS = @RINSIDECPPFLAGS@
 RINSIDELDFLAGS = @RINSIDELDFLAGS@
 RLDFLAGS = @RLDFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+VAR_DYNAMIC = @VAR_DYNAMIC@
+VAR_STATIC = @VAR_STATIC@
 VERSION = @VERSION@
 ZLIB = @ZLIB@
 abs_builddir = @abs_builddir@
@@ -244,15 +245,15 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
-	      echo ' cd $(srcdir) && $(AUTOMAKE) --gnu'; \
-	      $(am__cd) $(srcdir) && $(AUTOMAKE) --gnu \
+	      echo ' cd $(srcdir) && $(AUTOMAKE) --foreign'; \
+	      $(am__cd) $(srcdir) && $(AUTOMAKE) --foreign \
 		&& exit 0; \
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu Makefile
+	  $(AUTOMAKE) --foreign Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

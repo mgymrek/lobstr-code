@@ -1,21 +1,7 @@
 /*
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
-
- This file is part of MicroSatelliteDetector.
-
- MicroSatelliteDetector is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- MicroSatelliteDetector is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with MicroSatelliteDetector.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include <iostream>
 #include <string>
 #include <cstdlib>
@@ -29,13 +15,10 @@
 #include "ISatellite.h"
 #include "STRDetector.h"
 #include "runtime_parameters.h"
-
-
 #include "EntropyDetection.h"
 #include "runtime_parameters.h"
 #include "TukeyWindowGenerator.h"
 #include "HammingWindowGenerator.h"
-
 #include "common.h"
 #include "runtime_parameters.h"
 
@@ -96,15 +79,18 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   int nuc_end;
   string detected_microsatellite_nucleotides;
   EntropyDetection ed_filter(read->nucleotides, fft_window_size, fft_window_step);
-  if (!ed_filter.EntropyIsAboveThreshold()) return false;
-  // Added 01/25/12 refine the windows using smaller resolution
-  //EntropyDetection ed(read->nucleotides, new_window_size, new_window_step);
-  //if (!ed.EntropyIsAboveThreshold()) return false;
+  if (!ed_filter.EntropyIsAboveThreshold()) {
+    if (why_not_debug) {
+      cerr << "Entropy threshold failed" << endl;
+    }
+    return false;
+  }
   size_t start, end;
-  ed_filter.FindStartEnd(start, end);
+  bool rep_end = false; // is the end actually repetitive?
+  ed_filter.FindStartEnd(start, end, &rep_end);
   nuc_start = start * new_window_step + extend_flank; // added extend each by window step size
   nuc_end = (end + 2) * new_window_step - extend_flank;
-  if (nuc_start >= read->nucleotides.length() ||
+  if (nuc_start >= read->nucleotides.length() || nuc_start <= 0 || 
       nuc_end-nuc_start + 1 <= 0 || nuc_start >= nuc_end || nuc_end-nuc_start+1 >= read->nucleotides.size() ||
       nuc_end >= read->nucleotides.size()) 
     return false;
@@ -125,30 +111,11 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   ms.resize(1024);
   ms.build_plan(1024);
   ms.set_nucleotides(detected_microsatellite_nucleotides);
-  /*  if (microsatellite_detection_debug) {
-    cerr << "MicroSatellite-detection, read = " << detected_microsatellite_nucleotides << endl;
-    cerr << "Matrix before Tukey multiplication" << endl;
-    ms.debug_print_input(detected_microsatellite_nucleotides.length());
-    }*/
   ms.multiply_nuc_matrix_by_vector(*pTukeyWindow);
-  /*  if (microsatellite_detection_debug) {
-    cerr << "Matrix after Tukey multiplication" << endl;
-    ms.debug_print_input(detected_microsatellite_nucleotides.length());
-    }*/
   ms.pad_zeros_to_end(detected_microsatellite_nucleotides.length());
   ms.execute();
   ms.out_complex_to_magnitude();
-  ms.create_summed_matrix();
-  
-  /*if (microsatellite_detection_debug) {
-    cerr << "MicroSatellite-detection, read = " << detected_microsatellite_nucleotides << endl;
-    ms.debug_print_input(detected_microsatellite_nucleotides.length());
-    ms.debug_print_output_complex(1024);
-    ms.debug_print_output_magnitude(1024);
-    cerr << "MicroSatellite-detection, FFT on detected region:" << endl;
-    debug_print_matlab_vector(ms.summed_matrix,"fft_ms");
-    }*/
-  
+  ms.create_summed_matrix();  
   ms.destroy_plan();
   
 
@@ -224,7 +191,12 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     }
 
     // check that energy is high enough
-    if (best_energy < period_energy_threshold) return false;
+    if (best_energy < period_energy_threshold) {
+      if (why_not_debug) {
+	cerr <<"Energy below threshold" << endl;
+      }
+      return false;
+    }
     //    cout << best_energy << " " << next_best_energy  << " " << best_period << endl;
     
     if (fabs(next_best_energy-best_energy)/((best_energy+next_best_energy)/2)  > closeness) {
@@ -252,15 +224,16 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
 
   
   // adjust for max flank region lengths
+  // if repetitive end, don't trim
   read->left_flank_index_from_start = 0;
   read->right_flank_index_from_end = 0;
-  if (read->left_flank_nuc.size() > max_flank_len) {
+  if (read->left_flank_nuc.size() > max_flank_len & !rep_end) {
     string left_flank = read->left_flank_nuc;
     read->left_flank_nuc = left_flank.substr(left_flank.length()-max_flank_len,
 					     max_flank_len);
     read->left_flank_index_from_start = left_flank.length() - max_flank_len;
   }
-  if (read->right_flank_nuc.size() > max_flank_len) {
+  if (read->right_flank_nuc.size() > max_flank_len & !rep_end) {
     string right_flank = read->right_flank_nuc;
     read->right_flank_nuc = right_flank.substr(0, max_flank_len);
     read->right_flank_index_from_end = right_flank.length() - max_flank_len;
@@ -269,6 +242,9 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   read->quality_scores = read->quality_scores.substr(read->left_flank_index_from_start,read->nucleotides.size());
   read->detected_ms_nuc = ms_period_nuc;
 
+  if (why_not_debug ) {
+    cerr << read->left_flank_nuc.length() << " " << read->right_flank_nuc.length() << " " << best_period << endl;
+  }
   return ((read->left_flank_nuc.length() >= min_flank_len) & (read->right_flank_nuc.length() >= min_flank_len) &
 	  best_period <= max_period & best_period >= min_period);
 }

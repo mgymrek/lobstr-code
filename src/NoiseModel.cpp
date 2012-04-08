@@ -167,14 +167,15 @@ void NoiseModel::FitStepProb() {
   if (debug) {
     cerr << "Fitting step prob..." << endl;
   }
-  string evalString = "data = data.frame(mutated=mutated, period = period, copynum = copynum); \n" \
+  string evalString = "data = data.frame(mutated=mutated, period = period, copynum = copynum, mode = mode); \n" \
     "mutated_data = data[data$mutated,];\n" \
-    "mutated_data$step = round(mutated_data$copynum/mutated_data$period); \n" \
+    "mutated_data$step = abs(mutated_data$copynum - mutated_data$mode); \n" \
     "step_model = glm(mutated_data$step ~ mutated_data$period, family='poisson'); \n" \
     "poisIntercept = step_model$coefficients[[1]];\n" \
     "poisSlope = step_model$coefficients[[2]];\n" \
     "if (is.na(poisSlope)) {poisSlope = 0};\n" \
     "c(poisIntercept, poisSlope)";
+  //    "mutated_data$step = round(mutated_data$copynum/mutated_data$period); \n"
   if (debug) {
     cerr << evalString << endl;
   }

@@ -124,15 +124,12 @@ BOOST_CPPFLAGS = -I/usr/include
 BOOST_LDFLAGS = -L/usr/lib
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -pthread
+CFLAGS = -Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized -m64  -pthread  
 CPP = gcc -E
 CPPFLAGS =  -I/usr/include
-CPPUNIT_CFLAGS = 
-CPPUNIT_CONFIG = /usr/bin/cppunit-config
-CPPUNIT_LIBS = -lcppunit -ldl
 CXX = g++
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2 -pthread
+CXXFLAGS = -Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized -m64  -pthread   -I/usr/include 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -149,7 +146,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
-LDFLAGS =  -L/usr/lib
+LDFLAGS = 
 LIBOBJS = 
 LIBS = -lz  
 LTLIBOBJS = 
@@ -169,15 +166,19 @@ PTHREAD_CC = gcc
 PTHREAD_CFLAGS = -pthread
 PTHREAD_LIBS = 
 RANLIB = ranlib
-RCPPCPPFLAGS = -I/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/include
+RCPPCPPFLAGS = -I/usr/lib/R/site-library/Rcpp/include
 RCPPFLAGS = -I/usr/share/R/include
-RCPPLDFLAGS = -L/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/lib -lRcpp -Wl,-rpath,/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/Rcpp/lib
-RINSIDECPPFLAGS = -I/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/include
-RINSIDELDFLAGS = -L/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/lib -lRInside -Wl,-rpath,/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.14/RInside/lib
+RCPPLDFLAGS = -L/usr/lib/R/site-library/Rcpp/lib -lRcpp -Wl,-rpath,/usr/lib/R/site-library/Rcpp/lib
+RCPP_CFLAGS = -I/usr/share/R/include  
+RCPP_LIBS = -L/usr/lib/R/lib -lR  
+RINSIDECPPFLAGS = -I/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.15/RInside/include
+RINSIDELDFLAGS = -L/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.15/RInside/lib -lRInside -Wl,-rpath,/home/mgymrek/R/x86_64-pc-linux-gnu-library/2.15/RInside/lib
 RLDFLAGS = -L/usr/lib64/R/lib -lR
 SET_MAKE = 
 SHELL = /bin/bash
 STRIP = 
+VAR_DYNAMIC = -Wl,-Bdynamic
+VAR_STATIC = -Wl,-Bstatic
 VERSION = 1.0.6
 ZLIB = -lz
 abs_builddir = /data/melissa/scripts/projects/lobstr-code-production
@@ -190,8 +191,8 @@ acx_pthread_config =
 am__include = include
 am__leading_dot = .
 am__quote = 
-am__tar = ${AMTAR} chof - "$$tardir"
-am__untar = ${AMTAR} xf -
+am__tar = tar --format=posix -chf - "$$tardir"
+am__untar = tar -xf -
 bindir = ${exec_prefix}/bin
 build = x86_64-unknown-linux-gnu
 build_alias = 
@@ -244,15 +245,15 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
-	      echo ' cd $(srcdir) && $(AUTOMAKE) --gnu'; \
-	      $(am__cd) $(srcdir) && $(AUTOMAKE) --gnu \
+	      echo ' cd $(srcdir) && $(AUTOMAKE) --foreign'; \
+	      $(am__cd) $(srcdir) && $(AUTOMAKE) --foreign \
 		&& exit 0; \
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu Makefile
+	  $(AUTOMAKE) --foreign Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

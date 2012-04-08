@@ -95,9 +95,6 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CPPUNIT_CFLAGS = @CPPUNIT_CFLAGS@
-CPPUNIT_CONFIG = @CPPUNIT_CONFIG@
-CPPUNIT_LIBS = @CPPUNIT_LIBS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
@@ -140,12 +137,16 @@ RANLIB = @RANLIB@
 RCPPCPPFLAGS = @RCPPCPPFLAGS@
 RCPPFLAGS = @RCPPFLAGS@
 RCPPLDFLAGS = @RCPPLDFLAGS@
+RCPP_CFLAGS = @RCPP_CFLAGS@
+RCPP_LIBS = @RCPP_LIBS@
 RINSIDECPPFLAGS = @RINSIDECPPFLAGS@
 RINSIDELDFLAGS = @RINSIDELDFLAGS@
 RLDFLAGS = @RLDFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+VAR_DYNAMIC = @VAR_DYNAMIC@
+VAR_STATIC = @VAR_STATIC@
 VERSION = @VERSION@
 ZLIB = @ZLIB@
 abs_builddir = @abs_builddir@
@@ -222,9 +223,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu m4/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign m4/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu m4/Makefile
+	  $(AUTOMAKE) --foreign m4/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

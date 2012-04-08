@@ -25,6 +25,8 @@ Note, it is required that R be installed for installation to complete successful
 >install.packages("Rcpp")
 >install.packages("RInside")
 
+Note on some systems this may require you to do "sudo apt-get install r-cran-rcpp"
+
 II. USAGE
 
 Part I: creating an STR alignment
@@ -56,7 +58,7 @@ Required inputs are:
   - "classify" takes in a pre made noise model and produces an allelotype file
   - "both" performs both training and classification
   - "simple" performs allelotyping without using a noise model
-* --bam: a bam file consisting of aligned reads. The bam file MUST be sorted and indexed before calling this script. If the bam file was not produced by lobSTR, you must run converBam.py first (see below)
+* --bam: a bam file consisting of aligned reads. If the bam file was not produced by lobSTR, you must run converBam.py first (see below)
 * --out: a prefix to name output files
 * --noise_model: an example noisemodel is given in $PATH_TO_LOBSTR/models/illumina.noisemodel.txt. Or you can create your own using the "train" command described above. 
 
@@ -79,6 +81,7 @@ pkg-config
 fftw3-dev
 libboost-dev
 r-base
+r-cran-rcpp
 
 Python libraries (required only for indexing or converting previously aligned BAM files to lobSTR format):
 pysam

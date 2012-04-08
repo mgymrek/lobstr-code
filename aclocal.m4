@@ -19,99 +19,6 @@ You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically `autoreconf'.])])
 
-dnl
-dnl AM_PATH_CPPUNIT(MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
-dnl
-AC_DEFUN([AM_PATH_CPPUNIT],
-[
-
-AC_ARG_WITH(cppunit-prefix,[  --with-cppunit-prefix=PFX   Prefix where CppUnit is installed (optional)],
-            cppunit_config_prefix="$withval", cppunit_config_prefix="")
-AC_ARG_WITH(cppunit-exec-prefix,[  --with-cppunit-exec-prefix=PFX  Exec prefix where CppUnit is installed (optional)],
-            cppunit_config_exec_prefix="$withval", cppunit_config_exec_prefix="")
-
-  if test x$cppunit_config_exec_prefix != x ; then
-     cppunit_config_args="$cppunit_config_args --exec-prefix=$cppunit_config_exec_prefix"
-     if test x${CPPUNIT_CONFIG+set} != xset ; then
-        CPPUNIT_CONFIG=$cppunit_config_exec_prefix/bin/cppunit-config
-     fi
-  fi
-  if test x$cppunit_config_prefix != x ; then
-     cppunit_config_args="$cppunit_config_args --prefix=$cppunit_config_prefix"
-     if test x${CPPUNIT_CONFIG+set} != xset ; then
-        CPPUNIT_CONFIG=$cppunit_config_prefix/bin/cppunit-config
-     fi
-  fi
-
-  AC_PATH_PROG(CPPUNIT_CONFIG, cppunit-config, no)
-  cppunit_version_min=$1
-
-  AC_MSG_CHECKING(for Cppunit - version >= $cppunit_version_min)
-  no_cppunit=""
-  if test "$CPPUNIT_CONFIG" = "no" ; then
-    AC_MSG_RESULT(no)
-    no_cppunit=yes
-  else
-    CPPUNIT_CFLAGS=`$CPPUNIT_CONFIG --cflags`
-    CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs`
-    cppunit_version=`$CPPUNIT_CONFIG --version`
-
-    cppunit_major_version=`echo $cppunit_version | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
-    cppunit_minor_version=`echo $cppunit_version | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
-    cppunit_micro_version=`echo $cppunit_version | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
-
-    cppunit_major_min=`echo $cppunit_version_min | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
-    if test "x${cppunit_major_min}" = "x" ; then
-       cppunit_major_min=0
-    fi
-    
-    cppunit_minor_min=`echo $cppunit_version_min | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
-    if test "x${cppunit_minor_min}" = "x" ; then
-       cppunit_minor_min=0
-    fi
-    
-    cppunit_micro_min=`echo $cppunit_version_min | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
-    if test "x${cppunit_micro_min}" = "x" ; then
-       cppunit_micro_min=0
-    fi
-
-    cppunit_version_proper=`expr \
-        $cppunit_major_version \> $cppunit_major_min \| \
-        $cppunit_major_version \= $cppunit_major_min \& \
-        $cppunit_minor_version \> $cppunit_minor_min \| \
-        $cppunit_major_version \= $cppunit_major_min \& \
-        $cppunit_minor_version \= $cppunit_minor_min \& \
-        $cppunit_micro_version \>= $cppunit_micro_min `
-
-    if test "$cppunit_version_proper" = "1" ; then
-      AC_MSG_RESULT([$cppunit_major_version.$cppunit_minor_version.$cppunit_micro_version])
-    else
-      AC_MSG_RESULT(no)
-      no_cppunit=yes
-    fi
-  fi
-
-  if test "x$no_cppunit" = x ; then
-     ifelse([$2], , :, [$2])     
-  else
-     CPPUNIT_CFLAGS=""
-     CPPUNIT_LIBS=""
-     ifelse([$3], , :, [$3])
-  fi
-
-  AC_SUBST(CPPUNIT_CFLAGS)
-  AC_SUBST(CPPUNIT_LIBS)
-])
-
-
-
-
 # pkg.m4 - Macros to locate and utilise pkg-config.            -*- Autoconf -*-
 # 
 # Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
@@ -1038,6 +945,23 @@ AC_DEFUN([_AM_SET_OPTIONS],
 # Execute IF-SET if OPTION is set, IF-NOT-SET otherwise.
 AC_DEFUN([_AM_IF_OPTION],
 [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
+
+# Copyright (C) 2001, 2003, 2005  Free Software Foundation, Inc.
+#
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# AM_RUN_LOG(COMMAND)
+# -------------------
+# Run COMMAND, save the exit status in ac_status, and log it.
+# (This has been adapted from Autoconf's _AC_RUN_LOG macro.)
+AC_DEFUN([AM_RUN_LOG],
+[{ echo "$as_me:$LINENO: $1" >&AS_MESSAGE_LOG_FD
+   ($1) >&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD
+   ac_status=$?
+   echo "$as_me:$LINENO: \$? = $ac_status" >&AS_MESSAGE_LOG_FD
+   (exit $ac_status); }])
 
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 

@@ -120,14 +120,15 @@ def processTRF(strfile, outdir, genome):
             if len(name) > 15: name = ""
         except: name = ""
         # extract flanking regions
-        leftFlank = str(genome[chrom][max(start-extend,0):end].seq).upper()
-        rightFlank = str(genome[chrom][start:min(end+extend,len(genome[chrom]))].seq).upper()
-        strregion = str(genome[chrom][max(start-extend,0):min(end+extend,len(genome[chrom]))].seq).upper()
-        repseq = getCanonicalMS(repseq)
-        revrepseq = getCanonicalMS(reverseComplement(repseq))
-        repseq = compareString(repseq, revrepseq)
+        if "_" not in chrom:
+            leftFlank = str(genome[chrom][max(start-extend,0):end].seq).upper()
+            rightFlank = str(genome[chrom][start:min(end+extend,len(genome[chrom]))].seq).upper()
+            strregion = str(genome[chrom][max(start-extend,0):min(end+extend,len(genome[chrom]))].seq).upper()
+            repseq = getCanonicalMS(repseq)
+            revrepseq = getCanonicalMS(reverseComplement(repseq))
+            repseq = compareString(repseq, revrepseq)
         
-        if len(repseq) <= 6 and len(repseq) >= 2 and (start-extend) > 0:
+        if len(repseq) <= 6 and len(repseq) >= 2 and (start-extend) > 0 and "_" not in chrom:
             # write fasta entries
             lident = ">"+"_".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
             rident = ">"+"_".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
@@ -149,7 +150,7 @@ def processTRF(strfile, outdir, genome):
             allfasta.write(strident+"\n")
             allfasta.write(strregion+"\n")
             ident = ident + 1
-        elif len(repseq) == 7:
+        elif len(repseq) == 7 and "_" not in chrom:
              # write fasta entries
             lident = ">"+"_".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
             rident = ">"+"_".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))

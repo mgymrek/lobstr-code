@@ -91,17 +91,19 @@ void EntropyDetection::CalculateEntropyWindow() {
 
 bool EntropyDetection::EntropyIsAboveThreshold() {
   CalculateEntropyWindow();
+  if (why_not_debug) {
+    cerr << "entropy " << *max_element(_entropy_window.begin(), _entropy_window.end()) << endl;
+  }
   return *max_element(_entropy_window.begin(), _entropy_window.end()) > 
     entropy_threshold;
 }
 
-void EntropyDetection::FindStartEnd(size_t& start, size_t & end) {
+void EntropyDetection::FindStartEnd(size_t& start, size_t & end, bool* repetitive_end) {
   const vector<double> entropy_window = _entropy_window;
   vector<double>::const_iterator  it = max_element(entropy_window.begin(),
 						   entropy_window.end());
   size_t index_of_max = distance(entropy_window.begin(), it);
   float max_entropy = *it;
-  //cout << "max entropy " << max_entropy << endl;
   // Go backwards (to the left)
   int starti;
   for (starti = index_of_max ; starti>=0; starti--)
@@ -110,7 +112,10 @@ void EntropyDetection::FindStartEnd(size_t& start, size_t & end) {
     if (entropy_window[starti] < 0.8*max_entropy)
       break;
   start = starti+1;
-  if (start == 0) {start += 1;}
+  if (start == 0) {
+    start += 1;
+    *repetitive_end = true;
+  } // Try some flanking region
   // Go forwards (to the right)
   for (end = index_of_max ; end < entropy_window.size(); end++)  {
     //if ( entropy_window[end] < entropy_threshold )
@@ -119,10 +124,9 @@ void EntropyDetection::FindStartEnd(size_t& start, size_t & end) {
       break;
   }
   end--;
-  if (end == entropy_window.size() -1) {end-=1;}
-  /*  if (entropy_debug) {
-    cerr << "Entropy debug: " << "start: " << start
-	 << " end: " << end << " length: " << entropy_window.size() << endl;
-	 }*/
+  if (end == entropy_window.size() -1) {
+    end-=1;
+    *repetitive_end = true;
+  } // Try some flanking region
 }
 

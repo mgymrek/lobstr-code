@@ -6,37 +6,14 @@
 #include <iostream>
 #include <list>
 #include "TabFileWriter.h"
-
+#include "runtime_parameters.h"
 using namespace std;
 
 TabFileWriter::TabFileWriter(const string& filename):
   TextFileWriter(filename) {
+  // write command line argument
+  output_stream << user_defined_arguments << endl;
   // write header
-  /*
-  output_stream << "ID\t" <<
-    "Nucleotides\t" <<
-    "Quality\t"<<
-    "MS_start_pos\t" <<
-    "MS_end_pos\t" <<
-    "MS_repeat_period\t" <<
-    "left_flank\t" <<
-    "ms_region\t" <<
-    "right_flank\t" <<
-    "msChrom\t" <<
-    "msStart\t"<<
-    "msEnd\t"<<
-    "msRepeat\t"<<
-    "refCopyNum\t"<<
-    "lStart\t"<<
-    "lEnd\t"<<
-    "rStart\t"<<
-    "rEnd\t"<<
-    "diffFromRef\t"<<
-    "reverse\t"<<
-    "name\t"<<
-    "orig_start\t" <<
-    "orig_length" <<
-    endl;*/
   output_stream << "ID" << "\t"
 		<< "Nucleotides" << "\t"
 		<< "Qualities" << "\t"
@@ -51,7 +28,13 @@ TabFileWriter::TabFileWriter(const string& filename):
 		<< "refCopyNum" << "\t"
 		<< "reverse" << "\t"
 		<< "cigar" << "\t"
-		<< "score" << "\t" << endl;
+		<< "partial" << "\t"
+		<< "score";
+  if (include_orig_read_start) {
+    output_stream << "\tread_start" << endl;
+  } else {
+    output_stream << endl;
+  }
 }
 
 TabFileWriter::~TabFileWriter(){}
@@ -71,32 +54,11 @@ void TabFileWriter::WriteRecord(const MSReadRecord& read) {
 		<< read.refCopyNum << "\t"
 		<< read.reverse << "\t"
 		<< read.cigar_string << "\t"
-		<< read.sw_score << "\t"
-		<< endl;
-  /*
-  output_stream << read.ID << "\t"
-		<< read.nucleotides << "\t"
-		<< read.quality_scores << "\t"
-		<< read.ms_start << "\t"
-		<< read.ms_end << "\t"
-		<< read.ms_repeat_best_period << "\t"
-		<< read.left_flank_nuc << "\t"
-		<< read.detected_ms_region_nuc << "\t"
-		<< read.right_flank_nuc << "\t"
-		<< read.chrom << "\t"
-		<< read.msStart << "\t"
-		<< read.msEnd << "\t"
-		<< read.msRepeat << "\t"
-		<< read.refCopyNum << "\t"
-		<< read.lStart << "\t"
-		<< read.lEnd << "\t"
-		<< read.rStart << "\t"
-		<< read.rEnd << "\t"
-		<< read.diffFromRef << "\t"
-		<< read.reverse << "\t"
-		<< read.name << "\t"
-		<< read.orig_start << "\t"
-		<< read.orig_nucleotides.length() 
-		<< endl;
-  */
+		<< read.partial << "\t"
+		<< read.sw_score;
+  if (include_orig_read_start) {
+    output_stream << "\t" << read.orig_start << endl;
+  } else {
+    output_stream << endl;
+  }
 }

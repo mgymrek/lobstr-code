@@ -17,7 +17,13 @@ void ReadContainer::AddReadsFromFile(string bamfile) {
   if (!reader.Open(bamfile)){
     errx(1, "Could not open bam file");
   }
-  const BamTools::SamHeader header = reader.GetHeader();
+  std::string header_text = reader.GetHeaderText();
+  user_defined_arguments = header_text;
+  //  const BamTools::SamHeader header = reader.GetHeader();
+  /*  user_defined_arguments = header.HasComments()?
+    header.Comments.at(0):
+    "# lobSTR alignment parameters not available"; // for allelotyper store header here
+  */
   const BamTools::RefVector references = reader.GetReferenceData();
 
   BamTools::BamAlignment aln;
@@ -27,12 +33,13 @@ void ReadContainer::AddReadsFromFile(string bamfile) {
     aligned_read.nucleotides = aln.QueryBases;
     // get qualities
     aligned_read.qualities = aln.Qualities;
+    // get strand
+    aligned_read.strand = aln.IsReverseStrand();
     // get chrom
     aligned_read.chrom = references.at(aln.RefID).RefName;
     // get msStart
     if (!aln.GetTag("XS", aligned_read.msStart)) {
       aligned_read.msStart = 0;
-      
     }
     // get msEnd
     if (!aln.GetTag("XE", aligned_read.msEnd)) {
@@ -46,12 +53,36 @@ void ReadContainer::AddReadsFromFile(string bamfile) {
     if (!aln.GetTag("XR", aligned_read.repseq)) {
       aligned_read.repseq="";
     }
+    // get partial
+    if (!aln.GetTag("XP",aligned_read.partial)) {
+      aligned_read.partial = 0;
+    }
     // get period
     aligned_read.period = aligned_read.repseq.length();
     // get diff
     if (!aln.GetTag("XD",aligned_read.diffFromRef)) {
       aligned_read.diffFromRef = 0;
     }
+    if (!include_flank) { // diff is just sum of differences in cigar
+	CIGAR_LIST cigar_list;
+	float diff = 0;
+	for (vector<BamTools::CigarOp>::const_iterator it = aligned_read.cigar_ops.begin();
+	       it != aligned_read.cigar_ops.end(); it++) {
+	 CIGAR cig;
+	 cig.num = (*it).Length;
+	 cig.cigar_type = (*it).Type;
+	 cigar_list.cigars.push_back(cig);
+	}
+	aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);
+    }
+    if (profile) {
+      cout << aligned_read.nucleotides << " " << aligned_read.diffFromRef << " "<<  aligned_read.period << endl;
+    }
+
+    if (unit) {
+      if (aligned_read.diffFromRef % aligned_read.period  != 0) continue;
+    }
+    if (abs(aligned_read.diffFromRef) >= max_diff_ref) continue;
     // get ref copy num
     if (!aln.GetTag("XC", aligned_read.refCopyNum)) {
       aligned_read.refCopyNum = 0;
@@ -165,5 +196,18 @@ float ReadContainer::GetScore(const string& quality_string) {
 
 
 
+int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read, const CIGAR_LIST& cigar_list) {
+  int diff_from_ref = 0;
+  for (int i = 0; i < cigar_list.cigars.size(); i++) {
+    if (cigar_list.cigars.at(i).cigar_type == 'I') {
+      diff_from_ref += cigar_list.cigars.at(i).num;
+    }
+    if (cigar_list.cigars.at(i).cigar_type == 'D') {
+      diff_from_ref -= cigar_list.cigars.at(i).num;
+    }
+  }
+  // set STR region
+  return diff_from_ref;
+}
 
 ReadContainer::~ReadContainer(){};

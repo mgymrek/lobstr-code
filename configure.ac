@@ -19,37 +19,30 @@ AC_CONFIG_AUX_DIR(config)
 AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([dist-bzip2])
 
-LF_CONFIGURE_CC
-#AC_PROG_CC
-#AC_PROG_CPP
-#AC_AIX
-#AC_ISC_POSIX
-AM_PROG_CC_C_O
-#AC_MINIX
-#AC_HEADER_STDC
-LF_CONFIGURE_CXX
-#AC_PROG_CXX
-#AC_PROG_CXXCPP
+CXXFLAGS="$CXXFLAGS"
+CFLAGS="$CFLAGS"
 
-LF_HOST_TYPE
-LF_SET_WARNINGS
-AC_PROG_RANLIB
 AC_PROG_CXX
+AC_PROG_CC
+AM_PROG_CC_C_O
+AC_PROG_RANLIB
+AC_PROG_INSTALL
 
 PKG_CHECK_MODULES([FFTW], [fftw3])
+PKG_CHECK_MODULES([RCPP], [libR])
 
+#FFTW_LIBS="-Bstatic $FFTW_LIBS"
 ACX_PTHREAD()
-
 LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
-
 AX_CHECK_ZLIB()
 AX_CHECK_RINSIDE()
 AX_BOOST_BASE([1.38.0])
 
-
+# Checks for header files.
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
@@ -59,9 +52,34 @@ if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
   AC_DEFINE(HAVE_FSEEK64)
 fi
 
+#LT_INIT([disable-shared])
 
+user_CFLAGS=${CFLAGS}
+generic_CFLAGS="-Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized"
+ext_CFLAGS=""
+debug_CFLAGS=""
+case "${host_cpu}-${host_os}" in
+  i*86-*linux*)
+	    ext_CFLAGS="-march=i686";;
+  i*86-darwin*)
+	CFLAGS="-m64"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM], [ext_CFLAGS="-arch x86_64"], []);;
+  *)
+    AC_MSG_CHECKING([if gcc accepts -m64])
+    CFLAGS="-m64"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM], [ext_CFLAGS="-m64"; AC_MSG_RESULT([yes])],
+					  [ext_CFLAGS="-D_FILE_OFFSET_BITS=64"; AC_MSG_RESULT([no])]);;
+esac
 
-AM_PATH_CPPUNIT(1.12.1)
+CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS}"
+CXXFLAGS="$CFLAGS"
+CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS "
+LDFLAGS="$ext_LDFLAGS" 
+
+AC_SUBST([VAR_STATIC],["-Wl,-Bstatic"])
+AC_SUBST([VAR_DYNAMIC],["-Wl,-Bdynamic"])
+
+AM_INIT_AUTOMAKE([-Wall tar-pax foreign])
 
 AC_CONFIG_FILES([
    m4/Makefile

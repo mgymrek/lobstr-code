@@ -87,7 +87,7 @@ void show_help(){
 "--extend-flank  <INT>     length to extend flanking regions (default: 6)\n" \
 "\n\nAdvanced options - alignment:\n" \
 "--max-diff-ref       maximum difference in length from the reference sequence to allow for alignment (default: 30) (will take the absolute value)\n" \
-"--sw-score           minimum required smith waterman score (maximum is 2*read length)\n" \
+"--nw-score           minimum required smith waterman score (maximum is 2*read length)\n" \
 "-u                   require length difference to be a multiple of the repeat unit\n" \
     "-m,--mismatch <int>  edit distance allowed during alignment of each flanking region (default: -1)\n" \
     "-g <int>             maximum number of gap opens allowed in each flanking region (default: 1)\n" \
@@ -142,6 +142,10 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_FPR,
 	  OPT_EXTEND_FLANK,
 	  OPT_SW,
+	  OPT_DEBUGADJUST,
+	  OPT_NOTAB,
+	  OPT_PARTIALDEBUG,
+	  OPT_ORIG_READ,
 	};
 
 	int ch;
@@ -179,7 +183,12 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"profile", 0, 0, OPT_PROFILE},
 	  {"index-prefix", 1, 0, OPT_INDEX},
 	  {"extend-flank", 1, 0, OPT_EXTEND_FLANK},
-	  {"sw-score", 1, 0, OPT_SW},
+	  {"nw-score", 1, 0, OPT_SW},
+	  {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
+	  {"why-not", 0, 0, OPT_WHY_NOT},
+	  {"no-tab", 0, 0, OPT_NOTAB},
+	  {"partial-debug",0,0,OPT_PARTIALDEBUG},
+	  {"orig",0,0,OPT_ORIG_READ},
 	  {NULL, no_argument, NULL, 0},
 	};
 	ch = getopt_long(argc,argv,"hvqp:f:t:g:o:m:s:d:e:g:r:u?",
@@ -188,12 +197,23 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  switch(ch){
 	  case 'u':
 	    unit++;
+	    user_defined_arguments += "unit=True;";
 	    break;
 	  case OPT_PROFILE:
 	    profile++;
+	    user_defined_arguments += "profile=True;";
+	    break;
+	  case OPT_PARTIALDEBUG:
+	    partial_debug++;
+	    break;
+	  case OPT_WHY_NOT:
+	    why_not_debug++;
 	    break;
 	  case OPT_ALIGN_DEBUG:
 	    align_debug ++;
+	    break;
+	  case OPT_DEBUGADJUST:
+	    debug_adjust++;
 	    break;
 	  case 'v':
 	  case OPT_VERBOSE:
@@ -207,31 +227,45 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case 'q':
 	  case OPT_FASTQ:
 	    input_type = INPUT_FASTQ;
-	  fastq++;
+	    fastq++;
+	    user_defined_arguments += "fastq=True;";
 	    break;
 	  case OPT_BAM:
 	    input_type = INPUT_BAM;
+	    user_defined_arguments += "bam=True;";
 	    bam++;
 	    break;
 	  case 'p':
 	  case OPT_THREADS:
 	    threads = atoi(optarg);
+	    user_defined_arguments += "threads=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    if (threads <=0)
 	      errx(1,"Error: invalid number of threads");
 	    break;
 	  case 'f':
 	  case OPT_FILES:
 	    input_files_string = optarg;
+	    user_defined_arguments += "files=";
+	    user_defined_arguments += input_files_string;
+	    user_defined_arguments += ";";
 	    break;
 	  case 'o':
 	  case OPT_OUTPUT:
 	    output_prefix = string(optarg);
+	    user_defined_arguments += "out=";
+	    user_defined_arguments += output_prefix;
+	    user_defined_arguments += ";";
 	    break;
 	  case 'm':
 	  case OPT_MISMATCH:
 	    allowed_mismatches = atoi(optarg);
 	    if (allowed_mismatches < 0)
 	      errx(1,"Error: invalid number of mismatches");
+	    user_defined_arguments += "m=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case 'b':
 	  case OPT_SAM:
@@ -239,39 +273,63 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    break;
 	  case OPT_FFT_WINDOW_SIZE:
 	    fft_window_size = atoi(optarg);
+	    user_defined_arguments += "fft-window-size=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_FFT_WINDOW_STEP:
 	    fft_window_step = atoi(optarg);
+	    user_defined_arguments += "fft-window-step=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_EXTEND:
 	    extend = atoi(optarg);
 	    if (extend <=0)
 	      errx(1, "Error: invalid extension length");
+	    user_defined_arguments += "extend=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_MIN_PERIOD:
 	    min_period = atoi(optarg);
 	    if (min_period <= 0)
 	      errx(1, "Error: invalid min period");
+	    user_defined_arguments += "minperiod=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_MAX_PERIOD:
 	    max_period = atoi(optarg);
 	    if (max_period <= 0)
 	      errx(1, "Error: invalid max period");
+	    user_defined_arguments += "maxperiod=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_MAX_FLANK_LEN:
 	    max_flank_len = atoi(optarg);
 	    if (max_flank_len <= 0)
 	      errx(1, "Error: invalid max flank length");
+	    user_defined_arguments += "maxflank=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_MIN_FLANK_LEN:
 	    min_flank_len = atoi(optarg);
 	    if (min_flank_len <= 0)
 	      errx(1, "Error: invalid min flank length");
+	    user_defined_arguments += "minflank=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_MAX_DIFF_REF:
 	    max_diff_ref = atoi(optarg);
 	    if (max_diff_ref <=0 )
 	      errx(1, "Error: invalid max diff ref");
+	    user_defined_arguments += "max-diff-ref=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_FFTW_DEBUG:
 	    fftw_debug = true;
@@ -281,39 +339,70 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    break;
 	  case OPT_MIN_READ_LENGTH:
 	    min_read_length = atoi(optarg);
+	    user_defined_arguments += "min-read-length=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_MAX_READ_LENGTH:
 	    max_read_length = atoi(optarg);
-	    break;
-	  case OPT_MIN_COVERAGE:
-	    min_coverage = atoi(optarg);
+	    user_defined_arguments += "max-read-length=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_ENTROPY_THRESHOLD:
 	    entropy_threshold = atof(optarg);
+	    user_defined_arguments += "entropy-threshold=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_DEBUG_ENTROPY:
 	    entropy_debug++;
 	    break;
 	  case OPT_INDEX:
 	    index_prefix = string(optarg);
+	    user_defined_arguments += "index-prefix=";
+	    user_defined_arguments += index_prefix;
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_GAP_OPEN:
 	  case 'g':
 	    gap_open = atoi(optarg);
+	    user_defined_arguments += "gap-open=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_GAP_EXTEND:
 	  case 'e':
 	    gap_extend = atoi(optarg);
+	    user_defined_arguments += "gap-extend=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_FPR:
 	  case 'r':
 	    fpr = atof(optarg);
+ 	    user_defined_arguments += "fpr=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_EXTEND_FLANK:
 	    extend_flank = atoi(optarg);
+	    user_defined_arguments += "extend-flank=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
 	    break;
 	  case OPT_SW:
 	    min_sw_score = atoi(optarg);
+	    user_defined_arguments += "min-sw-score=";
+	    user_defined_arguments += string(optarg);
+	    user_defined_arguments += ";";
+	    break;
+	  case OPT_NOTAB:
+	    notab++;
+	    break;
+	  case OPT_ORIG_READ:
+	    include_orig_read_start++;
+	    user_defined_arguments += "orig-read-start=True;";
 	    break;
 	  case '?':
 	    show_help();
@@ -427,10 +516,10 @@ void single_thread_process_loop(const vector<string>& files) {
 	} else {
 	  bases += msread.nucleotides.length();
 	}
+	if (profile) {
+	    cout << msread.ID << "\t" << msread.nucleotides << "\t" << "-" << endl;
+	}
 	if (!pDetector->ProcessRead(&msread)) {
-	  if (profile) {
-	    cout << msread.ID << "\t" << msread.orig_nucleotides << "\t" << "-" << endl;
-	  }
 	  continue;
 	}
 
@@ -464,7 +553,7 @@ void single_thread_process_loop(const vector<string>& files) {
 	  if (pAligner->ProcessRead(&msread)) {
 	    aligned = true;
 	  }
-	} 
+	}					
 	if (aligned) {
 	  // genotyper.AddRead(&msread);
 	  pWriter.WriteRecord(msread);

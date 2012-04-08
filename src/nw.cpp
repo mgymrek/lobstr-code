@@ -10,15 +10,16 @@
 
 using namespace std;
 const int  a =  2;   // Match
-const int  b = -2;   // Mismatch
+const int  b = -6;   // Mismatch
 const int  s[ 4 ][ 4 ] = { { a, b, b, b },  
 			   { b, a, b, b },
 			   { b, b, a, b },
 			   { b, b, b, a } } ;
 const int  d = 1 ;                 /* gap penalty */
-const int GAPOPEN = 2;
+const int GAPOPEN = 6;
 const int GAPEXTEND = 1;
-
+const int ENDGAPEXTEND = 0;
+const int ENDGAPOPEN = 1;
 
 int nw(                                                          
         const string&       seq_1,          /*  Needleman-Wunsch   */
@@ -238,10 +239,17 @@ int nw_align_ag(                  // Needleman-Wunsch algorithm with affine gap 
 			mD2 = I->at((i-1)*(L1+1)+(j-1))+s[x][y];
 			M->at(i*(L1+1)+j) = maxM(mD1,mD2,&ptrM);
 
-			iU1 = M->at(i*(L1+1)+(j-1))-GAPOPEN;
-			iU2 = I->at(i*(L1+1)+(j-1))-GAPEXTEND;
-			iL1 = M->at((i-1)*(L1+1)+j) - GAPOPEN;
-			iL2 = I->at((i-1)*(L1+1)+j) - GAPEXTEND;
+			if (i == 0 || j == 0 || i == L1 || j == L2) {
+			  iU1 = M->at(i*(L1+1)+(j-1)) - ENDGAPOPEN;
+			  iU2 = I->at(i*(L1+1)+(j-1)) - ENDGAPEXTEND;
+			  iL1 = M->at((i-1)*(L1+1)+j) - ENDGAPOPEN;
+			  iL2 = I->at((i-1)*(L1+1)+j) - ENDGAPEXTEND;
+			} else {
+			  iU1 = M->at(i*(L1+1)+(j-1))-GAPOPEN;
+			  iU2 = I->at(i*(L1+1)+(j-1))-GAPEXTEND;
+			  iL1 = M->at((i-1)*(L1+1)+j) - GAPOPEN;
+			  iL2 = I->at((i-1)*(L1+1)+j) - GAPEXTEND;
+			}
 			I->at(i*(L1+1)+j) = maxI(iU1,iU2,iL1,iL2,&ptrI);
 			
 			tracebackM->at(i*(L1+1)+j) = ptrM;

@@ -30,6 +30,7 @@ struct AlignedRead {
   int diffFromRef;
   float refCopyNum;
   int partial;
+  bool strand;
 };
 
 /*

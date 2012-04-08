@@ -11,6 +11,13 @@
 
 // global variables that probably shouldn't be global variables
 
+// stores user arguments for lobSTR alignment
+// used to store the bam header for allelotyping step
+extern std::string user_defined_arguments;
+
+// store allelotyper user parameters
+extern std::string user_defined_arguments_allelotyper;
+
 // keep track of mappings between a kmer and its
 // canonical MS so we don't have to recompute it all the time
 extern std::map<std::string, std::string> canonicalMSTable;
