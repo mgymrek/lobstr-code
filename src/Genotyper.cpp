@@ -18,10 +18,6 @@ const float SMALL_CONST = 1e-10;
 const float min_supp_freq = 0.5;
 const float maxvalue = 1.0/0.0;
 
-static int round(float number) {
-  return number < 0.0 ? ceil(number - 0.5) : floor(number + 0.5);
-}
-
 Genotyper::Genotyper(NoiseModel* _noise_model,
 		     bool _male, bool _simple) {
   noise_model = _noise_model;
@@ -64,7 +60,6 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 		      aligned_reads.front().chrom == "chrY" ) &&
 		     male);
   
-  float refcopy = aligned_reads.front().refCopyNum;
   if (debug) {
     cerr << "In findMLE " << is_haploid << endl;
   }

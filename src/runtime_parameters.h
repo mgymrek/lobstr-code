@@ -30,7 +30,7 @@ enum INPUT_TYPE {
 };
 
 // flags
-extern bool verbose;
+extern bool my_verbose;
 extern bool sam;
 extern bool debug;
 extern bool genotype_only;
@@ -52,24 +52,24 @@ extern std::string output_prefix;
 extern std::string sam_file;
 
 // detection params
-extern int min_read_length;
-extern int max_read_length;
-extern int fft_window_size;
-extern int fft_window_step;
+extern size_t min_read_length;
+extern size_t max_read_length;
+extern size_t fft_window_size;
+extern size_t fft_window_step;
 extern float fft_lobe_threshold;
 extern float period_energy_threshold;
-extern int max_period;
-extern int min_period;
-extern int max_period_to_try;
-extern int min_flank_len;
-extern int max_flank_len;
+extern size_t max_period;
+extern size_t min_period;
+extern size_t max_period_to_try;
+extern size_t min_flank_len;
+extern size_t max_flank_len;
 extern float closeness;
 extern float percent_N_discard;
 extern float tukey_alpha;
 extern bool use_entropy;
 extern float entropy_threshold;
 extern int entropy_k;
-extern int extend_flank;
+extern size_t extend_flank;
 
 // alignment params
 extern bool adjust;
@@ -103,7 +103,7 @@ extern bool include_flank;
 extern bool print_reads;
 
 
-// anonymization params
+// anonymization params (deprecated)
 extern std::string str_alignment_file;
 extern std::string database_file;
 extern bool mask_n;
@@ -126,4 +126,6 @@ extern bool genotyper_debug;
 extern bool why_not_debug;
 extern bool entropy_debug;
 
+// min length of str region
+extern size_t MIN_STR_LENGTH;
 #endif /* RUNTIME_PARAMETERS_H_ */

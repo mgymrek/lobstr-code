@@ -3,7 +3,6 @@
 */
 
 #include <err.h>
-#include <error.h>
 #include <iostream>
 
 #include "common.h"
@@ -42,8 +41,8 @@ bool FastqFileReader::GetNextRecord(MSReadRecord* read) {
   // Second line = Nucleotides
   //
   
-  //If we can read the ID, but not the nucleotides,
-  //This is a problematic FASTQ file
+  // If we can read the ID, but not the nucleotides,
+  // This is a problematic FASTQ file
   current_line++;
   if (!getline(input_stream, nuc)) {
     errx(1,"Error reading nucleotide line from FASTQ file '%s' line %zu",

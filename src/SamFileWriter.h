@@ -8,10 +8,9 @@
 #include <string>
 #include <map>
 
-#include "MSReadRecord.h"
-// #include "TextFileWriter.h"
-#include "api/BamWriter.h"
 #include "api/BamAlignment.h"
+#include "api/BamWriter.h"
+#include "MSReadRecord.h"
 
 using namespace std;
 
@@ -20,7 +19,7 @@ namespace BamTools {
   class BamAlignment;
 }
 
-class SamFileWriter {//: public TextFileWriter {
+class SamFileWriter {
  public:
   SamFileWriter(const std::string& _filename,
 		const std::map<string, int>& _chrom_sizes);

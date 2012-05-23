@@ -37,9 +37,6 @@ using namespace std;
 // list of input files to process from
 vector<string> input_files;
 
-// Perform STRDetection
-STRDetector str_detector;
-
 // keep track of # bases so we can calculate coverage
 long bases = 0;
 
@@ -55,8 +52,6 @@ void DestroyReferences();
 map<std::string, BWT> bwt_references;
 map<std::string, BNT> bnt_annotations;
 gap_opt_t *opts;
-
-static pthread_mutex_t g_seq_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void show_help(){
   const char* help = "\n\nlobSTR [OPTIONS] -f <file1[,file2,...]> --index-prefix <index prefix> -o <output prefix>\n" \
@@ -212,12 +207,15 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  case OPT_ALIGN_DEBUG:
 	    align_debug ++;
 	    break;
+	  case OPT_DEBUG:
+	    debug++;
+	    break;
 	  case OPT_DEBUGADJUST:
 	    debug_adjust++;
 	    break;
 	  case 'v':
 	  case OPT_VERBOSE:
-	    verbose++;
+	    my_verbose++;
 	    break;
 	  case 'h':
 	  case OPT_HELP:
@@ -433,6 +431,9 @@ void parse_commandline_options(int argc,char* argv[]) {
 	if (min_flank_len > max_flank_len) {
 	  errx(1, "min_flank_len must be <=max_flank_len");
 	}
+	if (min_period < 2 || max_period > 6) {
+	  errx(1, "lobSTR can currently only profile STRs of periods 2 through 6.");
+	}
 	// check that we have the mandatory parameters
 	if ((input_files_string.empty()||  output_prefix.empty() ||
 	     index_prefix.empty()) &&
@@ -469,7 +470,7 @@ void LoadReference(const std::string& repseq) {
 
   // Load BNT annotations
   BNT bnt;
-  bntseq_t *bns, *ntbns = 0;
+  bntseq_t *bns;
   bns = bns_restore(prefix);
   bnt.bns = bns;
   bnt_annotations.insert(pair<string, BNT>(repseq,bnt));
@@ -689,7 +690,7 @@ void multi_thread_process_loop(vector<string> files) {
 int main(int argc,char* argv[]) {
   parse_commandline_options(argc,argv);
   
-  if (verbose) cout << "Initializing..." << endl;
+  if (my_verbose) cout << "Initializing..." << endl;
   // open file with all names
   TextFileReader tReader(index_prefix+"strdict.txt");
   string line;
@@ -748,7 +749,7 @@ int main(int argc,char* argv[]) {
   FFT_NUC_VECTOR::initialize_fftw_plans();
   
   // run detection/alignment
-  if (verbose) {cerr << "Running detection/alignment..." << endl;}
+  if (my_verbose) {cerr << "Running detection/alignment..." << endl;}
   if (threads == 1) {
     single_thread_process_loop(input_files);
   } else {

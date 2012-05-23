@@ -54,11 +54,15 @@ class BWAReadAligner {
   bool ProcessRead(MSReadRecord* read);
 
  protected:
+  // Get info from ref fields of index
   void ParseRefid(const std::string& refstring, ALIGNMENT* refid);
   
-  bool GetAlignmentCoordinates(bwa_seq_t* aligned_seqs, const std::string& repseq,
+  // Get the coordinates of each alignment
+  bool GetAlignmentCoordinates(bwa_seq_t* aligned_seqs, 
+			       const std::string& repseq,
 			       std::list<ALIGNMENT>* alignments);
 
+  // Get a unique shared alignment between left and right flanks
   static bool GetSharedAln(const list<ALIGNMENT>& map1,
 			   const list<ALIGNMENT>& map2,
 			   ALIGNMENT* left_refid,
@@ -66,15 +70,26 @@ class BWAReadAligner {
 
   // Perform local realignment, adjust exact STR boundaries
   // update cigar score.
-  bool AdjustAlignment(MSReadRecord* aligned_read, bool partial, bool left_aligned, bool right_aligned);
+  bool AdjustAlignment(MSReadRecord* aligned_read, bool partial, 
+		       bool left_aligned, bool right_aligned);
 
+  // Adjust partial read alignments
+  bool AdjustPartialAlignment(MSReadRecord* aligned_read, 
+			      const CIGAR_LIST& cigar_list, 
+			      bool left_aligned, bool right_aligned, 
+			      int start_pos, int reglen);
+  
   // Get the number of repeat units using the adjusted cigar score
   // Also refine position of flanking regions
   bool GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list, bool* partial);
 
+  // stroe all BWT references
   map<std::string, BWT>* _bwt_references;
+  // store all BWT annotations
   map<std::string, BNT>* _bnt_annotations;
+  // store all STR reference sequences
   map<int, REFSEQ>* _ref_sequences;
+  // all bwa alignment options
   gap_opt_t *_opts;
 };
 

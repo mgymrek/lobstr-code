@@ -1,21 +1,29 @@
-#include "BWAReadAligner.h"
+/*
+ Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+*/
+
 #include <algorithm>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdexcept>
+
+#include "BWAReadAligner.h"
 #include "cigar.h"
 #include "common.h"
 #include "nw.h"
 #include "runtime_parameters.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 
 extern unsigned char nst_nt4_table[256];
 int pad=50;
 int extend_partial = 0;
+size_t MAX_CIGAR_SIZE = 6;
+size_t MAX_ALLOWED_FLANK = 10;
 
-static int count(string s, char c) {
-  int num = 0;
-  for (int i = 0; i < s.length(); i++) {
+static size_t count(string s, char c) {
+  size_t num = 0;
+  for (size_t i = 0; i < s.length(); i++) {
     if (s.at(i) == c) num++;
   }
   return num;
@@ -46,17 +54,23 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
     return false;
   }
 
+  // check that the repseq is valid
   if (count(repseq,repseq.at(0)) == repseq.length()) return false;
   
-  // check that it's not a perect repeat (TODO: write these to a file)
+  // check that it's not a perect repeat
   if (IsPerfectRepeat(read->nucleotides, read->repseq)) {
     return false;
   }
+
+  // Check if flanks are perfect repeats
   if (IsPerfectRepeat(read->left_flank_nuc, read->repseq)) 
     left_all_repeats = true;
   if (IsPerfectRepeat(read->right_flank_nuc, read->repseq))
     right_all_repeats = true;
+  // don't continue if both are fully repetitive
+  if (left_all_repeats && right_all_repeats) return false;
 
+  // set up bwa
   int is_comp = _opts->mode&BWA_MODE_COMPREAD;
 
   // get bwa_seq_t *seqs
@@ -70,7 +84,6 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   read->right_flank_nuc = reverseComplement(read->right_flank_nuc);
 
   // LEFT FLANKING REGION
-  
   const char* left_flank = read->left_flank_nuc.c_str();
   const char* left_qual =  read->quality_scores.substr(0, strlen(left_flank)).c_str();
 
@@ -136,8 +149,6 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   // get ref seqs and index of alignment for each
   list<ALIGNMENT> left_alignments;
   list<ALIGNMENT> right_alignments;
-  // don't continue if both are fully repetitive
-  if (left_all_repeats && right_all_repeats) return false;
 
   // look for left alignment
   if (!left_all_repeats) {
@@ -158,14 +169,23 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   // get shared keys
   ALIGNMENT left_refid;
   ALIGNMENT right_refid;
+  bool left_cleared = false;
+  bool right_cleared = false;
   if (!GetSharedAln(left_alignments, right_alignments,
   		    &left_refid, &right_refid)) {
+    // if one flank maps everywhere, clear it
+    if (left_alignments.size() > MAX_ALLOWED_FLANK) {
+      left_alignments.clear();
+    }
+    if (right_alignments.size() > MAX_ALLOWED_FLANK) {
+      right_alignments.clear();
+    }
     // check if one flanking region aligns
     if (left_alignments.size() + right_alignments.size() == 1) {
       partial = true;
       read->partial = true;
       // Case 1: anchored the left side
-      if (left_alignments.size() != 0 && right_all_repeats) {
+      if (left_alignments.size() != 0 && (right_all_repeats||right_cleared)) {
 	right_all_repeats = true;
 	left_refid = left_alignments.front();
 	right_refid.left = !left_refid.left;
@@ -184,7 +204,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
 	}
       }
       // Case 2: anchored the right side
-      else if (right_alignments.size() != 0 && left_all_repeats) {
+      else if (right_alignments.size() != 0 && (left_all_repeats||left_cleared)) {
 	left_all_repeats = true;
 	right_refid = right_alignments.front();
 	left_refid.left = !right_refid.left;
@@ -240,23 +260,24 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
   read->right_flank_nuc = reverseComplement(read->right_flank_nuc);
 
 
-  //***** checks to make sure the alignment is reasonable***//
-  if (!read->reverse & !partial & (read->lStart >= read->msStart | read->rEnd <= read->msEnd)) {
+  // checks to make sure the alignment is reasonable
+  if (!read->reverse & !partial & ((read->lStart >= read->msStart) | (read->rEnd <= read->msEnd))) {
     return false;
   }
-  if (read->reverse & !partial & (read->rStart >= read->msStart | read->lEnd <= read->msEnd)) {
+  if (read->reverse & !partial & ((read->rStart >= read->msStart) | (read->lEnd <= read->msEnd))) {
     return false;
   }
-  if (read->rStart <0 | read->lStart <0 | read->rEnd <0 | read->lEnd < 0) {
+  if ((read->rStart <0) | (read->lStart <0) | (read->rEnd <0) | (read->lEnd < 0) | (read->msStart < 0)) {
     return false;
   }
 
   // adjust alignment and set cigar score
-  if (adjust & read->msStart > 0) {
+  if (adjust) {
     try {
-      if (!AdjustAlignment(read, partial, !left_all_repeats, !right_all_repeats)) return false;
-    } catch (char* str) {
-      cerr << "ERROR adjust alignment of read " << read->ID << endl;
+      if (!AdjustAlignment(read, partial, !left_all_repeats, !right_all_repeats)) {
+	return false;
+      }
+    } catch (std::out_of_range & exception) {
       return false;
     }
   }
@@ -264,7 +285,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read) {
     if (read->diffFromRef % read->ms_repeat_best_period != 0)
       return false;
   }
-  return ((abs(read->diffFromRef) <= max_diff_ref & read->msStart > 0)||partial);
+  return ((abs(read->diffFromRef) <= max_diff_ref)||partial);
 }
 
 bool BWAReadAligner::GetSharedAln(const list<ALIGNMENT>& map1,
@@ -367,7 +388,7 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
   // get coords
   for (int i = 0; i < aligned_seqs->n_multi; ++i) {
     bwt_multi1_t *q = aligned_seqs->multi + i;
-    int k, j, nn, seqid; 
+    int j, nn, seqid; 
     j = pos_end_multi(q, aligned_seqs->len) - q->pos;
     if (q->pos >= _bnt_annotations->at(repseq).bns->l_pac) {
       continue;
@@ -381,10 +402,12 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
     }    
     refid.strand = q->strand;
     if (align_debug) {
-      cout << "start " << refid.start << " qpos " << q->pos << " annotation " << _bnt_annotations->at(repseq).bns->anns[seqid].offset << endl;
+      cout << "start " << refid.start << " qpos " << q->pos << " annotation " 
+	   << _bnt_annotations->at(repseq).bns->anns[seqid].offset << endl;
     }
     if (q->strand) {
-      refid.pos = (refid.start-extend-pad) + (int)(q->pos - _bnt_annotations->at(repseq).bns->anns[seqid].offset) + 1;
+      refid.pos = (refid.start-extend-pad) + 
+	(int)(q->pos - _bnt_annotations->at(repseq).bns->anns[seqid].offset) + 1;
     } else {
       refid.pos = (int)(q->pos - _bnt_annotations->at(repseq).bns->anns[seqid].offset - 2*j)
 	+ (refid.start-extend-pad);
@@ -401,12 +424,12 @@ Update cigar score
  */
 bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read, bool partial, bool left_aligned, bool right_aligned) {
   // get reference sequence
-  int reglen = !aligned_read->reverse ? (aligned_read->rEnd - aligned_read->lStart) :
+  size_t reglen = !aligned_read->reverse ? (aligned_read->rEnd - aligned_read->lStart) :
     (aligned_read->lEnd - aligned_read->rStart);
   if (_ref_sequences->find(aligned_read->strid) == 
       _ref_sequences->end()) return false;
   REFSEQ refseq = _ref_sequences->at(aligned_read->strid);
-  int start_pos = !aligned_read->reverse ? aligned_read->lStart-1 : aligned_read->rStart;
+  size_t start_pos = !aligned_read->reverse ? aligned_read->lStart-1 : aligned_read->rStart;
   if (start_pos-refseq.start < 0 || 
       reglen + (start_pos - refseq.start) >= refseq.sequence.length()) {return false;}
   // start is in rep region, use end other end
@@ -420,6 +443,7 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read, bool partial, b
   }
   const string& rseq = refseq.sequence.substr(start_pos - refseq.start, reglen);
   const string& aligned_seq = !aligned_read->reverse ? aligned_read->nucleotides : reverseComplement(aligned_read->nucleotides);
+
   // update coords
   aligned_read->read_start = start_pos;
   aligned_read->read_end = start_pos + reglen;
@@ -432,58 +456,23 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read, bool partial, b
     cout << endl << "Partial " << partial << " Reverse " << aligned_read->reverse << " left rep " << !left_aligned << " right rep " << !right_aligned << endl;
     cout << rseq << " " << aligned_seq << endl;
   }
+
   // Global alignment read vs. region aligned to 
   string aligned_seq_sw;
   string ref_seq_sw;
   int sw_score;
   CIGAR_LIST cigar_list;
   nw(aligned_seq, rseq, aligned_seq_sw, ref_seq_sw, false, &sw_score, &cigar_list);
-  
   // Fix off by one alignment problem
   if (cigar_list.cigars.at(0).num == 1) {
-    if (cigar_list.cigars.at(0).cigar_type == 'I' &&
-	cigar_list.cigars.at(cigar_list.cigars.size()-1).cigar_type == 'D') {
-      aligned_read->read_start--;
+    if (cigar_list.cigars.at(0).cigar_type=='I') {
+      cigar_list.cigars.erase(cigar_list.cigars.begin());
       cigar_list.cigars.at(1).num++;
-      cigar_list.cigars.erase(cigar_list.cigars.begin());
-      cigar_list.cigars.erase(cigar_list.cigars.end()-1);
-      cigar_list.ResetString();
-    } else if (cigar_list.cigars.at(0).cigar_type == 'D' &&
-	       cigar_list.cigars.at(cigar_list.cigars.size()-1).cigar_type == 'I') {
       aligned_read->read_start++;
-      cigar_list.cigars.erase(cigar_list.cigars.begin());
-      cigar_list.cigars.erase(cigar_list.cigars.end()-1);  
-      cigar_list.ResetString();
     }
   }
 
-  // Fix end problems
-  if (cigar_list.cigars.size() >=3) {
-    if (cigar_list.cigars.at(cigar_list.cigars.size() -1).cigar_type == 'D' &
-	cigar_list.cigars.at(cigar_list.cigars.size() -1).num == 1 &
-	cigar_list.cigars.at(cigar_list.cigars.size()-2).cigar_type=='I' &
-	cigar_list.cigars.at(cigar_list.cigars.size()-2).num == 1) {
-      if (cigar_list.cigars.at(cigar_list.cigars.size()-3).cigar_type=='M') {
-	cigar_list.cigars.at(cigar_list.cigars.size()-3).num += 1;
-	cigar_list.cigars.erase(cigar_list.cigars.end()-1);
-	cigar_list.cigars.erase(cigar_list.cigars.end()-1);
-      } else {
-	cigar_list.cigars.at(cigar_list.cigars.size()-2).cigar_type = 'M';
-	cigar_list.cigars.erase(cigar_list.cigars.end()-1);
-      }
-      cigar_list.ResetString();
-    }
-    
-  }
-  if (cigar_list.cigars.size() >=3) {
-    if (cigar_list.cigars.at(cigar_list.cigars.size()-1).cigar_type=='I' &
-	cigar_list.cigars.at(cigar_list.cigars.size()-2).cigar_type=='M') {
-      cigar_list.cigars.at(cigar_list.cigars.size()-2).num +=
-	cigar_list.cigars.at(cigar_list.cigars.size()-1).num;
-      cigar_list.cigars.erase(cigar_list.cigars.end()-1);
-      cigar_list.ResetString();
-    }
-  }
+  // get rid of end gaps
   if (cigar_list.cigars.at(0).cigar_type == 'D') {
     int num = cigar_list.cigars.at(0).num;
     aligned_read->read_start += num;
@@ -494,10 +483,12 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read, bool partial, b
     cigar_list.cigars.erase(cigar_list.cigars.end()-1);
     cigar_list.ResetString();
   }
+  
 
   aligned_read->sw_score = sw_score;
   aligned_read->cigar = cigar_list.cigars;
   aligned_read->cigar_string = cigar_list.cigar_string;
+
   if (debug_adjust) {
     cout << aligned_read->ID << endl;
     cout << aligned_seq_sw << endl;
@@ -506,114 +497,146 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read, bool partial, b
     cout << cigar_list.cigar_string << endl;
     cout << aligned_read->diffFromRef << endl;
   }
-  // Update diffFromRef
-  if (sw_score < min_sw_score ) return false; // alignment is too bad
-  // Check if partial
-  if (partial) {
-    int cigar_index = 0;
-    int span = 0;
-    int i;
-    int strbp;
-    int diff_from_ref = 0;
-    int ms_length = aligned_read->msEnd - aligned_read->msStart;
-    for (i = 0; i < cigar_list.cigars.size(); i++) {
-      if (cigar_list.cigars.at(i).cigar_type == 'M' |
-	  cigar_list.cigars.at(i).cigar_type == 'D') {
-	span += cigar_list.cigars.at(i).num;
-      }
-      if (cigar_list.cigars.at(i).cigar_type == 'D') {
-	diff_from_ref -= cigar_list.cigars.at(i).num;
-      }
-      if (cigar_list.cigars.at(i).cigar_type == 'I') {
-	diff_from_ref += cigar_list.cigars.at(i).num;
-      }
-    }
-    // Case 1: starts at left. see if total span is > (str index+ms len)
-    if (partial & (!aligned_read->reverse & left_aligned) | (aligned_read->reverse & right_aligned)) {
-      strbp = span - (aligned_read->msStart - aligned_read->read_start);
-      if (aligned_read->msEnd - aligned_read->read_start >= span) {
-	if (debug_adjust) {
-	  cout << "Partial alignment from left, returning false " << (strbp+diff_from_ref)- ms_length << "bp" << endl;
-	}
-	//if (abs(diff_from_ref) > max_diff_ref) return false;
-	if (strbp+diff_from_ref < 0 || strbp+diff_from_ref >= aligned_read->nucleotides.length()) return false;
-	aligned_read->partial = true;
-	aligned_read->diffFromRef = (strbp+diff_from_ref)- ms_length ;
 
-	if (strbp + diff_from_ref < 0 || strbp + diff_from_ref >= aligned_read->nucleotides.length()) {
-	  return false;
-	} else {
-	  aligned_read->detected_ms_region_nuc = aligned_read->reverse ? aligned_read->nucleotides.substr(0,strbp+diff_from_ref) :
-	    reverseComplement(aligned_read->nucleotides).substr(0,strbp+diff_from_ref);	
-	}
-	return true;
-      }
-    }
-    // Case 2: starts at the right
-    if (partial & (!aligned_read->reverse & right_aligned) | (aligned_read->reverse & left_aligned)) {
-      strbp = span - (start_pos+reglen-aligned_read->msEnd);
-      if ((start_pos  + reglen - aligned_read->msStart) >= span) {
-	if (debug_adjust) {
-	  cout << "span " << span << " start " << start_pos << " " << " end " << start_pos+reglen << " msend " << aligned_read->msEnd
-	       << " msstart " << aligned_read->msStart << endl;
-	  cout << "Partial alignment from right, returning false " << (strbp +diff_from_ref)-ms_length<< "bp" << endl;
-	  cout << "strbp " << strbp << endl;
-	}
-	//	if (abs(diff_from_ref) > max_diff_ref) return false;
-	if (strbp+diff_from_ref < 0 || strbp+diff_from_ref >= aligned_read->nucleotides.length()) return false;
-	aligned_read->partial = true;
-	aligned_read->diffFromRef = (strbp +diff_from_ref)-ms_length;
-	if (strbp+diff_from_ref < 0 || strbp+diff_from_ref >= aligned_read->nucleotides.length()) {
-	  return false;
-	} else {
-	  aligned_read->detected_ms_region_nuc = aligned_read->reverse ? aligned_read->nucleotides.substr(aligned_read->nucleotides.length() - strbp-diff_from_ref,strbp+diff_from_ref) :
-	    reverseComplement(aligned_read->nucleotides).substr(aligned_read->nucleotides.length() - strbp-diff_from_ref,strbp+diff_from_ref);	
-	}
-	if (debug_adjust) {
-	  cerr << aligned_read->detected_ms_region_nuc << endl;
-	}
-	return true;
-      }
+  // Check if alignment is reasonably good
+  if (sw_score < min_sw_score ) return false;
+
+  // Adjust if partial
+  if (partial) {
+    if (!AdjustPartialAlignment(aligned_read,cigar_list, left_aligned, right_aligned, start_pos, reglen)) {
+      return false;
     }
   }
+
   if (!GetSTRAllele(aligned_read, cigar_list, &partial)) return false;
   if (debug_adjust) {
-    cout << aligned_read->diffFromRef << " " << aligned_read->detected_ms_region_nuc << " "
+    cout << aligned_read->diffFromRef << " " << aligned_read->detected_ms_nuc << " "
 	 << aligned_read->reverse << endl << endl;
   }
 
   return true;
 }
+
+bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list, bool left_aligned, bool right_aligned, int start_pos, int reglen) {
+
+  // how many base pairs are spanned in the reference by this read?
+  int span = 0;
+  // Index into cigar string
+  size_t i;
+  // how many base pairs are part of the actual str sequence?
+  int strbp;
+  // Difference in bp from the reference
+  int diff_from_ref = 0;
+  // Length of the STR region
+  int ms_length = aligned_read->msEnd - aligned_read->msStart;
+  // Get span of STR region
+  for (i = 0; i < cigar_list.cigars.size(); i++) {
+    if ((cigar_list.cigars.at(i).cigar_type == 'M') |
+	(cigar_list.cigars.at(i).cigar_type == 'D')) {
+      span += cigar_list.cigars.at(i).num;
+    }
+    if (cigar_list.cigars.at(i).cigar_type == 'D') {
+      diff_from_ref -= cigar_list.cigars.at(i).num;
+    }
+    if (cigar_list.cigars.at(i).cigar_type == 'I') {
+      diff_from_ref += cigar_list.cigars.at(i).num;
+    }
+  }
+  // Chack if actually partially spanning
+  // Case 1: starts at left. see if total span is > (str index+ms len)
+  if ((!aligned_read->reverse & left_aligned) | (aligned_read->reverse & right_aligned)) {
+    strbp = span - (aligned_read->msStart - aligned_read->read_start);
+    // Check if End extends beyond the read
+    if (aligned_read->msEnd - aligned_read->read_start >= span) {
+      if (debug_adjust) {
+	cout << "Partial alignment from left, returning false " << (strbp+diff_from_ref)- ms_length << "bp" << endl;
+      }
+      // Check if reasonable
+      if (strbp+diff_from_ref < 0 || 
+	  strbp+diff_from_ref >= (int)aligned_read->nucleotides.length() ||
+	  strbp < (int)MIN_STR_LENGTH) return false;
+      // Update read data
+      aligned_read->partial = true;
+      aligned_read->diffFromRef = (strbp+diff_from_ref)- ms_length ;
+      aligned_read->detected_ms_nuc = aligned_read->reverse ? 
+	aligned_read->nucleotides.substr(0,strbp+diff_from_ref) : 
+	reverseComplement(aligned_read->nucleotides).substr(0,strbp+diff_from_ref);	
+      return true;
+    } else {
+      aligned_read->partial = false;
+    }
+  }
+  // Case 2: anchored at the right
+  if ((!aligned_read->reverse & right_aligned) | (aligned_read->reverse & left_aligned)) {
+    strbp = span - (start_pos+reglen-aligned_read->msEnd);
+    // Check if beginning extends beyond the msStart
+    if ((start_pos  + reglen - aligned_read->msStart) >= span) {
+      if (debug_adjust) {
+	cout << "span " << span << " start " << start_pos << " " << " end " << start_pos+reglen << " msend " << aligned_read->msEnd
+	     << " msstart " << aligned_read->msStart << endl;
+	cout << "Partial alignment from right, returning false " << (strbp +diff_from_ref)-ms_length<< "bp" << endl;
+	cout << "strbp " << strbp << endl;
+	cout << "diff " << diff_from_ref << endl;
+	cout << "ms len " << ms_length << endl;
+      }
+      if (strbp+diff_from_ref < 0 || 
+	  strbp+diff_from_ref >= (int)aligned_read->nucleotides.length() ||
+	  strbp <= (int)MIN_STR_LENGTH) {
+	return false;
+      }
+      aligned_read->partial = true;
+      aligned_read->diffFromRef = (strbp +diff_from_ref)-ms_length;
+      aligned_read->detected_ms_nuc = aligned_read->reverse ? 
+	aligned_read->nucleotides.substr(aligned_read->nucleotides.length() - strbp-diff_from_ref,
+					 strbp+diff_from_ref) :
+	reverseComplement(aligned_read->nucleotides).substr(aligned_read->nucleotides.length() - 
+							    strbp-diff_from_ref,strbp+diff_from_ref);	
+      if (debug_adjust) {
+	cerr << aligned_read->detected_ms_nuc << endl;
+      }
+      return true;
+    } else {
+      aligned_read->partial = false;
+    }
+  }
+  return true;
+}
+
 bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list, bool *partial) {
-  int str_index = aligned_read->msStart-aligned_read->read_start +1;
-  int ms_length = aligned_read->msEnd - aligned_read->msStart -1;
-  if (*partial & str_index < 0) {
+  // index where STR starts in the read
+  size_t str_index = aligned_read->msStart-aligned_read->read_start +1;
+  // Length of the total STR region
+  size_t ms_length = aligned_read->msEnd - aligned_read->msStart -1;
+  // If right end anchored
+  if (*partial & (str_index < 0)) {
     str_index = 0;
     ms_length = aligned_read->msEnd - aligned_read->read_start;
   }
-  if (*partial & str_index+ms_length >= aligned_read->nucleotides.length()) {
+  // If left end anchored
+  if (*partial & (str_index+ms_length >= aligned_read->nucleotides.length())) {
     ms_length = aligned_read->nucleotides.length() - str_index - 1;
   }
-
+  // If alignment is too messy, get rid of it
+  if (cigar_list.cigars.size() > MAX_CIGAR_SIZE) {
+    return false;
+  }
   if (cigar_list.cigars.size() == 1) {  // same as reference
-    if ((str_index + ms_length) >= aligned_read->nucleotides.length() || str_index < 0 || ms_length  <= 0) return false;
     if (aligned_read->reverse) {
-      aligned_read->detected_ms_region_nuc =
+      aligned_read->detected_ms_nuc =
 	reverseComplement(aligned_read->nucleotides).substr(str_index, ms_length);
     }
-    aligned_read->detected_ms_region_nuc =
+    aligned_read->detected_ms_nuc =
       aligned_read->nucleotides.substr(str_index, ms_length);
     aligned_read->diffFromRef = 0;
-    return true;
+    return (aligned_read->detected_ms_nuc.length() > MIN_STR_LENGTH);
   }
 
   // get rid of the cigar score covering the left flanking region
   int str_start_in_cigar = aligned_read->msStart - aligned_read->read_start + 1;
   int pos = 0;
   int bp = 0;
-  int cigar_index = 0;
+  size_t cigar_index = 0;
   int diff = 0;
-  int newbp = 0;
   int total_cigar_pos = 0;
   int diff_from_ref = 0;
   char cigar_type;
@@ -664,9 +687,10 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& 
   }
   str_cigar_list.cigars.clear();
   str_cigar_list.cigars = new_cigar_list.cigars;
+
   // set diff from ref
   diff_from_ref = 0;
-  for (int i = 0; i < str_cigar_list.cigars.size(); i++) {
+  for (size_t i = 0; i < str_cigar_list.cigars.size(); i++) {
     if (str_cigar_list.cigars.at(i).cigar_type == 'I') {
       diff_from_ref += str_cigar_list.cigars.at(i).num;
     }
@@ -674,19 +698,18 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& 
       diff_from_ref -= str_cigar_list.cigars.at(i).num;
     }
   }
+
   // set STR region
   string ms_nuc;
-  if (ms_length+diff_from_ref - str_index +1 >= aligned_read->nucleotides.length() || ms_length+diff_from_ref - str_index +1 <= 5 || 
-      str_index < 0 ) return false;
   if (aligned_read->reverse) {
     string rev_read = reverseComplement(aligned_read->nucleotides);
     ms_nuc =  rev_read.substr(str_index, ms_length+diff_from_ref);
   } else {
     ms_nuc =  aligned_read->nucleotides.substr(str_index, ms_length+diff_from_ref);
   }
-  if (ms_nuc.length() <= 6) return false;
+  if (ms_nuc.length() <= MIN_STR_LENGTH) return false;
   aligned_read->diffFromRef = diff_from_ref;
-  aligned_read->detected_ms_region_nuc = ms_nuc;
+  aligned_read->detected_ms_nuc = ms_nuc;
   return true;
 }
 

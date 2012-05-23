@@ -3,13 +3,12 @@
 */
 
 #include <err.h>
-#include <error.h>
 #include <iostream>
 
-#include "common.h"
-#include "BamFileReader.h"
-
 #include "api/BamReader.h"
+#include "BamFileReader.h"
+#include "common.h"
+
 
 using namespace std;
 using BamTools::BamReader;

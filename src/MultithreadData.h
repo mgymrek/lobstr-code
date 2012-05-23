@@ -1,21 +1,17 @@
 /*
- * MultithreadData.h
- *
- *  Created on: Apr 24, 2011
- *      Author: mgymrek
- */
+ Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+*/
 
 #ifndef __MULTI_THREAD_DATA_H__
 #define __MULTI_THREAD_DATA_H__
 
-#include <istream>
-#include <fstream>
-#include <string>
-#include <list>
 #include <err.h>
-
-#include <semaphore.h>
+#include <fstream>
+#include <istream>
+#include <list>
 #include <pthread.h>
+#include <string>
+#include <semaphore.h>
 
 #include "MSReadRecord.h"
 

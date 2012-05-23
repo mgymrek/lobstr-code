@@ -7,9 +7,10 @@
 
 #include <iostream>
 #include <istream>
+#include <stdlib.h>
 #include <string>
 #include <vector>
-#include <stdlib.h>
+
 #include "cigar.h"
 
 class MSReadRecord {
@@ -44,12 +45,12 @@ public:
   // left flanking nucleotides
   std::string	left_flank_nuc;
   int left_flank_index_from_start;
-  // STR nucleotides
+  // STR nucleotides (detected by STRDetector.cpp)
   std::string	detected_ms_region_nuc;
   // right flanking nucleotides
   std::string  right_flank_nuc;
   int right_flank_index_from_end;
-  // detected STR
+  // detected STR (reset by BWAReadAligner.cpp)
   std::string  detected_ms_nuc;
   
   // reverse complement of ther ead was aligned

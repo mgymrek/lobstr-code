@@ -242,6 +242,7 @@ bool NoiseModel::WriteNoiseModelToFile(string filename) {
      << "poisIntercept=" << poisIntercept << endl
      << "poisSlope=" << poisSlope << endl;
   nWriter.Write(ss.str());
+  return true;
 }
 
 NoiseModel::~NoiseModel(){}

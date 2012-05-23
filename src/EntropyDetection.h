@@ -22,9 +22,6 @@ class EntropyDetection {
   // dinuc entropy, not generalized but optimized
   double EntropyOneWindowDinuc(const std::string& window_nucs);
 
-  // calculate k-word entropy for one wind
-  double EntropyOneWindowK(const std::string& window_nucs, int k);
-
   // vector of entropy values for each window
   void CalculateEntropyWindow();
 

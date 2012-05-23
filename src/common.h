@@ -74,7 +74,7 @@ int nucToNumber(const char& nuc);
 std::string reverseComplement(const std::string& nucs);
 
 // get the complement of a nucleotide
-static char complement(const char nucleotide);
+char complement(const char nucleotide);
 
 // get the canonical MS sequence
 void getCanonicalMS(const std::string& msnucs, std::string* canonical);

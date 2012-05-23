@@ -9,10 +9,11 @@
 #include <stdlib.h>
 #include <string>
 
+#include "common.h"
 #include "Genotyper.h"
 #include "NoiseModel.h"
-#include "runtime_parameters.h"
 #include "ReadContainer.h"
+#include "runtime_parameters.h"
 
 using namespace std;
 
@@ -108,8 +109,8 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    user_defined_arguments_allelotyper += "command=";
 	    user_defined_arguments_allelotyper += command;
 	    user_defined_arguments_allelotyper += ";";
-	    if (command != "train" & command != "classify"
-		& command != "both" & command != "simple") {
+	    if ((command != "train") & (command != "classify") &
+		(command != "both") & (command != "simple")) {
 	      cerr << "\n\nERROR: Command " << command << " is invalid. Command must be one of: train, classify, both, simple";
 	      show_help();
 	      exit(1);
@@ -138,7 +139,11 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    sex_set++;
 	    break;
 	  case OPT_NOISEMODEL:
+	    // TODO refuse to over write file if command is "train" or "both"
 	    noise_model = string(optarg);
+	    if ((command == "train" || command == "both")&&fexists(noise_model.c_str())) {
+	      errx(1,"Cannot write to specified noise model file. This file already exists.");
+	    }
 	    user_defined_arguments_allelotyper += "noise-model=";
 	    user_defined_arguments_allelotyper += string(optarg);
 	    user_defined_arguments_allelotyper += ";";
@@ -149,7 +154,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    break;
 	  case 'v':
 	  case OPT_VERBOSE:
-	    verbose++;
+	    my_verbose++;
 	    break;
 	  case 'h':
 	  case OPT_HELP:
@@ -215,12 +220,17 @@ void parse_commandline_options(int argc,char* argv[]) {
 	}
 }
 
+/* copied from common.h */
+bool fexists(const char *filename) {
+  ifstream ifile(filename);
+  return ifile;
+}
 
 int main(int argc,char* argv[]) {
   /* parse command line options */
   parse_commandline_options(argc,argv);
 
-  if (verbose) cout << "Running allelotyping with command "
+  if (my_verbose) cout << "Running allelotyping with command "
 		    << command << endl;
 
   /* initialize noise model */
@@ -228,19 +238,19 @@ int main(int argc,char* argv[]) {
   NoiseModel nm(&R);
 
   /* Add reads to read container */
-  if (verbose) cout << "Adding reads to read container" << endl;
+  if (my_verbose) cout << "Adding reads to read container" << endl;
   ReadContainer read_container;
   read_container.AddReadsFromFile(bam_file);
 
   /* Perform pcr dup removal if specified */
   if (rmdup) {
-    if (verbose) cout << "Performing pcr duplicate removal" << endl;
+    if (my_verbose) cout << "Performing pcr duplicate removal" << endl;
     read_container.RemovePCRDuplicates();
   }
 
   /* Train/classify */
   if (command == "train" or command == "both") {
-    if (verbose) cout << "Training noise model..." << endl;
+    if (my_verbose) cout << "Training noise model..." << endl;
     nm.Train(&read_container);
     nm.WriteNoiseModelToFile(noise_model);
   } else if (command == "classify") {
@@ -250,13 +260,13 @@ int main(int argc,char* argv[]) {
   }
 
   if (command == "classify" or command == "both") {
-    if (verbose) cout << "Classifying allelotypes..." << endl;
+    if (my_verbose) cout << "Classifying allelotypes..." << endl;
     Genotyper genotyper(&nm, male, false);
     genotyper.Genotype(read_container,
 		       output_prefix + ".genotypes.tab");
   }
   if (command == "simple") {
-    if (verbose) cout << "Classifying allelotypes..." << endl;
+    if (my_verbose) cout << "Classifying allelotypes..." << endl;
     Genotyper genotyper(&nm, male, true);
     genotyper.Genotype(read_container,
 		       output_prefix + ".genotypes.tab");

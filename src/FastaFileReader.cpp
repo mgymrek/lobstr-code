@@ -3,7 +3,6 @@
 */
 
 #include <err.h>
-#include <error.h>
 #include <iostream>
 
 #include "common.h"
@@ -36,8 +35,8 @@ bool FastaFileReader::GetNextRecord(MSReadRecord* read) {
     errx(1,"Error: found Invalid FASTA ID in file '%s' line %zu (expected '>' character)",
 	 filename.c_str(), current_line);
   
-  //If we can read the ID, but not the nucleotides,
-  //This is a problematic FASTA file
+  // If we can read the ID, but not the nucleotides,
+  // This is a problematic FASTA file
   current_line++;
   
   if (!getline(input_stream, nuc)) {

@@ -65,7 +65,6 @@ void ReadContainer::AddReadsFromFile(string bamfile) {
     }
     if (!include_flank) { // diff is just sum of differences in cigar
 	CIGAR_LIST cigar_list;
-	float diff = 0;
 	for (vector<BamTools::CigarOp>::const_iterator it = aligned_read.cigar_ops.begin();
 	       it != aligned_read.cigar_ops.end(); it++) {
 	 CIGAR cig;
@@ -186,8 +185,8 @@ float ReadContainer::GetAverageQualityScore(const list<AlignedRead>&
 
 float ReadContainer::GetScore(const string& quality_string) {
   if (quality_string.empty()) return 0.0;
-  float total_quality, score;
-  for (int i = 0; i < quality_string.length(); i++) {
+  float total_quality;
+  for (size_t i = 0; i < quality_string.length(); i++) {
     total_quality +=  quality_string.at(i) - 33;
   }
   return total_quality/(float)quality_string.length();
@@ -198,7 +197,7 @@ float ReadContainer::GetScore(const string& quality_string) {
 
 int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read, const CIGAR_LIST& cigar_list) {
   int diff_from_ref = 0;
-  for (int i = 0; i < cigar_list.cigars.size(); i++) {
+  for (size_t i = 0; i < cigar_list.cigars.size(); i++) {
     if (cigar_list.cigars.at(i).cigar_type == 'I') {
       diff_from_ref += cigar_list.cigars.at(i).num;
     }

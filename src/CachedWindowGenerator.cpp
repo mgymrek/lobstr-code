@@ -45,7 +45,7 @@ const WindowVector* CachedWindowGenerator::CreateWindow(size_t window_size) {
 const WindowVector* CachedWindowGenerator::GetWindow(size_t window_size) {
   lock();
 
-  //If we already calculated this window, just return it
+  // If we already calculated this window, just return it
   WINDOWS_HASH::const_iterator it = cached_windows.find(window_size);
   if (it != cached_windows.end()) {
     const WindowVector& v = it->second;
@@ -54,7 +54,7 @@ const WindowVector* CachedWindowGenerator::GetWindow(size_t window_size) {
     return p;
   }
   
-  //Not found, we need to create it (this will also store it in the cache)
+  // Not found, we need to create it (this will also store it in the cache)
   
   const WindowVector *p = CreateWindow(window_size);
   

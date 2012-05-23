@@ -12,7 +12,7 @@ std::string user_defined_arguments_allelotyper="# version=allelotype_v1.0.6;";
 std::map<std::string, std::string> canonicalMSTable;
 
 // flags
-bool verbose = false;
+bool my_verbose = false;
 bool sam = true;
 bool debug = false;
 bool genotype_only = false;
@@ -34,24 +34,24 @@ std::string output_prefix = "";
 std::string sam_file = "";
 
 // detection params
-int min_read_length = 45;
-int max_read_length = 1024;
-int fft_window_size = 24;
-int fft_window_step = 12;
+size_t min_read_length = 45;
+size_t max_read_length = 1024;
+size_t fft_window_size = 24;
+size_t fft_window_step = 12;
 float fft_lobe_threshold = 3;
 float period_energy_threshold = 500;
-int max_period = 6;
-int min_period = 2;
-int max_period_to_try = 6;
-int min_flank_len = 8;
-int max_flank_len = 25;
+size_t max_period = 6;
+size_t min_period = 2;
+size_t max_period_to_try = 6;
+size_t min_flank_len = 8;
+size_t max_flank_len = 25;
 float closeness = 0.3;
 float percent_N_discard = 0.05;
 float tukey_alpha = 0.5;
 bool use_entropy = true;
 float entropy_threshold = 0.45;
 int entropy_k = 2;
-int extend_flank = 6;
+size_t extend_flank = 6;
 
 // alignment params
 bool adjust = true;
@@ -107,3 +107,5 @@ bool anonymizer_debug = false;
 bool genotyper_debug = false;
 bool why_not_debug = false;
 bool entropy_debug = false;
+
+size_t MIN_STR_LENGTH = 6;

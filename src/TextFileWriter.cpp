@@ -3,7 +3,6 @@
 */
 
 #include <err.h>
-#include <error.h>
 #include <iostream>
 
 #include "TextFileWriter.h"

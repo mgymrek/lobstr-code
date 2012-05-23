@@ -3,7 +3,6 @@
 */
 
 #include <err.h>
-#include <error.h>
 #include <fstream>
 #include <iostream>
 

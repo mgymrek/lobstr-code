@@ -226,6 +226,7 @@ libindex_a_SOURCES = \
 	cs2nt.c
 
 liballelotype_a_SOURCES = \
+	common.cpp \
 	Genotyper.cpp \
 	NoiseModel.cpp \
 	ReadContainer.cpp \
@@ -288,5 +289,4 @@ lobSTR_LDFLAGS = -static $(AM_LDFLAGS)
 allelotype_SOURCES = 	main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS) $(RCPPFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) 
 allelotype_LDADD = liballelotype.a $(RLDFLAGS)  $(VAR_STATIC) $(RINSIDELDFLAGS) $(RCPPLDFLAGS)  $(VAR_DYNAMIC)
-
 

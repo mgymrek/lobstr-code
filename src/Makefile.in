@@ -66,11 +66,12 @@ AR = ar
 ARFLAGS = cru
 liballelotype_a_AR = $(AR) $(ARFLAGS)
 liballelotype_a_LIBADD =
-am_liballelotype_a_OBJECTS = Genotyper.$(OBJEXT) NoiseModel.$(OBJEXT) \
-	ReadContainer.$(OBJEXT) runtime_parameters.$(OBJEXT) \
-	TextFileReader.$(OBJEXT) TextFileWriter.$(OBJEXT) \
-	BamReader.$(OBJEXT) BamMultiReader.$(OBJEXT) \
-	BamWriter.$(OBJEXT) BamAlignment.$(OBJEXT) SamHeader.$(OBJEXT) \
+am_liballelotype_a_OBJECTS = common.$(OBJEXT) Genotyper.$(OBJEXT) \
+	NoiseModel.$(OBJEXT) ReadContainer.$(OBJEXT) \
+	runtime_parameters.$(OBJEXT) TextFileReader.$(OBJEXT) \
+	TextFileWriter.$(OBJEXT) BamReader.$(OBJEXT) \
+	BamMultiReader.$(OBJEXT) BamWriter.$(OBJEXT) \
+	BamAlignment.$(OBJEXT) SamHeader.$(OBJEXT) \
 	SamProgram.$(OBJEXT) SamProgramChain.$(OBJEXT) \
 	SamSequence.$(OBJEXT) SamSequenceDictionary.$(OBJEXT) \
 	SamReadGroup.$(OBJEXT) SamReadGroupDictionary.$(OBJEXT) \
@@ -510,6 +511,7 @@ libindex_a_SOURCES = \
 	cs2nt.c
 
 liballelotype_a_SOURCES = \
+	common.cpp \
 	Genotyper.cpp \
 	NoiseModel.cpp \
 	ReadContainer.cpp \

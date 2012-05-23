@@ -2,11 +2,9 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#include <cstdlib>
-#include <iostream>
-#include <list>
-#include "TabFileWriter.h"
 #include "runtime_parameters.h"
+#include "TabFileWriter.h"
+
 using namespace std;
 
 TabFileWriter::TabFileWriter(const string& filename):
@@ -43,7 +41,7 @@ void TabFileWriter::WriteRecord(const MSReadRecord& read) {
   output_stream << read.ID << "\t"
 		<< read.nucleotides << "\t"
 		<< read.quality_scores << "\t"
-		<< read.detected_ms_region_nuc << "\t"
+		<< read.detected_ms_nuc << "\t"
 		<< read.ms_repeat_best_period << "\t"
 		<< read.msRepeat << "\t"
 		<< read.chrom << "\t"

@@ -33,7 +33,7 @@ void getMSSeq(const string& nucs, int k, string* repeat) {
 }
 
 string getFirstString(const std::string& seq1, const std::string& seq2) {
-  for (int i = 0; i < seq1.size(); i++) {
+  for (size_t i = 0; i < seq1.size(); i++) {
     if (nucToNumber(seq1[i]) < nucToNumber(seq2[i])) return seq1;
     if (nucToNumber(seq1[i]) > nucToNumber(seq2[i])) return seq2;
   }
@@ -70,7 +70,7 @@ float GetAverageQualityScore(const vector<string>& qualities) {
 float GetQualityScore(const std::string& quality_score) {
   if (quality_score.length() == 0) return 0;
   float total_quality = 0;
-  for (int i = 0; i < quality_score.length(); ++i) {
+  for (size_t i = 0; i < quality_score.length(); ++i) {
     int qs = quality_score.at(i);
     total_quality += qs - 33;
   }
@@ -192,21 +192,6 @@ char complement(const char nucleotide) {
   }
   return 'N';
 }
-
-/*
-string reverseComplement(const string& nucs){
-  string rev;
-  size_t size = nucs.size();
-  rev.resize(size);
-  for(size_t i = 0; i < size; i++){
-    if (nucs.at(i) == 'A') { rev.replace(size-i-1,1,1,'T');}
-    else if (nucs.at(i) == 'T') { rev.replace(size-i-1,1,1,'A');}
-    else if (nucs.at(i) == 'C') { rev.replace(size-i-1,1,1,'G');}
-    else if (nucs.at(i) == 'G') { rev.replace(size-i-1,1,1,'C');}
-    else { rev.replace(size-i-1,1,1,'N');}
-  }
-  return rev;
-  }*/
 
 int nucToNumber(const char& nuc){
   switch(nuc) {

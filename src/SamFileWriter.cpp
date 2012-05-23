@@ -59,9 +59,9 @@ void SamFileWriter::WriteAdjustedRecord(const MSReadRecord &msread) {
   } else {
     bam_alignment.QueryBases = msread.nucleotides;
   }
-    // rname (ref id)
+  // rname (ref id)
   int ref_id;
-  int i = 0;
+  size_t i = 0;
   for (map<string, int>::const_iterator it = chrom_sizes.begin();
        it != chrom_sizes.end(); ++it) {
     if (it->first == msread.chrom) {
@@ -92,20 +92,16 @@ void SamFileWriter::WriteAdjustedRecord(const MSReadRecord &msread) {
   // XC: ref copy number
   bam_alignment.AddTag("XC", "f", msread.refCopyNum);
   // XG: repeat region
-  bam_alignment.AddTag("XG","Z",msread.detected_ms_region_nuc);
+  bam_alignment.AddTag("XG","Z",msread.detected_ms_nuc);
   // XW: sw score
   bam_alignment.AddTag("XW", "i", msread.sw_score);
-  // XA: mismatch in left flank
-  //bam_alignment.AddTag("XA", "i", msread.lDist);
-  // XB: mismatch in right flank
-  //bam_alignment.AddTag("XB", "i", msread.rDist);
   // XP: partial alignment
   bam_alignment.AddTag("XP", "i", (int)msread.partial);
   // XN: name of STR repeat
   if (!msread.name.empty()) {
     bam_alignment.AddTag("XN", "Z", msread.name);
   }
-  if ((msread.msStart-lpos +1) <= (msread.nucleotides.length())) {
+  if ((msread.msStart-lpos +1) <= ((int)msread.nucleotides.length())) {
     writer.SaveAlignment(bam_alignment);
   }
 }
@@ -170,10 +166,10 @@ void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
 			       + rseq.length());
     cigar_data.push_back(cigar_op);
   } else if (msread.diffFromRef > 0) {
-    int m1 = msread.msStart - lpos + 1;
+    size_t m1 = msread.msStart - lpos + 1;
     int ins = msread.diffFromRef;
-    int m2 = (read.length() - msread.diffFromRef - (msread.msStart-lpos+1));
-    if (m1 + ins + m2 != read.length() || m1 < 0 || m2 < 0)
+    size_t m2 = (read.length() - msread.diffFromRef - (msread.msStart-lpos+1));
+    if ((m1 + ins + m2 != read.length()) || (m1 < 0) || (m2 < 0))
       return;
     BamTools::CigarOp cigar_op_l('M', m1);
     BamTools::CigarOp cigar_op_m('I', ins);
@@ -182,10 +178,10 @@ void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
     cigar_data.push_back(cigar_op_m);
     cigar_data.push_back(cigar_op_r);
   } else {
-    int m1 = (msread.msStart-lpos +1);
+    size_t m1 = (msread.msStart-lpos +1);
     int del = (-1*msread.diffFromRef);
-    int m2 = (read.length() - (msread.msStart-lpos+1));
-    if (m1+m2 != read.length() || m1 < 0 || m2 < 0)
+    size_t m2 = (read.length() - (msread.msStart-lpos+1));
+    if ((m1+m2 != read.length()) ||( m1 < 0) || (m2 < 0))
       return;
     BamTools::CigarOp cigar_op_l('M', m1);
     BamTools::CigarOp cigar_op_m('D', del);
@@ -215,7 +211,7 @@ void SamFileWriter::WriteRecord(const MSReadRecord &msread) {
   if (!msread.name.empty()) {
     bam_alignment.AddTag("XN", "Z", msread.name);
   }
-  if ((msread.msStart-lpos +1) <= (msread.nucleotides.length())) {
+  if ((msread.msStart-lpos +1) <= ((int)msread.nucleotides.length())) {
     writer.SaveAlignment(bam_alignment);
   }
 }
@@ -224,65 +220,3 @@ SamFileWriter::~SamFileWriter() {
   writer.Close();
 }
 
-
-/*
-  // set the params
-  qual = msread.quality_scores;
-  qname = msread.ID;
-  flag = 16;
-  rname = msread.chrom;
-  lpos = msread.lStart;
-  rpos = msread.rStart;
-  mapq = 255;
-  mrnm = "*";
-  mpos = 0;
-  isize = 0;
-  // write output
-  if (msread.diffFromRef == 0) {
-    output_stream <<
-      qname << "\t" <<
-      flag << "\t" <<
-      rname << "\t" <<
-      lpos << "\t" <<
-      mapq << "\t" <<
-      (lseq.length() + middle.length()+rseq.length()) << "M" << "\t" <<
-      mrnm << "\t"<<
-      mpos << "\t" <<
-      isize << "\t" <<
-      read << "\t" <<
-      qual;
-  } else if (msread.diffFromRef > 0) {
-    output_stream <<
-      qname << "\t" <<
-      flag << "\t" <<
-      rname << "\t" <<
-      lpos << "\t" <<
-      mapq << "\t" <<
-      (msread.msStart-lpos +1) << "M" << msread.diffFromRef << "I" << (read.length() - msread.diffFromRef - (msread.msStart-lpos+1)) << "M" <<"\t" <<
-      mrnm << "\t"<<
-      mpos << "\t" <<
-      isize << "\t" <<
-      read << "\t" <<
-      qual;
-  } else{
-    output_stream <<
-      qname << "\t" <<
-      flag << "\t" <<
-      rname << "\t" <<
-      lpos << "\t" <<
-      mapq << "\t" <<
-      (msread.msStart-lpos +1) << "M" << (-1*msread.diffFromRef) << "D" << (read.length() - (msread.msStart-lpos+1)) << "M" <<"\t" <<
-      mrnm << "\t"<<
-      mpos << "\t" <<
-      isize << "\t" <<
-      read << "\t" <<
-      qual;
-  }  
-  output_stream << "\t"
-		<< "XP:Z:" << msread.chrom << ":" << msread.msStart << "-" << msread.msEnd
-		<< "\t"
-		<< "XL:f:" << str_length << endl;
-  float str_length = msread.refCopyNum +
-    float(msread.diffFromRef)/float(msread.msRepeat.length());
-
-*/

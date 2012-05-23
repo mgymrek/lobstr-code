@@ -2,25 +2,23 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#include <iostream>
-#include <string>
-#include <cstdlib>
-#include <unistd.h>
 #include <algorithm>
-#include <iterator>
 #include <cmath>
+#include <cstdlib>
 #include <fftw3.h>
+#include <iostream>
+#include <iterator>
+#include <string>
+#include <unistd.h>
 
-#include "FFT_four_nuc_vectors.h"
-#include "ISatellite.h"
-#include "STRDetector.h"
-#include "runtime_parameters.h"
-#include "EntropyDetection.h"
-#include "runtime_parameters.h"
-#include "TukeyWindowGenerator.h"
-#include "HammingWindowGenerator.h"
 #include "common.h"
+#include "EntropyDetection.h"
+#include "FFT_four_nuc_vectors.h"
+#include "HammingWindowGenerator.h"
+#include "ISatellite.h"
 #include "runtime_parameters.h"
+#include "STRDetector.h"
+#include "TukeyWindowGenerator.h"
 
 using namespace std;
 
@@ -29,13 +27,16 @@ int new_window_step = fft_window_step;
 
 STRDetector::STRDetector(){}
 
-
 /*
    FFT-with-FFTW copied from http://nashruddin.com/fft-with-fftw-example.html
 */
 
 
 bool STRDetector::ProcessRead(MSReadRecord* read) {
+  if (debug) {
+    cout << read->nucleotides << endl;
+  }
+
   // Preprocessing checks
   if (read->nucleotides.length() < (fft_window_size-1)) {
     if (why_not_debug) {
@@ -75,8 +76,8 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     3. Detect Lobe on summed matrix
     4. Store results in window_lobes_detection vector
   */
-  int nuc_start;
-  int nuc_end;
+  size_t nuc_start;
+  size_t nuc_end;
   string detected_microsatellite_nucleotides;
   EntropyDetection ed_filter(read->nucleotides, fft_window_size, fft_window_step);
   if (!ed_filter.EntropyIsAboveThreshold()) {
@@ -85,6 +86,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     }
     return false;
   }
+
   size_t start, end;
   bool rep_end = false; // is the end actually repetitive?
   ed_filter.FindStartEnd(start, end, &rep_end);
@@ -95,7 +97,8 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       nuc_end >= read->nucleotides.size()) 
     return false;
   // allow more nucleotides in detection step
-  if (nuc_start-extend_flank >= 0 && nuc_end - extend_flank +1 <= read->nucleotides.size()) {
+  if ((nuc_start-extend_flank >= 0) && 
+      (nuc_end - extend_flank +1 <= read->nucleotides.size())) {
     detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start-extend_flank,nuc_end - nuc_start+1);      
   } else {
     detected_microsatellite_nucleotides = read->nucleotides.substr(nuc_start,nuc_end - nuc_start+1);     
@@ -138,8 +141,10 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     
     min_period=2;
     size_t lobe_width = round( 1024.0 / ((double)detected_microsatellite_nucleotides.length()) );
-    HammingWindowGenerator *pHammingWindowGenerator = HammingWindowGenerator::GetHammingWindowSingleton();
-    const WindowVector *pHamming_Noise = pHammingWindowGenerator->GetWindow( lobe_width );
+    HammingWindowGenerator *pHammingWindowGenerator = 
+      HammingWindowGenerator::GetHammingWindowSingleton();
+    const WindowVector *pHamming_Noise = 
+      pHammingWindowGenerator->GetWindow( lobe_width );
     double noise_y = 0;
     std::vector<double> noise;
     noise.resize(lobe_width);
@@ -153,7 +158,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     const WindowVector *pHamming_roi = pHammingWindowGenerator->GetWindow( lobe_width * 2 + 1 );
     
     for (size_t period = min_period; period<=max_period_to_try; period++) {
-      
       double period_energy = 0 ;
       
       size_t f = 1 ;
@@ -164,12 +168,10 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       size_t roi_x_end = round(center + (double)lobe_width+1) ;
       if (roi_x_end>1023)
 	roi_x_end=1023;
-      size_t roi_x_size = roi_x_end - roi_x_start ;
       for ( size_t roi_x = roi_x_start ; roi_x < roi_x_end ; roi_x++ ) {
 	roi_y += fft_vec[roi_x] * pHamming_roi->at(roi_x-roi_x_start);
       }
-      
-      period_energy = (roi_y - noise_y) * period;//pow((roi_y - noise_y) * period, 2);
+      period_energy = (roi_y - noise_y) * period;
       energy.push_back(period_energy);
     }
     
@@ -218,6 +220,8 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   read->ms_repeat_next_best_period = next_best_period;
   
   // set indices of left, STR, and right regions
+  if ((read->ms_start >= (int)read->nucleotides.length()) || 
+      (read->ms_end+1 >= (int)read->nucleotides.length())) return false;
   read->left_flank_nuc = (nuc_start>0) ? read->nucleotides.substr(0, read->ms_start) : "-" ;
   read->right_flank_nuc = read->nucleotides.substr(read->ms_end+1); // changed mgymrek
   read->detected_ms_region_nuc = detected_microsatellite_nucleotides;
@@ -227,25 +231,39 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   // if repetitive end, don't trim
   read->left_flank_index_from_start = 0;
   read->right_flank_index_from_end = 0;
-  if (read->left_flank_nuc.size() > max_flank_len & !rep_end) {
+  if ((read->left_flank_nuc.size() > max_flank_len) & !rep_end) {
     string left_flank = read->left_flank_nuc;
     read->left_flank_nuc = left_flank.substr(left_flank.length()-max_flank_len,
 					     max_flank_len);
     read->left_flank_index_from_start = left_flank.length() - max_flank_len;
   }
-  if (read->right_flank_nuc.size() > max_flank_len & !rep_end) {
+  if ((read->right_flank_nuc.size() > max_flank_len) & !rep_end) {
     string right_flank = read->right_flank_nuc;
     read->right_flank_nuc = right_flank.substr(0, max_flank_len);
     read->right_flank_index_from_end = right_flank.length() - max_flank_len;
-    }
-  read->nucleotides = read->left_flank_nuc + read->detected_ms_region_nuc+read->right_flank_nuc;
-  read->quality_scores = read->quality_scores.substr(read->left_flank_index_from_start,read->nucleotides.size());
-  read->detected_ms_nuc = ms_period_nuc;
+  }
+
+  size_t nuc_len = (read->orig_nucleotides.length() - 
+		    read->right_flank_index_from_end -
+		    read->left_flank_index_from_start);
+
+  if (((read->left_flank_index_from_start+nuc_len) <= read->nucleotides.size()) & 
+      ((read->left_flank_index_from_start+nuc_len)  >= 0)) {
+    read->nucleotides = read->orig_nucleotides.substr(read->left_flank_index_from_start,nuc_len );
+    read->quality_scores = read->quality_scores.substr(read->left_flank_index_from_start,read->nucleotides.size());
+  } else {
+    return false;
+  }
+
+  //  read->detected_ms_nuc = ms_period_nuc;
 
   if (why_not_debug ) {
     cerr << read->left_flank_nuc.length() << " " << read->right_flank_nuc.length() << " " << best_period << endl;
   }
-  return ((read->left_flank_nuc.length() >= min_flank_len) & (read->right_flank_nuc.length() >= min_flank_len) &
-	  best_period <= max_period & best_period >= min_period);
+  return ((read->left_flank_nuc.length() >= min_flank_len) & 
+	  (read->right_flank_nuc.length() >= min_flank_len) &
+	  (best_period <= max_period) & 
+	  (best_period >= min_period) &
+	  (read->detected_ms_region_nuc.length() >= MIN_STR_LENGTH));
 }
 

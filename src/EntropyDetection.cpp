@@ -32,7 +32,7 @@ double EntropyDetection::EntropyOneWindowDinuc(const std::string& window_nucs) {
   size_t window_length = window_nucs.length();
   vector<int> kmer_counts (44, 0);
   float subseqs = 0;
-  for (int i = 0; i < window_length - 2; ++i) {
+  for (size_t i = 0; i < window_length - 2; ++i) {
     char nuc1 = window_nucs.at(i);
     char nuc2 = window_nucs.at(i+1);
     if (nuc1 != 'N' && nuc2 != 'N') {
@@ -41,7 +41,7 @@ double EntropyDetection::EntropyOneWindowDinuc(const std::string& window_nucs) {
     }
   }
   float entropy = 0;
-  for (int i = 0; i < kmer_counts.size(); ++i) {
+  for (size_t i = 0; i < kmer_counts.size(); ++i) {
     int count = kmer_counts.at(i);
     if (count !=0) {
       float p = float(count)/subseqs;
@@ -51,31 +51,6 @@ double EntropyDetection::EntropyOneWindowDinuc(const std::string& window_nucs) {
   return (4-entropy)/4;
 }
 
-double EntropyDetection::EntropyOneWindowK(const std::string& window_nucs, int k) {
-  map<string, int> kmer_counts;
-  size_t window_length = window_nucs.length();
-  size_t subseqs = 0;
-  for (int i = 0; i < window_length - k; i = i+1) {
-    string subseq = window_nucs.substr(i, k);
-    subseqs += 1;
-    if (kmer_counts.find(subseq) == kmer_counts.end()) {
-      kmer_counts.insert(make_pair(subseq, 1));
-    } else {
-      kmer_counts.at(subseq) += 1;
-    }
-  }
-  float entropy = 0;
-  for (map<string, int>::const_iterator it = kmer_counts.begin();
-       it != kmer_counts.end(); ++it) {
-    float p = float(it->second)/float(subseqs);
-    entropy += MinusPlogP(p);
-  }
-  float max_entropy = pow(2.0,float(k));
-  //float max_entropy = 4;
-  float percent_max = (max_entropy - entropy)/max_entropy;
-  return percent_max;
-}
-
 void EntropyDetection::CalculateEntropyWindow() {
   _entropy_window.clear();
   string window_nucleotides;
@@ -83,8 +58,7 @@ void EntropyDetection::CalculateEntropyWindow() {
     window_nucleotides = _nucs.substr(i, _window_size);
     double entropy = EntropyOneWindowDinuc(window_nucleotides);
     if (entropy > 0.8)
-      entropy = 0; // get rid of homopolymer runs messing it up
-    //     cout << window_nucleotides << " " << entropy << endl;
+      entropy = 0; 
     _entropy_window.push_back(entropy);
   }
 }
@@ -107,19 +81,15 @@ void EntropyDetection::FindStartEnd(size_t& start, size_t & end, bool* repetitiv
   // Go backwards (to the left)
   int starti;
   for (starti = index_of_max ; starti>=0; starti--)
-    //if (entropy_window[starti] < entropy_threshold)
-    // break;
     if (entropy_window[starti] < 0.8*max_entropy)
       break;
   start = starti+1;
   if (start == 0) {
     start += 1;
     *repetitive_end = true;
-  } // Try some flanking region
+  }
   // Go forwards (to the right)
   for (end = index_of_max ; end < entropy_window.size(); end++)  {
-    //if ( entropy_window[end] < entropy_threshold )
-    //  break;
     if (entropy_window[end] < 0.8*max_entropy)
       break;
   }
@@ -127,6 +97,6 @@ void EntropyDetection::FindStartEnd(size_t& start, size_t & end, bool* repetitiv
   if (end == entropy_window.size() -1) {
     end-=1;
     *repetitive_end = true;
-  } // Try some flanking region
+  }
 }
 
