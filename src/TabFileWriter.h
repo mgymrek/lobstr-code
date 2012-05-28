@@ -2,17 +2,21 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef __TAB_FILE_WRITER_H__
-#define __TAB_FILE_WRITER_H__
+#ifndef SRC_TABFILEWRITER_H__
+#define SRC_TABFILEWRITER_H__
 
-#include "MSReadRecord.h"
-#include "TextFileWriter.h"
+#include <stdlib.h>
+
+#include <string>
+
+#include "src/ReadPair.h"
+#include "src/TextFileWriter.h"
 
 class TabFileWriter : public TextFileWriter {
  public:
-  TabFileWriter(const std::string& filename);
+  explicit TabFileWriter(const std::string& filename);
   virtual ~TabFileWriter();
-  void WriteRecord(const MSReadRecord& msread);
+  void WriteRecord(const ReadPair& read_pair);
 };
 
-#endif /* __TAB_FILE_WRITER_H__ */
+#endif  // SRC_TABFILEWRITER_H__

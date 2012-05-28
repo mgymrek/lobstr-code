@@ -2,17 +2,15 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef SAMFILEWRITER_H_
-#define SAMFILEWRITER_H_
+#ifndef SRC_SAMFILEWRITER_H_
+#define SRC_SAMFILEWRITER_H_
 
 #include <string>
 #include <map>
 
 #include "api/BamAlignment.h"
 #include "api/BamWriter.h"
-#include "MSReadRecord.h"
-
-using namespace std;
+#include "src/ReadPair.h"
 
 namespace BamTools {
   class BamWriter;
@@ -22,28 +20,12 @@ namespace BamTools {
 class SamFileWriter {
  public:
   SamFileWriter(const std::string& _filename,
-		const std::map<string, int>& _chrom_sizes);
-  void WriteRecord(const MSReadRecord& msread);
-  void WriteAdjustedRecord(const MSReadRecord& msread);
+                const std::map<std::string, int>& _chrom_sizes);
+  void WriteRecord(const ReadPair& read_pair);
   virtual ~SamFileWriter();
  private:
-  std::map<string, int> chrom_sizes;
+  std::map<std::string, int> chrom_sizes;
   BamTools::BamWriter writer;
-  string qname;
-  int flag;
-  string rname;
-  int lpos;
-  int rpos;
-  int mapq;
-  string mrnm;
-  int mpos;
-  int isize;
-  string lseq;
-  string middle;
-  string rseq;
-  string cigar;
-  string read;
-  string qual;
 };
 
-#endif /* SAMFILEWRITER_H_ */
+#endif  // SRC_SAMFILEWRITER_H_

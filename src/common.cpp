@@ -7,14 +7,62 @@
 #include <sstream>
 
 #include "BamFileReader.h"
+#include "BamPairedFileReader.h"
 #include "common.h"
 #include "FastaFileReader.h"
+#include "FastaPairedFileReader.h"
 #include "FastqFileReader.h"
+#include "FastqPairedFileReader.h"
+#include "ZippedFastaFileReader.h"
+#include "ZippedFastqFileReader.h"
 #include "runtime_parameters.h"
 
 using namespace std;
 
-void getMSSeq(const string& nucs, int k, string* repeat) {
+int QUAL_CUTOFF = 20;
+void TrimRead(const string& input_nucs,
+	      const string& input_quals,
+	      string* trimmed_nucs,
+	      string* trimmed_quals) {
+  // if last bp is fine, return as is
+  size_t l = input_nucs.length();
+  if (int(input_quals.at(l-1)-33) >= QUAL_CUTOFF) {
+    *trimmed_nucs = input_nucs;
+    *trimmed_quals = input_quals;
+    return;
+  }
+
+  // else find the best place to chop
+  // done according to bwa manual -q option
+  // don't let read length go below minimum
+  size_t max_x;
+  int max_score = 0;
+  for (size_t x = min_read_length; x <= l; x++) {
+    int score = 0;
+    for (size_t i = x+1; i < l; i++) {
+      score += (QUAL_CUTOFF-(input_quals.at(i)-33));
+    }
+    if (score >= max_score) {
+      max_score = score;
+      max_x = x;
+    }
+  }
+  *trimmed_nucs = input_nucs.substr(0,max_x);
+  *trimmed_quals = input_quals.substr(0,max_x);
+}
+
+size_t count(const string& s, const char& c) {
+  size_t num = 0;
+  for (size_t i = 0; i < s.length(); i++) {
+    if (s.at(i) == c) num++;
+  }
+  return num;
+}
+
+
+bool getMSSeq(const string& nucs, int k, string* repeat) {
+  if (k < 2 || k > 6) return false;
+  if ((int)nucs.size() < k) return false;
   map<string,int> countKMers;
   size_t i;
   string subseq;
@@ -29,7 +77,15 @@ void getMSSeq(const string& nucs, int k, string* repeat) {
       maxkmer = countKMers.at(subseq);
     }
   }
-  getCanonicalMS(kmer, repeat);
+  string repseqfw;
+  string repseqrev;
+  string repseq;
+  if (kmer.size() < 2 || kmer.size() > 6) return false;
+  getCanonicalMS(kmer, &repseqfw);
+  getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
+  repseq = getFirstString(repseqfw, repseqrev);
+  *repeat = repseq;
+  return true;
 }
 
 string getFirstString(const std::string& seq1, const std::string& seq2) {
@@ -203,6 +259,15 @@ int nucToNumber(const char& nuc){
   }
 }
 
+std::string reverse(const std::string& s) {
+  string rev;
+  size_t size = s.size();
+  rev.resize(size);
+  for (size_t i = 0; i < size; i++) {
+    rev.replace(size-i-1,1,s.substr(i,1));
+  }
+  return rev;
+}
 
 void getCanonicalMS(const string& msnucs, string* canonical){
   // common ones
@@ -234,15 +299,35 @@ void getCanonicalMS(const string& msnucs, string* canonical){
 			  (msnucs, *canonical)); 
 }
 
-IFileReader* create_file_reader(const string& filename) {
-  switch(input_type)
-    {
+IFileReader* create_file_reader(const string& filename1,
+				const string& filename2) {
+  switch(input_type) {
     case INPUT_FASTA:
-      return new FastaFileReader(filename);  
+      if (paired) {
+	return new FastaPairedFileReader(filename1, filename2);
+      } else {
+	if (gzip) {
+	  return new ZippedFastaFileReader(filename1);
+	} else {
+	  return new FastaFileReader(filename1);  
+	}
+      }
     case INPUT_FASTQ:
-      return new FastqFileReader(filename);
+      if (paired) {
+	return new FastqPairedFileReader(filename1, filename2);
+      } else {
+	if (gzip) {
+	  return new ZippedFastqFileReader(filename1);
+	} else {
+	  return new FastqFileReader(filename1);
+	}
+      }
     case INPUT_BAM:
-      return new BamFileReader(filename);
+      if (paired) {
+	return new BamPairedFileReader(filename1);
+      } else {
+	return new BamFileReader(filename1);
+      }
     default:
       //This should really never happen
       errx(1,"Internal error, unknown 'input_type' (%d)", (int)input_type);

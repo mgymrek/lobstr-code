@@ -7,17 +7,17 @@
 #include <iostream>
 
 #include "IFileReader.h"
-#include "TextFileReader.h"
+#include "ZippedTextFileReader.h"
 
 using namespace std;
 
-TextFileReader::TextFileReader(const std::string& _filename) :
+ZippedTextFileReader::ZippedTextFileReader(const std::string& _filename) :
   current_line(0), filename(_filename),
   input_file_stream(_filename.empty() ? NULL : create_file_stream(filename)),
   input_stream(_filename.empty() ? cin : *input_file_stream ) {}
 
-std::ifstream* TextFileReader::create_file_stream(const std::string &filename) {
-  std::ifstream *input_stream = new std::ifstream(filename.c_str(), std::ios_base::in);
+igzstream* ZippedTextFileReader::create_file_stream(const std::string &filename) {
+  igzstream *input_stream = new igzstream(filename.c_str(), std::ios_base::in);
   if (input_stream==NULL)
     err(1, "Failed to allocate memory for ifstream");
   if (! (*input_stream))
@@ -26,23 +26,23 @@ std::ifstream* TextFileReader::create_file_stream(const std::string &filename) {
   return input_stream;
 }
 
-TextFileReader::~TextFileReader() {
+ZippedTextFileReader::~ZippedTextFileReader() {
   if (input_file_stream!=NULL) {
     delete input_file_stream;
     input_file_stream = NULL ;
   }
 }
 
-bool TextFileReader::GetNextLine(string* line) {
+bool ZippedTextFileReader::GetNextLine(string* line) {
   current_line++;
   if (!getline(input_stream, *line))
     return false;
   return true;
 }
 
-bool TextFileReader::GetNextRecord(ReadPair* read_pair) {
+bool ZippedTextFileReader::GetNextRecord(ReadPair* read_pair) {
   return false; // do nothing
 }
-bool TextFileReader::GetNextRead(MSReadRecord* read) {
+bool ZippedTextFileReader::GetNextRead(MSReadRecord* read) {
   return false; // do nothing
 }

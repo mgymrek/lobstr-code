@@ -2,12 +2,11 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef __ENTROPY_DETECTION_H__
-#define __ENTROPY_DETECTION_H__
+#ifndef SRC_ENTROPYDETECTION_H__
+#define SRC_ENTROPYDETECTION_H__
 
 #include <string>
 #include <vector>
-
 
 class EntropyDetection {
  private:
@@ -29,7 +28,7 @@ class EntropyDetection {
   bool EntropyIsAboveThreshold();
 
   // determine start and end region
-  void FindStartEnd(size_t& start, size_t & end, bool* repetitive_end);
+  void FindStartEnd(size_t* start, size_t* end, bool* repetitive_end);
 };
 
-#endif // __ENTROPY_DETECTION_H__
+#endif  // SRC_ENTROPYDETECTION_H__

@@ -2,35 +2,41 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef BWA_READALIGNER_H_
-#define BWA_READALIGNER_H_
+#ifndef SRC_BWAREADALIGNER_H_
+#define SRC_BWAREADALIGNER_H_
 
 #include <map>
-#include <set>
+#include <string>
 #include <vector>
-#include <list>
 
-#include "bwtaln.h"
-#include "bwase.h"
-#include "common.h"
-#include "MSReadRecord.h"
-#include "TabFileWriter.h"
+#include "src/cigar.h"
+#include "src/common.h"
+#include "src/ReadPair.h"
 
-using namespace std;
-
+// Store a single alignment found by BWA
 struct ALIGNMENT {
+  // Identifier of the STR aligned to
   int id;
+  // Is this the left flanking region
   bool left;
+  // Chrom of the STR aligned to
   std::string chrom;
+  // Start of the STR
   int start;
+  // End of the STR
   int end;
+  // Repeat motif
   std::string repeat;
+  // Reference copy number
   float copynum;
+  // Name of the STR
   std::string name;
+  // true = positive, false = minus
   bool strand;
+  // Position of the start of the alignment
   int pos;
-  int score;
-  // provide overloaded operators to compare 
+
+  // provide overloaded operators to compare
   // when used as a map key
   bool operator<(const ALIGNMENT& ref_pos1) const {
     if (chrom != ref_pos1.chrom) return true;
@@ -44,53 +50,103 @@ struct ALIGNMENT {
 
 class BWAReadAligner {
  public:
-  BWAReadAligner(map<std::string, BWT>* bwt_references,
-		 map<std::string, BNT>* bnt_annotations,
-		 map<int, REFSEQ>* ref_sequences,
-		 gap_opt_t *opts);
+  BWAReadAligner(std::map<std::string, BWT>* bwt_references,
+                 std::map<std::string, BNT>* bnt_annotations,
+                 std::map<int, REFSEQ>* ref_sequences,
+                 gap_opt_t *opts);
   virtual ~BWAReadAligner();
 
-  // main function - call BWA aligner 
-  bool ProcessRead(MSReadRecord* read);
+  // main function - align read pair
+  bool ProcessReadPair(ReadPair* read_pair);
 
  protected:
+  // Process a single read of a pair
+  // Return possible alignments of flanking regions
+  // in "good_*_alignments"
+  bool ProcessRead(MSReadRecord* read,
+                   std::vector<ALIGNMENT>* good_left_alignments,
+                   std::vector<ALIGNMENT>* good_right_alignments);
+
+  // Call BWA to align flanking regions
+  bwa_seq_t* BWAAlignFlanks(const MSReadRecord& read);
+
+  // Update partial flanking region from aligned one
+  void UpdatePartialFlank(const ALIGNMENT& aligned_flank,
+                          ALIGNMENT* unaligned_flank,
+                          int nuc_size, int aligned_flank_size,
+                          int unaligned_flank_size);
+
   // Get info from ref fields of index
   void ParseRefid(const std::string& refstring, ALIGNMENT* refid);
-  
+
   // Get the coordinates of each alignment
-  bool GetAlignmentCoordinates(bwa_seq_t* aligned_seqs, 
-			       const std::string& repseq,
-			       std::list<ALIGNMENT>* alignments);
+  bool GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
+                               const std::string& repseq,
+                               std::vector<ALIGNMENT>* alignments);
 
   // Get a unique shared alignment between left and right flanks
-  static bool GetSharedAln(const list<ALIGNMENT>& map1,
-			   const list<ALIGNMENT>& map2,
-			   ALIGNMENT* left_refid,
-			   ALIGNMENT* right_refid);
+  // Output unique left and right alignments in *_refids
+  bool GetSharedAlns(const std::vector<ALIGNMENT>& map1,
+                     const std::vector<ALIGNMENT>& map2,
+                     std::vector<ALIGNMENT>* left_refids,
+                     std::vector<ALIGNMENT>* right_refids);
+
+  // Align mate
+  bool AlignMate(const ReadPair& read_pair,
+                 std::vector<ALIGNMENT>* mate_alignments,
+                 const std::string& repseq);
+
+  // Check that the mate pair maps to the same region
+  // If yes, update mate_alignment info
+  bool CheckMateAlignment(const std::vector<ALIGNMENT>& mate_alignments,
+                          const ALIGNMENT& left_alignment,
+                          const ALIGNMENT& right_alignment,
+                          ALIGNMENT* mate_alignment);
+
+  // Try stitching a pair of reads.
+  // Update info in num_aligned_read and
+  // treat as single alignment
+  bool StitchReads(ReadPair* read_pair,
+                   ALIGNMENT* left_alignment,
+                   ALIGNMENT* right_alignment);
+
+  // Output fields for successful alignment
+  bool OutputAlignment(ReadPair* read_pair,
+                       const ALIGNMENT& left_alignment,
+                       const ALIGNMENT& right_alignment,
+                       const ALIGNMENT& mate_alignment,
+                       bool treat_as_paired);
 
   // Perform local realignment, adjust exact STR boundaries
   // update cigar score.
-  bool AdjustAlignment(MSReadRecord* aligned_read, bool partial, 
-		       bool left_aligned, bool right_aligned);
+  bool AdjustAlignment(MSReadRecord* aligned_read, bool partial,
+                       bool left_aligned, bool right_aligned);
 
   // Adjust partial read alignments
-  bool AdjustPartialAlignment(MSReadRecord* aligned_read, 
-			      const CIGAR_LIST& cigar_list, 
-			      bool left_aligned, bool right_aligned, 
-			      int start_pos, int reglen);
-  
-  // Get the number of repeat units using the adjusted cigar score
-  // Also refine position of flanking regions
-  bool GetSTRAllele(MSReadRecord* aligned_read, const CIGAR_LIST& cigar_list, bool* partial);
+  // If found to be completely spanning, update
+  // aligned_read
+  bool AdjustPartialAlignment(MSReadRecord* aligned_read,
+                              const CIGAR_LIST& cigar_list,
+                              bool left_aligned, bool right_aligned,
+                              int start_pos, int reglen);
 
-  // stroe all BWT references
-  map<std::string, BWT>* _bwt_references;
+  // Refine the cigar score and recalculate number of repeats
+  bool GetSTRAllele(MSReadRecord* aligned_read,
+                    const CIGAR_LIST& cigar_list);
+  // store all BWT references
+  std::map<std::string, BWT>* _bwt_references;
   // store all BWT annotations
-  map<std::string, BNT>* _bnt_annotations;
+  std::map<std::string, BNT>* _bnt_annotations;
   // store all STR reference sequences
-  map<int, REFSEQ>* _ref_sequences;
+  std::map<int, REFSEQ>* _ref_sequences;
+  // Keep parsed refid info to avoid
+  // reparsing each time. The value is
+  // a dummy ALIGNMENT with only ref info
+  std::map<std::string, ALIGNMENT> _ref_info;
   // all bwa alignment options
   gap_opt_t *_opts;
+  // default options
+  gap_opt_t *_default_opts;
 };
 
-#endif /* BWA_READALIGNER_H_ */
+#endif  // SRC_BWAREADALIGNER_H_

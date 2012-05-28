@@ -103,15 +103,19 @@ libindex_a_OBJECTS = $(am_libindex_a_OBJECTS)
 liblobstr_a_AR = $(AR) $(ARFLAGS)
 liblobstr_a_LIBADD =
 am_liblobstr_a_OBJECTS = BamFileReader.$(OBJEXT) \
-	BWAReadAligner.$(OBJEXT) CachedWindowGenerator.$(OBJEXT) \
-	common.$(OBJEXT) EntropyDetection.$(OBJEXT) \
-	FastaFileReader.$(OBJEXT) FastqFileReader.$(OBJEXT) \
-	FFT_four_nuc_vectors.$(OBJEXT) FFT_nuc_vectors.$(OBJEXT) \
+	BamPairedFileReader.$(OBJEXT) BWAReadAligner.$(OBJEXT) \
+	CachedWindowGenerator.$(OBJEXT) common.$(OBJEXT) \
+	EntropyDetection.$(OBJEXT) FastaFileReader.$(OBJEXT) \
+	FastaPairedFileReader.$(OBJEXT) FastqFileReader.$(OBJEXT) \
+	FastqPairedFileReader.$(OBJEXT) FFT_four_nuc_vectors.$(OBJEXT) \
+	FFT_nuc_vectors.$(OBJEXT) gzstream.$(OBJEXT) \
 	HammingWindowGenerator.$(OBJEXT) MultithreadData.$(OBJEXT) \
 	nw.$(OBJEXT) runtime_parameters.$(OBJEXT) \
 	SamFileWriter.$(OBJEXT) STRDetector.$(OBJEXT) \
 	TabFileWriter.$(OBJEXT) TextFileReader.$(OBJEXT) \
 	TextFileWriter.$(OBJEXT) TukeyWindowGenerator.$(OBJEXT) \
+	ZippedFastaFileReader.$(OBJEXT) \
+	ZippedFastqFileReader.$(OBJEXT) ZippedTextFileReader.$(OBJEXT) \
 	bamlite.$(OBJEXT) bntseq.$(OBJEXT) bwaseqio.$(OBJEXT) \
 	bwape.$(OBJEXT) bwase.$(OBJEXT) bwt.$(OBJEXT) bwtaln.$(OBJEXT) \
 	bwtgap.$(OBJEXT) bwtindex.$(OBJEXT) bwtio.$(OBJEXT) \
@@ -323,28 +327,36 @@ AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 AM_CPPFLAGS = $(FFTW_CFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) $(RCPPFLAGS)
 noinst_headers = \
 	BamFileReader.h \
+	BamPairedFileReader.h \
 	BWAReadAligner.h \
 	CachedWindowGenerator.h \
 	cigar.h \
 	common.h \
 	EntropyDetection.h \
 	FastaFileReader.h \
+	FastaPairedFileReader.h \
 	FastqFileReader.h \
+	FastqPairedFileReader.h \
 	FFT_nuc_vectors.h \
 	FFT_four_nuc_vectors.h \
+	gzstream.h \
 	IFileReader.h \
 	ISatellite.h \
 	MSReadRecord.h \
 	MultithreadData.h \
+	nw.h \
 	HammingWindowGenerator.h \
 	TukeyWindowGenerator.h \
-	nw.h \
+	ReadPair.h \
+	runtime_parameters.h \
 	SamFileWriter.h \
 	STRDetector.h \
-	runtime_parameters.h \
 	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
+	ZippedFastaFileReader.h \
+	ZippedFastqFileReader.h \
+	ZippedTextFileReader.h \
 	bamlite.h \
 	bntseq.h \
 	bwase.h \
@@ -407,14 +419,18 @@ noinst_headers = \
 noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a 
 liblobstr_a_SOURCES = \
 	BamFileReader.cpp \
+	BamPairedFileReader.cpp \
 	BWAReadAligner.cpp \
 	CachedWindowGenerator.cpp \
 	common.cpp \
 	EntropyDetection.cpp \
 	FastaFileReader.cpp \
+	FastaPairedFileReader.cpp \
 	FastqFileReader.cpp \
+	FastqPairedFileReader.cpp \
 	FFT_four_nuc_vectors.cpp \
 	FFT_nuc_vectors.cpp \
+	gzstream.cpp \
 	HammingWindowGenerator.cpp \
 	MultithreadData.cpp \
 	nw.cpp \
@@ -425,6 +441,9 @@ liblobstr_a_SOURCES = \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
+	ZippedFastaFileReader.cpp \
+	ZippedFastqFileReader.cpp \
+	ZippedTextFileReader.cpp \
 	bamlite.c \
 	bntseq.c \
 	bwaseqio.c \
@@ -718,6 +737,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BamIndexFactory_p.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BamMultiReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BamMultiReader_p.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BamPairedFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BamPipe_p.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BamRandomAccessController_p.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BamReader.Po@am__quote@
@@ -732,7 +752,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FFT_four_nuc_vectors.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FFT_nuc_vectors.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastaFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastaPairedFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastqFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FastqPairedFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Genotyper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HammingWindowGenerator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ILocalIODevice_p.Po@am__quote@
@@ -756,6 +778,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TukeyWindowGenerator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ZippedFastaFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ZippedFastqFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ZippedTextFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allelotype-main_allelotype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bamlite.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bamtools_fasta.Po@am__quote@
@@ -780,6 +805,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwtsw2_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cs2nt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gzstream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/is.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kstring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-main.Po@am__quote@

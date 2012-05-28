@@ -35,11 +35,11 @@ bool MultithreadData::input_output_counters_equal() {
   return equal;
 }
 
-void MultithreadData::post_new_input_read(MSReadRecord* pRecord) {
+void MultithreadData::post_new_input_read(ReadPair* pRecord) {
   items_to_process.put(pRecord);
 }
 
-MSReadRecord* MultithreadData::get_new_input() {
+ReadPair* MultithreadData::get_new_input() {
   return items_to_process.get();
 }
 
@@ -47,11 +47,11 @@ void MultithreadData::wait_for_completed_input_processing() {
   items_to_process.wait_for_all_slots();
 }
 
-void MultithreadData::post_new_output_read(MSReadRecord* pRecord) {
+void MultithreadData::post_new_output_read(ReadPair* pRecord) {
   items_to_output.put(pRecord);
 }
 
-MSReadRecord* MultithreadData::get_new_output() {
+ReadPair* MultithreadData::get_new_output() {
   return items_to_output.get();
 }
 

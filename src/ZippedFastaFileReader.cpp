@@ -6,14 +6,14 @@
 #include <iostream>
 
 #include "common.h"
-#include "FastaFileReader.h"
+#include "ZippedFastaFileReader.h"
 
 using namespace std;
 
-FastaFileReader::FastaFileReader(const string& _filename) :
-  TextFileReader(_filename) {}
+ZippedFastaFileReader::ZippedFastaFileReader(const string& _filename) :
+  ZippedTextFileReader(_filename) {}
 
-bool FastaFileReader::GetNextRecord(ReadPair* read_pair) {
+bool ZippedFastaFileReader::GetNextRecord(ReadPair* read_pair) {
   read_pair->reads.clear();
   MSReadRecord single_read;
   if (GetNextRead(&single_read)) {
@@ -24,7 +24,7 @@ bool FastaFileReader::GetNextRecord(ReadPair* read_pair) {
   }
 }
 
-bool FastaFileReader::GetNextRead(MSReadRecord* read) {
+bool ZippedFastaFileReader::GetNextRead(MSReadRecord* read) {
   string ID;
   string nuc;
   

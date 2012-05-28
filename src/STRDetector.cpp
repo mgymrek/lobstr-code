@@ -25,12 +25,30 @@ using namespace std;
 int new_window_size = fft_window_size;
 int new_window_step = fft_window_step;
 
-STRDetector::STRDetector(){}
-
 /*
    FFT-with-FFTW copied from http://nashruddin.com/fft-with-fftw-example.html
 */
 
+STRDetector::STRDetector(){}
+
+bool STRDetector::ProcessReadPair(ReadPair* read_pair) {
+  if (ProcessRead(&read_pair->reads.at(0))) {
+    read_pair->read1_passed_detection = true;
+  }
+  if (paired) {
+    if (ProcessRead(&read_pair->reads.at(1))) {
+      read_pair->read2_passed_detection = true;
+    }
+  }
+
+  // Returns true if at least one read in the pair is detected
+  if (paired) {
+    return (read_pair->read1_passed_detection ||
+	    read_pair->read2_passed_detection);
+  } else {
+    return read_pair->read1_passed_detection;
+  }
+}
 
 bool STRDetector::ProcessRead(MSReadRecord* read) {
   if (debug) {
@@ -89,7 +107,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
 
   size_t start, end;
   bool rep_end = false; // is the end actually repetitive?
-  ed_filter.FindStartEnd(start, end, &rep_end);
+  ed_filter.FindStartEnd(&start, &end, &rep_end);
   nuc_start = start * new_window_step + extend_flank; // added extend each by window step size
   nuc_end = (end + 2) * new_window_step - extend_flank;
   if (nuc_start >= read->nucleotides.length() || nuc_start <= 0 || 
@@ -199,8 +217,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       }
       return false;
     }
-    //    cout << best_energy << " " << next_best_energy  << " " << best_period << endl;
-    
     if (fabs(next_best_energy-best_energy)/((best_energy+next_best_energy)/2)  > closeness) {
       next_best_period = 0;
     }
@@ -247,23 +263,30 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
 		    read->right_flank_index_from_end -
 		    read->left_flank_index_from_start);
 
-  if (((read->left_flank_index_from_start+nuc_len) <= read->nucleotides.size()) & 
+  if (((read->left_flank_index_from_start+nuc_len) <= 
+       read->nucleotides.size()) & 
       ((read->left_flank_index_from_start+nuc_len)  >= 0)) {
-    read->nucleotides = read->orig_nucleotides.substr(read->left_flank_index_from_start,nuc_len );
-    read->quality_scores = read->quality_scores.substr(read->left_flank_index_from_start,read->nucleotides.size());
+    read->nucleotides = read->
+      orig_nucleotides.substr(read->left_flank_index_from_start,nuc_len );
+    read->quality_scores = read->
+      quality_scores.substr(read->left_flank_index_from_start,read->nucleotides.size());
   } else {
     return false;
   }
-
-  //  read->detected_ms_nuc = ms_period_nuc;
-
-  if (why_not_debug ) {
-    cerr << read->left_flank_nuc.length() << " " << read->right_flank_nuc.length() << " " << best_period << endl;
-  }
-  return ((read->left_flank_nuc.length() >= min_flank_len) & 
+  if ( ((read->left_flank_nuc.length() >= min_flank_len) & 
 	  (read->right_flank_nuc.length() >= min_flank_len) &
 	  (best_period <= max_period) & 
 	  (best_period >= min_period) &
-	  (read->detected_ms_region_nuc.length() >= MIN_STR_LENGTH));
+	(read->detected_ms_region_nuc.length() >= MIN_STR_LENGTH))) {
+    string repseq;
+    if (!getMSSeq(read->detected_ms_region_nuc,
+		  read->ms_repeat_best_period, &repseq)) {
+      return false;
+    }
+    read->repseq = repseq;
+    return true;
+  } else {
+    return false;
+  }
 }
 

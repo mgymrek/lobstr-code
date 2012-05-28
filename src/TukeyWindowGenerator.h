@@ -3,10 +3,10 @@
 
 */
 
-#ifndef __TUKEY_WINDOW_GENERATOR_H__
-#define __TUKEY_WINDOW_GENERATOR_H__
+#ifndef SRC_TUKEYWINDOWGENERATOR_H__
+#define SRC_TUKEYWINDOWGENERATOR_H__
 
-#include "CachedWindowGenerator.h"
+#include "src/CachedWindowGenerator.h"
 
 class TukeyWindowGenerator : public CachedWindowGenerator {
  public:
@@ -14,14 +14,10 @@ class TukeyWindowGenerator : public CachedWindowGenerator {
 
  protected:
   static TukeyWindowGenerator* singleton;
-  
- TukeyWindowGenerator() :
-  CachedWindowGenerator("tukey")
-    {
-    }
-  
-  void CalculateWindow(size_t window_size, WindowVector /*output*/ &v) ;
+
+  TukeyWindowGenerator() :
+  CachedWindowGenerator("tukey") {}
+  void CalculateWindow(size_t window_size, WindowVector &v);
 };
 
-
-#endif
+#endif  // SRC_TUKEYWINDOWGENERATOR_H__

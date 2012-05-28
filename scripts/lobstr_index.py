@@ -40,7 +40,7 @@ if (not("--str" in args and "--ref" in args and "--out_dir" in args)):
 strfile = ""
 reffile = ""
 outdir = ""
-extend = 150
+extend = 1000
 pad = 50
 verbose = False
 

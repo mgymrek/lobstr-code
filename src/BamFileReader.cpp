@@ -20,8 +20,19 @@ BamFileReader::BamFileReader(const std::string& _filename) {
   }
 }
 
-bool BamFileReader::GetNextRecord(MSReadRecord* read) {
- BamTools:BamAlignment aln;
+bool BamFileReader::GetNextRecord(ReadPair* read_pair) {
+  read_pair->reads.clear();
+  MSReadRecord single_read;
+  if (GetNextRead(&single_read)) {
+    read_pair->reads.push_back(single_read);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool BamFileReader::GetNextRead(MSReadRecord* read) {
+ BamAlignment aln;
   // check if any lines left
   if (!reader.GetNextAlignment(aln)) {
     return false;

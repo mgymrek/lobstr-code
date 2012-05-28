@@ -27,36 +27,53 @@ TabFileWriter::TabFileWriter(const string& filename):
 		<< "reverse" << "\t"
 		<< "cigar" << "\t"
 		<< "partial" << "\t"
-		<< "score";
-  if (include_orig_read_start) {
-    output_stream << "\tread_start" << endl;
-  } else {
-    output_stream << endl;
-  }
+		<< "score"
+		<< "\tmate dist\tstitched" << endl;
 }
 
 TabFileWriter::~TabFileWriter(){}
 
-void TabFileWriter::WriteRecord(const MSReadRecord& read) {
-  output_stream << read.ID << "\t"
-		<< read.nucleotides << "\t"
-		<< read.quality_scores << "\t"
-		<< read.detected_ms_nuc << "\t"
-		<< read.ms_repeat_best_period << "\t"
-		<< read.msRepeat << "\t"
-		<< read.chrom << "\t"
-		<< read.msStart << "\t"
-		<< read.msEnd << "\t"
-		<< read.read_start << "\t"
-		<< read.diffFromRef << "\t"
-		<< read.refCopyNum << "\t"
-		<< read.reverse << "\t"
-		<< read.cigar_string << "\t"
-		<< read.partial << "\t"
-		<< read.sw_score;
-  if (include_orig_read_start) {
-    output_stream << "\t" << read.orig_start << endl;
-  } else {
-    output_stream << endl;
+void TabFileWriter::WriteRecord(const ReadPair& read_pair) {
+  const int& aligned_read_num = read_pair.aligned_read_num;
+  const int& paired_dist = read_pair.treat_as_paired ?
+    abs(read_pair.reads.at(aligned_read_num).read_start-
+	read_pair.reads.at(1-aligned_read_num).read_start) : -1;
+  output_stream << read_pair.reads.at(aligned_read_num).ID << "\t"
+		<< read_pair.reads.at(aligned_read_num).nucleotides << "\t"
+		<< read_pair.reads.at(aligned_read_num).quality_scores << "\t"
+		<< read_pair.reads.at(aligned_read_num).detected_ms_nuc << "\t"
+		<< read_pair.reads.at(aligned_read_num).ms_repeat_best_period << "\t"
+		<< read_pair.reads.at(aligned_read_num).msRepeat << "\t"
+		<< read_pair.reads.at(aligned_read_num).chrom << "\t"
+		<< read_pair.reads.at(aligned_read_num).msStart << "\t"
+		<< read_pair.reads.at(aligned_read_num).msEnd << "\t"
+		<< read_pair.reads.at(aligned_read_num).read_start << "\t"
+		<< read_pair.reads.at(aligned_read_num).diffFromRef << "\t"
+		<< read_pair.reads.at(aligned_read_num).refCopyNum << "\t"
+		<< read_pair.reads.at(aligned_read_num).reverse << "\t"
+		<< read_pair.reads.at(aligned_read_num).cigar_string << "\t"
+		<< read_pair.reads.at(aligned_read_num).partial << "\t"
+		<< read_pair.reads.at(aligned_read_num).sw_score << "\t"
+		<< paired_dist << "\t"
+		<< (!read_pair.treat_as_paired && paired) << endl;
+
+  if (read_pair.treat_as_paired) {
+    output_stream << read_pair.reads.at(1-aligned_read_num).ID << "\t"
+		  << read_pair.reads.at(1-aligned_read_num).nucleotides << "\t"
+		  << read_pair.reads.at(1-aligned_read_num).quality_scores << "\t"
+		  << "-" << "\t"
+		  << read_pair.reads.at(aligned_read_num).ms_repeat_best_period << "\t"
+		  << read_pair.reads.at(aligned_read_num).msRepeat << "\t"
+		  << read_pair.reads.at(aligned_read_num).chrom << "\t"
+		  << read_pair.reads.at(aligned_read_num).msStart << "\t"
+		  << read_pair.reads.at(aligned_read_num).msEnd << "\t"
+		  << read_pair.reads.at(1-aligned_read_num).read_start << "\t"
+		  << "-" << "\t"
+		  << read_pair.reads.at(aligned_read_num).refCopyNum << "\t"
+		  << !read_pair.reads.at(aligned_read_num).reverse << "\t"
+		  << read_pair.reads.at(1-aligned_read_num).cigar_string << "\t" 
+		  << "-" << "\t"
+		  << read_pair.reads.at(1-aligned_read_num).sw_score << "\t"
+		  << paired_dist << "\t-1" << endl;
   }
 }

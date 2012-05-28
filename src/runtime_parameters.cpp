@@ -25,9 +25,13 @@ size_t threads = 1;
 
 // input files
 std::string input_files_string = "";
+std::string input_files_string_p1 = "";
+std::string input_files_string_p2 = "";
 INPUT_TYPE input_type = INPUT_FASTA;
 std::string table_file = "";
 std::string genome_file = "";
+bool paired = false;
+bool gzip = false;
 
 // output files
 std::string output_prefix = "";
@@ -61,7 +65,7 @@ int allowed_mismatches = -1;
 int max_align = 10;
 int max_diff_ref = 50;
 bool unit = false;
-int extend = 150;
+int extend = 1000;
 int min_length_to_allow_mismatches = 8;
 std::string index_prefix = "";
 int gap_open = 1;

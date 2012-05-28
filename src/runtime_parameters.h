@@ -2,8 +2,8 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef RUNTIME_PARAMETERS_H_
-#define RUNTIME_PARAMETERS_H_
+#ifndef SRC_RUNTIME_PARAMETERS_H_
+#define SRC_RUNTIME_PARAMETERS_H_
 
 #include <map>
 #include <string>
@@ -43,9 +43,13 @@ extern size_t threads;
 
 // input files
 extern std::string input_files_string;
+extern std::string input_files_string_p1;
+extern std::string input_files_string_p2;
 extern INPUT_TYPE input_type;
 extern std::string table_file;
 extern std::string genome_file;
+extern bool paired;
+extern bool gzip;
 
 // output files
 extern std::string output_prefix;
@@ -128,4 +132,5 @@ extern bool entropy_debug;
 
 // min length of str region
 extern size_t MIN_STR_LENGTH;
-#endif /* RUNTIME_PARAMETERS_H_ */
+
+#endif  // SRC_RUNTIME_PARAMETERS_H_

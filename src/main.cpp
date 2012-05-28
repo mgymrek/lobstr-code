@@ -21,7 +21,6 @@
 #include "FastaFileReader.h"
 #include "FastqFileReader.h"
 #include "FFT_nuc_vectors.h"
-#include "FFT_four_nuc_vectors.h"
 #include "HammingWindowGenerator.h"
 #include "IFileReader.h"
 #include "MSReadRecord.h"
@@ -36,6 +35,8 @@ using namespace std;
 
 // list of input files to process from
 vector<string> input_files;
+vector<string> input_files1;
+vector<string> input_files2;
 
 // keep track of # bases so we can calculate coverage
 long bases = 0;
@@ -54,8 +55,11 @@ map<std::string, BNT> bnt_annotations;
 gap_opt_t *opts;
 
 void show_help(){
-  const char* help = "\n\nlobSTR [OPTIONS] -f <file1[,file2,...]> --index-prefix <index prefix> -o <output prefix>\n" \
+  const char* help = "\n\nlobSTR [OPTIONS] {-f <file1[,file2,...]>|--p1 <file1_1[,file2_1,...]> --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix> -o <output prefix>\n" \
 "-f,--files     file or comma-separated list of files containing reads in fasta, fastq, or bam format (default: fasta)\n" \
+"--p1             file or comma-separated list of files containing the first end of paired end reads in fasta or fastq (default: fasta)\n" \
+"--p2             file or comma-separated list of files containing the second end of paired end reads in fasta or fastq (default: fasta)\n" \
+"--gzip           The input files are gzipped (only works for fasta or fastq input)\n" \
 "-o,--out       prefix for out put files. will output:\n" \
 "                      <prefix>.aligned.tab: tab delimited file of alignments\n" \
 "                      <prefix>.aligned.bam: bam file of alignments\n" \
@@ -67,6 +71,7 @@ void show_help(){
 "-v,--verbose               print out useful progress messages\n" \
 "-q,--fastq                 reads are in fastq format (default: fasta)\n" \
 "--bam                      reads are in bam format (default: fasta)\n" \
+"--bampair                  reads are in bam format and are paired-end\n" \
 "-p,--threads <INT>         number of threads (default: 1)\n" \
 "\n\nAdvanced options - general:\n" \
 "--min-read-length <INT>    minimum number of nucleotides for a read to be processed. This should be at least two times fft-window-size (default: 45)\n" \
@@ -99,6 +104,9 @@ void show_help(){
 void parse_commandline_options(int argc,char* argv[]) {
 	enum LONG_OPTIONS{
 	  OPT_FILES,
+	  OPT_PAIR1,
+	  OPT_PAIR2,
+	  OPT_GZIP,
 	  OPT_TABLE,
 	  OPT_GENOME,
 	  OPT_OUTPUT,
@@ -108,6 +116,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  OPT_ALIGN_DEBUG,
 	  OPT_FASTQ,
 	  OPT_BAM,
+	  OPT_BAMPAIR,
 	  OPT_THREADS,
 	  OPT_MISMATCH,
 	  OPT_SAM,
@@ -148,6 +157,9 @@ void parse_commandline_options(int argc,char* argv[]) {
 
 	static struct option long_options[] = {
 	  {"files", 1, 0, OPT_FILES},
+	  {"p1", 1, 0, OPT_PAIR1},
+	  {"p2", 1, 0, OPT_PAIR2},
+	  {"gzip", 0, 0, OPT_GZIP},
 	  {"table", 1, 0, OPT_TABLE},
 	  {"genome", 1, 0, OPT_GENOME},
 	  {"out", 1, 0, OPT_OUTPUT},
@@ -167,6 +179,7 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  {"debug", 0, 0, OPT_DEBUG},
 	  {"fastq", 0, 0, OPT_FASTQ},
 	  {"bam", 0, 0, OPT_BAM},
+	  {"bampair", 0, 0, OPT_BAMPAIR},
 	  {"fftw-debug", 0, 0, OPT_FFTW_DEBUG},
 	  {"lobe-debug", 0, 0, OPT_LOBE_DEBUG},
 	  {"align-debug", 0, 0, OPT_ALIGN_DEBUG},
@@ -233,6 +246,10 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    user_defined_arguments += "bam=True;";
 	    bam++;
 	    break;
+	  case OPT_BAMPAIR:
+	    paired = true;
+	    user_defined_arguments += "bampair=True;";
+	    break;
 	  case 'p':
 	  case OPT_THREADS:
 	    threads = atoi(optarg);
@@ -248,6 +265,24 @@ void parse_commandline_options(int argc,char* argv[]) {
 	    user_defined_arguments += "files=";
 	    user_defined_arguments += input_files_string;
 	    user_defined_arguments += ";";
+	    break;
+	  case OPT_PAIR1:
+	    input_files_string_p1 = optarg;
+	    user_defined_arguments += "files1=";
+	    user_defined_arguments += input_files_string_p1;
+	    user_defined_arguments += ";";
+	    paired = true;
+	    break;
+	  case OPT_PAIR2:
+	    input_files_string_p2 = optarg;
+	    user_defined_arguments += "files2=";
+	    user_defined_arguments += input_files_string_p2;
+	    user_defined_arguments += ";";
+	    paired = true;
+	    break;
+	  case OPT_GZIP:
+	    user_defined_arguments += "input_gzipped;";
+	    gzip++;
 	    break;
 	  case 'o':
 	  case OPT_OUTPUT:
@@ -435,13 +470,13 @@ void parse_commandline_options(int argc,char* argv[]) {
 	  errx(1, "lobSTR can currently only profile STRs of periods 2 through 6.");
 	}
 	// check that we have the mandatory parameters
-	if ((input_files_string.empty()||  output_prefix.empty() ||
-	     index_prefix.empty()) &&
-	    !genotype_only) {
+	if ( (((!paired || bam) && input_files_string.empty()) || 
+	      (paired && !bam && (input_files_string_p1.empty() || input_files_string_p2.empty())))||  
+	      output_prefix.empty() || index_prefix.empty()) {
 	  errx(1, "Required arguments are mising");
-	} else if (genotype_only && (aligned_file.empty()
-				     || output_prefix.empty())) {
-	  errx(1, "Required arguments are missing");
+	} 
+	if (gzip && bam ) {
+	  errx(1, "Gzip option not compatible with bam input");
 	}
 }
 
@@ -495,81 +530,110 @@ void DestroyReferences() {
 /*
  * process read in single thread
  */
-void single_thread_process_loop(const vector<string>& files) {
-  MSReadRecord msread;
+void single_thread_process_loop(const vector<string>& files1,
+				const vector<string>& files2) {
+  ReadPair read_pair;
   TabFileWriter pWriter(output_prefix + ".aligned.tab");
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   STRDetector *pDetector = new STRDetector();
   BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references, &bnt_annotations, &ref_sequences, opts);
-  for (vector<string>::const_iterator it = files.begin(); it != files.end(); it++) {
-    if (fexists((*it).c_str())) {
-      cout << "processing file " <<  *it << " ...\n";
-      IFileReader* pReader = create_file_reader(*it);
-      int aligned = false;
-      int num_reads_processed = 0;
-      while (pReader->GetNextRecord(&msread)) {
-	aligned = false;
-	num_reads_processed += 1;
-	msread.msRepeat = "";
-	if (!(msread.nucleotides.length() >= min_read_length &&
-	      msread.nucleotides.length() <= max_read_length)) {
+  std::string file1;
+  std::string file2;
+  for (size_t i = 0; i < input_files1.size(); i++) {
+    file1 = input_files1.at(i);
+    if (paired && !bam) {
+      file2 = input_files2.at(i);
+      if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
+	cerr << "Warning: file " << file1 << " or " << file2 << " does not exist" << endl;
+	continue;
+      }
+    } else {
+      if (!fexists(file1.c_str())) {
+	cerr << "Warning: file " << file1 << " does not exist" << endl;
+	continue;
+      }
+    }
+    if (paired) {
+      cout << "processing files " << file1 << " and " << file2 << "...\n";
+    } else {
+      cout << "processing file " <<  file1 << " ...\n";
+    }
+    IFileReader* pReader = create_file_reader(file1, file2);
+    int aligned = false;
+    int num_reads_processed = 0;
+    std::string repseq = "";
+    while (pReader->GetNextRecord(&read_pair)) {
+      aligned = false;
+      num_reads_processed += 1;
+      read_pair.read_count = num_reads_processed;
+      // reset fields
+      read_pair.reads.at(0).msRepeat = "";
+      if (paired) read_pair.reads.at(1).msRepeat = "";
+      // Check read length
+      if (!(read_pair.reads.at(0).nucleotides.length() >= min_read_length) &&
+	  (read_pair.reads.at(0).nucleotides.length() <= max_read_length)) {
+	continue;
+      }
+      if (paired) {
+	if (!(read_pair.reads.at(1).nucleotides.length() >= min_read_length) &&
+	    (read_pair.reads.at(1).nucleotides.length() <= max_read_length)) {
 	  continue;
-	} else {
-	  bases += msread.nucleotides.length();
-	}
-	if (profile) {
-	    cout << msread.ID << "\t" << msread.nucleotides << "\t" << "-" << endl;
-	}
-	if (!pDetector->ProcessRead(&msread)) {
-	  continue;
-	}
-
-	string repseqfw;
-	string repseqrev;
-	string repseq;
-	getMSSeq(msread.detected_ms_region_nuc, msread.ms_repeat_best_period, &repseqfw);
-	getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
-	repseq = getFirstString(repseqfw, repseqrev);
-	msread.repseq = repseq;
-	msread.repseq_reverse = (repseq==repseqrev);
-
-	if (profile) {
-	  cout << msread.ID << "\t" << msread.orig_nucleotides << "\t" << repseq << endl;
-	}
-
-	// alignment
-	if (pAligner->ProcessRead(&msread)) {
-	  aligned = true;
-	} else if (msread.ms_repeat_next_best_period != 0) {
-	  msread.ms_repeat_best_period = msread.ms_repeat_next_best_period;
-	  getMSSeq(msread.detected_ms_region_nuc, msread.ms_repeat_best_period, &repseqfw);
-	  getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
-	  repseq = getFirstString(repseqfw, repseqrev);
-	  msread.repseq = repseq;
-	  msread.repseq_reverse = (repseq==repseqrev);
-	  if (profile) {
-	    cout << msread.ID << "\t" << msread.orig_nucleotides << "\t" << repseq << endl;
-	  }
-
-	  if (pAligner->ProcessRead(&msread)) {
-	    aligned = true;
-	  }
-	}					
-	if (aligned) {
-	  // genotyper.AddRead(&msread);
-	  pWriter.WriteRecord(msread);
-	  if (sam) samWriter.WriteRecord(msread);
 	}
       }
-      delete pReader;
-      cout << "Processed " << num_reads_processed << " reads" << endl;
-    } else {
-      cerr << "Warning: file " << *it << " does not exist" << endl;
+      bases += read_pair.reads.at(0).nucleotides.length();
+      if (paired) bases += read_pair.reads.at(1).nucleotides.length();
+
+      // STEP 1: Sensing
+      if (!pDetector->ProcessReadPair(&read_pair)) {
+	continue;
+      }
+
+      // STEP 2: Alignment
+      if (pAligner->ProcessReadPair(&read_pair)) {
+	aligned = true;
+      } else {
+	read_pair.read1_passed_detection = false;
+	read_pair.read2_passed_detection = false;
+	// Try second best period for each read
+	if (read_pair.reads.at(0).ms_repeat_next_best_period != 0) {
+	  read_pair.reads.at(0).ms_repeat_best_period =
+	    read_pair.reads.at(0).ms_repeat_next_best_period;
+	  if (getMSSeq(read_pair.reads.at(0).detected_ms_region_nuc,
+		       read_pair.reads.at(0).ms_repeat_best_period, &repseq)) {
+	    read_pair.reads.at(0).repseq = repseq;
+	    read_pair.read1_passed_detection = true;
+	  }
+	}
+	if (paired) {
+	  if (read_pair.reads.at(1).ms_repeat_next_best_period != 0) {
+	    read_pair.reads.at(1).ms_repeat_best_period =
+	      read_pair.reads.at(1).ms_repeat_next_best_period;
+	    if (getMSSeq(read_pair.reads.at(1).detected_ms_region_nuc,
+			 read_pair.reads.at(1).ms_repeat_best_period, &repseq)) {
+	      read_pair.reads.at(1).repseq = repseq;
+	      read_pair.read2_passed_detection = true;
+	    }
+	  }
+	}
+	if (read_pair.read1_passed_detection ||
+	    read_pair.read2_passed_detection) {
+	  if (pAligner->ProcessReadPair(&read_pair)) {
+	    aligned = true;
+	  }
+	}
+      }
+      if (aligned) {
+	pWriter.WriteRecord(read_pair);
+	if (sam) samWriter.WriteRecord(read_pair);
+      }
     }
+    delete pReader;
+    cout << "Processed " << num_reads_processed << " reads" << endl;
   }
   delete pDetector;
   delete pAligner;
 }
+
 
 void* satellite_process_consumer_thread(void *arg) {
   MultithreadData *pMT_DATA = (MultithreadData*)(arg);
@@ -578,36 +642,61 @@ void* satellite_process_consumer_thread(void *arg) {
   int aligned = false;
   while (1) {
     aligned = false;
-    MSReadRecord *pReadRecord = pMT_DATA->get_new_input();
-    if (pReadRecord->nucleotides.length() >= min_read_length &&
-	pReadRecord->nucleotides.length() <= max_read_length) {
-      bases += pReadRecord->nucleotides.length();
-      if (pDetector->ProcessRead(pReadRecord)) {
-	string repseqfw;
-	string repseqrev;
-	string repseq;
-	getMSSeq(pReadRecord->detected_ms_region_nuc, pReadRecord->ms_repeat_best_period, &repseqfw);
-	getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
-	repseq = getFirstString(repseqfw, repseqrev);
-	pReadRecord->repseq = repseq;
-	pReadRecord->repseq_reverse = (repseq == repseqrev);
-	// alignment
-	if (pAligner->ProcessRead(pReadRecord)) {
-	  aligned = true;
-	} else if (pReadRecord->ms_repeat_next_best_period != 0) {
-	  pReadRecord->ms_repeat_best_period = pReadRecord->ms_repeat_next_best_period;
-	  getMSSeq(pReadRecord->detected_ms_region_nuc, pReadRecord->ms_repeat_best_period, &repseqfw);
-	  getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
-	  repseq = getFirstString(repseqfw, repseqrev);
-	  pReadRecord->repseq = repseq;	pReadRecord->repseq_reverse = (repseq == repseqrev);
-	  if (pAligner->ProcessRead(pReadRecord)) {
-	    aligned = true;
+    std::string repseq;
+    ReadPair* pReadRecord = pMT_DATA->get_new_input();
+    if (!(pReadRecord->reads.at(0).nucleotides.length() >= min_read_length) &&
+	(pReadRecord->reads.at(0).nucleotides.length() <= min_read_length)) {
+      continue;
+    }
+    if (paired) {
+      if (!(pReadRecord->reads.at(1).nucleotides.length() >= min_read_length) &&
+	  (pReadRecord->reads.at(1).nucleotides.length() <= min_read_length)) {
+	continue;
+      }
+    }
+    bases += pReadRecord->reads.at(0).nucleotides.length();
+    if (paired) pReadRecord->reads.at(1).nucleotides.length();
+    
+    // STEP 1: Sensing
+    if (!pDetector->ProcessReadPair(pReadRecord)) {
+      continue;
+    }
+
+    // STEP 2: Alignment
+    if (pAligner->ProcessReadPair(pReadRecord)) {
+      aligned = true;
+    } else {
+      pReadRecord->read1_passed_detection = false;
+      pReadRecord->read2_passed_detection = false;
+      // Try second best period for each read
+      if (pReadRecord->reads.at(0).ms_repeat_next_best_period != 0) {
+	pReadRecord->reads.at(0).ms_repeat_best_period =
+	  pReadRecord->reads.at(0).ms_repeat_next_best_period;
+	if (getMSSeq(pReadRecord->reads.at(0).detected_ms_region_nuc,
+		     pReadRecord->reads.at(0).ms_repeat_best_period, &repseq)) {
+	  pReadRecord->reads.at(0).repseq = repseq;
+	  pReadRecord->read1_passed_detection = true;
+	}
+      }
+      if (paired) {
+	if (pReadRecord->reads.at(1).ms_repeat_next_best_period != 0) {
+	  pReadRecord->reads.at(1).ms_repeat_best_period =
+	    pReadRecord->reads.at(1).ms_repeat_next_best_period;
+	  if (getMSSeq(pReadRecord->reads.at(1).detected_ms_region_nuc,
+		       pReadRecord->reads.at(1).ms_repeat_best_period, &repseq)) {
+	    pReadRecord->reads.at(1).repseq = repseq;
+	    pReadRecord->read2_passed_detection = true;
 	  }
 	}
       }
-    }	  
+      if (pReadRecord->read1_passed_detection ||
+	  pReadRecord->read2_passed_detection) {
+	if (pAligner->ProcessReadPair(pReadRecord)) {
+	  aligned = true;
+	}
+      }
+    }
     if (aligned) {
-      //genotyper.AddRead(pReadRecord);
       pMT_DATA->post_new_output_read(pReadRecord);
     } else {
       //Don't pass this read on to the output thread,
@@ -621,11 +710,10 @@ void* satellite_process_consumer_thread(void *arg) {
 
 void* output_writer_thread(void *arg) {
   MultithreadData *pMT_DATA = (MultithreadData*)(arg);
-  
   TabFileWriter *pWriter = new TabFileWriter(output_prefix + ".aligned.tab");
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   while (1) {
-    MSReadRecord *pReadRecord = pMT_DATA->get_new_output();
+    ReadPair *pReadRecord = pMT_DATA->get_new_output();
     pWriter->WriteRecord(*pReadRecord);
     samWriter.WriteRecord(*pReadRecord);
     delete pReadRecord;
@@ -636,12 +724,11 @@ void* output_writer_thread(void *arg) {
   pthread_exit((void*) arg);
 }
 
-void multi_thread_process_loop(vector<string> files) {
+void multi_thread_process_loop(vector<string> files1, vector<string> files2) {
   MultithreadData mtdata(threads);
   list<pthread_t> satellite_threads;
   pthread_t writer_thread;
-  if (files.size() == 0) return;
-  
+  if (files1.size() == 0) return;
   for (size_t i=0; i<threads; ++i) {
     pthread_t id;
     if (pthread_create(&id, NULL, satellite_process_consumer_thread, (void*)&mtdata))
@@ -653,29 +740,39 @@ void multi_thread_process_loop(vector<string> files) {
     err(1,"failed to create output writer thread");
   
   size_t counter = 1 ;
-  
-  for (vector<string>::const_iterator it = files.begin();
-       it != files.end(); ++it) {
-    if (fexists((*it).c_str())) {
-      cout << "processing file " << *it << endl;
-      IFileReader *pReader = create_file_reader(*it); 
-      
-      do {
-	MSReadRecord *pRecord = new MSReadRecord;
-	if (!pReader->GetNextRecord(pRecord))
-	  break; //no more reads
-	
-	pRecord->read_counter = counter;
+  std::string file1;
+  std::string file2;
+  for (size_t i = 0; i < files1.size(); i++) {
+    file1 = input_files1.at(i);
+    if (paired && !bam) {
+      file2 = input_files2.at(i);
+      if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
+	cerr << "Warning: file " << file1 << " or " << file2 << " does not exist" << endl;
+	continue;
+      }
+    } else {
+      if (!fexists(file1.c_str())) {
+	cerr << "Warning: file " << file1 << " does not exist" << endl;
+	continue;
+      }
+    }
+    if (paired) {
+      cout << "processing files " << file1 << " and " << file2 << "...\n";
+    } else {
+      cout << "processing file " <<  file1 << " ...\n";
+    }
+    IFileReader *pReader = create_file_reader(file1, file2);
+    do {
+      ReadPair *pRecord = new ReadPair;
+      pRecord->read_count = counter;
+      if (!pReader->GetNextRecord(pRecord))
+	break; //no more reads
 	counter++;
-	mtdata.increment_input_counter();
-	
+	mtdata.increment_input_counter();	
 	mtdata.post_new_input_read(pRecord);
 	pRecord = NULL ; //the consumers will take it from here, and free it
       } while(1);
       delete pReader;
-    } else {
-      cerr << "File " << *it << " does not exist" << endl;
-    }
   }
   while ( 1 ) {
     sleep(1); //OMG, the horror...
@@ -685,7 +782,6 @@ void multi_thread_process_loop(vector<string> files) {
     break;
   }
 }
-
 
 int main(int argc,char* argv[]) {
   parse_commandline_options(argc,argv);
@@ -701,14 +797,17 @@ int main(int argc,char* argv[]) {
       split(line,'\t', items);
       chrom_sizes[items[1]] = atoi(items[2].c_str());
     } else {
-      LoadReference(line);
+      // make sure repeat is valid
+      if (count(line, line.at(0)) != line.length()) {
+	LoadReference(line);
+      }
     }
   }
 
   // Load fasta reference with all STR sequences
   FastaFileReader faReader(index_prefix+"ref.fa");
   MSReadRecord ref_record;
-  while(faReader.GetNextRecord(&ref_record)) {
+  while(faReader.GetNextRead(&ref_record)) {
     REFSEQ refseq;
     vector<string> items;
     string refstring = ref_record.ID;;
@@ -737,7 +836,15 @@ int main(int argc,char* argv[]) {
   // all hits with no more than maxdiff found
 
   // get the input files
-  boost::split(input_files, input_files_string, boost::is_any_of(","));
+  if (paired) {					
+    boost::split(input_files1, input_files_string_p1, boost::is_any_of(","));
+    boost::split(input_files2, input_files_string_p2, boost::is_any_of(","));
+    if (!input_files1.size() == input_files2.size()) {
+      errx(1, "Error: different number of files for each pair");
+    }
+  } else {
+    boost::split(input_files, input_files_string, boost::is_any_of(","));
+  }
   // Initialize fft  
   // Create the singleton HammingWindow (before starting any threads)
   HammingWindowGenerator* hamgen =
@@ -751,9 +858,17 @@ int main(int argc,char* argv[]) {
   // run detection/alignment
   if (my_verbose) {cerr << "Running detection/alignment..." << endl;}
   if (threads == 1) {
-    single_thread_process_loop(input_files);
+    if (paired && !bam) {
+      single_thread_process_loop(input_files1, input_files2);
+    } else {
+      single_thread_process_loop(input_files, vector<string>(0));
+    }
   } else {
-    multi_thread_process_loop(input_files);
+    if (paired && !bam) {
+      multi_thread_process_loop(input_files1, input_files2);
+    } else {
+      multi_thread_process_loop(input_files, vector<string>(0));
+    }
   }
   delete hamgen;
   delete tukgen;

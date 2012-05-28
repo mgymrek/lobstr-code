@@ -6,14 +6,14 @@
 #include <iostream>
 
 #include "common.h"
-#include "FastqFileReader.h"
+#include "ZippedFastqFileReader.h"
 
 using namespace std;
 
-FastqFileReader::FastqFileReader(const std::string& _filename) :
-  TextFileReader(_filename) {}
+ZippedFastqFileReader::ZippedFastqFileReader(const std::string& _filename) :
+  ZippedTextFileReader(_filename) {}
 
-bool FastqFileReader::GetNextRecord(ReadPair* read_pair) {
+bool ZippedFastqFileReader::GetNextRecord(ReadPair* read_pair) {
   read_pair->reads.clear();
   MSReadRecord single_read;
   if (GetNextRead(&single_read)) {
@@ -24,7 +24,7 @@ bool FastqFileReader::GetNextRecord(ReadPair* read_pair) {
   }
 }
 
-bool FastqFileReader::GetNextRead(MSReadRecord* read) {
+bool ZippedFastqFileReader::GetNextRead(MSReadRecord* read) {
   string ID;
   string nuc;
   string ID2;
@@ -91,7 +91,6 @@ bool FastqFileReader::GetNextRead(MSReadRecord* read) {
 	 nuc.length(), quality.length(), filename.c_str(), current_line);
   
   read->ID = ID.substr(1);
-
   string trim_nucs;
   string trim_qual;
   TrimRead(nuc, quality, &trim_nucs, &trim_qual);

@@ -72,7 +72,7 @@ bool EntropyDetection::EntropyIsAboveThreshold() {
     entropy_threshold;
 }
 
-void EntropyDetection::FindStartEnd(size_t& start, size_t & end, bool* repetitive_end) {
+void EntropyDetection::FindStartEnd(size_t* start, size_t* end, bool* repetitive_end) {
   const vector<double> entropy_window = _entropy_window;
   vector<double>::const_iterator  it = max_element(entropy_window.begin(),
 						   entropy_window.end());
@@ -83,19 +83,19 @@ void EntropyDetection::FindStartEnd(size_t& start, size_t & end, bool* repetitiv
   for (starti = index_of_max ; starti>=0; starti--)
     if (entropy_window[starti] < 0.8*max_entropy)
       break;
-  start = starti+1;
-  if (start == 0) {
-    start += 1;
+  *start = starti+1;
+  if (*start == 0) {
+    *start += 1;
     *repetitive_end = true;
   }
   // Go forwards (to the right)
-  for (end = index_of_max ; end < entropy_window.size(); end++)  {
-    if (entropy_window[end] < 0.8*max_entropy)
+  for (*end = index_of_max ; *end < entropy_window.size(); *end++)  {
+    if (entropy_window[*end] < 0.8*max_entropy)
       break;
   }
-  end--;
-  if (end == entropy_window.size() -1) {
-    end-=1;
+  *end--;
+  if (*end == entropy_window.size() -1) {
+    *end-=1;
     *repetitive_end = true;
   }
 }

@@ -2,15 +2,19 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef __IFILE_READER_H__
-#define __IFILE_READER_H__
+#ifndef SRC_IFILEREADER_H__
+#define SRC_IFILEREADER_H__
 
-#include "MSReadRecord.h"
+#include "src/MSReadRecord.h"
+#include "src/ReadPair.h"
 
 class IFileReader {
  public:
-  virtual ~IFileReader() { };
-  virtual bool GetNextRecord(MSReadRecord* read) = 0 ;
+  virtual ~IFileReader() { }
+  // Get next record as a ReadPair (read2 is NULL in single end mode)
+  virtual bool GetNextRecord(ReadPair* read_pair) = 0;
+  // Get next read from a file
+  virtual bool GetNextRead(MSReadRecord* read) = 0;
 };
 
-#endif /* __IFILE_READER_H__ */
+#endif  // SRC_IFILEREADER_H__

@@ -388,6 +388,9 @@ int nw_align_ag(                  // Needleman-Wunsch algorithm with affine gap 
     new_cigar.cigar_type = cigar_char;
     cigar_list->cigars.push_back(new_cigar);
   }
+  if (cigar_list->cigars.at(cigar_list->cigars.size() -1).cigar_type == 'I') {
+    cigar_list->cigars.at(cigar_list->cigars.size() -1).cigar_type = 'S';
+  }
   reverse( seq_1_al.begin(), seq_1_al.end() );
   reverse( seq_2_al.begin(), seq_2_al.end() );
   return  0 ;

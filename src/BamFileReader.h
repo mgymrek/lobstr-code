@@ -2,15 +2,13 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef __BAM_FILE_READER_H__
-#define __BAM_FILE_READER_H__
+#ifndef SRC_BAMFILEREADER_H__
+#define SRC_BAMFILEREADER_H__
 
-#include <istream>
-#include <fstream>
 #include <string>
 
-#include "api/BamReader.h"
-#include "TextFileReader.h"
+#include "src/api/BamReader.h"
+#include "src/TextFileReader.h"
 
 namespace BamTools {
   class BamReader;
@@ -18,10 +16,11 @@ namespace BamTools {
 
 class BamFileReader : public TextFileReader {
  public:
-  BamFileReader ( const std::string& _filename="" ) ;
-  virtual bool GetNextRecord(MSReadRecord* read);
+  explicit BamFileReader(const std::string& _filename="");
+  virtual bool GetNextRecord(ReadPair* read_pair);
+  virtual bool GetNextRead(MSReadRecord* read);
  private:
   BamTools::BamReader reader;
 };
 
-#endif /*  __BAM_FILE_READER_H__ */
+#endif  // SRC_BAMFILEREADER_H__

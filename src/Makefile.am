@@ -21,28 +21,36 @@ AM_CPPFLAGS = $(FFTW_CFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) $(RCPPFLAGS)
 
 noinst_headers = \
 	BamFileReader.h \
+	BamPairedFileReader.h \
 	BWAReadAligner.h \
 	CachedWindowGenerator.h \
 	cigar.h \
 	common.h \
 	EntropyDetection.h \
 	FastaFileReader.h \
+	FastaPairedFileReader.h \
 	FastqFileReader.h \
+	FastqPairedFileReader.h \
 	FFT_nuc_vectors.h \
 	FFT_four_nuc_vectors.h \
+	gzstream.h \
 	IFileReader.h \
 	ISatellite.h \
 	MSReadRecord.h \
 	MultithreadData.h \
+	nw.h \
 	HammingWindowGenerator.h \
 	TukeyWindowGenerator.h \
-	nw.h \
+	ReadPair.h \
+	runtime_parameters.h \
 	SamFileWriter.h \
 	STRDetector.h \
-	runtime_parameters.h \
 	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
+	ZippedFastaFileReader.h \
+	ZippedFastqFileReader.h \
+	ZippedTextFileReader.h \
 	bamlite.h \
 	bntseq.h \
 	bwase.h \
@@ -122,14 +130,18 @@ noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a
 
 liblobstr_a_SOURCES = \
 	BamFileReader.cpp \
+	BamPairedFileReader.cpp \
 	BWAReadAligner.cpp \
 	CachedWindowGenerator.cpp \
 	common.cpp \
 	EntropyDetection.cpp \
 	FastaFileReader.cpp \
+	FastaPairedFileReader.cpp \
 	FastqFileReader.cpp \
+	FastqPairedFileReader.cpp \
 	FFT_four_nuc_vectors.cpp \
 	FFT_nuc_vectors.cpp \
+	gzstream.cpp \
 	HammingWindowGenerator.cpp \
 	MultithreadData.cpp \
 	nw.cpp \
@@ -140,6 +152,9 @@ liblobstr_a_SOURCES = \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
+	ZippedFastaFileReader.cpp \
+	ZippedFastqFileReader.cpp \
+	ZippedTextFileReader.cpp \
 	bamlite.c \
 	bntseq.c \
 	bwaseqio.c \

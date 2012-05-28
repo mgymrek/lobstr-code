@@ -2,8 +2,8 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
  */
 
-#ifndef __CIGAR_H__
-#define __CIGAR_H__
+#ifndef SRC_CIGAR_H__
+#define SRC_CIGAR_H__
 
 #include <string>
 #include <sstream>
@@ -20,7 +20,7 @@ struct CIGAR_LIST {
   void ResetString() {
     std::stringstream new_cigar;
     for (std::vector<CIGAR>::const_iterator it = cigars.begin();
-	 it != cigars.end(); it++) {
+         it != cigars.end(); it++) {
       new_cigar << it->num << it->cigar_type;
     }
     cigar_string = new_cigar.str();
@@ -28,4 +28,4 @@ struct CIGAR_LIST {
 };
 
 
-#endif /* __CIGAR_H__ */
+#endif  // SRC_CIGAR_H__

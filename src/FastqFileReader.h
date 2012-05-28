@@ -2,19 +2,18 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef __FASTQ_FILE_READER_H__
-#define __FASTQ_FILE_READER_H__
+#ifndef SRC_FASTQFILEREADER_H__
+#define SRC_FASTQFILEREADER_H__
 
-#include <istream>
-#include <fstream>
 #include <string>
 
-#include "TextFileReader.h"
+#include "src/TextFileReader.h"
 
 class FastqFileReader : public TextFileReader {
  public:
-  FastqFileReader ( const std::string& _filename="" ) ;
-  virtual bool GetNextRecord(MSReadRecord* read);
+  explicit FastqFileReader(const std::string& _filename="");
+  virtual bool GetNextRecord(ReadPair* read_pair);
+  virtual bool GetNextRead(MSReadRecord* read);
 };
 
-#endif /*  __FASTQ_FILE_READER_H__ */
+#endif  // SRC_FASTQFILEREADER_H__

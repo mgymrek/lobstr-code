@@ -2,20 +2,19 @@
  Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 */
 
-#ifndef __FASTA_FILE_READER_H__
-#define __FASTA_FILE_READER_H__
+#ifndef SRC_FASTAFILEREADER_H__
+#define SRC_FASTAFILEREADER_H__
 
-#include <istream>
-#include <fstream>
 #include <string>
 
-#include "IFileReader.h"
-#include "TextFileReader.h"
+#include "src/IFileReader.h"
+#include "src/TextFileReader.h"
 
 class FastaFileReader : public TextFileReader {
  public:
-  FastaFileReader (const std::string& _filename="" ) ;
-  virtual bool GetNextRecord(MSReadRecord* read);
+  explicit FastaFileReader(const std::string& _filename="");
+  virtual bool GetNextRecord(ReadPair* read_pair);
+  virtual bool GetNextRead(MSReadRecord* read);
 };
 
-#endif /* __FASTA_FILE_READER_H__ */
+#endif  // SRC_FASTAFILEREADER_H__
