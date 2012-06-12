@@ -1,5 +1,21 @@
 /*
- Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
 */
 
 #ifndef SRC_BWAREADALIGNER_H_
@@ -49,6 +65,7 @@ struct ALIGNMENT {
 };
 
 class BWAReadAligner {
+  friend class BWAReadAlignerTest;
  public:
   BWAReadAligner(std::map<std::string, BWT>* bwt_references,
                  std::map<std::string, BNT>* bnt_annotations,
@@ -103,6 +120,13 @@ class BWAReadAligner {
                           const ALIGNMENT& right_alignment,
                           ALIGNMENT* mate_alignment);
 
+  // If both ends aligned to an STR, check if compatible
+  bool FindCompatibleAlignment(const std::vector<ALIGNMENT>& good_left1,
+                               const std::vector<ALIGNMENT>& good_left2,
+                               const std::vector<ALIGNMENT>& good_right1,
+                               const std::vector<ALIGNMENT>& good_right2,
+                               size_t* index_of_hit, size_t* index_of_mate);
+
   // Try stitching a pair of reads.
   // Update info in num_aligned_read and
   // treat as single alignment
@@ -122,6 +146,11 @@ class BWAReadAligner {
   bool AdjustAlignment(MSReadRecord* aligned_read, bool partial,
                        bool left_aligned, bool right_aligned);
 
+  // Calculate map quality score
+  int GetMapq(const std::string& aligned_sw_string,
+	      const std::string& ref_sw_string,
+	      const std::string& aligned_quals);
+
   // Adjust partial read alignments
   // If found to be completely spanning, update
   // aligned_read
@@ -132,21 +161,22 @@ class BWAReadAligner {
 
   // Refine the cigar score and recalculate number of repeats
   bool GetSTRAllele(MSReadRecord* aligned_read,
-                    const CIGAR_LIST& cigar_list);
+		    const CIGAR_LIST& cigar_list);
   // store all BWT references
   std::map<std::string, BWT>* _bwt_references;
   // store all BWT annotations
   std::map<std::string, BNT>* _bnt_annotations;
   // store all STR reference sequences
   std::map<int, REFSEQ>* _ref_sequences;
-  // Keep parsed refid info to avoid
-  // reparsing each time. The value is
-  // a dummy ALIGNMENT with only ref info
-  std::map<std::string, ALIGNMENT> _ref_info;
   // all bwa alignment options
   gap_opt_t *_opts;
   // default options
   gap_opt_t *_default_opts;
+
+  // Debug params
+  bool cigar_debug;
+  bool partial_debug;
+  bool stitch_debug;
 };
 
 #endif  // SRC_BWAREADALIGNER_H_

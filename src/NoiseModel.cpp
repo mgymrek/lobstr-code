@@ -1,24 +1,46 @@
 /*
- * Author: Melissa Gymrek 2012
- */
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 
-#include <sstream>
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include <cmath>
+#include <list>
+#include <map>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "NoiseModel.h"
-#include "runtime_parameters.h"
-#include "TextFileReader.h"
-#include "TextFileWriter.h"
+#include "src/NoiseModel.h"
+#include "src/runtime_parameters.h"
+#include "src/TextFileReader.h"
+#include "src/TextFileWriter.h"
 
 const int MIN_PERIOD = 2;
 const int MAX_PERIOD = 6;
 
 using namespace std;
 
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+std::vector<std::string> &split(const std::string &s, char delim,
+                                std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;
-    while(std::getline(ss, item, delim)) {
+    while (std::getline(ss, item, delim)) {
         elems.push_back(item);
     }
     return elems;
@@ -39,7 +61,7 @@ static float ppois(int step, float mean) {
   return p;
 }
 
-NoiseModel::NoiseModel(RInside* _r){
+NoiseModel::NoiseModel(RInside* _r) {
   R = _r;
 }
 
@@ -49,25 +71,25 @@ void NoiseModel::Train(ReadContainer* read_container) {
     cerr << "Populating training data..." << endl;
   }
   for (map<pair<string, int>, list<AlignedRead> >::iterator
-	 it = read_container->aligned_str_map_.begin();
+         it = read_container->aligned_str_map_.begin();
        it != read_container->aligned_str_map_.end(); it++) {
     // check if haploid
     const list<AlignedRead>& aligned_reads = it->second;
     bool is_haploid = ((aligned_reads.front().chrom == "chrX" ||
-			aligned_reads.front().chrom == "chrY" ));
+                        aligned_reads.front().chrom == "chrY"));
     if (!is_haploid) continue;
     // check if has unique mode
     float unique_mode;
     if (HasUniqueMode(aligned_reads, &unique_mode)) {
       // add to training data (mode, period, copynum, mutated)
       int period = aligned_reads.front().period;
-      for (list<AlignedRead>::const_iterator it2 = 
-	     aligned_reads.begin(); it2 != aligned_reads.end(); it2++) {
-	training_data.mode.push_back(unique_mode);
-	training_data.period.push_back(period);
-	training_data.copynum.push_back((*it2).diffFromRef);
-	training_data.mutated.push_back((*it2).diffFromRef
-					!= unique_mode);
+      for (list<AlignedRead>::const_iterator it2 =
+             aligned_reads.begin(); it2 != aligned_reads.end(); it2++) {
+        training_data.mode.push_back(unique_mode);
+        training_data.period.push_back(period);
+        training_data.copynum.push_back((*it2).diffFromRef);
+        training_data.mutated.push_back((*it2).diffFromRef
+                                        != unique_mode);
       }
     }
   }
@@ -101,8 +123,8 @@ void NoiseModel::Train(ReadContainer* read_container) {
 }
 
 bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
-			       aligned_reads,
-			       float* mode) {
+                               aligned_reads,
+                               float* mode) {
   if (aligned_reads.size() == 1) {
     *mode = aligned_reads.front().diffFromRef;
     return true;
@@ -143,7 +165,7 @@ void NoiseModel::FitMutationProb() {
     cerr << "Fitting mutation prob..." << endl;
   }
   Rcpp::NumericVector periods(MAX_PERIOD-MIN_PERIOD+1);
-  for (int i = 0; i < MAX_PERIOD-MIN_PERIOD+1; i++ ){
+  for (int i = 0; i < MAX_PERIOD-MIN_PERIOD+1; i++) {
     periods[i] = i+MIN_PERIOD;
   }
   (*R)["all_periods"] = periods;
@@ -153,11 +175,11 @@ void NoiseModel::FitMutationProb() {
     "family='binomial'); \n" \
     "mutIntercept = mut_model$coefficients[[1]]; \n" \
     "mutSlope = mut_model$coefficients[[2]]; \n" \
-    "c(mutIntercept, mutSlope)"; 
+    "c(mutIntercept, mutSlope)";
   if (debug) {
     cerr << evalString << endl;
   }
-  SEXP ans = (*R).parseEval(evalString); // return intercept, slope
+  SEXP ans = (*R).parseEval(evalString);  // return intercept, slope
   Rcpp::NumericVector v(ans);
   mutIntercept = v[0];
   mutSlope = v[1];
@@ -167,32 +189,33 @@ void NoiseModel::FitStepProb() {
   if (debug) {
     cerr << "Fitting step prob..." << endl;
   }
-  string evalString = "data = data.frame(mutated=mutated, period = period, copynum = copynum, mode = mode); \n" \
+  string evalString = "data = data.frame(mutated=mutated, " \
+    "period = period, copynum = copynum, mode = mode); \n"  \
     "mutated_data = data[data$mutated,];\n" \
     "mutated_data$step = abs(mutated_data$copynum - mutated_data$mode); \n" \
-    "step_model = glm(mutated_data$step ~ mutated_data$period, family='poisson'); \n" \
+    "step_model = glm(mutated_data$step ~ " \
+    "mutated_data$period, family='poisson'); \n"      \
     "poisIntercept = step_model$coefficients[[1]];\n" \
     "poisSlope = step_model$coefficients[[2]];\n" \
     "if (is.na(poisSlope)) {poisSlope = 0};\n" \
     "c(poisIntercept, poisSlope)";
-  //    "mutated_data$step = round(mutated_data$copynum/mutated_data$period); \n"
   if (debug) {
     cerr << evalString << endl;
   }
-  SEXP ans = (*R).parseEval(evalString); // return intercept, slope
+  SEXP ans = (*R).parseEval(evalString);  // return intercept, slope
   Rcpp::NumericVector v(ans);
   poisIntercept = v[0];
   poisSlope = v[1];
 }
 
 float NoiseModel::GetTransitionProb(float a,
-				    float b, int period) {
+                                    float b, int period) {
   float mutProb = invLogit(mutIntercept + mutSlope*period);
   float poisMean = exp(poisIntercept + poisSlope*period);
   if (a == b) {
     return mutProb;
   } else {
-    int diff = (int)(abs(b-a));
+    int diff = static_cast<int>(abs(b-a));
     return (1-mutProb)*ppois(diff-1, poisMean);
   }
   return 0.0;
@@ -207,7 +230,7 @@ bool NoiseModel::ReadNoiseModelFromFile(string filename) {
   bool pS = false;
   while (nFile.GetNextLine(&line)) {
     vector<string> items;
-    split(line,'=', items);
+    split(line, '=', items);
     if (debug) {
       cerr << "reading line " << line << " " << items.size() << endl;
     }
@@ -230,7 +253,7 @@ bool NoiseModel::ReadNoiseModelFromFile(string filename) {
       pS = true;
     }
   }
-  if (! (mI && mS && pI && pS)) return false;
+  if (!(mI && mS && pI && pS)) return false;
   return true;
 }
 
@@ -245,5 +268,5 @@ bool NoiseModel::WriteNoiseModelToFile(string filename) {
   return true;
 }
 
-NoiseModel::~NoiseModel(){}
+NoiseModel::~NoiseModel() {}
 

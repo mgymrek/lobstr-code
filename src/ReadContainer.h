@@ -1,14 +1,35 @@
 /*
- * Author: Melissa Gymrek 2012
- */
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 
-#ifndef READ_CONTAINER_H_
-#define READ_CONTAINER_H_
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
+#ifndef SRC_READCONTAINER_H_
+#define SRC_READCONTAINER_H_
 
 #include <iostream>
 #include <list>
-#include "cigar.h"
-#include "api/BamReader.h"
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "src/cigar.h"
+#include "src/api/BamReader.h"
 
 using namespace std;
 using BamTools::BamReader;
@@ -30,6 +51,7 @@ struct AlignedRead {
   int diffFromRef;
   float refCopyNum;
   int partial;
+  int mate;
   bool strand;
 };
 
@@ -48,25 +70,26 @@ class ReadContainer {
   void RemovePCRDuplicates();
 
   // genotyper needs access to this to iterate over it
-  std::map<std::pair<std::string, int>, std::list<AlignedRead> > 
+  std::map<std::pair<std::string, int>, std::list<AlignedRead> >
     aligned_str_map_;
 
  private:
   /* Get values from representative read in set of dups */
   void GetRepRead(const list<AlignedRead>& aligned_read_list,
-		  AlignedRead* rep_alignment);
+                  AlignedRead* rep_alignment);
 
   /* Get average quality score of a set of reads */
   float GetAverageQualityScore(const list<AlignedRead>&
-			       aligned_read_list);
+                               aligned_read_list);
 
   /* Get quality core for a single read */
   float GetScore(const std::string& quality_string);
 
   /* Adjust diff from ref based on cigar */
-  int GetSTRAllele(const AlignedRead& aligned_read, const CIGAR_LIST& cigar_list);
+  int GetSTRAllele(const AlignedRead& aligned_read,
+                   const CIGAR_LIST& cigar_list);
 
   BamTools::BamReader reader;
 };
 
-#endif /* READ_CONTAINER_H_ */
+#endif  // SRC_READCONTAINER_H_

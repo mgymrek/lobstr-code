@@ -1,32 +1,54 @@
 /*
- Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
 */
 
 #include <err.h>
 #include <stdlib.h>
-#include <sstream>
 
-#include "BamFileReader.h"
-#include "BamPairedFileReader.h"
-#include "common.h"
-#include "FastaFileReader.h"
-#include "FastaPairedFileReader.h"
-#include "FastqFileReader.h"
-#include "FastqPairedFileReader.h"
-#include "ZippedFastaFileReader.h"
-#include "ZippedFastqFileReader.h"
-#include "runtime_parameters.h"
+#include <map>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "src/BamFileReader.h"
+#include "src/BamPairedFileReader.h"
+#include "src/common.h"
+#include "src/FastaFileReader.h"
+#include "src/FastaPairedFileReader.h"
+#include "src/FastqFileReader.h"
+#include "src/FastqPairedFileReader.h"
+#include "src/ZippedFastaFileReader.h"
+#include "src/ZippedFastqFileReader.h"
+#include "src/runtime_parameters.h"
 
 using namespace std;
 
-int QUAL_CUTOFF = 20;
 void TrimRead(const string& input_nucs,
-	      const string& input_quals,
-	      string* trimmed_nucs,
-	      string* trimmed_quals) {
+              const string& input_quals,
+              string* trimmed_nucs,
+              string* trimmed_quals,
+              int cutoff) {
   // if last bp is fine, return as is
   size_t l = input_nucs.length();
-  if (int(input_quals.at(l-1)-33) >= QUAL_CUTOFF) {
+  if (static_cast<int>(input_quals.at(l - 1) - QUALITY_CONSTANT)
+      >= cutoff) {
     *trimmed_nucs = input_nucs;
     *trimmed_quals = input_quals;
     return;
@@ -40,15 +62,15 @@ void TrimRead(const string& input_nucs,
   for (size_t x = min_read_length; x <= l; x++) {
     int score = 0;
     for (size_t i = x+1; i < l; i++) {
-      score += (QUAL_CUTOFF-(input_quals.at(i)-33));
+      score += (cutoff-(input_quals.at(i)-QUALITY_CONSTANT));
     }
     if (score >= max_score) {
       max_score = score;
       max_x = x;
     }
   }
-  *trimmed_nucs = input_nucs.substr(0,max_x);
-  *trimmed_quals = input_quals.substr(0,max_x);
+  *trimmed_nucs = input_nucs.substr(0, max_x + 1);
+  *trimmed_quals = input_quals.substr(0, max_x + 1);
 }
 
 size_t count(const string& s, const char& c) {
@@ -62,17 +84,17 @@ size_t count(const string& s, const char& c) {
 
 bool getMSSeq(const string& nucs, int k, string* repeat) {
   if (k < 2 || k > 6) return false;
-  if ((int)nucs.size() < k) return false;
-  map<string,int> countKMers;
+  if (static_cast<int>(nucs.size()) < k) return false;
+  map<string, int> countKMers;
   size_t i;
   string subseq;
   string kmer;
   int maxkmer = 0;
   subseq.resize(k);
-  for(i = 0; i < nucs.size()-k; i++){
-    subseq = nucs.substr(i,k);
+  for (i = 0; i < nucs.size() - k; i++) {
+    subseq = nucs.substr(i, k);
     countKMers[subseq]++;
-    if (countKMers.at(subseq) > maxkmer){
+    if (countKMers.at(subseq) > maxkmer) {
       kmer = subseq;
       maxkmer = countKMers.at(subseq);
     }
@@ -97,15 +119,16 @@ string getFirstString(const std::string& seq1, const std::string& seq2) {
 }
 
 bool IsPerfectRepeat(const std::string& sequence,
-		     const std::string& repeat) {
-  
+                     const std::string& repeat) {
   // find first occurrence of repeat
   size_t found;
   found = sequence.find(repeat);
   if (found == string::npos || found > repeat.length() - 1) return false;
   // check the part before found
-  if (sequence.substr(0, found) != repeat.substr(repeat.length() - found, found)) return false;
-  for (size_t i = found; i < sequence.length() - repeat.length() + 1; i += repeat.length()) {
+  if (sequence.substr(0, found) != repeat.substr(repeat.length() - found,
+                                                 found)) return false;
+  for (size_t i = found; i < sequence.length()
+         - repeat.length() + 1; i += repeat.length()) {
     string test_seq = sequence.substr(i, repeat.length());
     if (test_seq != repeat) return false;
   }
@@ -137,9 +160,13 @@ int GetChromNumber(string chromosome) {
   // get whatever is after "chr"
   string chrom_string = chromosome.substr(3);
   // convert this to a number
-  if (chrom_string == "X") { return 23;}
-  else if (chrom_string == "Y") { return 24;}
-  else { return atoi(chrom_string.c_str());}
+  if (chrom_string == "X") {
+    return 23;
+  } else if (chrom_string == "Y") {
+    return 24;
+  } else {
+    return atoi(chrom_string.c_str());
+  }
 }
 
 bool fexists(const char *filename) {
@@ -150,74 +177,65 @@ bool fexists(const char *filename) {
 bool valid_nucleotides_string(const string &str) {
   if (str.empty())
     return false;
-  for (size_t i = 0 ; i<str.length(); ++i) {
+  for (size_t i = 0 ; i < str.length(); ++i) {
     const char ch = str[i];
-    if ( (ch!='A') && (ch!='C') && (ch!='G') && (ch!='T') && (ch!='N')
-	 &&
-	 (ch!='a') && (ch!='c') && (ch!='g') && (ch!='t') && (ch!='n') )
+    if ( (ch != 'A') && (ch != 'C') && (ch != 'G') && (ch != 'T') &&
+         (ch != 'N') &&
+         (ch != 'a') && (ch != 'c') && (ch != 'g') && (ch != 't') &&
+         (ch != 'n') )
       return false;
   }
   return true;
 }
 
 char OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
-  size_t countA=0, countC=0, countG=0, countT=0;
-  for (size_t i=0; i<nuc.length(); i++) { 
-    switch(nuc.at(i))
-      {
+  size_t countA = 0, countC = 0, countG = 0, countT = 0;
+  for (size_t i = 0; i < nuc.length(); i++) {
+    switch (nuc.at(i)) {
       case 'A':
       case 'a':
-	countA++;
-	break;
-	
+        countA++;
+      break;
       case 'C':
       case 'c':
-	countC++;
-	break;
-	
+        countC++;
+      break;
       case 'G':
       case 'g':
-	countG++;
-	break;
-	
+        countG++;
+      break;
       case 'T':
       case 't':
-	countT++;
-	break;
-	
+        countT++;
+      break;
       case 'N':
       case 'n':
-	break;
-	
+        break;
       default:
-	errx(1,"Internal error: OneAbundantNucleotide called with invalid nucleotide string '%s', characte '%c'", nuc.c_str(), nuc.at(i));
+        errx(1, "Internal error: OneAbundantNucleotide " \
+             "called with invalid nucleotide string '%s'" \
+             ", characte '%c'", nuc.c_str(), nuc.at(i));
       }
   }
-  
   size_t threshold = nuc.length()*perc_threshold;
-  
-  if (countA>=threshold)
+  if (countA >= threshold)
     return 'A';
-  
-  if (countC>=threshold)
+  if (countC >= threshold)
     return 'C';
-  
-  if (countG>=threshold)
+  if (countG >= threshold)
     return 'G';
-  
-  if (countT>=threshold)
+  if (countT >= threshold)
     return 'T';
-  
   return 0;
 }
 
 double calculate_N_percentage(const std::string& nuc) {
-  size_t n_count=0;
-  for (size_t i=0; i<nuc.length(); i++)
-    if (nuc.at(i)=='N' || nuc.at(i)=='n')
+  size_t n_count = 0;
+  for (size_t i = 0; i < nuc.length(); i++)
+    if (nuc.at(i) == 'N' || nuc.at(i) == 'n')
       n_count++;
-  
-  return ((double)n_count)/((double)nuc.length());
+  return (static_cast<double>(n_count))/
+    (static_cast<double>(nuc.length()));
 }
 
 string reverseComplement(const string& nucs) {
@@ -230,9 +248,8 @@ string reverseComplement(const string& nucs) {
   return rev;
 }
 
-
 char complement(const char nucleotide) {
-  switch(nucleotide) {
+  switch (nucleotide) {
   case 'A':
   case 'a':
     return 'T';
@@ -249,8 +266,8 @@ char complement(const char nucleotide) {
   return 'N';
 }
 
-int nucToNumber(const char& nuc){
-  switch(nuc) {
+int nucToNumber(const char& nuc) {
+  switch (nuc) {
   case 'A': return 0;
   case 'C': return 1;
   case 'G': return 2;
@@ -264,12 +281,12 @@ std::string reverse(const std::string& s) {
   size_t size = s.size();
   rev.resize(size);
   for (size_t i = 0; i < size; i++) {
-    rev.replace(size-i-1,1,s.substr(i,1));
+    rev.replace(size-i-1, 1, s.substr(i, 1));
   }
   return rev;
 }
 
-void getCanonicalMS(const string& msnucs, string* canonical){
+void getCanonicalMS(const string& msnucs, string* canonical) {
   // common ones
   // first check to see if it is hashed already
   if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
@@ -280,76 +297,77 @@ void getCanonicalMS(const string& msnucs, string* canonical){
   size_t size = msnucs.size();
   size_t i;
   size_t j;
-  
   *canonical = msnucs;
   newseq.resize(size);
-  for(i = 1; i < size ; i++){
-    newseq = msnucs.substr(size-i,size) + msnucs.substr(0,size-i);
-    // if newsq > canon, make it canon  
-    for(j = 0; j < size; j++){
-      if(nucToNumber(newseq[j]) < nucToNumber((*canonical)[j])){
-	*canonical = newseq;
-	break;
-      } else if(nucToNumber(newseq[j]) > nucToNumber((*canonical)[j])){
-	break;
+  for (i = 1; i < size ; i++) {
+    newseq = msnucs.substr(size-i, size) + msnucs.substr(0, size-i);
+    // if newsq > canon, make it canon
+    for (j = 0; j < size; j++) {
+      if (nucToNumber(newseq[j]) < nucToNumber((*canonical)[j])) {
+        *canonical = newseq;
+        break;
+      } else if (nucToNumber(newseq[j]) > nucToNumber((*canonical)[j])) {
+        break;
       }
     }
   }
   canonicalMSTable.insert(pair<string, string>
-			  (msnucs, *canonical)); 
+                          (msnucs, *canonical));
 }
 
 IFileReader* create_file_reader(const string& filename1,
-				const string& filename2) {
-  switch(input_type) {
+                                const string& filename2) {
+  switch (input_type) {
     case INPUT_FASTA:
       if (paired) {
-	return new FastaPairedFileReader(filename1, filename2);
+        return new FastaPairedFileReader(filename1, filename2);
       } else {
-	if (gzip) {
-	  return new ZippedFastaFileReader(filename1);
-	} else {
-	  return new FastaFileReader(filename1);  
-	}
+        if (gzip) {
+          return new ZippedFastaFileReader(filename1);
+        } else {
+          return new FastaFileReader(filename1);
+        }
       }
-    case INPUT_FASTQ:
-      if (paired) {
-	return new FastqPairedFileReader(filename1, filename2);
+  case INPUT_FASTQ:
+    if (paired) {
+      return new FastqPairedFileReader(filename1, filename2);
+    } else {
+      if (gzip) {
+        return new ZippedFastqFileReader(filename1);
       } else {
-	if (gzip) {
-	  return new ZippedFastqFileReader(filename1);
-	} else {
-	  return new FastqFileReader(filename1);
-	}
+        return new FastqFileReader(filename1);
       }
-    case INPUT_BAM:
-      if (paired) {
-	return new BamPairedFileReader(filename1);
-      } else {
-	return new BamFileReader(filename1);
-      }
-    default:
-      //This should really never happen
-      errx(1,"Internal error, unknown 'input_type' (%d)", (int)input_type);
     }
-}
-std::string fftw_complex_to_string(fftw_complex v)
-{
-	stringstream s;
-	s.setf(ios::fixed,ios::floatfield);
-	s.width(7);
-	s.precision(5);
-	s << v[0] << " ";
-	s << ( ( v[1]>=0 ) ? "+ " : "- " );
-	s << (std::abs(v[1]))<< "i" ;
-	return s.str();
+  case INPUT_BAM:
+    if (paired) {
+      return new BamPairedFileReader(filename1);
+    } else {
+      return new BamFileReader(filename1);
+    }
+  default:
+    // This should really never happen
+    errx(1, "Internal error, unknown 'input_type' (%d)",
+         static_cast<int>(input_type));
+  }
 }
 
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+std::string fftw_complex_to_string(fftw_complex v) {
+  stringstream s;
+  s.setf(ios::fixed, ios::floatfield);
+  s.width(7);
+  s.precision(5);
+  s << v[0] << " ";
+  s << ((v[1] >= 0) ? "+ " : "- ");
+  s << (std::abs(v[1])) << "i";
+  return s.str();
+}
+
+std::vector<std::string> &split(const std::string &s,
+                                char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;
-    while(std::getline(ss, item, delim)) {
-        elems.push_back(item);
+    while (std::getline(ss, item, delim)) {
+      elems.push_back(item);
     }
     return elems;
 }

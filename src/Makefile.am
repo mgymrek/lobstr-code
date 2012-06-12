@@ -13,8 +13,6 @@ bin_PROGRAMS = lobSTR \
 	lobSTRIndex \
 	allelotype
 
-
-
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 
 AM_CPPFLAGS = $(FFTW_CFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) $(RCPPFLAGS)
@@ -108,7 +106,7 @@ noinst_headers = \
 	utils/bamtools_utilities.h \
 	utils/bamtools_pileup_engine.h \
 	utils/bamtools_variant.h \
-	utils/utils_global.h
+	utils/utils_global.h \
 	bwtaln.h \
 	main.h \
 	bwt.h \
@@ -126,7 +124,7 @@ noinst_headers = \
 	NoiseModel.h \
 	ReadContainer.h 
 
-noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a 
+noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a
 
 liblobstr_a_SOURCES = \
 	BamFileReader.cpp \
@@ -305,3 +303,99 @@ allelotype_SOURCES = 	main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS) $(RCPPFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) 
 allelotype_LDADD = liballelotype.a $(RLDFLAGS)  $(VAR_STATIC) $(RINSIDELDFLAGS) $(RCPPLDFLAGS)  $(VAR_DYNAMIC)
 
+TESTS = lobSTRTests
+check_PROGRAMS = $(TESTS)
+lobSTRTests_SOURCES = \
+	tests/main_test.cpp \
+	tests/BWAReadAligner_test.h \
+	tests/BWAReadAligner_test.cpp \
+	tests/common_test.h \
+	tests/common_test.cpp \
+	BamFileReader.cpp \
+	BamPairedFileReader.cpp \
+	BWAReadAligner.cpp \
+	CachedWindowGenerator.cpp \
+	common.cpp \
+	EntropyDetection.cpp \
+	FastaFileReader.cpp \
+	FastaPairedFileReader.cpp \
+	FastqFileReader.cpp \
+	FastqPairedFileReader.cpp \
+	FFT_four_nuc_vectors.cpp \
+	FFT_nuc_vectors.cpp \
+	gzstream.cpp \
+	HammingWindowGenerator.cpp \
+	MultithreadData.cpp \
+	nw.cpp \
+	runtime_parameters.cpp \
+	SamFileWriter.cpp \
+	STRDetector.cpp \
+	TabFileWriter.cpp \
+	TextFileReader.cpp \
+	TextFileWriter.cpp \
+	TukeyWindowGenerator.cpp \
+	ZippedFastaFileReader.cpp \
+	ZippedFastqFileReader.cpp \
+	ZippedTextFileReader.cpp \
+	bamlite.c \
+	bntseq.c \
+	bwape.c \
+	bwase.c \
+	bwt.c \
+	bwtaln.c \
+	bwtgap.c \
+	bwtindex.c \
+	bwtio.c \
+	bwtmisc.c \
+	bwtsw2_aux.c \
+	bwtsw2_chain.c \
+	bwtsw2_core.c \
+	bwtsw2_main.c \
+	bwt_gen.c \
+	bwt_lite.c \
+	cs2nt.c \
+	is.c \
+	kstring.c \
+	QSufSort.c \
+	simple_dp.c \
+	stdaln.c \
+	utils.c  \
+	api/BamReader.cpp \
+	api/BamMultiReader.cpp \
+	api/BamWriter.cpp \
+	api/BamAlignment.cpp \
+	api/SamHeader.cpp \
+	api/SamProgram.cpp \
+	api/SamProgramChain.cpp \
+	api/SamSequence.cpp \
+	api/SamSequenceDictionary.cpp \
+	api/SamReadGroup.cpp \
+	api/SamReadGroupDictionary.cpp \
+	api/internal/BamWriter_p.cpp \
+	api/internal/SamFormatPrinter_p.cpp \
+	api/internal/BamException_p.cpp \
+	api/internal/BamDeviceFactory_p.cpp \
+	api/internal/BamHeader_p.cpp \
+	api/internal/BamRandomAccessController_p.cpp \
+	api/internal/BamReader_p.cpp \
+	api/internal/ILocalIODevice_p.cpp \
+	api/internal/BgzfStream_p.cpp \
+	api/internal/BamFile_p.cpp \
+	api/internal/SamFormatParser_p.cpp \
+	api/internal/SamHeaderValidator_p.cpp \
+	api/internal/BamFtp_p.cpp \
+	api/internal/BamHttp_p.cpp \
+	api/internal/BamIndexFactory_p.cpp \
+	api/internal/BamPipe_p.cpp \
+	api/internal/BamStandardIndex_p.cpp \
+	api/internal/BamToolsIndex_p.cpp \
+	api/internal/BamMultiReader_p.cpp \
+	utils/bamtools_utilities.cpp  \
+	utils/bamtools_fasta.cpp \
+	utils/bamtools_options.cpp \
+	utils/bamtools_pileup_engine.cpp
+
+
+
+lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
+lobSTRTests_LDADD = $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl

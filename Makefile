@@ -127,6 +127,9 @@ CCDEPMODE = depmode=gcc3
 CFLAGS = -Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized -m64  -pthread  
 CPP = gcc -E
 CPPFLAGS =  -I/usr/include
+CPPUNIT_CFLAGS = 
+CPPUNIT_CONFIG = /usr/bin/cppunit-config
+CPPUNIT_LIBS = -lcppunit -ldl
 CXX = g++
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized -m64  -pthread   -I/usr/include 

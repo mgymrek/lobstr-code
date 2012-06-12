@@ -1,20 +1,42 @@
 /*
- * Author: Melissa Gymrek 2012
- */
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 #include <err.h>
 #include <error.h>
-#include <iostream>
 
-#include "ReadContainer.h"
-#include "runtime_parameters.h"
+#include <iostream>
+#include <list>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "src/ReadContainer.h"
+#include "src/runtime_parameters.h"
 
 using namespace std;
 
-ReadContainer::ReadContainer(){};
+ReadContainer::ReadContainer() {}
 
 void ReadContainer::AddReadsFromFile(string bamfile) {
-  if (!reader.Open(bamfile)){
+  if (!reader.Open(bamfile)) {
     errx(1, "Could not open bam file");
   }
   std::string header_text = reader.GetHeaderText();
@@ -49,33 +71,42 @@ void ReadContainer::AddReadsFromFile(string bamfile) {
     aligned_read.read_start = aln.Position;
     // get cigar
     aligned_read.cigar_ops = aln.CigarData;
-    // get STR seq 
+    // get STR seq
     if (!aln.GetTag("XR", aligned_read.repseq)) {
       aligned_read.repseq="";
     }
     // get partial
-    if (!aln.GetTag("XP",aligned_read.partial)) {
+    if (!aln.GetTag("XP", aligned_read.partial)) {
       aligned_read.partial = 0;
+    }
+    // get if mate pair
+    if (aln.IsSecondMate()) {
+      aligned_read.mate = 1;
+    } else {
+      aligned_read.mate = 0;
     }
     // get period
     aligned_read.period = aligned_read.repseq.length();
     // get diff
-    if (!aln.GetTag("XD",aligned_read.diffFromRef)) {
+    if (!aln.GetTag("XD", aligned_read.diffFromRef)) {
       aligned_read.diffFromRef = 0;
     }
-    if (!include_flank) { // diff is just sum of differences in cigar
-	CIGAR_LIST cigar_list;
-	for (vector<BamTools::CigarOp>::const_iterator it = aligned_read.cigar_ops.begin();
-	       it != aligned_read.cigar_ops.end(); it++) {
-	 CIGAR cig;
-	 cig.num = (*it).Length;
-	 cig.cigar_type = (*it).Type;
-	 cigar_list.cigars.push_back(cig);
-	}
-	aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);
+    if (!include_flank) {  // diff is just sum of differences in cigar
+      CIGAR_LIST cigar_list;
+      for (vector<BamTools::CigarOp>::const_iterator
+             it = aligned_read.cigar_ops.begin();
+           it != aligned_read.cigar_ops.end(); it++) {
+        CIGAR cig;
+        cig.num = (*it).Length;
+        cig.cigar_type = (*it).Type;
+        cigar_list.cigars.push_back(cig);
+      }
+      aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);
     }
     if (profile) {
-      cout << aligned_read.nucleotides << " " << aligned_read.diffFromRef << " "<<  aligned_read.period << endl;
+      cout << aligned_read.nucleotides << " "
+           << aligned_read.diffFromRef << " "
+           <<  aligned_read.period << endl;
     }
 
     if (unit) {
@@ -96,35 +127,39 @@ void ReadContainer::AddReadsFromFile(string bamfile) {
       list<AlignedRead> aligned_read_list;
       aligned_read_list.push_back(aligned_read);
       aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
-			      (coord, aligned_read_list));
+                              (coord, aligned_read_list));
     }
   }
 }
 
 void ReadContainer::RemovePCRDuplicates() {
   for (map<pair<string, int>, list<AlignedRead> >::iterator
-	 it = aligned_str_map_.begin();
+         it = aligned_str_map_.begin();
        it != aligned_str_map_.end(); it++) {
     // map of <start pos, length> -> aligned reads list
     map<pair<int, int>, list<AlignedRead> > pcr_duplicates;
     // Group into duplicates
     for (list<AlignedRead>::const_iterator
-	   it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-      pair<int, int> key(it2->read_start, it2->nucleotides.length());
+           it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+      //      pair<int, int> key(it2->read_start, it2->nucleotides.length());
+      // For now, reads at same start coord treated as dups
+      // Since trimming/stitching obscures length, don't use
+      // length for now
+      pair<int, int> key(it2->read_start, 0);
       if (pcr_duplicates.find(key) != pcr_duplicates.end()) {
-	pcr_duplicates.at(key).push_back(*it2);
+        pcr_duplicates.at(key).push_back(*it2);
       } else {
-	list<AlignedRead> pcr_dup_reads;
-	pcr_dup_reads.push_back(*it2);
-	pcr_duplicates.insert(pair< pair<int, int>, list<AlignedRead> >
-			       (key, pcr_dup_reads));
+        list<AlignedRead> pcr_dup_reads;
+        pcr_dup_reads.push_back(*it2);
+        pcr_duplicates.insert(pair< pair<int, int>, list<AlignedRead> >
+                              (key, pcr_dup_reads));
       }
     }
     // Choose one rep from each group
     list<AlignedRead> reads_after_rmdup;
     for (map<pair<int, int>, list<AlignedRead> >::const_iterator
-	   it3 = pcr_duplicates.begin();
-	 it3 != pcr_duplicates.end(); it3++) {
+           it3 = pcr_duplicates.begin();
+         it3 != pcr_duplicates.end(); it3++) {
       AlignedRead rep_read;
       GetRepRead(it3->second, &rep_read);
       reads_after_rmdup.push_back(rep_read);
@@ -135,21 +170,21 @@ void ReadContainer::RemovePCRDuplicates() {
 }
 
 void ReadContainer::GetRepRead(const list<AlignedRead>&
-			       aligned_read_list,
-			       AlignedRead* rep_alignment) {
+                               aligned_read_list,
+                               AlignedRead* rep_alignment) {
   map<float, list<AlignedRead> > copy_number_to_reads;
   for (list<AlignedRead>::const_iterator
-	 it = aligned_read_list.begin();
+         it = aligned_read_list.begin();
        it != aligned_read_list.end(); it++) {
     float diff = it->diffFromRef;
     if (copy_number_to_reads.find(diff) !=
-	copy_number_to_reads.end()) {
+        copy_number_to_reads.end()) {
       copy_number_to_reads.at(diff).push_back(*it);
     } else {
       list<AlignedRead> aligned_read_list;
       aligned_read_list.push_back(*it);
       copy_number_to_reads.insert(pair<float, list<AlignedRead> >
-				  (diff, aligned_read_list));
+                                  (diff, aligned_read_list));
     }
   }
   // check for majority vote, use qual as tiebreaker
@@ -157,12 +192,12 @@ void ReadContainer::GetRepRead(const list<AlignedRead>&
   size_t majority_vote_num_supporting_reads = 0;
   float majority_vote_average_quality = 0;
   for (map<float, list<AlignedRead> >::const_iterator
-	 it = copy_number_to_reads.begin();
+         it = copy_number_to_reads.begin();
        it != copy_number_to_reads.end(); it++) {
     float avg_qual = GetAverageQualityScore(it->second);
     if (it->second.size() > majority_vote_num_supporting_reads ||
-	(it->second.size() == majority_vote_num_supporting_reads &&
-	 avg_qual > majority_vote_average_quality)) {
+        (it->second.size() == majority_vote_num_supporting_reads &&
+         avg_qual > majority_vote_average_quality)) {
       // we are majority so far
       majority_vote_copy_number = it->first;
       majority_vote_num_supporting_reads = it->second.size();
@@ -173,14 +208,14 @@ void ReadContainer::GetRepRead(const list<AlignedRead>&
 }
 
 float ReadContainer::GetAverageQualityScore(const list<AlignedRead>&
-					    aligned_read_list) {
+                                            aligned_read_list) {
   if (aligned_read_list.size() == 0) return 0.0;
   float total_quality = 0;
   for (list<AlignedRead>::const_iterator it = aligned_read_list.begin();
        it != aligned_read_list.end(); it++) {
     total_quality += GetScore(it->qualities);
   }
-  return total_quality/(float)aligned_read_list.size();
+  return total_quality/static_cast<float>(aligned_read_list.size());
 }
 
 float ReadContainer::GetScore(const string& quality_string) {
@@ -189,13 +224,14 @@ float ReadContainer::GetScore(const string& quality_string) {
   for (size_t i = 0; i < quality_string.length(); i++) {
     total_quality +=  quality_string.at(i) - 33;
   }
-  return total_quality/(float)quality_string.length();
+  return total_quality/static_cast<float>(quality_string.length());
 }
 
 
 
 
-int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read, const CIGAR_LIST& cigar_list) {
+int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read,
+                                const CIGAR_LIST& cigar_list) {
   int diff_from_ref = 0;
   for (size_t i = 0; i < cigar_list.cigars.size(); i++) {
     if (cigar_list.cigars.at(i).cigar_type == 'I') {
@@ -209,4 +245,4 @@ int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read, const CIGAR_LIS
   return diff_from_ref;
 }
 
-ReadContainer::~ReadContainer(){};
+ReadContainer::~ReadContainer() {}

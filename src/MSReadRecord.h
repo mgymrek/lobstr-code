@@ -1,5 +1,21 @@
 /*
- Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
 */
 
 #ifndef SRC_MSREADRECORD_H_
@@ -66,8 +82,6 @@ class MSReadRecord {
   int msStart;
   // end position of STR
   int msEnd;
-  // repeat of aligned read
-  std::string msRepeat;
   // reference copy number
   float refCopyNum;
   // start coord of left flank
@@ -85,7 +99,7 @@ class MSReadRecord {
   // name of this STR locus
   std::string name;
   // alignment score
-  int sw_score;
+  int mapq;
   // cigar score for sam format
   std::vector<CIGAR> cigar;
   // cigar score as a string
@@ -94,10 +108,14 @@ class MSReadRecord {
   int read_start;
   // five prime pos
   int read_end;
-  // is the left flank all repeats
+  // is the left flank in the repeat region
   bool left_all_repeats;
-  // is the right flank all repeats
+  // is the right flank in the repeat region
   bool right_all_repeats;
+  // is the left flank perfect repeat
+  bool left_perfect_repeat;
+  // is the right flank perfect repeat
+  bool right_perfect_repeat;
   // detected STR (reset by BWAReadAligner.cpp)
   std::string  detected_ms_nuc;
 };

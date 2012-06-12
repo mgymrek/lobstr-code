@@ -1,12 +1,30 @@
 /*
- Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
 */
 
-#include "runtime_parameters.h"
+#include <map>
+#include <string>
+#include "src/runtime_parameters.h"
 
 // keep track of user defined arguments
-std::string user_defined_arguments="# version=lobSTR_v1.0.6;";
-std::string user_defined_arguments_allelotyper="# version=allelotype_v1.0.6;";
+std::string user_defined_arguments = "# version=lobSTR_v1.0.6;";
+std::string user_defined_arguments_allelotyper = "# version=allelotype_v1.0.6;";
 
 // keep track of common ones
 std::map<std::string, std::string> canonicalMSTable;
@@ -38,6 +56,7 @@ std::string output_prefix = "";
 std::string sam_file = "";
 
 // detection params
+bool check_next_best = false;
 size_t min_read_length = 45;
 size_t max_read_length = 1024;
 size_t fft_window_size = 24;
@@ -60,7 +79,8 @@ size_t extend_flank = 6;
 // alignment params
 bool adjust = true;
 bool debug_adjust = false;
-int min_sw_score = 20;
+int min_sw_score = 60;
+int max_mapq = 200;
 int allowed_mismatches = -1;
 int max_align = 10;
 int max_diff_ref = 50;
@@ -83,7 +103,7 @@ float min_het_freq = 0.20;
 bool male = true;
 bool sex_unknown = false;
 bool sex_set = false;
-int min_coverage = 2;
+int min_coverage = 1;
 std::string aligned_file = "";
 bool not_lobstr_file_detected = false;
 bool include_flank = true;
@@ -100,7 +120,7 @@ bool include_orig_read_start = false;
 bool profile = false;
 bool fftw_debug = false;
 bool lobe_debug = false;
-bool microsatellite_detection_debug= false ;
+bool microsatellite_detection_debug = false;
 bool period_detection_debug = false;
 bool force_noise_y = false;
 int force_noise_y_value = 2;
@@ -113,3 +133,6 @@ bool why_not_debug = false;
 bool entropy_debug = false;
 
 size_t MIN_STR_LENGTH = 6;
+
+int QUAL_CUTOFF = 15;
+int QUALITY_CONSTANT = 33;

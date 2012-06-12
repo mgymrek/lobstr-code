@@ -1,18 +1,36 @@
 /*
- Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+
+This file is part of lobSTR.
+
+lobSTR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+lobSTR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
 */
 
 #include <err.h>
-#include <iostream>
+
+#include <string>
 
 #include "api/BamReader.h"
-#include "BamFileReader.h"
-#include "common.h"
+#include "src/BamFileReader.h"
+#include "src/common.h"
+#include "src/runtime_parameters.h"
 
-
-using namespace std;
 using BamTools::BamReader;
 using BamTools::BamAlignment;
+
+using namespace std;
 
 BamFileReader::BamFileReader(const std::string& _filename) {
   if (!reader.Open(_filename)) {
@@ -32,21 +50,18 @@ bool BamFileReader::GetNextRecord(ReadPair* read_pair) {
 }
 
 bool BamFileReader::GetNextRead(MSReadRecord* read) {
- BamAlignment aln;
+  BamAlignment aln;
   // check if any lines left
   if (!reader.GetNextAlignment(aln)) {
     return false;
   }
-  
-  string ID;
-  string nuc;
-  string ID2;
-  string quality;
-  
   read->ID = aln.Name;
-  read->nucleotides = aln.QueryBases;
-  read->quality_scores = aln.Qualities;
-  read->orig_nucleotides = aln.QueryBases;
-  read->orig_qual = aln.Qualities;
+  string trim_nucs;
+  string trim_qual;
+  TrimRead(aln.QueryBases, aln.Qualities, &trim_nucs, &trim_qual, QUAL_CUTOFF);
+  read->nucleotides = trim_nucs;
+  read->quality_scores = trim_qual;
+  read->orig_nucleotides = trim_nucs;
+  read->orig_qual = trim_qual;
   return true;
 }
