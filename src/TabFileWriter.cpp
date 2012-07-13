@@ -75,7 +75,6 @@ void TabFileWriter::WriteRecord(const ReadPair& read_pair) {
                 << read_pair.reads.at(aligned_read_num).mapq << "\t"
                 << paired_dist << "\t"
                 << (!read_pair.treat_as_paired && paired) << endl;
-
   if (read_pair.treat_as_paired) {
     output_stream << read_pair.reads.at(1-aligned_read_num).ID << "\t"
                   << read_pair.reads.at(1-aligned_read_num).nucleotides << "\t"

@@ -48,6 +48,7 @@ enum INPUT_TYPE {
 extern bool my_verbose;
 extern bool sam;
 extern bool debug;
+extern bool plot_info;
 extern bool genotype_only;
 extern bool fastq;
 extern bool bam;
@@ -109,7 +110,7 @@ extern float fpr;
 extern bool partial_debug;
 
 // genotyping params
-extern std::string bam_file;
+extern std::string bam_files_string;
 extern std::string command;
 extern std::string noise_model;
 extern bool rmdup;
@@ -122,7 +123,10 @@ extern std::string aligned_file;
 extern bool non_lobstr_file_detected;
 extern bool include_flank;
 extern bool print_reads;
-
+extern int max_matedist;
+extern float min_supp_freq;
+extern float MIN_POSTERIOR;
+extern float MIN_MARGINAL;
 
 // anonymization params (deprecated)
 extern std::string str_alignment_file;
@@ -153,5 +157,11 @@ extern size_t MIN_STR_LENGTH;
 // trimming
 extern int QUAL_CUTOFF;
 extern int QUALITY_CONSTANT;
+
+// Amazon s3 parameters
+extern bool using_s3;
+extern std::string s3bucket;
+extern std::string s3cmd_configfile;
+extern bool s3debug;
 
 #endif  // SRC_RUNTIME_PARAMETERS_H_

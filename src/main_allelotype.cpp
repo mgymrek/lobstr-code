@@ -24,6 +24,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <RInside.h>
 #include <stdlib.h>
 
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <string>
 
@@ -38,25 +39,44 @@ using namespace std;
 void show_help() {
   const char* help = "\n\nTo train the genotyping noise model " \
     "from a set of aligned reads:\n"                            \
-"allelotype --command train [OPTIONS] --bam <input.bam> " \
-    "--noise_model <noisemodel.txt>\n\n"                  \
-"To run str profiling on a set of aligned reads:\n" \
-"allelotype --command classify [OPTIONS] --bam <input.bam> " \
-"--noise_model <noisemodel.txt> [--no-rmdup] " \
+    "allelotype --command train [OPTIONS] --bam <input.bam> "   \
+    "--noise_model <noisemodel.txt>\n\n"                        \
+    "To run str profiling on a set of aligned reads:\n"         \
+    "allelotype --command classify [OPTIONS] --bam <input.bam> "  \
+    "--noise_model <noisemodel.txt> [--no-rmdup] "                \
     "--out <output_prefix> --sex [M|F|U]\n\n"                     \
-"To run training and classification on a set of aligned reads:\n" \
-"allelotype --command both [OPTIONS] --bam <input.bam> " \
-    "--noise_model <noisemodel.txt> [--no-rmdup] " \
-    "--out <output_prefix> --sex [M|F|U]\n\n"          \
-"To allelotype without using a stutter noise model:\n" \
-"allelotype simple [OPTIONS] --bam <input.bam> [--no-rmdup] " \
-    "--out <output_prefix> --sex [M|F|U]\n\n"                 \
-"Options:\n" \
-"--no-rmdup: don't remove pcr duplicates before allelotyping\n" \
-"--min-het-freq: minimum frequency to make a heterozygous call\n" \
-"--sex: Gender of sample, M=male, F=female, U=unknown\n" \
-"-h: display this message\n" \
-"-v: print out helpful progress messages\n\n";
+    "To run training and classification on a set of aligned reads:\n" \
+    "allelotype --command both [OPTIONS] --bam <input.bam> "          \
+    "--noise_model <noisemodel.txt> [--no-rmdup] "                    \
+    "--out <output_prefix> --sex [M|F|U]\n\n"                         \
+    "To allelotype without using a stutter noise model:\n"            \
+    "allelotype simple [OPTIONS] --bam <input.bam> [--no-rmdup] "     \
+    "--out <output_prefix> --sex [M|F|U]\n\n"                         \
+    "Paramter description:\n"                                          \
+    "--command [simple|train|classify|both]: specify which of the tasks\n" \
+    "                                        described above to perform\n" \
+    "--bam <file1.bam,[file2.bam, ...]>:     comma-separated list of bam files\n" \
+    "                                        to analyze\n"              \
+    "--noise_model <STRING>:                 file to write (for --command train or \n" \
+    "                                        --command both) or read \n" \
+    "                                        (--command classify) noise model paramters to.\n" \
+    "--no-rmdup: don't remove pcr duplicates before allelotyping\n"     \
+    "--min-het-freq <FLOAT>: minimum frequency to make a heterozygous call\n" \
+    "                        (default: 0.2)\n" \
+    "--sex [U|M|F]: Gender of sample, M=male, F=female, U=unknown\n"    \
+    "               If gender is irrelevant or doesn't make sense in \n " \
+    "               your usage case, specify --sex U.\n" \
+    "-h: display this message\n"                                        \
+    "-v: print out helpful progress messages\n\n";
+    "Options for filtering reads:\n" \
+    "If not specified, no filters applied\n" \
+    "--max-diff-ref <INT>:         filter reads differing from the\n"   \
+    "                             reference allele by more than <INT> bp.\n" \
+    "--unit:                      filter reads differing by a non-integer\n" \
+    "                             number of repeat copies from reference\n" \
+    "--mapq <INT>:                filter reads with mapq scores of less than\n" \
+    "                             <INT>.\n"                             \
+    "--max-matedist <INT>:        Filter reads with a mate distance larger than <INT> bp.\n\n";
   cout << help;
   exit(1);
 }
@@ -80,6 +100,12 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_PROFILE,
     OPT_PRINT_READS,
     OPT_MIN_HET_FREQ,
+    OPT_MAX_DIFF_REF,
+    OPT_MAXMAPQ,
+    OPT_MAXMATEDIST,
+    OPT_PLOTINFO,
+    OPT_POSTERIOR,
+    OPT_MARGINAL,
   };
 
   int ch;
@@ -99,6 +125,12 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"no-include-flank", 0, 0, OPT_NO_INCLUDE_FLANK},
     {"profile", 0, 0, OPT_PROFILE},
     {"min-het-freq", 1, 0, OPT_MIN_HET_FREQ},
+    {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
+    {"mapq", 1, 0, OPT_MAXMAPQ},
+    {"max-matedist", 1, 0, OPT_MAXMATEDIST},
+    {"plot", 0, 0, OPT_PLOTINFO},
+    {"min-genotype-score", 1, 0, OPT_POSTERIOR},
+    {"min-allele-score", 1, 0, OPT_MARGINAL},
     {NULL, no_argument, NULL, 0},
   };
 
@@ -106,34 +138,41 @@ void parse_commandline_options(int argc, char* argv[]) {
                    long_options, &option_index);
   while (ch != -1) {
     switch (ch) {
+    case OPT_MARGINAL:
+      MIN_POSTERIOR = atof(optarg);
+      AddOption("min-genotype-score",string(optarg), true,
+                &user_defined_arguments_allelotyper);
+      break;
+    case OPT_POSTERIOR:
+      MIN_POSTERIOR = atof(optarg);
+      AddOption("min-allele-score",string(optarg), true,
+                &user_defined_arguments_allelotyper);
+      break;
+    case OPT_PLOTINFO:
+      plot_info++;
+      break;
     case OPT_PRINT_READS:
       print_reads++;
-      user_defined_arguments_allelotyper += "print-reads=True;";
+      AddOption("print-reads", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_BAM:
-      bam_file = string(optarg);
-      user_defined_arguments_allelotyper += "bam=";
-      user_defined_arguments_allelotyper += bam_file;
-      user_defined_arguments_allelotyper += ";";
+      bam_files_string = string(optarg);
+      AddOption("bam", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_NO_INCLUDE_FLANK:
       include_flank = false;
-      user_defined_arguments_allelotyper += "no-include-flank=True;";
+      AddOption("no-include-flank", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_PROFILE:
       profile++;
       break;
     case OPT_MIN_HET_FREQ:
       min_het_freq = atof(optarg);
-      user_defined_arguments_allelotyper += "min-het-freq=";
-      user_defined_arguments_allelotyper += string(optarg);
-      user_defined_arguments_allelotyper += ";";
+      AddOption("min-het-freq", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_COMMAND:
       command = string(optarg);
-      user_defined_arguments_allelotyper += "command=";
-      user_defined_arguments_allelotyper += command;
-      user_defined_arguments_allelotyper += ";";
+      AddOption("command", string(optarg), true, &user_defined_arguments_allelotyper);
       if ((command != "train") & (command != "classify") &
           (command != "both") & (command != "simple")) {
         cerr << "\n\nERROR: Command " << command
@@ -145,13 +184,11 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_OUTPUT:
       output_prefix = string(optarg);
-      user_defined_arguments_allelotyper += "out=";
-      user_defined_arguments_allelotyper += output_prefix;
-      user_defined_arguments_allelotyper += ";";
+      AddOption("out", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_NORMDUP:
       rmdup = false;
-      user_defined_arguments_allelotyper += "rmdup=False;";
+      AddOption("normdup", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_SEX:
       if (string(optarg) != "F" &&
@@ -161,10 +198,8 @@ void parse_commandline_options(int argc, char* argv[]) {
       }
       if (string(optarg) == "F") male = false;
       if (string(optarg) == "U") sex_unknown = true;
-      user_defined_arguments_allelotyper += "sex=";
-      user_defined_arguments_allelotyper += string(optarg);
-      user_defined_arguments_allelotyper += ";";
       sex_set++;
+      AddOption("sex", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_NOISEMODEL:
       noise_model = string(optarg);
@@ -173,13 +208,24 @@ void parse_commandline_options(int argc, char* argv[]) {
         errx(1, "Cannot write to specified noise model file. " \
              "This file already exists.");
       }
-      user_defined_arguments_allelotyper += "noise-model=";
-      user_defined_arguments_allelotyper += string(optarg);
-      user_defined_arguments_allelotyper += ";";
+      AddOption("noise-model", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_UNIT:
       unit = true;
       user_defined_arguments_allelotyper += "unit=True;";
+      AddOption("unit", "", false, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MAX_DIFF_REF:
+      max_diff_ref = atoi(optarg);
+      AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MAXMAPQ:
+      max_mapq = atoi(optarg);
+      AddOption("mapq", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MAXMATEDIST:
+      max_matedist = atoi(optarg);
+      AddOption("max-matedist", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case 'v':
     case OPT_VERBOSE:
@@ -218,7 +264,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     exit(1);
   }
   if (command == "train") {
-    if (bam_file.empty() || noise_model.empty()) {
+    if (bam_files_string.empty() || noise_model.empty()) {
       cerr << "\n\nERROR: Required arguments are missing. " \
         "Please specify a bam file and an output prefix";
       show_help();
@@ -227,7 +273,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     male = true;
   }
   if (command == "classify") {
-    if (bam_file.empty() || noise_model.empty()
+    if (bam_files_string.empty() || noise_model.empty()
         || output_prefix.empty() || !sex_set) {
       cerr << "\n\nERROR: Required arguments are missing. " \
         "Please specify a bam file, " \
@@ -237,7 +283,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     }
   }
   if (command == "both" || command == "simple") {
-    if (bam_file.empty() || output_prefix.empty() || !sex_set)  {
+    if (bam_files_string.empty() || output_prefix.empty() || !sex_set)  {
       cerr << "\n\nERROR: Required arguments are missing. " \
         "Please specify a bam file, " \
         "output prefix, and gender";
@@ -254,10 +300,10 @@ void parse_commandline_options(int argc, char* argv[]) {
 }
 
 /* copied from common.h */
-bool fexists(const char *filename) {
+/*bool fexists(const char *filename) {
   ifstream ifile(filename);
   return ifile;
-}
+  }*/
 
 int main(int argc, char* argv[]) {
   /* parse command line options */
@@ -271,9 +317,11 @@ int main(int argc, char* argv[]) {
   NoiseModel nm(&R);
 
   /* Add reads to read container */
+  vector<string>bam_files;
+  boost::split(bam_files, bam_files_string, boost::is_any_of(","));
   if (my_verbose) cout << "Adding reads to read container" << endl;
   ReadContainer read_container;
-  read_container.AddReadsFromFile(bam_file);
+  read_container.AddReadsFromFile(bam_files);
 
   /* Perform pcr dup removal if specified */
   if (rmdup) {

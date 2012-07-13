@@ -240,12 +240,22 @@ libindex_a_SOURCES = \
 
 liballelotype_a_SOURCES = \
 	common.cpp \
+	BamFileReader.cpp \
+	BamPairedFileReader.cpp \
+	FastaFileReader.cpp \
+	FastqFileReader.cpp \
+	FastaPairedFileReader.cpp \
+	FastqPairedFileReader.cpp \
 	Genotyper.cpp \
+	gzstream.cpp \
 	NoiseModel.cpp \
 	ReadContainer.cpp \
 	runtime_parameters.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
+	ZippedFastaFileReader.cpp \
+	ZippedFastqFileReader.cpp \
+	ZippedTextFileReader.cpp \
 	api/BamReader.cpp \
 	api/BamMultiReader.cpp \
 	api/BamWriter.cpp \

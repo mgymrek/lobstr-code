@@ -96,6 +96,9 @@ class MSReadRecord {
   int diffFromRef;
   // partially covered
   bool partial;
+  // was initially marked as partially covered
+  // (this field used for debugging)
+  bool was_partial;
   // name of this STR locus
   std::string name;
   // alignment score
@@ -118,6 +121,8 @@ class MSReadRecord {
   bool right_perfect_repeat;
   // detected STR (reset by BWAReadAligner.cpp)
   std::string  detected_ms_nuc;
+  // is the read paired?
+  bool paired;
 };
 
 #endif  // SRC_MSREADRECORD_H_

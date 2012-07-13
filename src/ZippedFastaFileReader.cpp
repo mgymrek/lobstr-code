@@ -86,5 +86,6 @@ bool ZippedFastaFileReader::GetNextRead(MSReadRecord* read) {
   read->quality_scores = string(nuc.length(), 'N');
   read->orig_nucleotides = nuc;
   read->orig_qual = read->quality_scores;
+  read->paired = false;
   return true;
 }

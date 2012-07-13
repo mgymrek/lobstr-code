@@ -67,7 +67,7 @@ class NoiseModel {
   bool WriteNoiseModelToFile(std::string filename);
 
   /* What is the prob of observing STR=b when true value is STR=a*/
-  float GetTransitionProb(float a, float b, int period);
+  float GetTransitionProb(int a, int b, int period);
 
  private:
   /* Check if a set of reads has a unique mode */

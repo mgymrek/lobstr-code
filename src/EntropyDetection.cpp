@@ -65,10 +65,6 @@ double EntropyDetection::EntropyOneWindowDinuc(const std::string& window_nucs) {
       entropy += MinusPlogP(p);
     }
   }
-  if (why_not_debug) {
-    cerr << "[Entropy]: " << window_nucs << " "
-         << (4-entropy)/4 << endl;
-  }
   return (4-entropy)/4;
 }
 
@@ -86,11 +82,6 @@ void EntropyDetection::CalculateEntropyWindow() {
 
 bool EntropyDetection::EntropyIsAboveThreshold() {
   CalculateEntropyWindow();
-  if (why_not_debug) {
-    cerr << "entropy "
-         << *max_element(_entropy_window.begin(),
-                         _entropy_window.end()) << endl;
-  }
   return *max_element(_entropy_window.begin(), _entropy_window.end()) >
     entropy_threshold;
 }

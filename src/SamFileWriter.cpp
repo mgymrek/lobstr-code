@@ -127,7 +127,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   // XG: repeat region
   bam_alignment.AddTag("XG", "Z", read_pair.reads.
                        at(aligned_read_num).detected_ms_nuc);
-  // XW: sw score
+  // XW: mapq
   bam_alignment.AddTag("XW", "i", read_pair.reads.
                        at(aligned_read_num).mapq);
   // XP: partial alignment

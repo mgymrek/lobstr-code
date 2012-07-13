@@ -161,7 +161,7 @@ class BWAReadAligner {
 
   // Refine the cigar score and recalculate number of repeats
   bool GetSTRAllele(MSReadRecord* aligned_read,
-		    const CIGAR_LIST& cigar_list);
+                    const CIGAR_LIST& cigar_list);
   // store all BWT references
   std::map<std::string, BWT>* _bwt_references;
   // store all BWT annotations

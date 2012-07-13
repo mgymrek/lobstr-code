@@ -112,5 +112,6 @@ bool ZippedFastqFileReader::GetNextRead(MSReadRecord* read) {
   read->quality_scores = trim_qual;
   read->orig_nucleotides = trim_nucs;
   read->orig_qual = trim_qual;
+  read->paired = false;
   return true;
 }

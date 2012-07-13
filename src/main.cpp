@@ -52,7 +52,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/TukeyWindowGenerator.h"
 
 using namespace std;
-
+const int READPROGRESS = 10000;
 // list of input files to process from
 vector<string> input_files;
 vector<string> input_files1;
@@ -106,7 +106,12 @@ void show_help() {
     "--gzip         The input files are gzippe\n" \
     "               (only works for fasta or fastq input)\n" \
     "--bampair      reads are in bam format and are paired-end\n" \
-    "               (not yet implemented)\n" \
+    "               NOTE: bam file MUST be sorted by read name\n" \
+    "               (samtools sort -n <file.bam> <prefix>)\n" \
+    "--bwaq         Trim reads ends based on quality scores. This\n" \
+    "               has the same effect as the BWA parameter -q:\n" \
+    "               BWA trims a read down to argmax_x{\sum_{i=x+1}^l(INT-q_i)} \n" \
+    "               if q_l<INT where l is the original read length.\n" \
     "\n\nAdvanced options - general:\n" \
     "-p,--threads <INT>         number of threads (default: 1)\n" \
     "--min-read-length <INT>    minimum number of nucleotides for a\n" \
@@ -133,14 +138,13 @@ void show_help() {
     "\n\nAdvanced options - alignment:\n" \
     "--max-diff-ref <INT>       maximum difference in length from\n" \
     "                           the reference sequence to allow for\n" \
+    "                           (default: 50bp)\n" \
     "--extend <INT>             Number of bp the reference was extended\n" \
-    "                           when building the index (default: 150bp).\n" \
+    "                           when building the index.\n" \
     "                           Must be same as --extend parameter used \n" \
     "                           to run lobstr_index.py\n" \
-    "                           alignment (default: 50)\n" \
-    "--nw-score <INT>           minimum required smith waterman score\n" \
-    "                           (maximum is 2*read length)\n" \
-    "--mapq <INT>               maximum allowed mapq score (default: 75)\n" \
+    "                           alignment (default: 1000)\n" \
+    "--mapq <INT>               maximum allowed mapq score (default: 100)\n" \
     "                           calculated as the sum of qualities at base \n" \
     "                           mismatches.\n" \
     "-u                         require length difference to be a\n" \
@@ -155,9 +159,16 @@ void show_help() {
     "-r <float>                 edit distance allowed during alignment\n" \
     "                           of each flanking region (ignored if -m\n" \
     "                           is set) (default: 0.01)\n" \
+    "\n\nAdvanced options - Amazon Web Services:\n" \
+    "--use-s3 <bucket>          Files are read from this s3 bucket\n" \
+    "                           WARNING s3 mode DELETES FILES after processing\n" \
+    "                           DO NOT USE this option unless you are pulling\n" \
+    "                           files from Amazon S3!\n" \
+    "--s3config <file>          s3cmd configuration file (created by\n" \
+    "                           s3cmd --configure)\n" \
     "This program takes in raw reads, detects and aligns reads\n" \
     "containing microsatellites, and genotypes STR locations.\n\n";
-  cout << help;
+  cerr << help;
   exit(1);
 }
 
@@ -217,6 +228,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_BWAQ,
     OPT_OLDILLUMINA,
     OPT_CHECKNEXTBEST,
+    OPT_USES3,
+    OPT_S3CONFIG,
+    OPT_S3DEBUG,
   };
 
   int ch;
@@ -268,6 +282,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"partial-debug", 0, 0, OPT_PARTIALDEBUG},
     {"orig", 0, 0, OPT_ORIG_READ},
     {"nextbest", 0, 0, OPT_CHECKNEXTBEST},
+    {"use-s3", 1, 0, OPT_USES3},
+    {"s3config", 1, 0, OPT_S3CONFIG},
+    {"s3debug", 0, 0, OPT_S3DEBUG},
     {NULL, no_argument, NULL, 0},
   };
   ch = getopt_long(argc, argv, "hvqp:f:t:g:o:m:s:d:e:g:r:u?",
@@ -276,11 +293,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     switch (ch) {
     case 'u':
       unit++;
-      user_defined_arguments += "unit=True;";
+      AddOption("unit", "", false, &user_defined_arguments);
       break;
     case OPT_PROFILE:
       profile++;
-      user_defined_arguments += "profile=True;";
       break;
     case OPT_PARTIALDEBUG:
       partial_debug++;
@@ -309,66 +325,58 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_FASTQ:
       input_type = INPUT_FASTQ;
       fastq++;
-      user_defined_arguments += "fastq=True;";
+      AddOption("fastq", "", false, &user_defined_arguments);
       break;
     case OPT_BAM:
       input_type = INPUT_BAM;
-      user_defined_arguments += "bam=True;";
       bam++;
+      AddOption("bam", "", false, &user_defined_arguments);
       break;
     case OPT_BAMPAIR:
       paired = true;
-      user_defined_arguments += "bampair=True;";
+      AddOption("bampair", "", false, &user_defined_arguments);
       break;
     case 'p':
     case OPT_THREADS:
       threads = atoi(optarg);
-      user_defined_arguments += "threads=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("threads", string(optarg), true, &user_defined_arguments);
       if (threads <= 0)
         errx(1, "Error: invalid number of threads");
+      if (threads > 1)
+        cerr << "Warning, multithreading on small files "\
+          "(< several million reads) may fail to produce BAM output" << endl;
       break;
     case 'f':
     case OPT_FILES:
       input_files_string = optarg;
-      user_defined_arguments += "files=";
-      user_defined_arguments += input_files_string;
-      user_defined_arguments += ";";
+      AddOption("files", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_PAIR1:
       input_files_string_p1 = optarg;
-      user_defined_arguments += "files1=";
-      user_defined_arguments += input_files_string_p1;
-      user_defined_arguments += ";";
       paired = true;
+      AddOption("files1", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_PAIR2:
       input_files_string_p2 = optarg;
-      user_defined_arguments += "files2=";
-      user_defined_arguments += input_files_string_p2;
-      user_defined_arguments += ";";
       paired = true;
+      AddOption("files2", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_GZIP:
       user_defined_arguments += "input_gzipped;";
       gzip++;
+      AddOption("gzip", "", false, &user_defined_arguments);
       break;
     case 'o':
     case OPT_OUTPUT:
       output_prefix = string(optarg);
-      user_defined_arguments += "out=";
-      user_defined_arguments += output_prefix;
-      user_defined_arguments += ";";
+      AddOption("out", string(optarg), true, &user_defined_arguments);
       break;
     case 'm':
     case OPT_MISMATCH:
       allowed_mismatches = atoi(optarg);
       if (allowed_mismatches < 0)
         errx(1, "Error: invalid number of mismatches");
-      user_defined_arguments += "m=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("m", string(optarg), true, &user_defined_arguments);
       break;
     case 'b':
     case OPT_SAM:
@@ -376,63 +384,47 @@ void parse_commandline_options(int argc, char* argv[]) {
     break;
     case OPT_FFT_WINDOW_SIZE:
       fft_window_size = atoi(optarg);
-      user_defined_arguments += "fft-window-size=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("fft-window-size", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_FFT_WINDOW_STEP:
       fft_window_step = atoi(optarg);
-      user_defined_arguments += "fft-window-step=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("fft-window-step", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_EXTEND:
       extend = atoi(optarg);
       if (extend <= 0)
         errx(1, "Error: invalid extension length");
-      user_defined_arguments += "extend=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("extend", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MIN_PERIOD:
       min_period = atoi(optarg);
       if (min_period <= 0)
         errx(1, "Error: invalid min period");
-      user_defined_arguments += "minperiod=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("minperiod", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_PERIOD:
       max_period = atoi(optarg);
       if (max_period <= 0)
         errx(1, "Error: invalid max period");
-      user_defined_arguments += "maxperiod=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("maxperiod", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_FLANK_LEN:
       max_flank_len = atoi(optarg);
       if (max_flank_len <= 0)
         errx(1, "Error: invalid max flank length");
-      user_defined_arguments += "maxflank=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("maxflank", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MIN_FLANK_LEN:
       min_flank_len = atoi(optarg);
       if (min_flank_len <= 0)
         errx(1, "Error: invalid min flank length");
-      user_defined_arguments += "minflank=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("minflank", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_DIFF_REF:
       max_diff_ref = atoi(optarg);
       if (max_diff_ref <=0 )
         errx(1, "Error: invalid max diff ref");
-      user_defined_arguments += "max-diff-ref=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_FFTW_DEBUG:
       fftw_debug = true;
@@ -442,79 +434,57 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_MIN_READ_LENGTH:
       min_read_length = atoi(optarg);
-      user_defined_arguments += "min-read-length=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("min-read-length", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_READ_LENGTH:
       max_read_length = atoi(optarg);
-      user_defined_arguments += "max-read-length=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("max-read-length", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_ENTROPY_THRESHOLD:
       entropy_threshold = atof(optarg);
-      user_defined_arguments += "entropy-threshold=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("entropy-threshold", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_DEBUG_ENTROPY:
       entropy_debug++;
       break;
     case OPT_INDEX:
       index_prefix = string(optarg);
-      user_defined_arguments += "index-prefix=";
-      user_defined_arguments += index_prefix;
-      user_defined_arguments += ";";
+      AddOption("index-prefix", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_GAP_OPEN:
     case 'g':
       gap_open = atoi(optarg);
-      user_defined_arguments += "gap-open=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("gap-open", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_GAP_EXTEND:
     case 'e':
       gap_extend = atoi(optarg);
-      user_defined_arguments += "gap-extend=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("gap-extend", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_FPR:
     case 'r':
       fpr = atof(optarg);
-      user_defined_arguments += "fpr=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("fpr", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_EXTEND_FLANK:
       extend_flank = atoi(optarg);
-      user_defined_arguments += "extend-flank=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("extend-flank", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_SW:
       min_sw_score = atoi(optarg);
-      user_defined_arguments += "min-sw-score=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("min-sw-score", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAPQ:
       max_mapq = atoi(optarg);
-      user_defined_arguments += "mapq=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("mapq", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_BWAQ:
       QUAL_CUTOFF = atoi(optarg);
-      user_defined_arguments += "bwaq=";
-      user_defined_arguments += string(optarg);
-      user_defined_arguments += ";";
+      AddOption("bwaq", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_OLDILLUMINA:
       QUALITY_CONSTANT = 64;
-      user_defined_arguments += "oldillumina;";
+      AddOption("oldillumina", "", false, &user_defined_arguments);
       break;
     case OPT_NOTAB:
       notab++;
@@ -525,7 +495,21 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_CHECKNEXTBEST:
       check_next_best++;
-      user_defined_arguments += "check-next-best=True;";
+      AddOption("check-next-best", "", false, &user_defined_arguments);
+      break;
+    case OPT_USES3:
+      using_s3++;
+      s3bucket = string(optarg);
+      AddOption("use-s3", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_S3CONFIG:
+      s3cmd_configfile = string(optarg);
+      using_s3++;
+      AddOption("s3cmdconfig", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_S3DEBUG:
+      s3debug++;
+      user_defined_arguments += "s3debug;";
       break;
     case '?':
       show_help();
@@ -563,13 +547,14 @@ void parse_commandline_options(int argc, char* argv[]) {
        (paired && !bam && (input_files_string_p1.empty() ||
                            input_files_string_p2.empty())))||
       output_prefix.empty() || index_prefix.empty()) {
+    show_help();
     errx(1, "Required arguments are mising");
   }
   if (gzip && bam) {
     errx(1, "Gzip option not compatible with bam input");
   }
-  if (paired && bam) {
-    errx(1, "Sorry, paired bam input not yet implemented.");
+  if (using_s3 && s3cmd_configfile.empty()) {
+    errx(1, "Must supply an s3cmd configure file.");
   }
 }
 
@@ -637,21 +622,52 @@ void single_thread_process_loop(const vector<string>& files1,
     file1 = files1.at(i);
     if (paired && !bam) {
       file2 = files2.at(i);
+      cerr << "processing files " << file1 << " and " << file2 << "...\n";
+      if (using_s3) {
+        const std::string s3cmd1 = GenerateS3Command(s3bucket,
+                                                     file1,
+                                                     s3cmd_configfile);
+        const std::string s3cmd2 = GenerateS3Command(s3bucket,
+                                                     file2,
+                                                     s3cmd_configfile);
+        if (s3debug) {
+          cerr << "[S3 debug] " << s3cmd1 << endl;
+          cerr << "[S3 debug] " << s3cmd2 << endl;
+        } else {
+          if (system(s3cmd1.c_str()) != 0) {
+            errx(1, "Error fetching file 1 from S3");
+          }
+          if (system(s3cmd2.c_str()) != 0) {
+            errx(1, "Error fetching file 2 from S3");
+          }
+        }
+        file1 = "/mnt/lobstr/"+file1;
+        file2 = "/mnt/lobstr/"+file2;
+      }
       if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
         cerr << "Warning: file " << file1 << " or " << file2
              << " does not exist" << endl;
         continue;
       }
     } else {
+      cerr << "processing file " <<  file1 << " ...\n";
+      if (using_s3) {
+        const std::string s3cmd = GenerateS3Command(s3bucket,
+                                                    file1,
+                                                    s3cmd_configfile);
+        if (s3debug) {
+          cerr << "[S3 debug] " << s3cmd << endl;
+        } else {
+          if (system(s3cmd.c_str()) != 0) {
+            errx(1, "Error fetching file from S3");
+          }
+        }
+        file1 = "/mnt/lobstr/"+file1;
+      }
       if (!fexists(file1.c_str())) {
         cerr << "Warning: file " << file1 << " does not exist" << endl;
         continue;
       }
-    }
-    if (paired) {
-      cout << "processing files " << file1 << " and " << file2 << "...\n";
-    } else {
-      cout << "processing file " <<  file1 << " ...\n";
     }
     IFileReader* pReader = create_file_reader(file1, file2);
     int aligned = false;
@@ -660,12 +676,15 @@ void single_thread_process_loop(const vector<string>& files1,
     while (pReader->GetNextRecord(&read_pair)) {
       aligned = false;
       num_reads_processed += 1;
+      if (num_reads_processed % READPROGRESS == 0) {
+        cerr << "Processed " << num_reads_processed << " reads" << endl;
+      }
       read_pair.read_count = num_reads_processed;
       // reset fields
       read_pair.reads.at(0).repseq = "";
       read_pair.reads.at(0).ms_repeat_best_period = 0;
       read_pair.reads.at(0).ms_repeat_next_best_period = 0;
-      if (paired) {
+      if (read_pair.reads.at(0).paired) {
         read_pair.reads.at(1).repseq = "";
         read_pair.reads.at(1).ms_repeat_best_period = 0;
         read_pair.reads.at(1).ms_repeat_next_best_period = 0;
@@ -676,14 +695,14 @@ void single_thread_process_loop(const vector<string>& files1,
           (read_pair.reads.at(0).nucleotides.length() <= max_read_length)) {
         continue;
       }
-      if (paired) {
+      if (read_pair.reads.at(0).paired) {
         if (!(read_pair.reads.at(1).nucleotides.length() >= min_read_length) &&
             (read_pair.reads.at(1).nucleotides.length() <= max_read_length)) {
           continue;
         }
       }
       bases += read_pair.reads.at(0).nucleotides.length();
-      if (paired) bases += read_pair.reads.at(1).nucleotides.length();
+      if (read_pair.reads.at(0).paired) bases += read_pair.reads.at(1).nucleotides.length();
 
       // STEP 1: Sensing
       if (!pDetector->ProcessReadPair(&read_pair)) {
@@ -706,7 +725,7 @@ void single_thread_process_loop(const vector<string>& files1,
             read_pair.read1_passed_detection = true;
           }
         }
-        if (paired) {
+        if (read_pair.reads.at(0).paired) {
           if (read_pair.reads.at(1).ms_repeat_next_best_period != 0) {
             read_pair.reads.at(1).ms_repeat_best_period =
               read_pair.reads.at(1).ms_repeat_next_best_period;
@@ -731,7 +750,21 @@ void single_thread_process_loop(const vector<string>& files1,
       }
     }
     delete pReader;
-    cout << "Processed " << num_reads_processed << " reads" << endl;
+    cerr << "Processed " << num_reads_processed << " reads" << endl;
+    if (using_s3) {
+      string rmcmd = "rm " + file1;
+      if (paired && !bam) {
+        rmcmd += "; rm ";
+        rmcmd += file2;
+      }
+      if (s3debug) {
+        cerr << "[S3 debug]: " << rmcmd << endl;
+      } else {
+        if (system(rmcmd.c_str()) != 0) {
+          errx(1, "Error deleting file");
+        }
+      }
+    }
   }
   delete pDetector;
   delete pAligner;
@@ -755,7 +788,7 @@ void* satellite_process_consumer_thread(void *arg) {
       pMT_DATA->increment_output_counter();
       continue;
     }
-    if (paired) {
+    if (pReadRecord->reads.at(0).paired) {
       if (!(pReadRecord->reads.at(1).nucleotides.length() >= min_read_length) &&
           (pReadRecord->reads.at(1).nucleotides.length() <= max_read_length)) {
         delete pReadRecord;
@@ -764,13 +797,13 @@ void* satellite_process_consumer_thread(void *arg) {
       }
     }
     bases += pReadRecord->reads.at(0).nucleotides.length();
-    if (paired) bases += pReadRecord->reads.at(1).nucleotides.length();
+    if (pReadRecord->reads.at(0).paired) bases += pReadRecord->reads.at(1).nucleotides.length();
 
     // Reset fields
     pReadRecord->reads.at(0).repseq = "";
     pReadRecord->reads.at(0).ms_repeat_best_period = 0;
     pReadRecord->reads.at(0).ms_repeat_next_best_period = 0;
-    if (paired) {
+    if (pReadRecord->reads.at(0).paired) {
       pReadRecord->reads.at(1).repseq = "";
       pReadRecord->reads.at(1).ms_repeat_best_period = 0;
       pReadRecord->reads.at(1).ms_repeat_next_best_period = 0;
@@ -799,7 +832,7 @@ void* satellite_process_consumer_thread(void *arg) {
           pReadRecord->read1_passed_detection = true;
         }
       }
-      if (paired) {
+      if (pReadRecord->reads.at(0).paired) {
         if (pReadRecord->reads.at(1).ms_repeat_next_best_period != 0) {
           pReadRecord->reads.at(1).ms_repeat_best_period =
             pReadRecord->reads.at(1).ms_repeat_next_best_period;
@@ -871,26 +904,61 @@ void multi_thread_process_loop(vector<string> files1,
     file1 = files1.at(i);
     if (paired && !bam) {
       file2 = files2.at(i);
+      cerr << "processing files " << file1 << " and " << file2 << "...\n";
+      if (using_s3) {
+        const std::string s3cmd1 = GenerateS3Command(s3bucket,
+                                                     file1,
+                                                     s3cmd_configfile);
+        const std::string s3cmd2 = GenerateS3Command(s3bucket,
+                                                     file2,
+                                                     s3cmd_configfile);
+        if (s3debug) {
+          cerr << "[S3 debug] " << s3cmd1 << endl;
+          cerr << "[S3 debug] " << s3cmd2 << endl;
+        } else {
+          if (system(s3cmd1.c_str()) != 0) {
+            errx(1, "Error fetching file 1 from S3");
+          }
+          if (system(s3cmd2.c_str()) != 0) {
+            errx(1, "Error fetching file 2 from S3");
+          }
+        }
+        file1 = "/mnt/lobstr/"+file1;
+        file2 = "/mnt/lobstr/"+file2;
+      }
       if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
         cerr << "Warning: file " << file1 << " or "
              << file2 << " does not exist" << endl;
         continue;
       }
     } else {
+      cerr << "processing file " <<  file1 << " ...\n";
+      if (using_s3) {
+        const std::string s3cmd = GenerateS3Command(s3bucket,
+                                                    file1,
+                                                    s3cmd_configfile);
+        if (s3debug) {
+          cerr << "[S3 debug] " << s3cmd << endl;
+        } else {
+          if (system(s3cmd.c_str()) != 0) {
+            errx(1, "Error fetching file from S3");
+          }
+        }
+        file1 = "/mnt/lobstr/"+file1;
+        file2 = "/mnt/lobstr/"+file2;
+      }
       if (!fexists(file1.c_str())) {
         cerr << "Warning: file " << file1 << " does not exist" << endl;
         continue;
       }
     }
-    if (paired) {
-      cout << "processing files " << file1 << " and " << file2 << "...\n";
-    } else {
-      cout << "processing file " <<  file1 << " ...\n";
-    }
     IFileReader *pReader = create_file_reader(file1, file2);
     do {
       ReadPair *pRecord = new ReadPair;
       pRecord->read_count = counter;
+      if (counter % READPROGRESS == 0) {
+        cerr << "Processed " << counter << " reads" << endl;
+      }
       if (!pReader->GetNextRecord(pRecord))
         break;  // no more reads
       counter++;
@@ -899,6 +967,20 @@ void multi_thread_process_loop(vector<string> files1,
       pRecord = NULL;  // the consumers will take it from here, and free it
     } while (1);
     delete pReader;
+    if (using_s3) {
+      string rmcmd = "rm " + file1;
+      if (paired && !bam) {
+        rmcmd += "; rm ";
+        rmcmd += file2;
+      }
+      if (s3debug) {
+        cerr << "[S3 debug]: " << rmcmd << endl;
+      } else {
+        if (system(rmcmd.c_str()) != 0) {
+          errx(1, "Error deleting file");
+        }
+      }
+    }
   }
   while (1) {
     sleep(1);  // OMG, the horror...
@@ -911,7 +993,7 @@ void multi_thread_process_loop(vector<string> files1,
 
 int main(int argc, char* argv[]) {
   parse_commandline_options(argc, argv);
-  if (my_verbose) cout << "Initializing..." << endl;
+  if (my_verbose) cerr << "Initializing..." << endl;
   // open file with all names
   TextFileReader tReader(index_prefix+"strdict.txt");
   string line = "";
@@ -923,7 +1005,7 @@ int main(int argc, char* argv[]) {
       chrom_sizes[items[1]] = atoi(items[2].c_str());
     } else {
       // make sure repeat is valid
-      if (count(line, line.at(0)) != line.length()) {
+      if (count(line, line.at(0)) != line.length() || line.length() == 1) {
         LoadReference(line);
       }
     }
@@ -961,7 +1043,7 @@ int main(int argc, char* argv[]) {
   // all hits with no more than maxdiff found
 
   // get the input files
-  if (paired) {
+  if (paired && !bam) {
     boost::split(input_files1, input_files_string_p1, boost::is_any_of(","));
     boost::split(input_files2, input_files_string_p2, boost::is_any_of(","));
     if (!input_files1.size() == input_files2.size()) {

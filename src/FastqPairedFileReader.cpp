@@ -44,11 +44,13 @@ bool FastqPairedFileReader::GetNextRecord(ReadPair* read_pair) {
   MSReadRecord read1;
   MSReadRecord read2;
   if (_reader1->GetNextRead(&read1)) {
+    read1.paired = true;
     read_pair->reads.push_back(read1);
   } else {
     return false;
   }
   if (_reader2->GetNextRead(&read2)) {
+    read2.paired = true;
     read_pair->reads.push_back(read2);
   } else {
     return false;

@@ -51,14 +51,11 @@ bool STRDetector::ProcessReadPair(ReadPair* read_pair) {
   if (ProcessRead(&read_pair->reads.at(0))) {
     read_pair->read1_passed_detection = true;
   }
-  if (paired) {
+  // Returns true if at least one read in the pair is detected
+  if (read_pair->reads.at(0).paired) {
     if (ProcessRead(&read_pair->reads.at(1))) {
       read_pair->read2_passed_detection = true;
     }
-  }
-
-  // Returns true if at least one read in the pair is detected
-  if (paired) {
     return (read_pair->read1_passed_detection ||
             read_pair->read2_passed_detection);
   } else {
@@ -67,46 +64,24 @@ bool STRDetector::ProcessReadPair(ReadPair* read_pair) {
 }
 
 bool STRDetector::ProcessRead(MSReadRecord* read) {
-  if (debug) {
-    cerr << "\n[STRDetector]: " << read->nucleotides << endl;
-  }
   // Preprocessing checks
   if (read->nucleotides.length() < (fft_window_size-1)) {
-    if (why_not_debug) {
-      cerr << "[STRDetector]: Read length must be greater " \
-        "than the window size" << endl;
-    }
     return false;
   }
 
   if (calculate_N_percentage(read->nucleotides) > percent_N_discard) {
-    if (why_not_debug) {
-      cerr << "[STRDetector]: Discarding read '" << read->ID
-           << "' (too many Ns)" << endl;
-    }
     return false;
   }
 
   if (read->nucleotides.length() < min_read_length) {
-    if (why_not_debug) {
-      cerr << "[STRDetector]: Discarding read '" << read->ID
-           << "' (read length too short)" << endl;
-    }
     return false;
   }
 
   if (read->nucleotides.length() > max_read_length) {
-    if (why_not_debug) {
-      cerr << "[STRDetector]:Discarding read '" << read->ID
-           << "' (read length too long)" << endl;
-    }
     return false;
   }
   vector<double> window_lobe_detection;
 
-  if (debug) {
-    cerr << "[STRDetector]: sliding window step" << endl;
-  }
   //  Step 1 - sliding window
   size_t nuc_start;
   size_t nuc_end;
@@ -121,10 +96,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     return false;
   }
 
-  if (debug) {
-    cerr << "[STRDetector]: find repeat windows" << endl;
-  }
-
   size_t start, end;
   bool rep_end = false;
   ed_filter.FindStartEnd(&start, &end, &rep_end);
@@ -132,12 +103,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   nuc_start = start * fft_window_step;  // + extend_flank;
   nuc_end = (end + 2) * fft_window_step;  // - extend_flank;
 
-  if (debug) {
-    cerr << "[STRDetector]: check windows"
-         << "nuc start " << nuc_start <<  " "
-         << "nuc end " << nuc_end
-         << endl;
-  }
   if (nuc_start >= read->nucleotides.length() ||
       nuc_start <= 0 ||
       nuc_end-nuc_start + 1 <= 0 ||
@@ -146,9 +111,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       nuc_end >= read->nucleotides.size())
     return false;
 
-  if (debug) {
-    cerr << "[STRDetector]: extend flanks " << read->nucleotides << endl;
-  }
   // allow more nucleotides in detection step
   if ((nuc_start-extend_flank >= 0) &&
       (nuc_start-extend_flank < read->nucleotides.size()) &&
@@ -161,9 +123,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       read->nucleotides.substr(nuc_start, nuc_end - nuc_start+1);
   }
 
-  if (debug) {
-    cerr << "[STRDetector]: do fft on newly extracted region" << endl;
-  }
   // Step 3 - Do FFT on the newly extract microsatellite region
   TukeyWindowGenerator *pTukeyWindowGenerator =
     TukeyWindowGenerator::GetTukeyWindowSingleton();
@@ -185,6 +144,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   size_t best_period = 0;
   size_t next_best_period = 0;
   string ms_period_nuc;
+  int min_period_to_try = min_period == 1 ? 2 : min_period;
   char over_abundtant_nuc =
     OneAbundantNucleotide(detected_microsatellite_nucleotides, 1);
   if (over_abundtant_nuc != 0) {
@@ -192,7 +152,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     ms_period_nuc = over_abundtant_nuc;
   } else {
     std::vector<double> &fft_vec = ms.summed_matrix;
-    min_period = 2;
     size_t lobe_width =
       round(1024.0 / static_cast<double>
             (detected_microsatellite_nucleotides.length()));
@@ -211,7 +170,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     std::vector<double> energy;
     const WindowVector *pHamming_roi =
       pHammingWindowGenerator->GetWindow(lobe_width * 2 + 1);
-    for (size_t period = min_period;
+    for (size_t period = min_period_to_try;
          period <= max_period_to_try; period++) {
       double period_energy = 0;
       size_t f = 1;
@@ -233,14 +192,14 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
     std::vector<double>::iterator max_it =
       max_element(energy.begin(), energy.end());
     size_t max_index = distance(energy.begin(), max_it);
-    best_period = max_index + min_period;
+    best_period = max_index + min_period_to_try;
     float best_energy = energy.at(max_index);
     float next_best_energy = 0;
-    for (size_t newperiod = min_period; newperiod <= max_period;
+    for (size_t newperiod = min_period_to_try; newperiod <= max_period;
          newperiod++) {
       if (newperiod != best_period) {
-        if ((energy.at(newperiod - min_period))>next_best_energy) {
-          next_best_energy = energy.at(newperiod - min_period);
+        if ((energy.at(newperiod - min_period_to_try))>next_best_energy) {
+          next_best_energy = energy.at(newperiod - min_period_to_try);
           next_best_period = newperiod;
         }
       }

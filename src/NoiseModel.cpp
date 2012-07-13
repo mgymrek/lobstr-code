@@ -26,6 +26,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <utility>
 #include <vector>
 
+#include "src/common.h"
 #include "src/NoiseModel.h"
 #include "src/runtime_parameters.h"
 #include "src/TextFileReader.h"
@@ -33,18 +34,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 const int MIN_PERIOD = 2;
 const int MAX_PERIOD = 6;
+const float NONUNIT_PENALTY = 0.000001;
 
 using namespace std;
-
-std::vector<std::string> &split(const std::string &s, char delim,
-                                std::vector<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
-}
 
 static float invLogit(float x) {
   float expx = exp(x);
@@ -208,17 +200,26 @@ void NoiseModel::FitStepProb() {
   poisSlope = v[1];
 }
 
-float NoiseModel::GetTransitionProb(float a,
-                                    float b, int period) {
-  float mutProb = invLogit(mutIntercept + mutSlope*period);
+float NoiseModel::GetTransitionProb(int a,
+                                    int b, int period) {
+  float mutProb = 1-invLogit(mutIntercept + mutSlope*period);
   float poisMean = exp(poisIntercept + poisSlope*period);
-  if (a == b) {
-    return mutProb;
-  } else {
-    int diff = static_cast<int>(abs(b-a));
-    return (1-mutProb)*ppois(diff-1, poisMean);
+  if (debug) {
+    cerr << "[GetTransitionProb]: " << a << " " << b << " "
+         << period << " " << mutProb << " " << poisMean << endl;
   }
-  return 0.0;
+  float score;
+  if (a == b) {
+    score = (1-mutProb);
+  } else {
+    int diff = abs(b-a);
+    score = (mutProb)*ppois(diff-1, poisMean);
+    if (diff%period != 0) score = score*NONUNIT_PENALTY;
+  }
+  if (debug) {
+    cerr << "[GetTransitionProb]: " << score << endl;
+  }
+  return score;
 }
 
 bool NoiseModel::ReadNoiseModelFromFile(string filename) {

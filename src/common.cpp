@@ -40,6 +40,17 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+void AddOption(const string& optname, const string& optval,
+               bool hasvalue, string* paramstring) {
+  *paramstring += optname;
+  if (hasvalue) {
+    *paramstring += "=";
+    *paramstring += optval;
+  }
+  *paramstring += ";";
+  return;
+}
+
 void TrimRead(const string& input_nucs,
               const string& input_quals,
               string* trimmed_nucs,
@@ -83,7 +94,7 @@ size_t count(const string& s, const char& c) {
 
 
 bool getMSSeq(const string& nucs, int k, string* repeat) {
-  if (k < 2 || k > 6) return false;
+  if (k < 1 || k > 6) return false;
   if (static_cast<int>(nucs.size()) < k) return false;
   map<string, int> countKMers;
   size_t i;
@@ -102,7 +113,7 @@ bool getMSSeq(const string& nucs, int k, string* repeat) {
   string repseqfw;
   string repseqrev;
   string repseq;
-  if (kmer.size() < 2 || kmer.size() > 6) return false;
+  if (kmer.size() < 1 || kmer.size() > 6) return false;
   getCanonicalMS(kmer, &repseqfw);
   getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
   repseq = getFirstString(repseqfw, repseqrev);
@@ -351,6 +362,15 @@ IFileReader* create_file_reader(const string& filename1,
   }
 }
 
+string GenerateS3Command(const string& bucket,
+                         const string& filename,
+                         const string& configfile) {
+  stringstream s;
+  s << "s3cmd -c " << configfile << " get --skip-existing "
+    << bucket << "/" << filename << " "
+    << "/mnt/lobstr/" << filename << endl;
+  return s.str();
+}
 std::string fftw_complex_to_string(fftw_complex v) {
   stringstream s;
   s.setf(ios::fixed, ios::floatfield);
@@ -361,6 +381,7 @@ std::string fftw_complex_to_string(fftw_complex v) {
   s << (std::abs(v[1])) << "i";
   return s.str();
 }
+
 
 std::vector<std::string> &split(const std::string &s,
                                 char delim, std::vector<std::string> &elems) {

@@ -53,6 +53,9 @@ struct AlignedRead {
   int partial;
   int mate;
   bool strand;
+  int stitched;
+  int matedist;
+  int mapq;
 };
 
 /*
@@ -64,7 +67,7 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(std::string bamfile);
+  void AddReadsFromFile(vector<std::string> bamfiles);
 
   /* Remove pcr duplicates */
   void RemovePCRDuplicates();

@@ -21,8 +21,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_BAMPAIREDFILEREADER_H__
 #define SRC_BAMPAIREDFILEREADER_H__
 
-#include <istream>
-#include <fstream>
 #include <string>
 
 #include "src/api/BamReader.h"
@@ -40,6 +38,7 @@ class BamPairedFileReader : public TextFileReader {
 
  private:
   BamTools::BamReader reader;
+  bool GetNextReadMate(MSReadRecord* read);
 };
 
 #endif  // SRC_BAMPAIREDFILEREADER_H__

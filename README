@@ -6,11 +6,13 @@ V. Output files
 VI. Known Bugs
 VII. Building a lobSTR index
 VIII. Allelotyping a bam file not created using lobSTR
+IX. Running lobSTR on the Amazon Cloud
+X. Quality control checks for lobSTR results
 
 
 I. INSTALLATION FROM SOURCE
  
-To install from source, download lobstr (which you must have gotten that far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
+To install from source, download lobSTR (you must have gotten this far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
 
 tar -xzvf lobstr-xxx.tar.gz
 cd lobstr-xxx/
@@ -18,7 +20,7 @@ cd lobstr-xxx/
 make
 make install
 
-The last step might require root access in order to have proper permissions. Congratulations, if these steps didn't explode with error messages, you're done. If not, it is probably because you're missing required packages. See section IV for requirements.
+The last step might require root access in order to have proper permissions. Congratulations, if these steps didn't explode with error messages, you're done. If not, it is probably because you're missing required packages. See Section IV for requirements.
 
 Note, it is required that R be installed for installation to complete successfully. You will also need to install Rcpp and RInside for configuration to work. You can install them easily from inside of the R environment using the following commands:
 
@@ -38,12 +40,37 @@ lobSTR --help
 for a list of all command line options.
 
 Required inputs are:
-* -f: comma separated list of files containing raw reads in fasta, fastq, or bam format (for fastq you must add the argument -q, for bam you must add the argument --bam)
+* Input files.
+For single-end fastq/fasta/bam files:
+   -f <file_list>, where $file_list is a comma separated list of files containing raw reads in fasta, fastq, or bam format (for fastq you must add the argument -q, for bam you must add the argument --bam) 
+For paired-end files fastq/fasta files:
+  --p1 <file_list> --p2 <file_list> where $file_list arguments are comma-separated lists of files in for the first and second ends in fastq or fasta format. For fastq, you must add the argument -q.
+For paired-end bam files:
+  -f <file_list> where $file_list is a comma separated list of files containing reads in bam format. You must also specify the --bam and --bampair flags. Note, to process paired end bam files, you MUST sort the files by read name first using:
+samtools sort -n <oldfile.bam> <newfileprefix>
+
+For fastq or fasta files that are gzipped, specify the --gzip flag.
+
+Several examples of setting the file path parameters:
+1. Single end fastq files
+-f file1.fq,file2.fq -q
+2. Single end fasta files
+-f file1.fa,file2.fa,file3.fa
+3. Paired-end fastq files
+--p1 file1_1.fq,file2_1.fq --p2 file1_2.fq,file2_2.fq -q
+4. Single end bam file
+-f file1.bam,file2.bam,file3.bam --bam
+5. Paired-end bam file
+-f file1.sorted_by_name.bam --bam --bampair
+6. Gzipped fastq paired end files
+--p1 file1_1.fq.gz --p2 file1_2.fq.gz
+
 * -o: prefix to name all output files
+
 * --index-prefix: path and prefix of lobSTR index: You can download the lobSTR index from the lobSTR downloads page. Unzip the index to an folder PATH-TO-INDEX. To specify this as the index, use:
 --index-prefix PATH-TO-INDEX/lobSTR_
 
-change the path accordingly to match the path where the index is stored. An index for hg18 and hg19 is available for download on the lobSTR website
+Change the path accordingly to match the path where the index is stored. An index for hg18 and hg19 is available for download on the lobSTR website
 
 Part II: allelotyping
 
@@ -64,7 +91,6 @@ Required inputs are:
 
 Optional:
 * --no-rmdup: do not remove PCR duplicates
-
 
 III. GETTING HELP
 For more information see the website at http://jura.wi.mit.edu/erlich/lobSTR/
@@ -87,6 +113,8 @@ Python libraries (required only for indexing or converting previously aligned BA
 pysam
 Biopython
 
+For sorting paired-end files, samtools must be installed.
+
 V. OUTPUT
 
 The following files are output from lobSTR:
@@ -97,7 +125,20 @@ $prefix.genotypes.tab: genotype called at each locus
 
 
 VI. KNOWN BUGS
-covertBam.py will not produce accurate allelotypes for reads with indels in the flanking regions. At this point it is highly recommended that if you want to use a previously aligned BAM file for allelotyping, that you first run lobSTR alignment on the BAM file and then proceed with the regular instructions. Better support for converting foreign BAM files to contain lobSTR_specific tags is coming soon.
+
+- covertBam.py will not produce accurate allelotypes for reads with indels in the flanking regions. At this point it is highly recommended that if you want to use a previously aligned BAM file for allelotyping, that you first run lobSTR alignment on the BAM file and then proceed with the regular instructions. Better support for converting foreign BAM files to contain lobSTR_specific tags is coming soon.
+
+- For very small files (< several million reads), if lobSTR is run in multiprocessing mode it may fail to write to the BAM output file. Therefore, for small files, it is recommended to run in single processor mode (-p 1).
+
+- R environment: Some users have reported the error "cannot find system Renviron" after running the allelotype step. This issue is due to the environment variable $R_HOME not being set correctly. To fix this issue, set $R_HOME to a path where the Renviron file can be found. 
+
+For example in tcsh:
+setenv R_HOME /usr/lib/R
+
+In bash:
+export R_HOME=/usr/lib/R
+
+You may need to replace /usr/lib/R to where R is installed in your system if it is not in the default path.
 
 VII. Building a lobSTR index
 An index built using the Tandem Repeat Finder table from UCSC is included in the index_trf/ directory of the lobSTR download.
@@ -106,13 +147,18 @@ You can build your own lobSTR index using the lobstr_index.py script provided in
 
 Usage:
 
-python PATH-TO-LOBSTR/scripts/lobstr_index.py --str <path to trf table> --ref <reference genome in fasta format> --out_dir <path to output index> 
+python PATH-TO-LOBSTR/scripts/lobstr_index.py --str <path to trf table> --ref <reference genome in fasta format> --out_dir <path to output index> [--extend <INT>]
 
 Where --str is the table resulting from running the Tandem Repeat Finder tool.
-The resulting argument to --index-prefix for lobSTR will then be $out_dir/lobSTR_
+The resulting argument to --index-prefix for lobSTR will then be $out_dir/lobSTR
 
+--extend gives how many bp around an STR locus to include in the reference. By default, this is set to 1000bp in order to allow enough sequence to align mate pairs of STR-containing reads. Note that the --extend parameter must be set to the SAME value for lobSTR alignment as it was set to during index building.
+_
 
 VIII. Allelotyping bam alignment files not created using lobSTR.
+
+Note, it is highly recommended that you first use lobSTR alignment to align bam files. If you absolutely must use an existing alignment not created by lobSTR, follow the instructions below. 
+
 Because lobSTR adds its own custom fields to bam files, you must first convert the bam file you want to profile to the lobSTR bam format.
 
 First you must ensure that the bam file is sorted and indexed:
@@ -120,10 +166,53 @@ samtools sort test.bam test.sorted
 samtools index test.sorted.bam
 
 Then run convertBam.py, available in $PATH_TO_LOBSTR/scripts/convertBam.py:
-python convertBam.py trf.ucsc.hg18.filtered.bed test.sorted.bam test.sorted.converted.bam
+python convertBam.py trf.ucsc.hg19.filtered.bed test.sorted.bam test.sorted.converted.bam
 
-trf.ucsc.hg18.filtered.bed and trf.ucsc.hg18.filtered.bed are available from the lobSTR website.
+trf.ucsc.hg18.filtered.bed and trf.ucsc.hg19.filtered.bed are available from the lobSTR website.
 
 To create the lobSTR-formatted bam file test.sorted.converted.bam. This file is now ready to be allelotyped by lobSTR_allelotype.py 
 
 Note, this step is sometimes unreliable. See "KNOWN BUGS" for more information.
+
+IX. Running lobSTR on the Amazon Cloud
+
+We have made lobSTR available on the Amazon Cloud. the lobSTR tool and index are stored in an S3 bucket at:
+
+s3://lobstr_public/lobstr_2.0.0.linux64.tar.gz
+s3://lobstr_public/lobstr_index_trfhg19_extend1000.tar.gz
+
+This bucket is located in the US Standard. Therefore, it is free to transfer the tool and index to any EC2 instance running in the same region. To download the the items in the bucket, from an EC2 instance run:
+
+s3cmd get s3://lobstr_public/lobstr_2.0.0.linux64.tar.gz
+s3cmd get s3://lobstr_public/lobstr_index_hg19_extend1000.tar.gz
+
+You can then unpack the tars and run lobSTR by following the instructions above.
+
+lobSTR also has several parameters built for reading files from S3. In this setting, lobSTR will transfer files from the desired S3 bucket, process the file, and then delete it. DO NOT use this option if you do not want the files to be removed from the local hard drive after processing. This option is made for processing many files from S3 in situations where it is not desirable to keep a copy of the raw data around. If this is not your desired behavior, first download the files to the local drive and proceed with lobSTR usage as described above without the s3 options set.
+
+Using the s3 options require that s3cmd be installed and that there exists an s3 config file with the user's credential information. The s3 options are:
+
+--use-s3 <bucket>          Files are read from this s3 bucket
+                           WARNING s3 mode DELETES FILES after processing
+                           DO NOT USE this option unless you are pulling
+                           files from Amazon S3!
+--s3config <file>          s3cmd configuration file (created by
+                           s3cmd --configure)
+
+For example, to process a genome from the 1000 genomes S3 bucket, you can run:
+
+lobSTR --index-prefix $index_path/lobSTR_ --extend 1000 -q --bwaq 10 --mapq 100 --out NA19675_WGS_paired -q --gzip --p1 SRR058937_1.filt.fastq.gz,SRR058938_1.filt.fastq.gz,SRR058939_1.filt.fastq.gz,SRR058964_1.filt.fastq.gz --p2 SRR058937_2.filt.fastq.gz,SRR058938_2.filt.fastq.gz,SRR058939_2.filt.fastq.gz,SRR058964_2.filt.fastq.gz -v -p 10 --use-s3 s3://1000genomes/data/NA19675/sequence_read --s3config lobstr1kgtools/s3cfg
+
+X. Quality control checks for lobSTR results
+
+The following scripts output helpful statistics about the quality of lobSTR alignment and allelotyping results:
+
+python scripts/lobSTR_alignment_checks.py -f <aligned.tab file> [--plot]
+python scripts/lobSTR_allelotype_checks.py -f <genotypes.tab file> [--plot]
+
+For each, specifying the optional --plot flag will output quality control plots. This option requires that matplotlib be installed.
+
+A description of the normal range of values reported, as well as a description of the plots produced, is given on the usage page of the website.
+
+
+

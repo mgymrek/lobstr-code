@@ -47,6 +47,11 @@ struct REFSEQ {
   int start;
 };
 
+// add option to params string
+void AddOption(const std::string& optname,
+               const std::string& optval,
+               bool hasvalue, std::string* paramstring);
+
 // trim read based on quality scores
 void TrimRead(const std::string& input_nucs,
               const std::string& input_quals,
@@ -110,6 +115,13 @@ void getCanonicalMS(const std::string& msnucs, std::string* canonical);
 // get the appropriate fiile reader
 IFileReader* create_file_reader(const std::string& filename1,
                                 const std::string& filename2);
+
+// Generate s3cmd command to get file to process
+// TODO(mgymrek) eventually replace this with an
+// iostream type object that can read s3 files in chunks
+std::string GenerateS3Command(const std::string& bucket,
+                              const std::string& filename,
+                              const std::string& configfile);
 
 // debugging functions
 std::string fftw_complex_to_string(fftw_complex v);

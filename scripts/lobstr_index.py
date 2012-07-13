@@ -8,7 +8,7 @@ OPTIONS:
 --out_dir: path to write results to
 -h, --help: print this usage screen
 -v: verbose
---extend: the length of flanking region to include on either side of the STR. (default 150). Note, if you change this paramter, YOU MUST USE THE SAME --extend OPTION WHEN YOU CALL lobSTR
+--extend: the length of flanking region to include on either side of the STR. (default 1000). Note, if you change this paramter, YOU MUST USE THE SAME --extend OPTION WHEN YOU CALL lobSTR
 
 In $out_dir, creates:
 Creates BWT references for each repeat unit
@@ -128,7 +128,7 @@ def processTRF(strfile, outdir, genome):
             revrepseq = getCanonicalMS(reverseComplement(repseq))
             repseq = compareString(repseq, revrepseq)
         
-        if len(repseq) <= 6 and len(repseq) >= 2 and (start-extend) > 0 and "_" not in chrom:
+        if len(repseq) <= 6 and len(repseq) >= 1 and (start-extend) > 0 and "_" not in chrom:
             # write fasta entries
             lident = ">"+"_".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
             rident = ">"+"_".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))

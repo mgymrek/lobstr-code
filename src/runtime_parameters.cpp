@@ -23,8 +23,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/runtime_parameters.h"
 
 // keep track of user defined arguments
-std::string user_defined_arguments = "# version=lobSTR_v1.0.6;";
-std::string user_defined_arguments_allelotyper = "# version=allelotype_v1.0.6;";
+std::string user_defined_arguments = "# version=lobSTR_v2.0.0;";
+std::string user_defined_arguments_allelotyper = "# version=allelotype_v2.0.0;";
 
 // keep track of common ones
 std::map<std::string, std::string> canonicalMSTable;
@@ -33,6 +33,7 @@ std::map<std::string, std::string> canonicalMSTable;
 bool my_verbose = false;
 bool sam = true;
 bool debug = false;
+bool plot_info = false;
 bool genotype_only = false;
 bool fastq = false;
 bool bam = false;
@@ -56,7 +57,7 @@ std::string output_prefix = "";
 std::string sam_file = "";
 
 // detection params
-bool check_next_best = false;
+bool check_next_best = true;
 size_t min_read_length = 45;
 size_t max_read_length = 1024;
 size_t fft_window_size = 24;
@@ -80,7 +81,7 @@ size_t extend_flank = 6;
 bool adjust = true;
 bool debug_adjust = false;
 int min_sw_score = 60;
-int max_mapq = 200;
+int max_mapq = 100;
 int allowed_mismatches = -1;
 int max_align = 10;
 int max_diff_ref = 50;
@@ -95,7 +96,7 @@ bool partial_debug = false;
 
 
 // genotyping params
-std::string bam_file = "";
+std::string bam_files_string = "";
 std::string command = "";
 std::string noise_model = "";
 bool rmdup = true;
@@ -108,6 +109,10 @@ std::string aligned_file = "";
 bool not_lobstr_file_detected = false;
 bool include_flank = true;
 bool print_reads = false;
+int max_matedist = 100000;
+float min_supp_freq = 0.25;
+float MIN_POSTERIOR = 0.5;
+float MIN_MARGINAL = 0.9;
 
 // anonymizing params
 std::string str_alignment_file = "";
@@ -136,3 +141,9 @@ size_t MIN_STR_LENGTH = 6;
 
 int QUAL_CUTOFF = 15;
 int QUALITY_CONSTANT = 33;
+
+// Amazon s3 paramters
+bool using_s3 = false;
+std::string s3bucket = "";
+std::string s3cmd_configfile = "";
+bool s3debug = false;

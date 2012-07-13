@@ -12,7 +12,7 @@ m4_include([ax_check_zlib.m4])
 m4_include([ax_check_rinside.m4])
 
 AC_INIT([lobSTR],
-        [1.0.6],
+        [2.0.0],
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
