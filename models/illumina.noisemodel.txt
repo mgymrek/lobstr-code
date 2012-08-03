@@ -1,0 +1,5 @@
+mutIntercept=1.15193
+mutSlope=-0.0406984
+poisIntercept=-27.3026
+poisSlope=0
+
