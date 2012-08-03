@@ -1,4 +1,0 @@
-mutIntercept=0.864447384648
-mutSlope=0.453909305598
-poisIntercept=-0.89533697316
-poisSlope=0.176783528203

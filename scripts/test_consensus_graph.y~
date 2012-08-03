@@ -1,2 +1,0 @@
-from consensus_graph.py import *
-cs = Consensus(reads, refseq)

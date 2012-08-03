@@ -1,8 +1,0 @@
-#!/usr/bin/python
-
-def usage():
-    print """
-./plotAllelotypes.py <genotypes.tab plot debug file> <outputprefix>
-"""
-import os
-import sys
