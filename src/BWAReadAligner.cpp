@@ -65,7 +65,7 @@ const size_t MIN_STITCH_OVERLAP = 16;
 const float STITCH_REQUIRED_SCORE = 0.8;
 // Allowed difference in score between returned stitch
 // and next best stitch
-const float STITCH_DIFF = 0;
+const float STITCH_DIFF = 0.1;
 // penalty to mapq for clipped ends
 const int CLIP_PENALTY = 10;
 // min allowed distance from STR boundary to read ends
