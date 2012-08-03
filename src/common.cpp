@@ -371,6 +371,32 @@ string GenerateS3Command(const string& bucket,
     << "/mnt/lobstr/" << filename << endl;
   return s.str();
 }
+
+void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
+                          const std::string& nucs,
+                          bool* added_s) {
+  // how many nucleotides the current cigar counts for
+  size_t cigar_length = 0;
+  for (int i = 0; i < cigar_list->cigars.size(); i++) {
+    CIGAR cig = cigar_list->cigars.at(i);
+    if (cig.cigar_type == 'M' || cig.cigar_type == 'I' || cig.cigar_type == 'S') {
+      cigar_length += cig.num;
+    }
+  }
+  // bp not covered by the cigar score
+  int diff = nucs.length() - cigar_length;
+  if (diff > 0) {
+    *added_s = true;
+    CIGAR cig;
+    cig.num = diff;
+    cig.cigar_type = 'S';
+    cigar_list->cigars.push_back(cig);
+    cigar_list->ResetString();
+  } else {
+    *added_s = false;
+  }
+}
+
 std::string fftw_complex_to_string(fftw_complex v) {
   stringstream s;
   s.setf(ios::fixed, ios::floatfield);

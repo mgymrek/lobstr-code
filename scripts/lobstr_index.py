@@ -120,19 +120,22 @@ def processTRF(strfile, outdir, genome):
             if len(name) > 15: name = ""
         except: name = ""
         # extract flanking regions
-        if "_" not in chrom:
-            leftFlank = str(genome[chrom][max(start-extend,0):end].seq).upper()
-            rightFlank = str(genome[chrom][start:min(end+extend,len(genome[chrom]))].seq).upper()
-            strregion = str(genome[chrom][max(start-extend,0):min(end+extend,len(genome[chrom]))].seq).upper()
-            repseq = getCanonicalMS(repseq)
-            revrepseq = getCanonicalMS(reverseComplement(repseq))
-            repseq = compareString(repseq, revrepseq)
+        if "$" not in chrom:
+            try:
+                leftFlank = str(genome[chrom][max(start-extend,0):end].seq).upper()
+                rightFlank = str(genome[chrom][start:min(end+extend,len(genome[chrom]))].seq).upper()
+                strregion = str(genome[chrom][max(start-extend,0):min(end+extend,len(genome[chrom]))].seq).upper()
+                repseq = getCanonicalMS(repseq)
+                revrepseq = getCanonicalMS(reverseComplement(repseq))
+                repseq = compareString(repseq, revrepseq)
+            except:
+                repseq = ""
         
-        if len(repseq) <= 6 and len(repseq) >= 1 and (start-extend) > 0 and "_" not in chrom:
+        if len(repseq) <= 6 and len(repseq) >= 1 and (start-extend) > 0 and "$" not in chrom:
             # write fasta entries
-            lident = ">"+"_".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
-            rident = ">"+"_".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
-            strident = ">"+"_".join(map(str,[ident,chrom,start-extend,end+extend,repseq,copynum,name]))
+            lident = ">"+"$".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
+            rident = ">"+"$".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
+            strident = ">"+"$".join(map(str,[ident,chrom,start-extend,end+extend,repseq,copynum,name]))
             try:
                 repToFile[repseq].write(rident+"\n")
                 repToFile[repseq].write(PadFlank(rightFlank,pad)+"\n")
@@ -150,10 +153,10 @@ def processTRF(strfile, outdir, genome):
             allfasta.write(strident+"\n")
             allfasta.write(strregion+"\n")
             ident = ident + 1
-        elif len(repseq) == 7 and "_" not in chrom:
+        elif len(repseq) == 7 and "$" not in chrom:
              # write fasta entries
-            lident = ">"+"_".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
-            rident = ">"+"_".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
+            lident = ">"+"$".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
+            rident = ">"+"$".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
             if repseq not in sevenmerdict.keys():
                 sevenmerdict[repseq] =(rident+"\n")
                 sevenmerdict[repseq]+=(rightFlank+"\n")

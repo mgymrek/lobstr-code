@@ -585,7 +585,7 @@ void BWAReadAligner::UpdatePartialFlank(const ALIGNMENT& aligned_flank,
 
 void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
   vector<string> items;
-  split(refstring, '_', items);
+  split(refstring, '$', items);
   refid->id = atoi(items.at(0).c_str());
   refid->left = (items.at(1) == "L");
   refid->chrom = items.at(2);
@@ -1214,6 +1214,9 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
       if (!read_pair->reads.at(1-aligned_read_num).reverse) {
         read_pair->reads.at(1-aligned_read_num).read_start--;
       }
+      // make sure CIGAR is valid
+      bool added_s;
+      GenerateCorrectCigar(&cigar_list, read_pair->reads.at(1-aligned_read_num).nucleotides, &added_s);
       read_pair->reads.at(1-aligned_read_num).cigar_string =
         cigar_list.cigar_string;
       read_pair->reads.at(1-aligned_read_num).cigar =
@@ -1307,6 +1310,9 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
   // Update info in aligned read
   aligned_read->mapq = GetMapq(aligned_seq_sw, ref_seq_sw,
                                aligned_seq_quals);
+  // make sure CIGAR is valid
+  bool added_s;
+  GenerateCorrectCigar(&cigar_list, aligned_read->nucleotides, &added_s);
   aligned_read->cigar = cigar_list.cigars;
   aligned_read->cigar_string = cigar_list.cigar_string;
 

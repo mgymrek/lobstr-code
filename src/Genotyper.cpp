@@ -190,24 +190,26 @@ void Genotyper::SimpleGenotype(const list<AlignedRead>& aligned_reads,
     *score = 0;
     return;
   }
-  if (aligned_reads.size() == 1) {
-    float allele = aligned_reads.front().diffFromRef;
-    *allele1 = allele;
-    *allele2 = allele;
-    *score = 1;
-    return;
-  }
   map<float, int> str_to_counts;
+  int num_nonpartial = 0;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
-    if ((*it).partial == 1) continue;
-    if (str_to_counts.find((*it).diffFromRef) ==
-        str_to_counts.end()) {
-      str_to_counts.insert(pair<float, int>((*it).diffFromRef, 1));
-    } else {
-      str_to_counts.at((*it).diffFromRef) =
-        str_to_counts.at((*it).diffFromRef)+1;
+    if ((*it).partial == 0) {
+      num_nonpartial += 1;
+      if (str_to_counts.find((*it).diffFromRef) ==
+          str_to_counts.end()) {
+        str_to_counts.insert(pair<float, int>((*it).diffFromRef, 1));
+      } else {
+        str_to_counts.at((*it).diffFromRef) =
+          str_to_counts.at((*it).diffFromRef)+1;
+      }
     }
+  }
+  if (num_nonpartial == 0) {
+    *allele1 = 0;
+    *allele2 = 0;
+    *score = 0;
+    return;
   }
   int top_str_count = 0;
   float top_str_allele;
@@ -229,17 +231,17 @@ void Genotyper::SimpleGenotype(const list<AlignedRead>& aligned_reads,
   }
   if (is_haploid ||
       static_cast<float>(second_str_count)/
-      static_cast<float>(aligned_reads.size())
+      static_cast<float>(num_nonpartial)
       < min_het_freq) {
     *allele1 = top_str_allele;
     *allele2 = top_str_allele;
     *score = static_cast<float>(top_str_count)/
-      static_cast<float>(aligned_reads.size());
+      static_cast<float>(num_nonpartial);
   } else {
     *allele1 = top_str_allele;
     *allele2 = second_str_allele;
     *score = static_cast<float>(top_str_count + second_str_count) /
-      static_cast<float>(aligned_reads.size());
+      static_cast<float>(num_nonpartial);
   }
 }
 

@@ -123,6 +123,11 @@ std::string GenerateS3Command(const std::string& bucket,
                               const std::string& filename,
                               const std::string& configfile);
 
+// make sure cigar string is valid
+void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
+                          const std::string& nucs,
+                          bool* added_s);
+
 // debugging functions
 std::string fftw_complex_to_string(fftw_complex v);
 

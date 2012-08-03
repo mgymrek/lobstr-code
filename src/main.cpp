@@ -77,10 +77,10 @@ gap_opt_t *opts;
 void show_help() {
   const char* help =
     "\n\nlobSTR [OPTIONS] " \
-    "    {-f <file1[,file2,...]>|--p1 <file1_1[,file2_1,...]>\n" \
+    "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
     "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
     "    -o <output prefix>\n" \
-    " Parameter descriptions:\n " \
+    "Parameter descriptions:\n " \
     "-f,--files     file or comma-separated list of files\n" \
     "               containing reads in fasta, fastq, or bam format\n" \
     "               (default: fasta)\n" \
@@ -97,26 +97,28 @@ void show_help() {
     "--index-prefix prefix for bwa reference (must run lobstr_index.py\n" \
     "               to create index. If the index is downloaded\n" \
     "               to PATH_TO_INDEX, this argument is\n" \
-    "               PATH_TO_INDEX/lobSTR_\n" \
+    "               PATH_TO_INDEX/lobSTR_)\n" \
     "\n\nOptions:\n" \
     "-h,--help      display this help screen\n" \
     "-v,--verbose   print out useful progress messages\n" \
     "-q,--fastq     reads are in fastq format (default: fasta)\n" \
     "--bam          reads are in bam format (default: fasta)\n" \
-    "--gzip         The input files are gzippe\n" \
+    "--gzip         The input files are gzipped\n" \
     "               (only works for fasta or fastq input)\n" \
     "--bampair      reads are in bam format and are paired-end\n" \
     "               NOTE: bam file MUST be sorted by read name\n" \
     "               (samtools sort -n <file.bam> <prefix>)\n" \
-    "--bwaq         Trim reads ends based on quality scores. This\n" \
+    "--bwaq         Trim read ends based on quality scores. This\n" \
     "               has the same effect as the BWA parameter -q:\n" \
-    "               BWA trims a read down to argmax_x{\sum_{i=x+1}^l(INT-q_i)} \n" \
+    "               BWA trims a read down to argmax_x{sum_{i=x+1}^l(INT-q_i)} \n" \
     "               if q_l<INT where l is the original read length.\n" \
+    "--oldillumina  Specifies that quality score are given in old Phred\n" \
+    "               format (Illumina 1.3+, Illumina 1.5+) where quality\n" \
+    "               scores are given as Phred + 64 rather than Phred + 33\n" \
     "\n\nAdvanced options - general:\n" \
     "-p,--threads <INT>         number of threads (default: 1)\n" \
     "--min-read-length <INT>    minimum number of nucleotides for a\n" \
-    "                           read to be processed. This should be at\n" \
-    "                           least two times fft-window-size\n" \
+    "                           read to be processed.\n" \
     "                           (default: 45)\n" \
     "--max-read-length <INT>    maximum number of nucleotides for a\n" \
     "                           read to be processed. (default: 1024)\n" \
@@ -137,7 +139,7 @@ void show_help() {
     "                           (default: 25)\n" \
     "\n\nAdvanced options - alignment:\n" \
     "--max-diff-ref <INT>       maximum difference in length from\n" \
-    "                           the reference sequence to allow for\n" \
+    "                           the reference sequence to report\n" \
     "                           (default: 50bp)\n" \
     "--extend <INT>             Number of bp the reference was extended\n" \
     "                           when building the index.\n" \
@@ -275,7 +277,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"nw-score", 1, 0, OPT_SW},
     {"mapq", 1, 0, OPT_MAPQ},
     {"bwaq", 1, 0, OPT_BWAQ},
-    {"old", 0, 0, OPT_OLDILLUMINA},
+    {"oldillumina", 0, 0, OPT_OLDILLUMINA},
     {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
     {"why-not", 0, 0, OPT_WHY_NOT},
     {"no-tab", 0, 0, OPT_NOTAB},
@@ -1018,7 +1020,7 @@ int main(int argc, char* argv[]) {
     REFSEQ refseq;
     vector<string> items;
     string refstring = ref_record.ID;
-    split(refstring, '_', items);
+    split(refstring, '$', items);
     if (items.size() == 7) {  // else must be _random_, _cox_hap1, etc.
       refseq.sequence = ref_record.orig_nucleotides;
       refseq.start = atoi(items.at(2).c_str());

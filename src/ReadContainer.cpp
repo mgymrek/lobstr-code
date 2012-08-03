@@ -28,6 +28,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <utility>
 #include <vector>
 
+#include "src/common.h"
 #include "src/ReadContainer.h"
 #include "src/runtime_parameters.h"
 
@@ -115,6 +116,12 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
           cig.cigar_type = (*it).Type;
           cigar_list.cigars.push_back(cig);
         }
+        bool added_s;
+        cigar_list.ResetString();
+        GenerateCorrectCigar(&cigar_list, aln.QueryBases, &added_s);
+        if (added_s) {
+          aligned_read.partial = 1;
+        }
         aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);
       }
       if (profile) {
@@ -158,8 +165,8 @@ void ReadContainer::RemovePCRDuplicates() {
     // Group into duplicates
     for (list<AlignedRead>::const_iterator
            it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-      pair<int, int> key(it2->read_start, it2->nucleotides.length());
-      // pair<int, int> key(it2->read_start, 0);
+      //pair<int, int> key(it2->read_start, it2->nucleotides.length());
+      pair<int, int> key(it2->read_start, 0);
       if (pcr_duplicates.find(key) != pcr_duplicates.end()) {
         pcr_duplicates.at(key).push_back(*it2);
       } else {

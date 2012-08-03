@@ -5,9 +5,8 @@ IV. Required packages
 V. Output files
 VI. Known Bugs
 VII. Building a lobSTR index
-VIII. Allelotyping a bam file not created using lobSTR
-IX. Running lobSTR on the Amazon Cloud
-X. Quality control checks for lobSTR results
+VIII. Running lobSTR on the Amazon Cloud
+IX. Quality control checks for lobSTR results
 
 
 I. INSTALLATION FROM SOURCE
@@ -126,6 +125,8 @@ $prefix.genotypes.tab: genotype called at each locus
 
 VI. KNOWN BUGS
 
+- lobSTR will not produce output for chromosome names containing a "_". For now all "_" characters must be removed from chromosome names.
+
 - covertBam.py will not produce accurate allelotypes for reads with indels in the flanking regions. At this point it is highly recommended that if you want to use a previously aligned BAM file for allelotyping, that you first run lobSTR alignment on the BAM file and then proceed with the regular instructions. Better support for converting foreign BAM files to contain lobSTR_specific tags is coming soon.
 
 - For very small files (< several million reads), if lobSTR is run in multiprocessing mode it may fail to write to the BAM output file. Therefore, for small files, it is recommended to run in single processor mode (-p 1).
@@ -153,28 +154,9 @@ Where --str is the table resulting from running the Tandem Repeat Finder tool.
 The resulting argument to --index-prefix for lobSTR will then be $out_dir/lobSTR
 
 --extend gives how many bp around an STR locus to include in the reference. By default, this is set to 1000bp in order to allow enough sequence to align mate pairs of STR-containing reads. Note that the --extend parameter must be set to the SAME value for lobSTR alignment as it was set to during index building.
-_
 
-VIII. Allelotyping bam alignment files not created using lobSTR.
 
-Note, it is highly recommended that you first use lobSTR alignment to align bam files. If you absolutely must use an existing alignment not created by lobSTR, follow the instructions below. 
-
-Because lobSTR adds its own custom fields to bam files, you must first convert the bam file you want to profile to the lobSTR bam format.
-
-First you must ensure that the bam file is sorted and indexed:
-samtools sort test.bam test.sorted
-samtools index test.sorted.bam
-
-Then run convertBam.py, available in $PATH_TO_LOBSTR/scripts/convertBam.py:
-python convertBam.py trf.ucsc.hg19.filtered.bed test.sorted.bam test.sorted.converted.bam
-
-trf.ucsc.hg18.filtered.bed and trf.ucsc.hg19.filtered.bed are available from the lobSTR website.
-
-To create the lobSTR-formatted bam file test.sorted.converted.bam. This file is now ready to be allelotyped by lobSTR_allelotype.py 
-
-Note, this step is sometimes unreliable. See "KNOWN BUGS" for more information.
-
-IX. Running lobSTR on the Amazon Cloud
+VIII. Running lobSTR on the Amazon Cloud
 
 We have made lobSTR available on the Amazon Cloud. the lobSTR tool and index are stored in an S3 bucket at:
 
@@ -203,7 +185,7 @@ For example, to process a genome from the 1000 genomes S3 bucket, you can run:
 
 lobSTR --index-prefix $index_path/lobSTR_ --extend 1000 -q --bwaq 10 --mapq 100 --out NA19675_WGS_paired -q --gzip --p1 SRR058937_1.filt.fastq.gz,SRR058938_1.filt.fastq.gz,SRR058939_1.filt.fastq.gz,SRR058964_1.filt.fastq.gz --p2 SRR058937_2.filt.fastq.gz,SRR058938_2.filt.fastq.gz,SRR058939_2.filt.fastq.gz,SRR058964_2.filt.fastq.gz -v -p 10 --use-s3 s3://1000genomes/data/NA19675/sequence_read --s3config lobstr1kgtools/s3cfg
 
-X. Quality control checks for lobSTR results
+IX. Quality control checks for lobSTR results
 
 The following scripts output helpful statistics about the quality of lobSTR alignment and allelotyping results:
 

@@ -51,10 +51,10 @@ bool BamPairedFileReader::GetNextRecord(ReadPair* read_pair) {
     } else {
       if (GetNextReadMate(&mate)) {
         if (mate.ID == single_read.ID) {
-          mate.nucleotides = reverseComplement(mate.nucleotides);
-          mate.orig_nucleotides = reverseComplement(mate.orig_nucleotides);
-          mate.quality_scores = reverse(mate.quality_scores);
-          mate.orig_qual = reverse(mate.orig_qual);
+          //          mate.nucleotides = reverseComplement(mate.nucleotides);
+          //          mate.orig_nucleotides = reverseComplement(mate.orig_nucleotides);
+          //          mate.quality_scores = reverse(mate.quality_scores);
+          //          mate.orig_qual = reverse(mate.orig_qual);
           read_pair->reads.push_back(mate);
           return true;
         } else {
@@ -84,11 +84,14 @@ bool BamPairedFileReader::GetNextReadMate(MSReadRecord* read) {
 
   string trim_nucs;
   string trim_qual;
-  TrimRead(aln.QueryBases, aln.Qualities, &trim_nucs, &trim_qual, QUAL_CUTOFF);
-  read->nucleotides = reverseComplement(trim_nucs);
-  read->quality_scores = reverse(trim_qual);
-  read->orig_nucleotides = reverseComplement(trim_nucs);
-  read->orig_qual = reverse(trim_qual);
+
+  string nucs =  reverseComplement(aln.QueryBases);
+  string qual = reverse(aln.Qualities);
+  TrimRead(nucs, qual, &trim_nucs, &trim_qual, QUAL_CUTOFF);
+  read->nucleotides = trim_nucs;
+  read->quality_scores = trim_qual;
+  read->orig_nucleotides = trim_nucs;
+  read->orig_qual = trim_qual;
   read->paired = aln.IsPaired();
   return true;
 }

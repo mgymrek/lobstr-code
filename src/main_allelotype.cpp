@@ -40,7 +40,7 @@ void show_help() {
   const char* help = "\n\nTo train the genotyping noise model " \
     "from a set of aligned reads:\n"                            \
     "allelotype --command train [OPTIONS] --bam <input.bam> "   \
-    "--noise_model <noisemodel.txt>\n\n"                        \
+    "--noise_model <noisemodel.txt> --sex M \n\n"                        \
     "To run str profiling on a set of aligned reads:\n"         \
     "allelotype --command classify [OPTIONS] --bam <input.bam> "  \
     "--noise_model <noisemodel.txt> [--no-rmdup] "                \
@@ -52,29 +52,29 @@ void show_help() {
     "To allelotype without using a stutter noise model:\n"            \
     "allelotype simple [OPTIONS] --bam <input.bam> [--no-rmdup] "     \
     "--out <output_prefix> --sex [M|F|U]\n\n"                         \
-    "Paramter description:\n"                                          \
+    "Parameter description:\n"                                          \
     "--command [simple|train|classify|both]: specify which of the tasks\n" \
     "                                        described above to perform\n" \
     "--bam <file1.bam,[file2.bam, ...]>:     comma-separated list of bam files\n" \
     "                                        to analyze\n"              \
     "--noise_model <STRING>:                 file to write (for --command train or \n" \
     "                                        --command both) or read \n" \
-    "                                        (--command classify) noise model paramters to.\n" \
-    "--no-rmdup: don't remove pcr duplicates before allelotyping\n"     \
-    "--min-het-freq <FLOAT>: minimum frequency to make a heterozygous call\n" \
-    "                        (default: 0.2)\n" \
-    "--sex [U|M|F]: Gender of sample, M=male, F=female, U=unknown\n"    \
-    "               If gender is irrelevant or doesn't make sense in \n " \
-    "               your usage case, specify --sex U.\n" \
+    "                                        (--command classify) noise model parameters to.\n" \
+    "--no-rmdup:                 don't remove pcr duplicates before allelotyping\n"     \
+    "--min-het-freq <FLOAT>:     minimum frequency to make a heterozygous call\n" \
+    "                            (default: 0.2)\n" \
+    "--sex [U|M|F]:              Gender of sample, M=male, F=female, U=unknown\n"    \
+    "                            If gender is irrelevant or doesn't make sense in \n " \
+    "                            your usage case, specify --sex U.\n" \
     "-h: display this message\n"                                        \
-    "-v: print out helpful progress messages\n\n";
+    "-v: print out helpful progress messages\n\n" \
     "Options for filtering reads:\n" \
     "If not specified, no filters applied\n" \
-    "--max-diff-ref <INT>:         filter reads differing from the\n"   \
+    "--max-diff-ref <INT>:        filter reads differing from the\n"   \
     "                             reference allele by more than <INT> bp.\n" \
     "--unit:                      filter reads differing by a non-integer\n" \
     "                             number of repeat copies from reference\n" \
-    "--mapq <INT>:                filter reads with mapq scores of less than\n" \
+    "--mapq <INT>:                filter reads with mapq scores of more than\n" \
     "                             <INT>.\n"                             \
     "--max-matedist <INT>:        Filter reads with a mate distance larger than <INT> bp.\n\n";
   cout << help;
