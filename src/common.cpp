@@ -134,6 +134,7 @@ bool IsPerfectRepeat(const std::string& sequence,
   // find first occurrence of repeat
   size_t found;
   found = sequence.find(repeat);
+
   if (found == string::npos || found > repeat.length() - 1) return false;
   // check the part before found
   if (sequence.substr(0, found) != repeat.substr(repeat.length() - found,

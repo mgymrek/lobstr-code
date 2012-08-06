@@ -336,19 +336,21 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   }
 
   // Check if flanks are perfect repeats
-  if (IsPerfectRepeat(read->left_flank_nuc, repseq)) {
+  if (IsPerfectRepeat(read->left_flank_nuc, repseq) ||
+      IsPerfectRepeat(read->left_flank_nuc, reverseComplement(repseq))) {
     read->left_perfect_repeat = true;
     left_all_repeats = true;
-    if (align_debug) {
-      cerr << "[ProcessRead]: left all repeats"<< endl;
-    }
   }
-  if (IsPerfectRepeat(read->right_flank_nuc, repseq)) {
+  if (align_debug) {
+    cerr << "[ProcessRead]: left all repeats " << left_all_repeats << endl;
+  }
+  if (IsPerfectRepeat(read->right_flank_nuc, repseq) ||
+      IsPerfectRepeat(read->right_flank_nuc, reverseComplement(repseq))) {
     read->right_perfect_repeat = true;
     right_all_repeats = true;
-    if (align_debug) {
-      cerr << "[ProcessRead]: right all repeats" << endl;
-    }
+  }
+  if (align_debug) {
+    cerr << "[ProcessRead]: right all repeats " << right_all_repeats << endl;
   }
   // don't continue if both are fully repetitive
   if (left_all_repeats && right_all_repeats) return false;

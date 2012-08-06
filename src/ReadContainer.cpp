@@ -161,24 +161,24 @@ void ReadContainer::RemovePCRDuplicates() {
          it = aligned_str_map_.begin();
        it != aligned_str_map_.end(); it++) {
     // map of <start pos, length> -> aligned reads list
-    map<pair<int, int>, list<AlignedRead> > pcr_duplicates;
+    map<pair<int, bool>, list<AlignedRead> > pcr_duplicates;
     // Group into duplicates
     for (list<AlignedRead>::const_iterator
            it2 = it->second.begin(); it2 != it->second.end(); it2++) {
       //pair<int, int> key(it2->read_start, it2->nucleotides.length());
-      pair<int, int> key(it2->read_start, 0);
+      pair<int, bool> key(it2->read_start, it2->strand);
       if (pcr_duplicates.find(key) != pcr_duplicates.end()) {
         pcr_duplicates.at(key).push_back(*it2);
       } else {
         list<AlignedRead> pcr_dup_reads;
         pcr_dup_reads.push_back(*it2);
-        pcr_duplicates.insert(pair< pair<int, int>, list<AlignedRead> >
+        pcr_duplicates.insert(pair< pair<int, bool>, list<AlignedRead> >
                               (key, pcr_dup_reads));
       }
     }
     // Choose one rep from each group
     list<AlignedRead> reads_after_rmdup;
-    for (map<pair<int, int>, list<AlignedRead> >::const_iterator
+    for (map<pair<int, bool>, list<AlignedRead> >::const_iterator
            it3 = pcr_duplicates.begin();
          it3 != pcr_duplicates.end(); it3++) {
       AlignedRead rep_read;
