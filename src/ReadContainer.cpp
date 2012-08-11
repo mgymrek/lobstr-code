@@ -117,9 +117,18 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
           cigar_list.cigars.push_back(cig);
         }
         bool added_s;
+        bool cigar_had_s;
         cigar_list.ResetString();
-        GenerateCorrectCigar(&cigar_list, aln.QueryBases, &added_s);
+        GenerateCorrectCigar(&cigar_list, aln.QueryBases,
+                             &added_s, &cigar_had_s);
         if (added_s) {
+          aligned_read.partial = 1;
+        }
+        // added 08/10/12 to get rid of reads clipped
+        // at ends that incorrectly return ref allele
+        // should change to make sure aligned portion
+        // doesn't end too close to str end
+        if (cigar_had_s) {
           aligned_read.partial = 1;
         }
         aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);

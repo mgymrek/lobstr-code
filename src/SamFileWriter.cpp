@@ -33,6 +33,8 @@ using BamTools::RefData;
 using BamTools::RefVector;
 using BamTools::BamAlignment;
 
+const std::string NASTRING = "NA";
+
 SamFileWriter::SamFileWriter(const string& _filename,
                              const map<string, int>& _chrom_sizes) {
   chrom_sizes = _chrom_sizes;
@@ -125,8 +127,12 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   bam_alignment.AddTag("XC", "f", read_pair.reads.
                        at(aligned_read_num).refCopyNum);
   // XG: repeat region
-  bam_alignment.AddTag("XG", "Z", read_pair.reads.
-                       at(aligned_read_num).detected_ms_nuc);
+  if (read_pair.reads.at(aligned_read_num).partial) {
+    bam_alignment.AddTag("XG", "Z", NASTRING);
+  } else {
+    bam_alignment.AddTag("XG", "Z", read_pair.reads.
+                         at(aligned_read_num).detected_ms_nuc);
+  }
   // XW: mapq
   bam_alignment.AddTag("XW", "i", read_pair.reads.
                        at(aligned_read_num).mapq);

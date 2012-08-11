@@ -375,24 +375,31 @@ string GenerateS3Command(const string& bucket,
 
 void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
                           const std::string& nucs,
-                          bool* added_s) {
+                          bool* added_s,
+                          bool* cigar_had_s) {
   // how many nucleotides the current cigar counts for
   size_t cigar_length = 0;
+  *cigar_had_s = false;
   for (int i = 0; i < cigar_list->cigars.size(); i++) {
     CIGAR cig = cigar_list->cigars.at(i);
     if (cig.cigar_type == 'M' || cig.cigar_type == 'I' || cig.cigar_type == 'S') {
       cigar_length += cig.num;
     }
+    if (cig.cigar_type == 'S') *cigar_had_s = true;
   }
   // bp not covered by the cigar score
   int diff = nucs.length() - cigar_length;
   if (diff > 0) {
     *added_s = true;
-    CIGAR cig;
-    cig.num = diff;
-    cig.cigar_type = 'S';
-    cigar_list->cigars.push_back(cig);
-    cigar_list->ResetString();
+    if (cigar_list->cigars.at(cigar_list->cigars.size()-1).cigar_type == 'M') {
+      cigar_list->cigars.at(cigar_list->cigars.size()-1).num += diff;
+    } else {
+      CIGAR cig;
+      cig.num = diff;
+      cig.cigar_type = 'M';
+      cigar_list->cigars.push_back(cig);
+      cigar_list->ResetString();
+    }
   } else {
     *added_s = false;
   }

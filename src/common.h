@@ -126,8 +126,8 @@ std::string GenerateS3Command(const std::string& bucket,
 // make sure cigar string is valid
 void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
                           const std::string& nucs,
-                          bool* added_s);
-
+                          bool* added_s,
+                          bool* cigar_had_s);
 // debugging functions
 std::string fftw_complex_to_string(fftw_complex v);
 
