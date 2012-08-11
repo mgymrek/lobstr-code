@@ -9,7 +9,7 @@ lobstr_v2.0.0 (July 18, 2012):
 lobstr_v2.0.0_2 (August 1, 2012):
 	- fixed problem reading from paired-end bam files (reads were not properly reverse complemented)
 
-lobstr_v2.0.0_3:
+lobstr_v2.0.1:
 	- fixed invalid CIGAR string issue: some reads were clipped at the end but "S" was not added to the CIGAR string. Reads with "S" at the end of the CIGAR string are now treated as partially spanning
 	- changed PCR duplicate removal to only check that reads have the same start coordinate and orientation, rather than also checking that they are the same length. Read trimming causes reads with the same original length to have different lengths and therefore not be flagged properly as duplicates
 	- changed required stitch overlap score to be 0.1 above next best score
