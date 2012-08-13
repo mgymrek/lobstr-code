@@ -1276,7 +1276,7 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
     reverse(aligned_read->quality_scores);
 
   // update coords
-  aligned_read->read_start = start_pos;
+  aligned_read->read_start = start_pos - REFEXTEND;
   aligned_read->read_end = start_pos + reglen;
 
   if (debug_adjust) {
