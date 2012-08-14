@@ -20,6 +20,8 @@ cp ax* $1
 cp ac* $1
 cp reconf $1
 cp -r src $1
+rm -f src/lobSTR.linux64
+rm -f src/allelotype.linux64
 cp -r data $1
 mkdir $1/scripts
 cp scripts/lobstr_index.py $1/scripts/
