@@ -51,10 +51,6 @@ bool BamPairedFileReader::GetNextRecord(ReadPair* read_pair) {
     } else {
       if (GetNextReadMate(&mate)) {
         if (mate.ID == single_read.ID) {
-          //          mate.nucleotides = reverseComplement(mate.nucleotides);
-          //          mate.orig_nucleotides = reverseComplement(mate.orig_nucleotides);
-          //          mate.quality_scores = reverse(mate.quality_scores);
-          //          mate.orig_qual = reverse(mate.orig_qual);
           read_pair->reads.push_back(mate);
           return true;
         } else {
@@ -76,9 +72,12 @@ bool BamPairedFileReader::GetNextReadMate(MSReadRecord* read) {
   read->ID = aln.Name;
   // strip /1 or /2 for pairs
   if (read->ID.length() > 2) {
-    if (read->ID.substr(read->ID.length()-1) == "1" ||
-        read->ID.substr(read->ID.length()-1) == "2") {
-      read->ID = read->ID.substr(0,read->ID.length()-2);
+    int pos1 = read->ID.find("/1");
+    int pos2 = read->ID.find("/2");
+    if (pos1 != -1) {
+      read->ID = read->ID.substr(0, pos1);
+    } else if (pos2 != -1) {
+      read->ID = read->ID.substr(0, pos2);
     }
   }
 
@@ -105,9 +104,12 @@ bool BamPairedFileReader::GetNextRead(MSReadRecord* read) {
   read->ID = aln.Name;
   // strip /1 or /2 for pairs
   if (read->ID.length() > 2) {
-    if (read->ID.substr(read->ID.length()-1) == "1" ||
-        read->ID.substr(read->ID.length()-1) == "2") {
-      read->ID = read->ID.substr(0,read->ID.length()-2);
+    int pos1 = read->ID.find("/1");
+    int pos2 = read->ID.find("/2");
+    if (pos1 != -1) {
+      read->ID = read->ID.substr(0, pos1);
+    } else if (pos2 != -1) {
+      read->ID = read->ID.substr(0, pos2);
     }
   }
 
