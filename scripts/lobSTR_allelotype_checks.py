@@ -22,6 +22,7 @@ If the --plot option is specified, the following plots are generated:
 7. Stutter noise plots
 
 Prints all results to stdout
+Note stutter is determined using high confidence homozygous calls
 
 """
 
@@ -74,6 +75,8 @@ for o,a in opts:
 ###########################
 
 if plot:
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import numpy as np
     plt.rcParams['pdf.fonttype'] = 42
@@ -137,15 +140,15 @@ def ClassifyAllelotypes(filename):
         # get mod info
         for item in alleles:
             moddict[period][item%period] = moddict[period][item%period]+1
-        # get stutter info (sex chroms and confident homozygous calls
+        # get stutter info (confident homozygous calls)
         if len(alleles) == 2:
-            if (("chrX" in line or "chrY" in line)) and coverage >= MIN_COV:# or (alleles[0] == alleles[1] and percagree >= 0.9))
+            if ( coverage >= MIN_COV and alleles[0] == alleles[1] and percagree >= 0.9):
                 all_reads = items[ALL_READS_COL-1].split("/")
                 genotype = int(items[ALLELES_COL-1].split(",")[0])
                 for allele in all_reads:
                     call = int(allele.split(":")[0])
                     numreads = int(allele.split(":")[1])
-                    step = (genotype-call)*1.0/period
+                    step = (call-genotype)*1.0/period
                     length = ref*period + call
                     if call == genotype:
                         stutter = 0
@@ -214,7 +217,9 @@ def GetAlleleDiffs(filename, period):
     cmd = "cat %s | grep -v version | awk '($8 >= %s)' | awk '($5 == %s)' | cut -f 7 | "\
         "sed 's/,/\\t/g' | awk '($1!=$2)' | awk '(x=$2-$1) {print (x<0?-1*x:x)}'"%(filename, MIN_COV, period)
     diffs_stdout = ExecuteCmd(cmd, debug)
-    diffs = [int(item) for item in GetListFromStdout(diffs_stdout)]
+    try:
+        diffs = [int(item) for item in GetListFromStdout(diffs_stdout)]
+    except: diffs = []
     return diffs
 
 def GetPercAgreeingList(filename):
@@ -309,11 +314,12 @@ def main():
         for period in xrange(2,7):
             plt.clf()
             allele_diffs = GetAlleleDiffs(lobstr_genotype_file, period)
-            n, bins, patches = plt.hist(allele_diffs, facecolor=colors[period])
-            plt.xlabel("Distance between alleles (bp) (Period %s)"%period)
-            plt.ylabel("# STRs")
-            plt.title("")
-            plt.savefig("%s.alleledist.per%s.pdf"%(lobstr_genotype_file, period))
+            if (len(allele_diffs) > 0):
+                n, bins, patches = plt.hist(allele_diffs, facecolor=colors[period])
+                plt.xlabel("Distance between alleles (bp) (Period %s)"%period)
+                plt.ylabel("# STRs")
+                plt.title("")
+                plt.savefig("%s.alleledist.per%s.pdf"%(lobstr_genotype_file, period))
 
         # 3. Distribution of perc agreeing
         plt.clf()
@@ -363,7 +369,9 @@ def main():
         for period in xrange(2,7):
             all_reads = ([item for item in stutter_info_list if item[0] == period])
             stutter_reads = ([item for item in all_reads if item[2]])
-            sprob = len(stutter_reads)*1.0/len(all_reads)
+            try:
+                sprob = len(stutter_reads)*1.0/len(all_reads)
+            except: sprob = 0
             stutter_probs_by_period.append(sprob)
         plt.clf()
         plt.bar(range(2,7), stutter_probs_by_period, align='center')
@@ -375,7 +383,9 @@ def main():
         for period in xrange(2,7):
             all_reads = ([item for item in stutter_info_list if item[0] == period and item[3] == int(item[3])])
             stutter_reads = ([item for item in all_reads if item[2]])
-            sprob = len(stutter_reads)*1.0/len(all_reads)
+            try:
+                sprob = len(stutter_reads)*1.0/len(all_reads)
+            except: sprob = 0
             stutter_probs_by_period.append(sprob)
         plt.clf()
         plt.bar(range(2,7), stutter_probs_by_period, align='center')
@@ -403,11 +413,13 @@ def main():
         # 7c. Length of stutter
         all_stutter = [item for item in stutter_info_list if item[2]]
         stutter_steps = [round(item[3]) for item in all_stutter]
+        plt.clf()
         plt.hist(stutter_steps, bins=range(-4,5), align="center")
         plt.xlabel("Stutter step sizes")
         plt.ylabel("Frequency")
         plt.title("")
-        plt.savefig("%s.stutter_lengths.pdf"%lobstr_genotype_file)
+        if (len(all_stutter) >0):
+            plt.savefig("%s.stutter_lengths.pdf"%lobstr_genotype_file)
         
         # 7d. Heatmap of stutter by length for each period
         for period in xrange(2,7):
@@ -415,13 +427,23 @@ def main():
             pdata = [item for item in stutter_info_list if item[0] == period]
             # get dimensions
             true_alleles = [item[4] for item in pdata]
-            min_true = min(true_alleles)
-            max_true = max(true_alleles)
+            try:
+                min_true = min(true_alleles)
+                max_true = max(true_alleles)
+            except:
+                min_true = 0
+                max_true = 0
             obs_alleles = [item[4]+item[3]*period for item in pdata]
-            min_obs = min(obs_alleles)
-            max_obs = max(obs_alleles)
-            min_all = min([min_obs, min_true])
-            max_all = max([max_obs, max_true])
+            try:
+                min_obs = min(obs_alleles)
+                max_obs = max(obs_alleles)
+                min_all = min([min_obs, min_true])
+                max_all = max([max_obs, max_true])
+            except:
+                min_obs = 0
+                max_obs = 0
+                min_all = 0
+                max_all = 0
             num_all = max_all-min_all+1
             data = [0 for i in xrange(int(num_all*num_all))]
             data = np.array(data)
@@ -436,6 +458,7 @@ def main():
             fig = plt.figure()
             plt.pcolormesh(data, cmap="Blues")
             plt.colorbar()
-            plt.savefig("%s.stutterheat.period%s.pdf"%(filename, period))
+            if (len(pdata)>0):
+                plt.savefig("%s.stutterheat.period%s.pdf"%(filename, period))
 
 main()

@@ -103,6 +103,8 @@ class MSReadRecord {
   std::string name;
   // alignment score
   int mapq;
+  // edit distance from reference, for SAM NM tag
+  int edit_dist;
   // cigar score for sam format
   std::vector<CIGAR> cigar;
   // cigar score as a string

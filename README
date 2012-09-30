@@ -1,12 +1,15 @@
 I. Installation from source
-II. Usage
-III. Getting help
-IV. Required packages
-V. Output files
-VI. Known Bugs
-VII. Building a lobSTR index
-VIII. Running lobSTR on the Amazon Cloud
-IX. Quality control checks for lobSTR results
+II. Installation from pre-compiled binaries
+III. Usage
+IV. Getting help
+V. Required packages
+VI. Output files
+VII. Known Bugs
+VIII. Building a lobSTR index
+IX. Running lobSTR on the Amazon Cloud
+X. Quality control checks for lobSTR results
+XI. Building the strinfo file
+XII. Converting lobSTR output to VCF format
 
 
 I. INSTALLATION FROM SOURCE
@@ -19,16 +22,11 @@ cd lobstr-xxx/
 make
 make install
 
-The last step might require root access in order to have proper permissions. Congratulations, if these steps didn't explode with error messages, you're done. If not, it is probably because you're missing required packages. See Section IV for requirements.
+II. INSTALLATION FROM PRE-COMPILED BINARIES
+tar -xzvf lobstr-xxx.tar.gz
+cp lobstr-xxx/bin/* /usr/bin
 
-Note, it is required that R be installed for installation to complete successfully. You will also need to install Rcpp and RInside for configuration to work. You can install them easily from inside of the R environment using the following commands:
-
->install.packages("Rcpp")
->install.packages("RInside")
-
-Note on some systems this may require you to do "sudo apt-get install r-cran-rcpp"
-
-II. USAGE
+III. USAGE
 
 Part I: creating an STR alignment
 
@@ -84,17 +82,19 @@ Required inputs are:
   - "classify" takes in a pre made noise model and produces an allelotype file
   - "both" performs both training and classification
   - "simple" performs allelotyping without using a noise model
-* --bam: a bam file consisting of aligned reads. If the bam file was not produced by lobSTR, you must run converBam.py first (see below)
+* --bam: a bam file consisting of aligned reads created during the alignment step.
 * --out: a prefix to name output files
-* --noise_model: an example noisemodel is given in $PATH_TO_LOBSTR/models/illumina.noisemodel.txt. Or you can create your own using the "train" command described above. 
+* --noise_model: an example noisemodel is given in the files $PATH_TO_LOBSTR/models/illumina2.* . Or you can create your own using the "train" command described above. 
+* --strinfo: a file containing metadata about each STR locus. This is included in the download at $PATH_TO_LOBSTR/data/strinfo.hg19.tab and $PATH_TO_LOBSTR/data/strinfo.hg18.tab. To create this file for a custom set of loci or for loci from a different species, see XI: BUILDING THE STRINFO FILE.
+
 
 Optional:
 * --no-rmdup: do not remove PCR duplicates
 
-III. GETTING HELP
-For more information see the website at http://jura.wi.mit.edu/erlich/lobSTR/
+IV. GETTING HELP
+For more information see the website at http://jura.wi.mit.edu/erlich/lobSTR/ and the lobSTR user group mailing list (groups.google.com/group/lobstr-user-group)
 
-IV. REQUIREMENTS
+V. REQUIREMENTS
 
 Assuming you're using a UNIX environment, the following packages are required, and can be obtained by doing "sudo apt-get install $package_name".
 
@@ -105,43 +105,30 @@ libtool
 pkg-config
 fftw3-dev
 libboost-dev
-r-base
-r-cran-rcpp
 
-Python libraries (required only for indexing or converting previously aligned BAM files to lobSTR format):
-pysam
+Python libraries (required only for indexing or converting lobSTR output to vcf format):
 Biopython
+PyVCF
 
 For sorting paired-end files, samtools must be installed.
 
-V. OUTPUT
+VI. OUTPUT
 
-The following files are output from lobSTR:
+The following files are output from lobSTR, with formats described fully at http://club/lobSTR/file-formats.html:
 
 $prefix.aligned.tab: all aligned reads
 $prefix.aligned.bam: aligned reads in bam format
 $prefix.genotypes.tab: genotype called at each locus
 
 
-VI. KNOWN BUGS
+VII. KNOWN BUGS
 
-- lobSTR will not produce output for chromosome names containing a "_". For now all "_" characters must be removed from chromosome names.
-
-- covertBam.py will not produce accurate allelotypes for reads with indels in the flanking regions. At this point it is highly recommended that if you want to use a previously aligned BAM file for allelotyping, that you first run lobSTR alignment on the BAM file and then proceed with the regular instructions. Better support for converting foreign BAM files to contain lobSTR_specific tags is coming soon.
+- lobSTR will not produce output for chromosome names containing a "$". For now all "$" characters must be removed from chromosome names.
 
 - For very small files (< several million reads), if lobSTR is run in multiprocessing mode it may fail to write to the BAM output file. Therefore, for small files, it is recommended to run in single processor mode (-p 1).
 
-- R environment: Some users have reported the error "cannot find system Renviron" after running the allelotype step. This issue is due to the environment variable $R_HOME not being set correctly. To fix this issue, set $R_HOME to a path where the Renviron file can be found. 
 
-For example in tcsh:
-setenv R_HOME /usr/lib/R
-
-In bash:
-export R_HOME=/usr/lib/R
-
-You may need to replace /usr/lib/R to where R is installed in your system if it is not in the default path.
-
-VII. Building a lobSTR index
+VIII. Building a lobSTR index
 An index built using the Tandem Repeat Finder table from UCSC is included in the index_trf/ directory of the lobSTR download.
 
 You can build your own lobSTR index using the lobstr_index.py script provided in the scripts/ directory of the lobSTR download. 
@@ -156,7 +143,7 @@ The resulting argument to --index-prefix for lobSTR will then be $out_dir/lobSTR
 --extend gives how many bp around an STR locus to include in the reference. By default, this is set to 1000bp in order to allow enough sequence to align mate pairs of STR-containing reads. Note that the --extend parameter must be set to the SAME value for lobSTR alignment as it was set to during index building.
 
 
-VIII. Running lobSTR on the Amazon Cloud
+IX. Running lobSTR on the Amazon Cloud
 
 We have made lobSTR available on the Amazon Cloud. the lobSTR tool and index are stored in an S3 bucket at:
 
@@ -185,7 +172,7 @@ For example, to process a genome from the 1000 genomes S3 bucket, you can run:
 
 lobSTR --index-prefix $index_path/lobSTR_ --extend 1000 -q --bwaq 10 --mapq 100 --out NA19675_WGS_paired -q --gzip --p1 SRR058937_1.filt.fastq.gz,SRR058938_1.filt.fastq.gz,SRR058939_1.filt.fastq.gz,SRR058964_1.filt.fastq.gz --p2 SRR058937_2.filt.fastq.gz,SRR058938_2.filt.fastq.gz,SRR058939_2.filt.fastq.gz,SRR058964_2.filt.fastq.gz -v -p 10 --use-s3 s3://1000genomes/data/NA19675/sequence_read --s3config lobstr1kgtools/s3cfg
 
-IX. Quality control checks for lobSTR results
+X. Quality control checks for lobSTR results
 
 The following scripts output helpful statistics about the quality of lobSTR alignment and allelotyping results:
 
@@ -195,6 +182,32 @@ python scripts/lobSTR_allelotype_checks.py -f <genotypes.tab file> [--plot]
 For each, specifying the optional --plot flag will output quality control plots. This option requires that matplotlib be installed.
 
 A description of the normal range of values reported, as well as a description of the plots produced, is given on the usage page of the website.
+
+
+XI. BUILDING THE STRINFO TABLE
+
+The allelotype step uses additional characteristics about each STR (GC content, TRF score, and sequence entropy) in its model of PCR stutter noise. This file is pre-made and included in the lobSTR download for genomes hg18 and hg19. To create it on another set of STR loci:
+
+python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py <str table> <ref.fa> > <strinfo.tab>
+
+e.g.:
+python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py data/trf.ucsc.hg19.filtered.bed hg19.fa > strinfo_hg19.tab
+
+XII. CONVERTING LOBSTR OUTPUT TO VCF FORMAT
+
+For a full description of all options, do:
+
+python $PATH_TO_LOBSTR/scripts/lobstr_to_vcf.py
+
+To convert lobSTR output to VCF output:
+
+python $PATH_TO_LOBSTR/scripts/lobstr_to_vcf.py --gen <lobstr genotypes.tab file> --sample <STRING> --out STRING> --exclude <positions to exclude>
+
+Where the arguments are:
+--gen: genotypes.tab file output from the allelotype step
+--sample: name of the sample
+--out: prefix to name output file
+--exclude: positions to exclude (For downstream analysis, it is beneficial to remove any STRs with the same start position but with different motifs, as it will cause errors with vcftools. Files of positions to exclude are in data/vcf_positions_to_exclude_hg19.tab and data/vcf_positions_to_exclude_hg18.tab.
 
 
 

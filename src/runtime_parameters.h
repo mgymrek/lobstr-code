@@ -24,6 +24,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+const int MIN_PERIOD = 2;
+const int MAX_PERIOD = 6;
+
 // global variables that probably shouldn't be global variables
 
 // stores user arguments for lobSTR alignment
@@ -108,6 +111,7 @@ extern int gap_open;
 extern int gap_extend;
 extern float fpr;
 extern bool partial_debug;
+extern std::string read_group;
 
 // genotyping params
 extern std::string bam_files_string;
@@ -127,6 +131,9 @@ extern int max_matedist;
 extern float min_supp_freq;
 extern float MIN_POSTERIOR;
 extern float MIN_MARGINAL;
+extern std::string haploid_chroms_string;
+extern bool exclude_partial;
+extern std::string strinfofile;
 
 // anonymization params (deprecated)
 extern std::string str_alignment_file;

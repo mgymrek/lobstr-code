@@ -11,6 +11,11 @@ make clean
 make distclean
 ./configure
 make
+make check
+mkdir $1/bin
+mv src/lobSTR $1/bin/
+mv src/allelotype $1/bin/
+mv src/lobSTRIndex $1/bin/
 cp config* $1
 cp -r config* $1
 cp -r m4 $1
@@ -20,13 +25,12 @@ cp ax* $1
 cp ac* $1
 cp reconf $1
 cp -r src $1
-rm -f src/lobSTR.linux64
-rm -f src/allelotype.linux64
 cp -r data $1
 mkdir $1/scripts
 cp scripts/lobstr_index.py $1/scripts/
 cp scripts/*check*.py $1/scripts/
 cp scripts/lobstr_to_vcf.py $1/scripts/lobstr_to_vcf.py
+cp scripts/GetSTRInfo.py $1/scripts/GetSTRInfo.py
 cp -r tests $1
 cp -r models $1
 cp README $1

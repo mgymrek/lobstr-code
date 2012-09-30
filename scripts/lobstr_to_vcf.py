@@ -46,6 +46,7 @@ sample = ""
 verbose = False
 gzipped = False
 excludefile = ""
+SMALL_CONST = 0.0000001
 
 
 for o,a in opts:
@@ -93,6 +94,7 @@ def GetVCFHeader(genfile, output_prefix):
     header.write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
     header.write("##FORMAT=<ID=GB,Number=1,Type=String,Description=\"Genotype given in bp difference from reference\">\n")
     header.write("##FORMAT=<ID=ALL,Number=1,Type=String,Description=\"All alleles seen\">\n")
+    header.write("##FORMAT=<ID=Q,Number=1,Type=Float,Description=\"Allelotype score\">\n")
     header.write("##FORMAT=<ID=S1,Number=1,Type=Float,Description=\"Allele 1 score\">\n")
     header.write("##FORMAT=<ID=S2,Number=1,Type=Float,Description=\"Allele 2 score\">\n")
     header.write("##ALT=<ID=STRVAR,Description=\"Short tandem variation\">\n")
@@ -140,10 +142,10 @@ def ProcessGenotypes(genfile, vcf_writer, pos_to_exclude):
         CHROM = chrom
         POS = start
         ID = "."
-        QUAL = score
+        QUAL = (int((-10*math.log10(1-score+SMALL_CONST))*100))*1.0/100
         FILTER = ""
         INFO = {"REF":ref_copy_num, "END":end, "PERIOD":len(motif.strip()), "MOTIF": motif.strip()}
-        FORMAT="GT:GB:DP:SUPP:CONFLICT:ALL:S1:S2"
+        FORMAT="GT:GB:DP:SUPP:CONFLICT:ALL:Q:S1:S2"
         SAMPLE_INDICES = {sample:0}
         genotype_bp = alleles[0]+"/"+alleles[1]
         genotype = ""
@@ -167,7 +169,7 @@ def ProcessGenotypes(genfile, vcf_writer, pos_to_exclude):
             genotype_failed = True
         if not genotype_failed:
             all_alleles = all_alleles.replace(":","|")
-            call = vcf.parser._Call("",sample, data={"GT":genotype,"GB":genotype_bp,"DP":coverage,"SUPP":agree,"CONFLICT":conflict,"ALL":all_alleles,"S1":score1,"S2":score2})
+            call = vcf.parser._Call("",sample, data={"GT":genotype,"GB":genotype_bp,"DP":coverage,"SUPP":agree,"CONFLICT":conflict,"ALL":all_alleles,"Q":score,"S1":score1,"S2":score2})
             SAMPLES = [call]
             if not genotype_failed:
                 vcf_record = vcf.parser._Record(CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT, SAMPLE_INDICES, samples=SAMPLES)

@@ -32,15 +32,26 @@ using BamTools::BamWriter;
 using BamTools::RefData;
 using BamTools::RefVector;
 using BamTools::BamAlignment;
+using BamTools::SamHeader;
+using BamTools::SamReadGroup;
+using BamTools::SamReadGroupDictionary;
 
 const std::string NASTRING = "NA";
 
 SamFileWriter::SamFileWriter(const string& _filename,
                              const map<string, int>& _chrom_sizes) {
   chrom_sizes = _chrom_sizes;
-  string header="@CO\t";
-  header += user_defined_arguments;
-  header +="\n";
+  SamHeader header;
+  header.Comments.push_back(user_defined_arguments);
+  if (!read_group.empty()) {
+    SamReadGroup rg(read_group);
+    rg.Sample = read_group;
+    header.ReadGroups.Add(rg);
+  }
+
+  //  string header="@CO\t";
+  //header += user_defined_arguments;
+  //header +="\n";
   RefVector ref_vector;
   for (map<string, int>::const_iterator it = chrom_sizes.begin();
        it != chrom_sizes.end(); ++it) {
@@ -78,7 +89,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   bam_alignment.SetIsReverseStrand(read_pair.reads.
                                    at(aligned_read_num).reverse);
   bam_alignment.Position = read_pair.reads.at(aligned_read_num).read_start;
-  bam_alignment.MapQuality = read_pair.reads.at(aligned_read_num).mapq;
+  bam_alignment.MapQuality = 255;//read_pair.reads.at(aligned_read_num).mapq;
   bam_alignment.Qualities = read_pair.reads.
     at(aligned_read_num).quality_scores;
   if (read_pair.reads.at(aligned_read_num).reverse) {
@@ -88,6 +99,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
     bam_alignment.QueryBases =
       read_pair.reads.at(aligned_read_num).nucleotides;
   }
+
   // rname (ref id)
   int ref_id;
   size_t i = 0;
@@ -148,6 +160,14 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   if (!read_pair.reads.at(aligned_read_num).name.empty()) {
     bam_alignment.AddTag("XN", "Z", read_pair.reads.at(aligned_read_num).name);
   }
+  // XQ: alignment quality score
+  bam_alignment.AddTag("XQ", "i", read_pair.reads.at(aligned_read_num).mapq);
+  // RG: read group
+  if (!read_group.empty()) {
+    bam_alignment.AddTag("RG", "Z", read_group);
+  }
+  // NM: edit distance to reference
+  bam_alignment.AddTag("NM", "i", read_pair.reads.at(aligned_read_num).edit_dist);
 
   writer.SaveAlignment(bam_alignment);
 
@@ -171,7 +191,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
                                         at(1-aligned_read_num).reverse);
       mate_alignment.Position =
         read_pair.reads.at(1-aligned_read_num).read_start;
-      mate_alignment.MapQuality = read_pair.reads.at(1-aligned_read_num).mapq;
+      mate_alignment.MapQuality = 255;//read_pair.reads.at(1-aligned_read_num).mapq;
       mate_alignment.Qualities =
         read_pair.reads.at(1-aligned_read_num).quality_scores;
       if (read_pair.reads.at(1-aligned_read_num).reverse) {
@@ -196,22 +216,31 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
 
       // write user flags giving repeat information
       // XS: start pos of matching STR
-      bam_alignment.AddTag("XS", "i", read_pair.reads.
+      mate_alignment.AddTag("XS", "i", read_pair.reads.
                            at(aligned_read_num).msStart);
       // XE: end pos of matching STR
-      bam_alignment.AddTag("XE", "i", read_pair.reads.
+      mate_alignment.AddTag("XE", "i", read_pair.reads.
                            at(aligned_read_num).msEnd);
       // XR: STR repeat
-      bam_alignment.AddTag("XR", "Z", read_pair.reads.
+      mate_alignment.AddTag("XR", "Z", read_pair.reads.
                            at(aligned_read_num).repseq);
       // XC: ref copy number
-      bam_alignment.AddTag("XC", "f", read_pair.reads.
+      mate_alignment.AddTag("XC", "f", read_pair.reads.
                            at(aligned_read_num).refCopyNum);
       // XN: name of STR repeat
       if (!read_pair.reads.at(aligned_read_num).name.empty()) {
         mate_alignment.AddTag("XN", "Z", read_pair.reads.
                               at(aligned_read_num).name);
       }
+      // XQ: alignment quality score
+      mate_alignment.AddTag("XQ", "f", read_pair.reads.at(aligned_read_num).mapq);
+      // RG: read group
+      if (!read_group.empty()) {
+        mate_alignment.AddTag("RG", "Z", read_group);
+      }
+      // NM: edit distance to reference
+      mate_alignment.AddTag("NM", "i", read_pair.reads.at(1-aligned_read_num).edit_dist);
+
       writer.SaveAlignment(mate_alignment);
   }
 }

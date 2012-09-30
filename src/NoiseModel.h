@@ -21,28 +21,26 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_NOISEMODEL_H_
 #define SRC_NOISEMODEL_H_
 
-#include <RInside.h>
+#include "src/linear.h"
 
+#include <algorithm>
 #include <list>
 #include <string>
 #include <vector>
 
 #include "src/ReadContainer.h"
+#include "src/runtime_parameters.h"
 
 using namespace std;
 
-struct RTrainingData {
-  Rcpp::NumericVector mode;
-  Rcpp::NumericVector period;
-  Rcpp::NumericVector copynum;
-  Rcpp::NumericVector mutated;
-};
-
-struct TrainingData {
-  vector<float> mode;
-  vector<int> period;
-  vector<float> copynum;
-  vector<bool> mutated;
+/* Metadata for each STR locus */
+struct STRINFO {
+  std::string chrom;
+  int start;
+  int end;
+  float score;
+  float gc;
+  float entropy;
 };
 
 /*
@@ -54,44 +52,55 @@ struct TrainingData {
 
 class NoiseModel {
  public:
-  explicit NoiseModel(RInside* _r);
+  NoiseModel(const std::string& strinfofile,
+             const std::vector<std::string>& haploid_chroms_);
   ~NoiseModel();
+  
+  /* Read STR info from file */
+  void ReadSTRInfo(const std::string& filename);
 
   /* Train from a set of aligned reads */
   void Train(ReadContainer* read_container);
 
   /* Read noise model from file */
-  bool ReadNoiseModelFromFile(std::string filename);
-
-  /* Write noise model to file */
-  bool WriteNoiseModelToFile(std::string filename);
+  bool ReadNoiseModelFromFile(const std::string& filename);
 
   /* What is the prob of observing STR=b when true value is STR=a*/
-  float GetTransitionProb(int a, int b, int period);
+  float GetTransitionProb(int a, int b, int period, int length,
+                          float gc, float score);
 
+  /* STR info data */
+  std::map<std::pair<std::string, int>, STRINFO> strInfo;
+
+  std::vector<std::string> haploid_chroms;
  private:
   /* Check if a set of reads has a unique mode */
-  bool HasUniqueMode(const list<AlignedRead>& aligned_reads,
+  bool HasUniqueMode(const std::list<AlignedRead>& aligned_reads,
                      float* mode);
 
   /* Fit logistic model for noise/no noise decision */
-  void FitMutationProb();
+  void FitMutationProb(const std::vector<AlignedRead>& reads_for_training);
+
+  /* Read regression problem from filfe */
+  void read_problem(const char *filename);
 
   /* Fit Poisson model for number of noise steps */
-  void FitStepProb();
-
-  /* hold the training data */
-  TrainingData training_data;
-  RTrainingData r_training_data;
-
-  /* embed an R instance */
-  RInside* R;
+  void FitStepProb(const std::map<int, std::map <int,int> >& step_size_by_period);
 
   /* model data */
-  float mutIntercept;
-  float mutSlope;
-  float poisIntercept;
-  float poisSlope;
+  std::string stutter_problem_filename;
+  std::string stutter_model_filename;
+  std::string stepsize_model_filename;
+  // stutter probability problem
+  struct problem stutter_prob;
+  // logistic regression of prob. of stutter
+  model* stutter_prob_model;
+  // probability of stutter to increase allele length
+  float p_incr;
+  // mean step size mod period
+  std::vector<float> average_step_size;
+  // PDF of step size for each period
+  std::vector<std::vector<float> > pdf_model;
 };
 
 #endif  // SRC_NOISEMODEL_H_

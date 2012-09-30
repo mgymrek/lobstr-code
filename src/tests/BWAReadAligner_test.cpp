@@ -95,24 +95,29 @@ read_pair.reads.at(0).orig_qual = "TGTATTTCATGTGTACATTCGTATCTATCTATCTATCTATCTATC
 }
 
 void BWAReadAlignerTest::test_GetMapq() {
+  int edit;
   // Case 1: no mismatches
   std::string aligned = "ACACGTACGTTATCGATCGAT";
   std::string ref = "ACACGTACGTTATCGATCGAT";
   std::string qual = "eeeeedeeedadeeeeeeedd";
-  CPPUNIT_ASSERT_EQUAL(0, _aligner->GetMapq(aligned, ref, qual));
+  CPPUNIT_ASSERT_EQUAL(0, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(edit, 0);
 
   // Case 2: mismatches
   aligned = "TCACGTACGTTATCGATCGAT";
-  CPPUNIT_ASSERT_EQUAL(static_cast<int>('e')-33, _aligner->GetMapq(aligned, ref, qual));
+  CPPUNIT_ASSERT_EQUAL(static_cast<int>('e')-33, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(edit, 1);
 
   // Case 3: gaps, no mismatches
   aligned = "AC-ACGTACGTTATCGATCGAT";
   ref = "ACTACGTACGTTATCGATCGAT";
-  CPPUNIT_ASSERT_EQUAL(0, _aligner->GetMapq(aligned, ref, qual));
+  CPPUNIT_ASSERT_EQUAL(0, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(edit, 0);
 
   // Case 4: gaps and mismatches
   aligned = "AC-ACGTACGTTATCGATCGAC";
-  CPPUNIT_ASSERT_EQUAL(static_cast<int>('d')-33, _aligner->GetMapq(aligned, ref, qual));
+  CPPUNIT_ASSERT_EQUAL(static_cast<int>('d')-33, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(edit, 1);
 }
 
 void BWAReadAlignerTest::test_GetSTRAllele() {

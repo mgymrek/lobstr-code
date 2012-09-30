@@ -15,7 +15,7 @@ bin_PROGRAMS = lobSTR \
 
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 
-AM_CPPFLAGS = $(FFTW_CFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) $(RCPPFLAGS)
+AM_CPPFLAGS = $(FFTW_CFLAGS)
 
 noinst_headers = \
 	BamFileReader.h \
@@ -120,6 +120,8 @@ noinst_headers = \
 	bwt_lite.h \
 	bwase.h \
 	bwt_gen.h \
+	linear.h \
+	tron.h \
 	Genotyper.h \
 	NoiseModel.h \
 	ReadContainer.h 
@@ -289,14 +291,11 @@ liballelotype_a_SOURCES = \
 	utils/bamtools_utilities.cpp  \
 	utils/bamtools_fasta.cpp \
 	utils/bamtools_options.cpp \
-	utils/bamtools_pileup_engine.cpp
-
-#-- scripts to be installed in $prefix/bin
-dist_bin_SCRIPTS = \
-	../scripts/lobstr_index.py
-	../scripts/convertBam.py
-
-CLEANFILES = $(bin_SCRIPTS)
+	utils/bamtools_pileup_engine.cpp \
+	linear.cpp \
+	predict.c \
+	train.c	\
+	tron.cpp
 
 lobSTRIndex_SOURCES = main.c
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
@@ -308,10 +307,10 @@ lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTR_LDADD = liblobstr.a $(FFTW_LIBS)
 lobSTR_LDFLAGS = -static $(AM_LDFLAGS)
 
-
 allelotype_SOURCES = 	main_allelotype.cpp
-allelotype_CPPFLAGS = $(AM_CPPFLAGS) $(RCPPFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) 
-allelotype_LDADD = liballelotype.a $(RLDFLAGS)  $(VAR_STATIC) $(RINSIDELDFLAGS) $(RCPPLDFLAGS)  $(VAR_DYNAMIC)
+allelotype_CPPFLAGS = $(AM_CPPFLAGS)
+allelotype_LDADD = liballelotype.a $(BLAS_LIBS) $(LIBS) $(FLIBS)
+allelotype_LDFLAGS = -static $(AM_LDFLAGS)
 
 TESTS = lobSTRTests
 check_PROGRAMS = $(TESTS)

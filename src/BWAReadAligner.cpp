@@ -471,6 +471,9 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
          << good_left_alignments->size() << " "
          << good_right_alignments->size() << endl;
   }
+
+  // Don't return partial alignments if excluded
+  if (read->partial & exclude_partial) return false;
   // Return true if at least one good alignment
   return (good_left_alignments->size() >= 1 &&
           good_right_alignments->size() >= 1);
@@ -1146,11 +1149,12 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
   // Make sure alignment meets requirements
   if (unit && !read_pair->reads.at(aligned_read_num).partial) {
     if (read_pair->reads.at(aligned_read_num).diffFromRef %
-        read_pair->reads.at(aligned_read_num).ms_repeat_best_period != 0)
+        read_pair->reads.at(aligned_read_num).ms_repeat_best_period != 0) {
       if (align_debug) {
         cerr << "[BWAReadAligner]: returning false (unit failed)" << endl;
       }
       return false;
+    }
   }
   if (align_debug) {
     cerr << "[BWAReadAligner]: Checking diff and mapq requirements" << endl;
@@ -1206,10 +1210,12 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
         cerr << "[BWAReadAligner]: Getting qualities for mate" << endl;
       }
       // update qualities. For read pairs qual is sum of the two ends' mapq
+      int edit;
       int mate_mapq = GetMapq(aln_seq, ref_seq,
-                              aligned_seq_quals);
+                              aligned_seq_quals, &edit);
       const int& read_mapq = read_pair->reads.at(aligned_read_num).mapq;
       read_pair->reads.at(1-aligned_read_num).mapq = mate_mapq+read_mapq;
+      read_pair->reads.at(1-aligned_read_num).edit_dist = edit;
       read_pair->reads.at(aligned_read_num).mapq = mate_mapq+read_mapq;
       
       // need this to make it work out
@@ -1313,8 +1319,11 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
   cigar_list.ResetString();
 
   // Update info in aligned read
+  int edit;
   aligned_read->mapq = GetMapq(aligned_seq_sw, ref_seq_sw,
-                               aligned_seq_quals);
+                               aligned_seq_quals, &edit);
+  aligned_read->edit_dist = edit;
+
   // make sure CIGAR is valid
   bool added_s;
   bool cigar_had_s;
@@ -1392,7 +1401,9 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
 
 int BWAReadAligner::GetMapq(const std::string& aligned_sw_string,
                             const std::string& ref_sw_string,
-                            const std::string& aligned_quals) {
+                            const std::string& aligned_quals,
+                            int* edit_dist) {
+  *edit_dist = 0;
   size_t qual_index = 0;
   int score = 0;
   if (debug_adjust) {
@@ -1407,15 +1418,18 @@ int BWAReadAligner::GetMapq(const std::string& aligned_sw_string,
       if (refchar != '-') {
         // mismatch
         if (alnchar != refchar) {
+          (*edit_dist)++;
           if (debug_adjust) {
             cerr << "[GetMapq]: " << alnchar << " " << refchar << " "
                  << (aligned_quals.at(qual_index)) << endl;
           }
           score += (static_cast<int>(aligned_quals.at(qual_index))-33);
         }
+      } else {
+        (*edit_dist)++;
       }
       qual_index++;
-    }
+    } 
   }
   if (debug_adjust) {
     cerr << "[GetMapq]: " << score << endl;
@@ -1496,10 +1510,10 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
       aligned_read->detected_ms_nuc = !aligned_read->reverse ?
         aligned_read->nucleotides.
         substr(aligned_read->nucleotides.length() -
-               strbp-diff_from_ref, strbp+diff_from_ref) :
+               strbp-diff_from_ref, strbp + diff_from_ref) :
         reverseComplement(aligned_read->nucleotides).
         substr(aligned_read->nucleotides.length() -
-               strbp-diff_from_ref, strbp+diff_from_ref);
+               strbp-diff_from_ref, strbp + diff_from_ref);
       return true;
     } else if (!aligned_read->left_perfect_repeat &&
                !aligned_read->right_perfect_repeat) {
@@ -1634,10 +1648,10 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
     if (aligned_read->reverse) {
       aligned_read->detected_ms_nuc =
         reverseComplement(aligned_read->nucleotides).
-        substr(str_index, ms_length);
+        substr(str_index - 1, ms_length);
     } else {
       aligned_read->detected_ms_nuc =
-        aligned_read->nucleotides.substr(str_index, ms_length);
+        aligned_read->nucleotides.substr(str_index - 1, ms_length);
     }
     aligned_read->diffFromRef = 0;
     if (align_debug) {
@@ -1783,10 +1797,10 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
   string ms_nuc;
   if (aligned_read->reverse) {
     string rev_read = reverseComplement(aligned_read->nucleotides);
-    ms_nuc =  rev_read.substr(str_index, ms_length+diff_from_ref);
+    ms_nuc =  rev_read.substr(str_index - 1, ms_length+diff_from_ref);
   } else {
     ms_nuc =  aligned_read->nucleotides.
-      substr(str_index, ms_length+diff_from_ref);
+      substr(str_index - 1, ms_length+diff_from_ref);
   }
   if (ms_nuc.length() <= MIN_STR_LENGTH) {
     if (align_debug) {

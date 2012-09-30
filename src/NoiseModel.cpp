@@ -18,6 +18,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <err.h>
+#include <errno.h>
+
 #include <cmath>
 #include <list>
 #include <map>
@@ -32,95 +35,145 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/TextFileReader.h"
 #include "src/TextFileWriter.h"
 
-const int MIN_PERIOD = 2;
-const int MAX_PERIOD = 6;
-const float NONUNIT_PENALTY = 0.000001;
+#define Malloc(type,n) (type *)malloc((n)*sizeof(type))
+
+const int MIN_TRAIN_COV = 5;
+const float MIN_TRAIN_AGREE = 0.5;
+const float SMALL_CONST = 1e-4;
+const int MIN_READS_FOR_TRAINING = 1000;
 
 using namespace std;
 
-static float invLogit(float x) {
-  float expx = exp(x);
-  return expx/(1+expx);
-}
-
-static float ppois(int step, float mean) {
+/* Same as R dpois */
+static float dpois(int step, float mean) {
   if (step < 0) return 0;
   float p = exp(-1*mean);
   for (int i = 0; i < step; i++) {
     p = p*mean;
     p = p/(i+1);
   }
+  return p;  
+}
+
+/* same as R dgeom */
+static float dgeom(int step, float psucc) {
+  if (step < 0) return 0;
+  float p = psucc;
+  for (int i = 0; i < step; i++) {
+    p = p*(1-psucc);
+  }
   return p;
 }
 
-NoiseModel::NoiseModel(RInside* _r) {
-  R = _r;
+/* Return step size module period */
+static float mmod(int step, int period) {
+  int astep = abs(step);
+  int n1 = astep % period;
+  int n2 = abs(astep % period - period);
+  return (n1 < n2) ? n1:n2;
+}
+
+NoiseModel::NoiseModel(const string& strinfofile,
+                       const vector<string>& haploid_chroms_) {
+  // Read STR info
+  ReadSTRInfo(strinfofile);
+  // Set noise model filenames
+  stutter_problem_filename = noise_model + ".stutterproblem";
+  stutter_model_filename = noise_model + ".stuttermodel";
+  stepsize_model_filename = noise_model + ".stepmodel";
+  // Set haploid chromosomes
+  haploid_chroms = haploid_chroms_;
+  // initialize pdf
+  for (int i = 0; i < MAX_PERIOD-MIN_PERIOD+1; i++) {
+    vector<float> v0(0);
+    vector<float> v1(0);
+    for (int j = 0; j < MAX_PERIOD*3*2+1; j++) {
+      v1.push_back(0);
+    }
+    pdf_model.push_back(v1);
+  }
+}
+
+void NoiseModel::ReadSTRInfo(const string& filename) {
+  TextFileReader infoFile(filename);
+  string line;
+  while (infoFile.GetNextLine(&line)) {
+    vector<string> items;
+    split(line, '\t', items);
+    if (items.size() == 0) break;
+    if (items.size() != 6) {
+      errx(1, "Error, STR info file has invalid format");
+    }
+    STRINFO info;
+    info.chrom = items[0];
+    info.start = atoi(items[1].c_str());
+    info.end = atoi(items[2].c_str());
+    info.score = atof(items[3].c_str());
+    info.gc = atof(items[4].c_str());
+    info.entropy = atof(items[5].c_str());
+    pair<string, int> coord (info.chrom, info.start);
+    strInfo.insert(pair< pair<string, int>, STRINFO >
+                   (coord, info));
+  }
 }
 
 void NoiseModel::Train(ReadContainer* read_container) {
   // Populate training data
-  if (debug) {
-    cerr << "Populating training data..." << endl;
-  }
+  vector<AlignedRead> reads_for_training(0);
+  map<int, map <int,int> > step_size_by_period;
   for (map<pair<string, int>, list<AlignedRead> >::iterator
          it = read_container->aligned_str_map_.begin();
        it != read_container->aligned_str_map_.end(); it++) {
-    // check if haploid
     const list<AlignedRead>& aligned_reads = it->second;
-    bool is_haploid = ((aligned_reads.front().chrom == "chrX" ||
-                        aligned_reads.front().chrom == "chrY"));
+    // check if haploid
+    bool is_haploid = false;
+    if ((find(haploid_chroms.begin(), haploid_chroms.end(),
+              aligned_reads.front().chrom) != haploid_chroms.end() ) ||
+        find(haploid_chroms.begin(), haploid_chroms.end(), "all")!= haploid_chroms.end()) {
+      is_haploid = true;
+    }
     if (!is_haploid) continue;
+    // check if in our list of STRs
+    pair<string, int> coord(aligned_reads.front().chrom,
+                            aligned_reads.front().msStart);
+    if (strInfo.find(coord) == strInfo.end()) continue;
     // check if has unique mode
     float unique_mode;
     if (HasUniqueMode(aligned_reads, &unique_mode)) {
-      // add to training data (mode, period, copynum, mutated)
-      int period = aligned_reads.front().period;
       for (list<AlignedRead>::const_iterator it2 =
              aligned_reads.begin(); it2 != aligned_reads.end(); it2++) {
-        training_data.mode.push_back(unique_mode);
-        training_data.period.push_back(period);
-        training_data.copynum.push_back((*it2).diffFromRef);
-        training_data.mutated.push_back((*it2).diffFromRef
-                                        != unique_mode);
+        if (it2->partial) continue;
+        if (it2->mapq != 0) continue;
+        AlignedRead aread;
+        aread.chrom = it2->chrom; aread.msStart = it2->msStart;
+        aread.msEnd = it2->msEnd; aread.read_start = it2->read_start;
+        aread.period = it2->period; aread.diffFromRef = it2->diffFromRef;
+        aread.stutter = aread.diffFromRef != unique_mode;
+        reads_for_training.push_back(aread);
+        if (aread.stutter & abs(aread.diffFromRef) <= 3*aread.period) {
+          step_size_by_period[aread.period][aread.diffFromRef]++;
+        }
       }
     }
   }
 
+  // *** Step 1: model of probability of stuttering *** //
   if (debug) {
-    cerr << "Converint to R format" << endl;
+    cerr << "Fitting mutation prob..." << endl;
   }
-  // Convert training data vectors to R vectors
-  int td_length = training_data.mode.size();
-  r_training_data.mode = Rcpp::NumericVector(td_length);
-  r_training_data.period = Rcpp::NumericVector(td_length);
-  r_training_data.copynum = Rcpp::NumericVector(td_length);
-  r_training_data.mutated = Rcpp::NumericVector(td_length);
-  for (int i = 0; i < td_length; i++) {
-    r_training_data.mode[i] = training_data.mode.at(i);
-    r_training_data.period[i] = training_data.period.at(i);
-    r_training_data.copynum[i] = training_data.copynum.at(i);
-    r_training_data.mutated[i] = training_data.mutated.at(i);
-  }
-  (*R)["mode"] = r_training_data.mode;
-  (*R)["period"] = r_training_data.period;
-  (*R)["copynum"] = r_training_data.copynum;
-  (*R)["mutated"] = r_training_data.mutated;
-
+  FitMutationProb(reads_for_training);
+  // *** Step 2: Fitting step size distribution *** //
   if (debug) {
-    cerr << "Fitting models..." << endl;
+    cerr << "Fitting step size prob..." << endl;
   }
-  // Fit model
-  FitMutationProb();
-  FitStepProb();
+  FitStepProb(step_size_by_period);
 }
 
 bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
                                aligned_reads,
                                float* mode) {
-  if (aligned_reads.size() == 1) {
-    *mode = aligned_reads.front().diffFromRef;
-    return true;
-  }
+  if (aligned_reads.size() < MIN_TRAIN_COV) return false;
+  
   int top_copy_count;
   float top_copy;
   int second_copy_count;
@@ -145,128 +198,397 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
       second_copy_count = count;
     }
   }
-  if (top_copy_count > second_copy_count) {
+  if (top_copy_count > second_copy_count &&
+      static_cast<float>(top_copy_count)/
+      static_cast<float>(aligned_reads.size()) > MIN_TRAIN_AGREE) {
     *mode = top_copy;
     return true;
   }
   return false;
 }
 
-void NoiseModel::FitMutationProb() {
-  if (debug) {
-    cerr << "Fitting mutation prob..." << endl;
+void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) {  
+  // set up problem
+  TextFileWriter pWriter(stutter_problem_filename);
+  stringstream ssp;
+  for (size_t i = 0; i < reads_for_training.size() ; i++) {
+    pair<string, int> coord (reads_for_training.at(i).chrom,
+                             reads_for_training.at(i).msStart);
+    double stuttered = (static_cast<double>
+                        (reads_for_training.at(i).stutter))== 1?1:-1;
+    ssp << stuttered << " "
+        << 1 << ":"
+        << reads_for_training.at(i).period << " "
+        << 2 << ":"
+        << reads_for_training.at(i).msEnd -
+      reads_for_training.at(i).msStart + 
+      reads_for_training.at(i).diffFromRef << " "
+        << 3 << ":"
+        << strInfo.at(coord).gc << " "
+        << 4 << ":"
+        << strInfo.at(coord).score << endl;
   }
-  Rcpp::NumericVector periods(MAX_PERIOD-MIN_PERIOD+1);
+  pWriter.Write(ssp.str());
+  read_problem(stutter_problem_filename.c_str());
+  if (my_verbose) {
+    cout << "Using " << reads_for_training.size() << " reads for training."
+         << " (Required: " << MIN_READS_FOR_TRAINING << ")" << endl;
+    cout << "Training data written to " << stutter_problem_filename << endl;
+  }
+  if (reads_for_training.size() < MIN_READS_FOR_TRAINING) {
+    errx(1, "ERROR: Too few reads for training");
+  }
+
+  // set up LIBLINEAR params
+  struct parameter stutter_prob_params;
+  stutter_prob_params.solver_type = L2R_LR;
+  stutter_prob_params.eps = 0.01;
+  stutter_prob_params.C = 1;
+  stutter_prob_params.nr_weight = 0;
+  stutter_prob_params.p = 0.1;
+  stutter_prob_params.weight_label = NULL;
+	stutter_prob_params.weight = NULL;
+
+  const char* params_msg = check_parameter(&stutter_prob,
+                                           &stutter_prob_params);
+  if (params_msg != NULL) {
+    errx(1, params_msg);
+  }
+  // Build model and write to file
+  stutter_prob_model = train(&stutter_prob, &stutter_prob_params);
+  save_model(stutter_model_filename.c_str(), stutter_prob_model);
+
+  free_and_destroy_model(&stutter_prob_model);
+}
+
+void NoiseModel::FitStepProb(const map<int, map <int,int> > & step_size_by_period) {
+  // Fill pdf for observed data
+  vector<vector<float> > pdf_obs;
   for (int i = 0; i < MAX_PERIOD-MIN_PERIOD+1; i++) {
-    periods[i] = i+MIN_PERIOD;
-  }
-  (*R)["all_periods"] = periods;
-
-  // Do logistic regression
-  string evalString = "mut_model = glm(mutated~period, " \
-    "family='binomial'); \n" \
-    "mutIntercept = mut_model$coefficients[[1]]; \n" \
-    "mutSlope = mut_model$coefficients[[2]]; \n" \
-    "c(mutIntercept, mutSlope)";
-  if (debug) {
-    cerr << evalString << endl;
-  }
-  SEXP ans = (*R).parseEval(evalString);  // return intercept, slope
-  Rcpp::NumericVector v(ans);
-  mutIntercept = v[0];
-  mutSlope = v[1];
-}
-
-void NoiseModel::FitStepProb() {
-  if (debug) {
-    cerr << "Fitting step prob..." << endl;
-  }
-  string evalString = "data = data.frame(mutated=mutated, " \
-    "period = period, copynum = copynum, mode = mode); \n"  \
-    "mutated_data = data[data$mutated,];\n" \
-    "mutated_data$step = abs(mutated_data$copynum - mutated_data$mode); \n" \
-    "step_model = glm(mutated_data$step ~ " \
-    "mutated_data$period, family='poisson'); \n"      \
-    "poisIntercept = step_model$coefficients[[1]];\n" \
-    "poisSlope = step_model$coefficients[[2]];\n" \
-    "if (is.na(poisSlope)) {poisSlope = 0};\n" \
-    "c(poisIntercept, poisSlope)";
-  if (debug) {
-    cerr << evalString << endl;
-  }
-  SEXP ans = (*R).parseEval(evalString);  // return intercept, slope
-  Rcpp::NumericVector v(ans);
-  poisIntercept = v[0];
-  poisSlope = v[1];
-}
-
-float NoiseModel::GetTransitionProb(int a,
-                                    int b, int period) {
-  float mutProb = 1-invLogit(mutIntercept + mutSlope*period);
-  float poisMean = exp(poisIntercept + poisSlope*period);
-  if (debug) {
-    cerr << "[GetTransitionProb]: " << a << " " << b << " "
-         << period << " " << mutProb << " " << poisMean << endl;
-  }
-  float score;
-  if (a == b) {
-    score = (1-mutProb);
-  } else {
-    int diff = abs(b-a);
-    score = (mutProb)*ppois(diff-1, poisMean);
-    if (diff%period != 0) score = score*NONUNIT_PENALTY;
-  }
-  if (debug) {
-    cerr << "[GetTransitionProb]: " << score << endl;
-  }
-  return score;
-}
-
-bool NoiseModel::ReadNoiseModelFromFile(string filename) {
-  TextFileReader nFile(filename);
-  string line;
-  bool mI = false;
-  bool mS = false;
-  bool pI = false;
-  bool pS = false;
-  while (nFile.GetNextLine(&line)) {
-    vector<string> items;
-    split(line, '=', items);
-    if (debug) {
-      cerr << "reading line " << line << " " << items.size() << endl;
+    vector<float> v0(0);
+    for (int j = 0; j < MAX_PERIOD*3*2+1; j++) {
+      v0.push_back(0);
     }
-    if (items.size() == 0) break;
-    if (items.size() != 2) return false;
-    if (items.at(0) == "mutIntercept") {
-      mutIntercept = atof(items.at(1).c_str());
-      mI = true;
+    pdf_obs.push_back(v0);
+  }
+  // Get avg. step size mod period and prob of incr/decr
+  p_incr = 0;
+  int total_reads = 0;
+  int num_incr = 0;
+  for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
+    int total_period_reads = 0;
+    int total_steps = 0;
+    if ((step_size_by_period).find(period) !=
+        (step_size_by_period).end()) {
+      for (map<int,int>::const_iterator it =
+             (step_size_by_period).at(period).begin();
+           it != (step_size_by_period).at(period).end(); it++) {
+        const int& step = it->first;
+        const int& count = it->second;
+        const int& modstep = mmod(step,period);
+        total_period_reads += count;
+        total_steps += modstep*count;
+        if (step > 0) {
+          num_incr += count;
+        }
+        pdf_obs.at(period-MIN_PERIOD).at(step+3*MAX_PERIOD) = count;
+      }
     }
-    if (items.at(0) == "mutSlope") {
-      mutSlope = atof(items.at(1).c_str());
-      mS = true;
+    if (total_period_reads > 0 & total_steps > 0) {
+      float avg_step = static_cast<float>(total_steps)/
+        static_cast<float>(total_period_reads);
+      average_step_size.push_back(avg_step);
+    } else {
+      average_step_size.push_back(SMALL_CONST);
     }
-    if (items.at(0) == "poisIntercept") {
-      poisIntercept = atof(items.at(1).c_str());
-      pI = true;
+    total_reads += total_period_reads;
+  }
+
+  //  average_step_size = avg_step_per_period;
+  p_incr = static_cast<float>(num_incr)/
+    static_cast<float>(total_reads);
+  if (debug) {
+    cerr << "num incr " << num_incr << " total " << total_reads
+         << "pinr " << p_incr << endl;
+  }
+
+  // Fill PDF for each period
+  // index to element corresponding to 0 diff from ref
+  int zero_index = MAX_PERIOD*3;
+  for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
+    float total_mass = 0;
+    for (int i = MAX_PERIOD*-3; i <= MAX_PERIOD*3; i++) {
+      float prob = 0;
+      if (i > 0 && i <= period*3) {
+        int index_plus = zero_index+i;
+        int index_minus = zero_index-i;
+        // Set poisson probability
+        prob = dpois(i, period);
+        if (debug) {
+          cerr << "poisson prob " << prob << endl;
+        }
+        // Set non-unit probability
+        prob = prob*dgeom(mmod(i, period), 1/(average_step_size.at(period-MIN_PERIOD)+1));
+        if (debug) {
+          cerr << "nonunit prob " << prob << "i " 
+               << i << " period " << period 
+               << " mmod " << mmod(i, period) << " geom " 
+               << dgeom(mmod(i, period), 1/(average_step_size.at(period-MIN_PERIOD)+1))
+               << " avg stp size " << average_step_size.at(period-MIN_PERIOD) << endl;
+        }
+        // Set incr/decr probability
+        float prob_plus = prob * p_incr;
+        float prob_minus = prob * (1-p_incr);
+        pdf_model.at(period-MIN_PERIOD).at(index_plus) = prob_plus;
+        pdf_model.at(period-MIN_PERIOD).at(index_minus) = prob_minus;
+        total_mass += prob_plus + prob_minus;
+      } else {
+        pdf_model.at(period-MIN_PERIOD).at(zero_index+i) = 0;
+      }
     }
-    if (items.at(0) == "poisSlope") {
-      poisSlope = atof(items.at(1).c_str());
-      pS = true;
+    // Scale
+    for (int j = 1; j <= period*3; j++) {
+      pdf_model.at(period-MIN_PERIOD).at(zero_index+j) =
+        pdf_model.at(period-MIN_PERIOD).at(zero_index+j)/total_mass;
     }
   }
-  if (!(mI && mS && pI && pS)) return false;
-  return true;
-}
 
-bool NoiseModel::WriteNoiseModelToFile(string filename) {
-  TextFileWriter nWriter(filename);
+  // Write to file
+  TextFileWriter nWriter(stepsize_model_filename);
   stringstream ss;
-  ss << "mutIntercept=" << mutIntercept << endl
-     << "mutSlope=" << mutSlope << endl
-     << "poisIntercept=" << poisIntercept << endl
-     << "poisSlope=" << poisSlope << endl;
+  // write mean nonunit step size for each period
+  for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
+    ss << average_step_size[period-MIN_PERIOD] << endl;
+  }
+  // write prob incr/decr
+  ss << "ProbIncrease=" << p_incr << endl;
+  // write pdf for model
+  for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
+    ss << "Period" << period << "Model";
+    for (int i = 0; i < MAX_PERIOD*3*2+1; i++) {
+      ss << " " << pdf_model.at(period-MIN_PERIOD).at(i);
+    }
+    ss << endl;
+  }
+  // write pdf for obs
+  for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
+    ss << "Period" << period << "Obs";
+    for (int i = 0; i < MAX_PERIOD*3*2+1; i++) {
+      ss << " " << pdf_obs.at(period-MIN_PERIOD).at(i);
+    }
+    ss << endl;
+  }
   nWriter.Write(ss.str());
+}
+
+float NoiseModel::GetTransitionProb(int a, int b,
+                                    int period, int length,
+                                    float gc, float score) {
+  // Outlier reads likely not from stutter
+  if (abs(b-a)> 3*period) {
+    return 0;
+  }
+  double* pests = (double*) malloc(2*sizeof(double));
+  feature_node* x = Malloc(struct feature_node, 4);
+  x[0].index = 1;
+  x[0].value = period;
+  x[1].index = 2;
+  x[1].value = length;
+  x[2].index = 3;
+  x[2].value = gc;
+  x[3].index = 4;
+  x[3].value = score;
+  x[4].index = -1;
+  predict_probability(stutter_prob_model, x, pests);
+  float mutProb = pests[1];
+  free(x);
+  free(pests);
+  float lik;
+  if (a == b) {
+    lik = (1-mutProb);
+  } else {
+    float stepProb = pdf_model.at(period-MIN_PERIOD).at(b-a + 3*MAX_PERIOD);
+    lik = (mutProb)*stepProb;
+  }
+  return lik;
+}
+
+bool NoiseModel::ReadNoiseModelFromFile(const string& filename) {
+  // *** Step 1: Read logistic regression model ***
+  if (debug) {
+    cerr << "loading stutter prob from file..." << endl;
+  }
+  stutter_prob_model = load_model(stutter_model_filename.c_str());
+  // *** Step 2: Read step size parameters ***
+  if (debug) {
+    cerr << "loading step size params from file..." << endl;
+  }
+  TextFileReader nFile(stepsize_model_filename.c_str());
+  string line;
+  if (debug) {
+    cerr << "Getting average step size " << endl;
+  }
+  // Get nonunit step size
+  for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
+    nFile.GetNextLine(&line);
+    if (debug) {
+      cerr << "Period " << period << "  " << line << endl;
+    }
+    average_step_size.push_back(atof(line.c_str()));
+  }
+  if (debug ) {
+    cerr << "Getting prob incr/decr..." << endl;
+  }
+  // Get prob incr/decr
+  nFile.GetNextLine(&line);
+  p_incr = atof(line.c_str());
+  if (debug ) {
+    cerr << "pinc " << p_incr << endl;
+  }
+  // Get pdf
+  for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
+    nFile.GetNextLine(&line);
+    vector<string> items;
+    split(line, ' ', items);
+    if (items.size() < 3*MAX_PERIOD*2+1) return false;
+    for (size_t i = 1; i < items.size(); i++) {
+      if (debug) {
+        cerr << "Period " << period << " i " << i << " " << items[i] << endl;
+      }
+      pdf_model.at(period-MIN_PERIOD).at(i-1) = atof(items[i].c_str());
+    }
+  }
   return true;
+}
+
+/* copied from train.c */
+static int max_line_len;
+static char *line = NULL;
+double bias;
+struct feature_node *x_space;
+static char* readline(FILE *input)
+{
+	int len;
+	
+	if(fgets(line,max_line_len,input) == NULL)
+		return NULL;
+
+	while(strrchr(line,'\n') == NULL)
+	{
+		max_line_len *= 2;
+		line = (char *) realloc(line,max_line_len);
+		len = (int) strlen(line);
+		if(fgets(line+len,max_line_len-len,input) == NULL)
+			break;
+	}
+	return line;
+}
+
+static void exit_input_error(int line_num)
+{
+	fprintf(stderr,"Wrong input format at line %d\n", line_num);
+	exit(1);
+}
+// read in a problem (in libsvm format)
+void NoiseModel::read_problem(const char *filename)
+{
+	int max_index, inst_max_index, i;
+	long int elements, j;
+	FILE *fp = fopen(filename,"r");
+	char *endptr;
+	char *idx, *val, *label;
+
+	if(fp == NULL)
+	{
+		fprintf(stderr,"can't open input file %s\n",filename);
+		exit(1);
+	}
+
+	stutter_prob.l = 0;
+	elements = 0;
+	max_line_len = 1024;
+	line = Malloc(char,max_line_len);
+	while(readline(fp)!=NULL)
+	{
+		char *p = strtok(line," \t"); // label
+
+		// features
+		while(1)
+		{
+			p = strtok(NULL," \t");
+			if(p == NULL || *p == '\n') // check '\n' as ' ' may be after the last feature
+				break;
+			elements++;
+		}
+		elements++; // for bias term
+		stutter_prob.l++;
+	}
+	rewind(fp);
+
+	stutter_prob.bias=bias;
+
+	stutter_prob.y = Malloc(double,stutter_prob.l);
+	stutter_prob.x = Malloc(struct feature_node *,stutter_prob.l);
+	x_space = Malloc(struct feature_node,elements+stutter_prob.l);
+
+	max_index = 0;
+	j=0;
+	for(i=0;i<stutter_prob.l;i++)
+	{
+		inst_max_index = 0; // strtol gives 0 if wrong format
+		readline(fp);
+		stutter_prob.x[i] = &x_space[j];
+		label = strtok(line," \t\n");
+		if(label == NULL) // empty line
+			exit_input_error(i+1);
+
+		stutter_prob.y[i] = strtod(label,&endptr);
+		if(endptr == label || *endptr != '\0')
+			exit_input_error(i+1);
+
+		while(1)
+		{
+			idx = strtok(NULL,":");
+			val = strtok(NULL," \t");
+
+			if(val == NULL)
+				break;
+
+			errno = 0;
+			x_space[j].index = (int) strtol(idx,&endptr,10);
+			if(endptr == idx || errno != 0 || *endptr != '\0' || x_space[j].index <= inst_max_index)
+				exit_input_error(i+1);
+			else
+				inst_max_index = x_space[j].index;
+
+			errno = 0;
+			x_space[j].value = strtod(val,&endptr);
+			if(endptr == val || errno != 0 || (*endptr != '\0' && !isspace(*endptr)))
+				exit_input_error(i+1);
+
+			++j;
+		}
+
+		if(inst_max_index > max_index)
+			max_index = inst_max_index;
+
+		if(stutter_prob.bias >= 0)
+			x_space[j++].value = stutter_prob.bias;
+
+		x_space[j++].index = -1;
+	}
+
+	if(stutter_prob.bias >= 0)
+	{
+		stutter_prob.n=max_index+1;
+		for(i=1;i<stutter_prob.l;i++)
+			(stutter_prob.x[i]-2)->index = stutter_prob.n; 
+		x_space[j-2].index = stutter_prob.n;
+	}
+	else
+		stutter_prob.n=max_index;
+
+	fclose(fp);
 }
 
 NoiseModel::~NoiseModel() {}

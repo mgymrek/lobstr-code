@@ -131,7 +131,7 @@ def processTRF(strfile, outdir, genome):
             except:
                 repseq = ""
         
-        if len(repseq) <= 6 and len(repseq) >= 1 and (start-extend) > 0 and "$" not in chrom:
+        if len(repseq) <= 6 and len(repseq) >= 1 and (start-extend) > 0 and "$" not in chrom and len(strregion) > 0:
             # write fasta entries
             lident = ">"+"$".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
             rident = ">"+"$".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))

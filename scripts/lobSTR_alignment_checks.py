@@ -71,6 +71,8 @@ for o,a in opts:
 ###########################
 
 if plot:
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     plt.rcParams['pdf.fonttype'] = 42
 ###########################

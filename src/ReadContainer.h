@@ -38,6 +38,7 @@ using BamTools::SamHeader;
 using BamTools::RefData;
 using BamTools::RefVector;
 using BamTools::CigarOp;
+
 struct AlignedRead {
   std::string chrom;
   int msStart;
@@ -56,6 +57,7 @@ struct AlignedRead {
   int stitched;
   int matedist;
   int mapq;
+  bool stutter;
 };
 
 /*
@@ -67,7 +69,7 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(vector<std::string> bamfiles);
+  void AddReadsFromFile(vector<std::string> bamfiles, bool exclude_partial);
 
   /* Remove pcr duplicates */
   void RemovePCRDuplicates();

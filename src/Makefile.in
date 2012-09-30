@@ -26,7 +26,6 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -51,12 +50,11 @@ bin_PROGRAMS = lobSTR$(EXEEXT) lobSTRIndex$(EXEEXT) \
 TESTS = lobSTRTests$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = src
-DIST_COMMON = $(dist_bin_SCRIPTS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/ax_boost_base.m4 $(top_srcdir)/ax_check_zlib.m4 \
-	$(top_srcdir)/ax_check_rinside.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/ax_blas.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -93,7 +91,8 @@ am_liballelotype_a_OBJECTS = common.$(OBJEXT) BamFileReader.$(OBJEXT) \
 	BamStandardIndex_p.$(OBJEXT) BamToolsIndex_p.$(OBJEXT) \
 	BamMultiReader_p.$(OBJEXT) bamtools_utilities.$(OBJEXT) \
 	bamtools_fasta.$(OBJEXT) bamtools_options.$(OBJEXT) \
-	bamtools_pileup_engine.$(OBJEXT)
+	bamtools_pileup_engine.$(OBJEXT) linear.$(OBJEXT) \
+	predict.$(OBJEXT) train.$(OBJEXT) tron.$(OBJEXT)
 liballelotype_a_OBJECTS = $(am_liballelotype_a_OBJECTS)
 libindex_a_AR = $(AR) $(ARFLAGS)
 libindex_a_LIBADD =
@@ -149,15 +148,16 @@ am_liblobstr_a_OBJECTS = BamFileReader.$(OBJEXT) \
 	bamtools_fasta.$(OBJEXT) bamtools_options.$(OBJEXT) \
 	bamtools_pileup_engine.$(OBJEXT)
 liblobstr_a_OBJECTS = $(am_liblobstr_a_OBJECTS)
-am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"
+am__installdirs = "$(DESTDIR)$(bindir)"
 am__EXEEXT_1 = lobSTRTests$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS)
 am_allelotype_OBJECTS = allelotype-main_allelotype.$(OBJEXT)
 allelotype_OBJECTS = $(am_allelotype_OBJECTS)
 am__DEPENDENCIES_1 =
 allelotype_DEPENDENCIES = liballelotype.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+allelotype_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(allelotype_LDFLAGS) $(LDFLAGS) -o $@
 am_lobSTR_OBJECTS = lobSTR-main.$(OBJEXT)
 lobSTR_OBJECTS = $(am_lobSTR_OBJECTS)
 lobSTR_DEPENDENCIES = liblobstr.a $(am__DEPENDENCIES_1)
@@ -244,28 +244,6 @@ am_lobSTRTests_OBJECTS = lobSTRTests-main_test.$(OBJEXT) \
 	lobSTRTests-bamtools_pileup_engine.$(OBJEXT)
 lobSTRTests_OBJECTS = $(am_lobSTRTests_OBJECTS)
 lobSTRTests_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-SCRIPTS = $(dist_bin_SCRIPTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -296,6 +274,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
 BOOST_CPPFLAGS = @BOOST_CPPFLAGS@
 BOOST_LDFLAGS = @BOOST_LDFLAGS@
 CC = @CC@
@@ -317,8 +296,11 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+F77 = @F77@
+FFLAGS = @FFLAGS@
 FFTW_CFLAGS = @FFTW_CFLAGS@
 FFTW_LIBS = @FFTW_LIBS@
+FLIBS = @FLIBS@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -345,14 +327,6 @@ PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
-RCPPCPPFLAGS = @RCPPCPPFLAGS@
-RCPPFLAGS = @RCPPFLAGS@
-RCPPLDFLAGS = @RCPPLDFLAGS@
-RCPP_CFLAGS = @RCPP_CFLAGS@
-RCPP_LIBS = @RCPP_LIBS@
-RINSIDECPPFLAGS = @RINSIDECPPFLAGS@
-RINSIDELDFLAGS = @RINSIDELDFLAGS@
-RLDFLAGS = @RLDFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -366,6 +340,7 @@ abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_F77 = @ac_ct_F77@
 acx_pthread_config = @acx_pthread_config@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -413,7 +388,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
-AM_CPPFLAGS = $(FFTW_CFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) $(RCPPFLAGS)
+AM_CPPFLAGS = $(FFTW_CFLAGS)
 noinst_headers = \
 	BamFileReader.h \
 	BamPairedFileReader.h \
@@ -517,6 +492,8 @@ noinst_headers = \
 	bwt_lite.h \
 	bwase.h \
 	bwt_gen.h \
+	linear.h \
+	tron.h \
 	Genotyper.h \
 	NoiseModel.h \
 	ReadContainer.h 
@@ -685,14 +662,12 @@ liballelotype_a_SOURCES = \
 	utils/bamtools_utilities.cpp  \
 	utils/bamtools_fasta.cpp \
 	utils/bamtools_options.cpp \
-	utils/bamtools_pileup_engine.cpp
+	utils/bamtools_pileup_engine.cpp \
+	linear.cpp \
+	predict.c \
+	train.c	\
+	tron.cpp
 
-
-#-- scripts to be installed in $prefix/bin
-dist_bin_SCRIPTS = \
-	../scripts/lobstr_index.py
-
-CLEANFILES = $(bin_SCRIPTS)
 lobSTRIndex_SOURCES = main.c
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTRIndex_LDADD = $(AM_LDADD) libindex.a
@@ -702,8 +677,9 @@ lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTR_LDADD = liblobstr.a $(FFTW_LIBS)
 lobSTR_LDFLAGS = -static $(AM_LDFLAGS)
 allelotype_SOURCES = main_allelotype.cpp
-allelotype_CPPFLAGS = $(AM_CPPFLAGS) $(RCPPFLAGS) $(RINSIDECPPFLAGS) $(RCPPCPPFLAGS) 
-allelotype_LDADD = liballelotype.a $(RLDFLAGS)  $(VAR_STATIC) $(RINSIDELDFLAGS) $(RCPPLDFLAGS)  $(VAR_DYNAMIC)
+allelotype_CPPFLAGS = $(AM_CPPFLAGS)
+allelotype_LDADD = liballelotype.a $(BLAS_LIBS) $(LIBS) $(FLIBS)
+allelotype_LDFLAGS = -static $(AM_LDFLAGS)
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
 	tests/BWAReadAligner_test.h \
@@ -887,7 +863,7 @@ clean-checkPROGRAMS:
 	-test -z "$(check_PROGRAMS)" || rm -f $(check_PROGRAMS)
 allelotype$(EXEEXT): $(allelotype_OBJECTS) $(allelotype_DEPENDENCIES) 
 	@rm -f allelotype$(EXEEXT)
-	$(CXXLINK) $(allelotype_OBJECTS) $(allelotype_LDADD) $(LIBS)
+	$(allelotype_LINK) $(allelotype_OBJECTS) $(allelotype_LDADD) $(LIBS)
 lobSTR$(EXEEXT): $(lobSTR_OBJECTS) $(lobSTR_DEPENDENCIES) 
 	@rm -f lobSTR$(EXEEXT)
 	$(lobSTR_LINK) $(lobSTR_OBJECTS) $(lobSTR_LDADD) $(LIBS)
@@ -897,40 +873,6 @@ lobSTRIndex$(EXEEXT): $(lobSTRIndex_OBJECTS) $(lobSTRIndex_DEPENDENCIES)
 lobSTRTests$(EXEEXT): $(lobSTRTests_OBJECTS) $(lobSTRTests_DEPENDENCIES) 
 	@rm -f lobSTRTests$(EXEEXT)
 	$(CXXLINK) $(lobSTRTests_OBJECTS) $(lobSTRTests_LDADD) $(LIBS)
-install-dist_binSCRIPTS: $(dist_bin_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	test -z "$(bindir)" || $(MKDIR_P) "$(DESTDIR)$(bindir)"
-	@list='$(dist_bin_SCRIPTS)'; test -n "$(bindir)" || list=; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n' \
-	    -e 'h;s|.*|.|' \
-	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
-	      if (++n[d] == $(am__install_max)) { \
-		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
-	    else { print "f", d "/" $$4, $$1 } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	     test -z "$$files" || { \
-	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(bindir)$$dir'"; \
-	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
-	     } \
-	; done
-
-uninstall-dist_binSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_bin_SCRIPTS)'; test -n "$(bindir)" || exit 0; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	       sed -e 's,.*/,,;$(transform)'`; \
-	test -n "$$list" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(bindir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(bindir)" && rm -f $$files
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -1021,6 +963,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gzstream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/is.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kstring.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linear.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTR-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRIndex-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-BWAReadAligner.Po@am__quote@
@@ -1110,9 +1053,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-stdaln.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nw.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/predict.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runtime_parameters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_dp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stdaln.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/train.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tron.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 
 .c.o:
@@ -3043,9 +2989,9 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"; do \
+	for dir in "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -3065,7 +3011,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -3103,7 +3048,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-binPROGRAMS install-dist_binSCRIPTS
+install-exec-am: install-binPROGRAMS
 
 install-html: install-html-am
 
@@ -3142,7 +3087,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-dist_binSCRIPTS
+uninstall-am: uninstall-binPROGRAMS
 
 .MAKE: check-am install-am install-strip
 
@@ -3151,17 +3096,15 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_binSCRIPTS
 	clean-noinstLIBRARIES ctags distclean distclean-compile \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-binPROGRAMS \
-	install-data install-data-am install-dist_binSCRIPTS \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
-	ps ps-am tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-dist_binSCRIPTS
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-binPROGRAMS
 
-	../scripts/convertBam.py
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

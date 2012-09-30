@@ -83,7 +83,8 @@ struct STRRecord {
 class Genotyper {
  public:
   Genotyper(NoiseModel* _noise_model,
-            bool _male, bool _simple);
+            const std::vector<std::string>& _haploid_chroms,
+            bool _simple);
   ~Genotyper();
 
   /* determine allelotypes and write to file */
@@ -105,15 +106,15 @@ class Genotyper {
   /* Get most likely allelotype */
   void FindMLE(const list<AlignedRead>& aligned_reads, int period,
                float* allele1, float* allele2, float* score,
-               float* score_allele1, float* score_allele2);
+               float* score_allele1, float* score_allele2, bool haploid);
 
   /* Get allelotype without using noise model */
   void SimpleGenotype(const list<AlignedRead>& aligned_reads,
                       int period,
                       float* allele1, float* allele2, float* score);
 
-  /* the sample is male */
-  bool male;
+  /* chromosomes to treat as haploid */
+  std::vector<std::string> haploid_chroms;
 
   /* use the simple genotyper with no noise model */
   bool simple;

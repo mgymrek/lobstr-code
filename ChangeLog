@@ -15,3 +15,14 @@ lobstr_v2.0.1 (August 13, 2012):
 	- changed required stitch overlap score to be 0.1 above next best score
 	- check both forward and reverse complement when using IsPerfectRepeat function
 	- changed XG tag to say "NA" for partially spanning reads
+
+lobstr_v2.0.2 (September 30, 2012):
+	- changed they way lobSTR checks input for paired-end BAM files. Instead of stripping /1 and /2 from ends of read, look for /1 and /2 anywhere in the read name and strip all characters after that.
+	- Fixed bug in indexing that reported some empty reference sequences that caused alignment to break when checking the fasta file.
+	- Added option --exclude-partial to avoid processing any partially spanning reads during allelotyping and alignment.
+	- changed --sex option to --haploid. Now, specify --haploid <comma-separated list fo chroms to treat as haploid>. To specify the whole organism as haploid, use --haploid all. Kept --sex option for compatibility with rest of lobstr 2 versions.
+	- added --rg option to add read group to alignments in BAM format
+	- changed mapquality to say 255, put alignment score in XQ tag
+	- added NM tag to BAM file
+	- fixed off-by-one error in reporting extracted STR sequence
+	- removed R dependency for allelotyping

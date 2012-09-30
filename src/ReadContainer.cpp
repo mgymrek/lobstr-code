@@ -36,7 +36,8 @@ using namespace std;
 
 ReadContainer::ReadContainer() {}
 
-void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
+void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
+                                     bool exclude_partial) {
   string bamfile = "";
   for (int i = 0; i < bamfiles.size(); i++) {
     bamfile = bamfiles.at(i);
@@ -73,7 +74,13 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
         aligned_read.msEnd = 0;
       }
       // get mapq
-      aligned_read.mapq = aln.MapQuality;
+      if (!aln.GetTag("XQ", aligned_read.mapq)) {
+        aligned_read.mapq = aln.MapQuality;
+        if (aligned_read.mapq == 255) {
+          aligned_read.mapq = 0;
+        }
+      }
+
       // get mate dist
       if (!aln.GetTag("XM", aligned_read.matedist)) {
         aligned_read.matedist = 0;
@@ -138,6 +145,7 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
              << aligned_read.diffFromRef << " "
              <<  aligned_read.period << endl;
       }
+
       // apply filters
       if (unit) {
         if (aligned_read.diffFromRef % aligned_read.period  != 0) continue;
@@ -145,6 +153,7 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
       if (abs(aligned_read.diffFromRef) > max_diff_ref) continue;
       if (aligned_read.mapq > max_mapq) continue;
       if (aligned_read.matedist > max_matedist) continue;
+      if (aligned_read.partial & exclude_partial) continue;
 
       // get ref copy num
       if (!aln.GetTag("XC", aligned_read.refCopyNum)) {
@@ -274,5 +283,6 @@ int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read,
   // set STR region
   return diff_from_ref;
 }
+
 
 ReadContainer::~ReadContainer() {}

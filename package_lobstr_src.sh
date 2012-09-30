@@ -4,6 +4,7 @@
 
 echo "packing up $1.src.tar.gz"
 mkdir $1
+make check
 make clean
 make distclean
 cp config* $1
@@ -15,13 +16,12 @@ cp ax* $1
 cp ac* $1
 cp reconf $1
 cp -r src $1
-rm -f $1/src/lobSTR.linux64
-rm -f $1/src/allelotype.linux64
 cp -r data $1
 mkdir $1/scripts
 cp scripts/lobstr_index.py $1/scripts/
 cp scripts/*check*.py $1/scripts/
 cp scripts/lobstr_to_vcf.py $1/scripts/lobstr_to_vcf.py
+cp scripts/GetSTRInfo.py $1/scripts/GetSTRInfo.py
 cp -r tests $1
 cp -r models $1
 cp README $1

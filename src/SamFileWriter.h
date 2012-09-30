@@ -26,6 +26,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "api/BamAlignment.h"
 #include "api/BamWriter.h"
+#include "api/SamHeader.h"
+#include "api/SamReadGroup.h"
+#include "api/SamReadGroupDictionary.h"
 #include "src/ReadPair.h"
 
 namespace BamTools {

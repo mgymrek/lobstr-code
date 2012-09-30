@@ -7,12 +7,13 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 m4_include([ax_boost_base.m4])
 m4_include([ax_check_zlib.m4])
-m4_include([ax_check_rinside.m4])
+m4_include([ax_blas.m4])
 
 AC_INIT([lobSTR],
-        [2.0.0],
+        [2.0.2],
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
@@ -31,16 +32,13 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 
 PKG_CHECK_MODULES([FFTW], [fftw3])
-PKG_CHECK_MODULES([RCPP], [libR])
-
-#FFTW_LIBS="-Bstatic $FFTW_LIBS"
 ACX_PTHREAD()
 LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 AX_CHECK_ZLIB()
-AX_CHECK_RINSIDE()
+AX_BLAS()
 AX_BOOST_BASE([1.38.0])
 
 # Checks for header files.

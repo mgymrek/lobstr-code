@@ -148,8 +148,9 @@ class BWAReadAligner {
 
   // Calculate map quality score
   int GetMapq(const std::string& aligned_sw_string,
-	      const std::string& ref_sw_string,
-	      const std::string& aligned_quals);
+              const std::string& ref_sw_string,
+              const std::string& aligned_quals,
+              int* edit_dist);
 
   // Adjust partial read alignments
   // If found to be completely spanning, update
