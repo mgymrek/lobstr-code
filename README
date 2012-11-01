@@ -11,6 +11,7 @@ X. Quality control checks for lobSTR results
 XI. Building the strinfo file
 XII. Converting lobSTR output to VCF format
 
+Note, full instructions for the most current version lobSTR are provided on the lobSTR webpage (jura.wi.mit.edu/erlich/lobSTR/). This file is meant to give only basic usage instructions.
 
 I. INSTALLATION FROM SOURCE
  

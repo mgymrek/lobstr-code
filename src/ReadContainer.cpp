@@ -154,6 +154,7 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
       if (aligned_read.mapq > max_mapq) continue;
       if (aligned_read.matedist > max_matedist) continue;
       if (aligned_read.partial & exclude_partial) continue;
+      if (aligned_read.mate) continue;
 
       // get ref copy num
       if (!aln.GetTag("XC", aligned_read.refCopyNum)) {

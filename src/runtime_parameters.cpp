@@ -114,7 +114,7 @@ float min_supp_freq = 0.25;
 float MIN_POSTERIOR = 0.0;
 float MIN_MARGINAL = 0.0;
 std::string haploid_chroms_string = "";
-bool exclude_partial = true;
+bool exclude_partial = false;
 std::string strinfofile = "";
 
 // anonymizing params

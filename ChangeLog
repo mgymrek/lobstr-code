@@ -26,3 +26,7 @@ lobstr_v2.0.2 (September 30, 2012):
 	- added NM tag to BAM file
 	- fixed off-by-one error in reporting extracted STR sequence
 	- removed R dependency for allelotyping
+
+lobstr_v2.0.2_1 (November 1, 2012):
+	- changed error in reporting coverage columns for paired end samples
+	- changed partial flag not to be set by default
