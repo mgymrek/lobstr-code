@@ -31,8 +31,8 @@ struct STRRecord {
   int stop;
   std::string repseq;
   int period;
-  float allele1;
-  float allele2;
+  int allele1;
+  int allele2;
   int coverage;
   float score;
   float allele1_score;
@@ -50,6 +50,8 @@ struct STRRecord {
   std::string allele2_string;
   std::map<pair<int,int>,float> likelihood_grid;
   std::map<pair<int,int>,float> posterior_grid;
+  char ref_allele;
+  vector<int> alleles_to_include;
   void Reset() {
     chrom = "";
     start = -1;
@@ -67,8 +69,10 @@ struct STRRecord {
     num_stitched = 0;
     refcopy = -1;
     max_partial = 0;
+    ref_allele = 'N';
     likelihood_grid.clear();
     posterior_grid.clear();
+    alleles_to_include.clear();
   }
 };
 

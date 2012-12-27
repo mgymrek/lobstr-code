@@ -287,6 +287,20 @@ bool BamReader::Rewind(void) {
     return d->Rewind();
 }
 
+// **added by mgymrek 12/27/12**
+/*
+  Give position in bam file
+ */
+int64_t BamReader::Tell(void) {
+  return d->m_stream.Tell();
+} 
+/*
+Seek to position in bam file. Used to rewind by one alignment
+ */
+bool BamReader::Seek(int64_t position) {
+  return d->Seek(position);
+}
+// ** end add **
 /*! \fn void BamReader::SetIndex(BamIndex* index)
     \brief Sets a custom BamIndex on this reader.
 

@@ -37,10 +37,10 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 
-const int MIN_TRAIN_COV = 5;
+const size_t MIN_TRAIN_COV = 5;
 const float MIN_TRAIN_AGREE = 0.5;
 const float SMALL_CONST = 1e-4;
-const int MIN_READS_FOR_TRAINING = 1000;
+const size_t MIN_READS_FOR_TRAINING = 1000;
 
 using namespace std;
 
@@ -150,7 +150,7 @@ void NoiseModel::Train(ReadContainer* read_container) {
         aread.period = it2->period; aread.diffFromRef = it2->diffFromRef;
         aread.stutter = aread.diffFromRef != unique_mode;
         reads_for_training.push_back(aread);
-        if (aread.stutter & abs(aread.diffFromRef) <= 3*aread.period) {
+        if (aread.stutter && abs(aread.diffFromRef) <= 3*aread.period) {
           step_size_by_period[aread.period][aread.diffFromRef]++;
         }
       }
@@ -294,7 +294,7 @@ void NoiseModel::FitStepProb(const map<int, map <int,int> > & step_size_by_perio
         pdf_obs.at(period-MIN_PERIOD).at(step+3*MAX_PERIOD) = count;
       }
     }
-    if (total_period_reads > 0 & total_steps > 0) {
+    if (total_period_reads > 0 && total_steps > 0) {
       float avg_step = static_cast<float>(total_steps)/
         static_cast<float>(total_period_reads);
       average_step_size.push_back(avg_step);

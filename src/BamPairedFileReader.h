@@ -38,7 +38,7 @@ class BamPairedFileReader : public TextFileReader {
 
  private:
   BamTools::BamReader reader;
-  bool GetNextReadMate(MSReadRecord* read);
+  bool GetNextReadMate(MSReadRecord* read, int64_t* bam_file_position);
 };
 
 #endif  // SRC_BAMPAIREDFILEREADER_H__

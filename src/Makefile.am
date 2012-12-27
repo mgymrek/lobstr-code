@@ -31,6 +31,7 @@ noinst_headers = \
 	FastqPairedFileReader.h \
 	FFT_nuc_vectors.h \
 	FFT_four_nuc_vectors.h \
+	GenotypeTabWriter.h \
 	gzstream.h \
 	IFileReader.h \
 	ISatellite.h \
@@ -43,9 +44,11 @@ noinst_headers = \
 	runtime_parameters.h \
 	SamFileWriter.h \
 	STRDetector.h \
+	STRRecord.h \
 	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
+	VCFWriter.h \
 	ZippedFastaFileReader.h \
 	ZippedFastqFileReader.h \
 	ZippedTextFileReader.h \
@@ -249,12 +252,14 @@ liballelotype_a_SOURCES = \
 	FastaPairedFileReader.cpp \
 	FastqPairedFileReader.cpp \
 	Genotyper.cpp \
+	GenotypeTabWriter.cpp \
 	gzstream.cpp \
 	NoiseModel.cpp \
 	ReadContainer.cpp \
 	runtime_parameters.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
+	VCFWriter.cpp \
 	ZippedFastaFileReader.cpp \
 	ZippedFastqFileReader.cpp \
 	ZippedTextFileReader.cpp \

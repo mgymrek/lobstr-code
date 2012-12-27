@@ -116,6 +116,11 @@ float MIN_MARGINAL = 0.0;
 std::string haploid_chroms_string = "";
 bool exclude_partial = false;
 std::string strinfofile = "";
+std::string priorsfile = "";
+
+// vcf params
+std::string exclude_positions_file = "";
+std::string sample = "";
 
 // anonymizing params
 std::string str_alignment_file = "";

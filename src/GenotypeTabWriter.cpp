@@ -38,31 +38,29 @@ GenotypeTabWriter::GenotypeTabWriter(const string& filename)
 GenotypeTabWriter::~GenotypeTabWriter() {}
 
 void GenotypeTabWriter::WriteRecord(const STRRecord& str_record) {
-      // TODO write all scores
-  stringstream gLine;
-  gLine << str_record.chrom << "\t"
-        << str_record.start << "\t"
-        << str_record.stop << "\t"
-        << str_record.repseq << "\t"
-        << str_record.period << "\t"
-        << str_record.refcopy << "\t"
-        << str_record.allele1_string << ","
-        << str_record.allele2_string << "\t"
-        << str_record.coverage << "\t"
-        << str_record.agreeing << "\t"
-        << str_record.coverage - str_record.agreeing << "\t"
-        << str_record.readstring << "\t"
-        << str_record.score << "\t"
-        << str_record.allele1_score << "\t"
-        << str_record.allele2_score << "\t"
-        << str_record.partial_coverage << "\t"
-        << str_record.max_partial_string << "\t"
-        << str_record.partialreadstring << "\t"
-        << str_record.num_stitched;
-  if (!((str_record.allele1 == -10000 || str_record.allele2 == -10000) &&
+  if (((str_record.allele1 == -10000 || str_record.allele2 == -10000) &&
         str_record.partial_coverage == 0)
       && (str_record.stop > 0 && str_record.start > 0 &&
           str_record.stop > str_record.start)) {
-    output_stream << gLine;
+    return;
   }
+  output_stream << str_record.chrom << "\t"
+                << str_record.start << "\t"
+                << str_record.stop << "\t"
+                << str_record.repseq << "\t"
+                << str_record.period << "\t"
+                << str_record.refcopy << "\t"
+                << str_record.allele1_string << ","
+                << str_record.allele2_string << "\t"
+                << str_record.coverage << "\t"
+                << str_record.agreeing << "\t"
+                << str_record.coverage - str_record.agreeing << "\t"
+                << str_record.readstring << "\t"
+                << str_record.score << "\t"
+                << str_record.allele1_score << "\t"
+                << str_record.allele2_score << "\t"
+                << str_record.partial_coverage << "\t"
+                << str_record.max_partial_string << "\t"
+                << str_record.partialreadstring << "\t"
+                << str_record.num_stitched << endl;
 }

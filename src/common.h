@@ -128,6 +128,15 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
                           const std::string& nucs,
                           bool* added_s,
                           bool* cigar_had_s);
+
+// Generate the date in YYMMDD
+std::string currentDateTime();
+
+// Replace string method
+std::string string_replace(std::string src,
+                           const std::string& target,
+                           const std::string& replace);
+
 // debugging functions
 std::string fftw_complex_to_string(fftw_complex v);
 

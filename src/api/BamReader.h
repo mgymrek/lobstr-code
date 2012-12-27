@@ -48,6 +48,12 @@ class API_EXPORT BamReader {
         bool Open(const std::string& filename);
         // returns internal file pointer to beginning of alignment data
         bool Rewind(void);
+        // **added by mgymrek 12/27/12**
+        // give position in bam file
+        int64_t Tell(void);
+        // seek to position in bam file
+        bool Seek(int64_t position);
+        // ** end add **
         // sets the target region of interest
         bool SetRegion(const BamRegion& region);
         // sets the target region of interest

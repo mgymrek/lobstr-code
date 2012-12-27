@@ -20,6 +20,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <err.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <map>
 #include <sstream>
@@ -403,6 +404,37 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   } else {
     *added_s = false;
   }
+}
+
+std::string currentDateTime() {
+  time_t now = time(0);
+  struct tm tstruct;
+  char buf[80];
+  tstruct = *localtime(&now);
+  strftime(buf, sizeof(buf), "%Y%m%d", &tstruct);
+  return buf;
+}
+
+std::string string_replace(std::string src,
+                           const std::string& target,
+                           const std::string& replace) {
+  if (target.length() == 0) {
+    // searching for a match to the empty string will result in 
+    //  an infinite loop
+    //  it might make sense to throw an exception for this case
+    return src;
+  }
+  if (src.length() == 0) {
+    return src;  // nothing to match against
+  }
+  size_t idx = 0;
+  for (;;) {
+    idx = src.find( target, idx);
+    if (idx == string::npos)  break;
+    src.replace(idx, target.length(), replace);
+    idx += replace.length();
+  }
+  return src;
 }
 
 std::string fftw_complex_to_string(fftw_complex v) {

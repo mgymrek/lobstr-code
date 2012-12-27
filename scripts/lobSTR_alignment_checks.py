@@ -167,6 +167,13 @@ def GetDiffsFromRef(filename):
     diffs = [int(item) for item in GetListFromStdout(diffs_stdout)]
     return diffs
 
+def IsPaired(filename):
+    """
+    Return true if file was aligned in paired-end mode
+    """
+    l = open(filename, "r").readline()
+    return "p1=" in l and "p2=" in l
+
 ###########################
 def main():
     lobstr_alignment_file = filename
@@ -194,11 +201,12 @@ def main():
         print("%s\tPercent reverse strand reads\t%s"%(lobstr_alignment_file, perc_rev))
 
     # 4. Mean insert size between aligned paired ends (for paired samples only)
-    if num_supp != 0:
-        mean_ins = GetMeanInsertSize(lobstr_alignment_file)
-    else: mean_ins = -1
-    if not debug:
-        print("%s\tMean insert size\t%s"%(lobstr_alignment_file, mean_ins))
+    if IsPaired(lobstr_alignment_file):
+        if num_supp != 0:
+            mean_ins = GetMeanInsertSize(lobstr_alignment_file)
+        else: mean_ins = -1
+        if not debug:
+            print("%s\tMean insert size\t%s"%(lobstr_alignment_file, mean_ins))
 
     # 5. % Alignments differing by a non-integer number of repeats
     perc_nonint = GetPercNonIntAlignments(lobstr_alignment_file)
@@ -209,12 +217,13 @@ def main():
     if plot:
         # 1. Insert size distribution (for paired samples only)
         plt.clf()
-        insert_sizes = GetInsertSizes(lobstr_alignment_file)
-        n, bins, patches = plt.hist(insert_sizes, range=[0,500])
-        plt.xlabel("Insert sizes")
-        plt.ylabel("Frequency")
-        plt.title("")
-        plt.savefig("%s.insertsizes.pdf"%lobstr_alignment_file)
+        if IsPaired(lobstr_alignment_file):
+            insert_sizes = GetInsertSizes(lobstr_alignment_file)
+            n, bins, patches = plt.hist(insert_sizes, range=[0,500])
+            plt.xlabel("Insert sizes")
+            plt.ylabel("Frequency")
+            plt.title("")
+            plt.savefig("%s.insertsizes.pdf"%lobstr_alignment_file)
 
         # 2. Quality score distribution (for fully spanning reads, only)
         plt.clf()

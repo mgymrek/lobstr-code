@@ -44,26 +44,40 @@ bool BamPairedFileReader::GetNextRecord(ReadPair* read_pair) {
   read_pair->reads.clear();
   MSReadRecord single_read;
   MSReadRecord mate;
+  int64_t bam_file_position;
   if (GetNextRead(&single_read)) {
     read_pair->reads.push_back(single_read);
     if (!single_read.paired) {
       return true;
     } else {
-      if (GetNextReadMate(&mate)) {
+      if (GetNextReadMate(&mate, &bam_file_position)) {
         if (mate.ID == single_read.ID) {
           read_pair->reads.push_back(mate);
           return true;
         } else {
-          errx(1, "Could not find pair Is the bam file sorted by read name?");
+          cerr << "WARNING: Could not find pair for " << single_read.ID
+               << ". Is the bam file sorted by read name?"
+               << " If yes, some reads are missing." << endl;
+          // set single read to not paired
+          read_pair->reads.at(0).paired = false;
+          // back up by one read
+          if (!reader.Seek(bam_file_position)) {
+            errx(1, "ERROR: could not rewind bam file reader");
+          }
+          return true;
         }
       }
     }
   } else {
     return false;
   }
+  return false;
 }
 
-bool BamPairedFileReader::GetNextReadMate(MSReadRecord* read) {
+bool BamPairedFileReader::GetNextReadMate(MSReadRecord* read,
+                                          int64_t* bam_file_position) {
+  // Get position in case we need to rewind
+  *bam_file_position = reader.Tell();
   BamAlignment aln;
   // check if any lines left
   if (!reader.GetNextAlignment(aln)) {

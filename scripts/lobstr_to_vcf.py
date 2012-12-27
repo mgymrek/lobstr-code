@@ -16,6 +16,8 @@ OPTIONS:
 --help,-h: print this message
 --verbose,-v: print helpful status messages
 
+FILTERS:
+--max-length <INT>: exclude STRs with a length of more than INT bp
 """
 
 import os
@@ -27,7 +29,7 @@ import math
 import gzip
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hv", ["help","gen=", "sample=", "out=","exclude=","zip"])
+    opts, args = getopt.getopt(sys.argv[1:], "hv", ["help","gen=", "sample=", "out=","exclude=","zip", "max-length="])
 except getopt.GetoptError, err:
     # print help information and exit:
     print str(err) # will print something like "option -a not recognized"
@@ -47,6 +49,7 @@ verbose = False
 gzipped = False
 excludefile = ""
 SMALL_CONST = 0.0000001
+MAXLEN = 1000
 
 
 for o,a in opts:
@@ -56,6 +59,7 @@ for o,a in opts:
     if o == "--sample": sample = a
     if o == "--exclude": excludefile = a
     if o == "--zip": gzipped = True
+    if o == "--max-length": MAXLEN = int(a)
     if o == "-h" or o == "--help":
         usage()
         sys.exit(0)
@@ -126,6 +130,10 @@ def ProcessGenotypes(genfile, vcf_writer, pos_to_exclude):
         if ref_copy_num <= 0: genotype_failed = True
         allelotype = items[6]
         alleles = [allelotype.split(",")[0],allelotype.split(",")[1]]
+        if alleles[0] != "NA":
+            if (int(alleles[0]) + ref_copy_num)/period > MAXLEN: genotype_failed = True
+        if alleles[1] != "NA":
+            if (int(alleles[1]) + ref_copy_num)/period > MAXLEN: genotype_failed = True
         coverage = int(items[7])
         agree = int(items[8])
         conflict = int(items[9])

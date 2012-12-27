@@ -134,6 +134,11 @@ extern float MIN_MARGINAL;
 extern std::string haploid_chroms_string;
 extern bool exclude_partial;
 extern std::string strinfofile;
+extern std::string priorsfile;
+
+// vcf params
+extern std::string exclude_positions_file;
+extern std::string sample;
 
 // anonymization params (deprecated)
 extern std::string str_alignment_file;

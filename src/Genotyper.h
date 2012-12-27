@@ -18,63 +18,20 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef SRC_GENOTYPER_V2_H_
-#define SRC_GENOTYPER_V2_H_
+#ifndef SRC_GENOTYPER_H_
+#define SRC_GENOTYPER_H_
 
 #include <list>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
+#include "src/STRRecord.h"
 
 using namespace std;
-
-/*
-  Struct to keep track of info for a single STR locus
- */
-struct STRRecord {
-  std::string chrom;
-  int start;
-  int stop;
-  std::string repseq;
-  int period;
-  float allele1;
-  float allele2;
-  int coverage;
-  float score;
-  float allele1_score;
-  float allele2_score;
-  int conflicting;
-  int agreeing;
-  int partial_coverage;
-  int num_stitched;
-  float refcopy;
-  int max_partial;
-  std::string readstring;
-  std::string partialreadstring;
-  std::string max_partial_string;
-  std::string allele1_string;
-  std::string allele2_string;
-  void Reset() {
-    chrom = "";
-    start = -1;
-    stop = -1;
-    repseq = "";
-    period = -1;
-    allele1 = -10000;
-    allele2 = -10000;
-    coverage = 0;
-    allele1_score = -1;
-    allele2_score = -1;
-    conflicting = 0;
-    agreeing = 0;
-    partial_coverage = 0;
-    num_stitched = 0;
-    refcopy = -1;
-    max_partial = 0;
-  }
-};
 
 /*
   Class to determine allelotypes at each locus
@@ -84,12 +41,17 @@ class Genotyper {
  public:
   Genotyper(NoiseModel* _noise_model,
             const std::vector<std::string>& _haploid_chroms,
+            std::map<pair<std::string, int>, char>* _ref_nucleotides,
             bool _simple);
   ~Genotyper();
 
+  /* Load prior information on alleles and allele frequencies */
+  void LoadPriors(const std::string& filename);
+
   /* determine allelotypes and write to file */
   void Genotype(const ReadContainer& read_container,
-                const std::string& output_file);
+                const std::string& output_file,
+                const std::string& vcf_file);
 
  private:
   /* Process all reads at a single locus */
@@ -104,14 +66,19 @@ class Genotyper {
                 int period, int* counta, int* countb);
 
   /* Get most likely allelotype */
-  void FindMLE(const list<AlignedRead>& aligned_reads, int period,
-               float* allele1, float* allele2, float* score,
-               float* score_allele1, float* score_allele2, bool haploid);
+  void FindMLE(const list<AlignedRead>& aligned_reads,
+               const map<int, float>& prior_freqs,
+               bool haploid, int period,
+               int* allele1, int* allele2, float* score,
+               float* score_allele1, float* score_allele2,
+               map<pair<int,int>,float>* allelotype_likelihood_grid,
+               map<pair<int,int>,float>* allelotype_posterior_grid,
+               vector<int>* alleles_to_include);
 
   /* Get allelotype without using noise model */
   void SimpleGenotype(const list<AlignedRead>& aligned_reads,
                       int period,
-                      float* allele1, float* allele2, float* score);
+                      int* allele1, int* allele2, float* score);
 
   /* chromosomes to treat as haploid */
   std::vector<std::string> haploid_chroms;
@@ -121,6 +88,15 @@ class Genotyper {
 
   /* store the noise model parameters */
   NoiseModel* noise_model;
+
+  /* Use priors that have been loaded from a file */
+  bool use_priors;
+
+  /* Information on allele frequencies to use as priors */
+  map<pair<string, int>, map<int, float> > allele_frequencies_per_locus;
+
+  /* Reference nucleotie for each locus */
+  std::map<pair<std::string, int>, char>* ref_nucleotides;
 };
 
-#endif  // SRC_GENOTYPER_V2_H_
+#endif  // SRC_GENOTYPER_H_

@@ -21,6 +21,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_REFERENCEGENOME_H__
 #define SRC_REFERENCEGENOME_H__
 
+#include <map>
 #include <string>
 
 class ReferenceGenome {
@@ -29,9 +30,12 @@ class ReferenceGenome {
   ~ReferenceGenome();
 
   // pull out positions from genome
-  const std::string GetPositions(const std::string& chrom,
-                                 const int& start,
-                                 const int& end);
+  const std::string GetPosition(const std::string& chrom,
+                                const int& start,
+                                const int& length);
+
+  // keep track of sequence for each ref
+  std::map<std::string, std::string> genome;
 };
 
 #endif  // SRC_REFERENCEGENOME_H__
