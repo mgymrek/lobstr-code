@@ -34,9 +34,10 @@ struct STRRecord {
   int allele1;
   int allele2;
   int coverage;
-  float score;
-  float allele1_score;
-  float allele2_score;
+  float score; // max a posterior
+  float max_log_lik; // maximuml ikelihood
+  float allele1_score; // marginal posterior
+  float allele2_score; // marginal posterior
   int conflicting;
   int agreeing;
   int partial_coverage;
@@ -48,8 +49,8 @@ struct STRRecord {
   std::string max_partial_string;
   std::string allele1_string;
   std::string allele2_string;
-  std::map<pair<int,int>,float> likelihood_grid;
-  std::map<pair<int,int>,float> posterior_grid;
+  std::map<pair<int,int>,float> likelihood_grid; // log10(P(R|G))
+  std::map<pair<int,int>,float> posterior_grid; // log10 P(R|G)/sum P(R|G)P(G)
   char ref_allele;
   vector<int> alleles_to_include;
   void Reset() {
@@ -61,6 +62,8 @@ struct STRRecord {
     allele1 = -10000;
     allele2 = -10000;
     coverage = 0;
+    score = -1;
+    max_log_lik = -10000;
     allele1_score = -1;
     allele2_score = -1;
     conflicting = 0;

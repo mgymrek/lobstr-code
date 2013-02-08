@@ -30,7 +30,7 @@ GenotypeTabWriter::GenotypeTabWriter(const string& filename)
   // write command line arguments
   if (user_defined_arguments.size() > 0) {
     output_stream << (user_defined_arguments.
-                      substr(4, user_defined_arguments.size()-5));
+                      substr(4, user_defined_arguments.size()-5)) << endl;
   }
   output_stream << user_defined_arguments_allelotyper << endl;
 }
@@ -56,9 +56,9 @@ void GenotypeTabWriter::WriteRecord(const STRRecord& str_record) {
                 << str_record.agreeing << "\t"
                 << str_record.coverage - str_record.agreeing << "\t"
                 << str_record.readstring << "\t"
-                << str_record.score << "\t"
-                << str_record.allele1_score << "\t"
-                << str_record.allele2_score << "\t"
+                << str_record.score << "\t" // posterior prob of call
+                << str_record.allele1_score << "\t" // marginal posterior prob
+                << str_record.allele2_score << "\t" // marginal posterior prob
                 << str_record.partial_coverage << "\t"
                 << str_record.max_partial_string << "\t"
                 << str_record.partialreadstring << "\t"
