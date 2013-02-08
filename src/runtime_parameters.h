@@ -117,6 +117,7 @@ extern std::string read_group;
 extern std::string bam_files_string;
 extern std::string command;
 extern std::string noise_model;
+extern std::string use_chrom;
 extern bool rmdup;
 extern float min_het_freq;
 extern bool male;
@@ -139,6 +140,7 @@ extern std::string priorsfile;
 // vcf params
 extern std::string exclude_positions_file;
 extern std::string sample;
+extern bool include_all_alleles;
 
 // anonymization params (deprecated)
 extern std::string str_alignment_file;

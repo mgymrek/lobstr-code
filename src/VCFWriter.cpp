@@ -81,7 +81,6 @@ VCFWriter::VCFWriter(const string& filename)
   // FORMAT fields
   output_stream << "##FORMAT=<ID=ALLREADS,Number=1,Type=String,Description=\"All reads aligned to locus\">" << endl;
   output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;  
-  output_stream << "##FORMAT=<ID=CONFLICT,Number=1,Type=Integer,Description=\"Number of reads conflicting genotype call\">" << endl;
   output_stream << "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">" << endl;
   output_stream << "##FORMAT=<ID=GB,Number=1,Type=String,Description=\"Genotype given in bp difference from reference\">" << endl;
   output_stream << "##FORMAT=<ID=GL,Number=G,Type=Float,Description=\"Genotype likelihoods (log10 scaled)\">" << endl;
@@ -91,13 +90,15 @@ VCFWriter::VCFWriter(const string& filename)
   output_stream << "##FORMAT=<ID=PP,Number=1,Type=Float,Description=\"Posterior probability of call\">" << endl;
   output_stream << "##FORMAT=<ID=MP,Number=1,Type=Float,Description=\"Upper bound on maximum partially spanning allele\">" << endl;
   output_stream << "##FORMAT=<ID=PC,Number=1,Type=Integer,Description=\"Coverage by partially spanning reads\">" << endl;
-  output_stream << "##FORMAT=<ID=S1,Number=1,Type=Float,Description=\"Allele 1 marginal posterior\">" << endl;
-  output_stream << "##FORMAT=<ID=S2,Number=1,Type=Float,Description=\"Allele 2 marginal posterior\">" << endl;
   output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
-  output_stream << "##FORMAT=<ID=SUPP,Number=1,Type=Integer,Description=\"Number of reads supporting genotype call\">" << endl;
   // header columns
   output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" << sample << endl;
-  LoadPositionsToExclude();
+  if (!exclude_positions_file.empty()) {
+    if (my_verbose) {
+      cerr << "Loading positions to exclude..." << endl;
+    }
+    LoadPositionsToExclude();
+  }
 }
 
 void VCFWriter::LoadPositionsToExclude() {
@@ -200,7 +201,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                  << "REF=" << str_record.refcopy << ";"
                  << "VT=STR" << "\t";
   // FORMAT
-  output_stream << "GT:ALLREADS:ALLPARTIALREADS:CONFLICT:DP:GB:GL:PL:GPP:MP:PC:PP:S1:S2:STITCH:SUPP" << "\t";
+  output_stream << "GT:ALLREADS:ALLPARTIALREADS:DP:GB:GL:PL:GPP:MP:PC:PP:STITCH" << "\t";
   // Sample info
   size_t num_alleles = str_record.alleles_to_include.size()+1;
   size_t num_allele_pairs = (num_alleles*(num_alleles+1))/2;
@@ -208,6 +209,8 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   genotype_likelihoods.resize((size_t)(num_allele_pairs));
   vector<float> genotype_posteriors; // -10*log10(posteriors)
   genotype_posteriors.resize((size_t)(num_allele_pairs));
+
+  // go over possible genotypes
   for (size_t i = 0; i < num_alleles; i++) {
     for (size_t j = 0; j <= i; j++) {
       // from http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41 F(j/k) = (k*(k+1)/2)+j.
@@ -251,23 +254,17 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
     }  
   }
   stringstream gbstring;
-  stringstream score1string;
-  stringstream score2string;
   stringstream max_partial_string;
-  if (str_record.allele1 == MISSING || str_record.coverage == 0) {
+  if (str_record.coverage == 0) {
     gbstring << ".";
-    score1string << ".";
   } else {
     gbstring << str_record.allele1;
-    score1string << str_record.allele1_score;
   }
   gbstring << "/";
-  if (str_record.allele2 == MISSING || str_record.coverage == 0) {
+  if (str_record.coverage == 0) {
     gbstring << ".";
-    score2string << "."; 
   } else {
     gbstring << str_record.allele2;
-    score2string << str_record.allele2_score;
   }
   if (str_record.partial_coverage == 0) {
     max_partial_string << "."; 
@@ -277,7 +274,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   output_stream << genotype_string.str() << ":"
                 << str_record.readstring << ":"
                 << str_record.partialreadstring << ":"
-                << str_record.conflicting << ":"
                 << str_record.coverage << ":"
                 << gbstring.str() << ":"
                 << genotype_likelihoods_string.str() << ":"
@@ -286,8 +282,5 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                 << max_partial_string.str() << ":"
                 << str_record.partial_coverage << ":"
                 << str_record.score << ":"
-                << score1string.str() << ":"
-                << score2string.str() << ":"
-                << str_record.num_stitched << ":"
-                << str_record.agreeing << endl;
+                << str_record.num_stitched << endl;
 }

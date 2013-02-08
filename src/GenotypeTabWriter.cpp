@@ -50,13 +50,13 @@ void GenotypeTabWriter::WriteRecord(const STRRecord& str_record) {
                 << str_record.repseq << "\t"
                 << str_record.period << "\t"
                 << str_record.refcopy << "\t"
-                << str_record.allele1_string << ","
-                << str_record.allele2_string << "\t"
+                << str_record.allele1_string << "," // ML allelotype
+                << str_record.allele2_string << "\t" // ML allelotype
                 << str_record.coverage << "\t"
                 << str_record.agreeing << "\t"
                 << str_record.coverage - str_record.agreeing << "\t"
                 << str_record.readstring << "\t"
-                << str_record.score << "\t" // posterior prob of call
+                << str_record.score << "\t" // posterior prob. of call
                 << str_record.allele1_score << "\t" // marginal posterior prob
                 << str_record.allele2_score << "\t" // marginal posterior prob
                 << str_record.partial_coverage << "\t"

@@ -30,3 +30,8 @@ lobstr_v2.0.2 (September 30, 2012):
 lobstr_v2.0.2_1 (November 1, 2012):
 	- changed error in reporting coverage columns for paired end samples
 	- changed partial flag not to be set by default
+
+lobSTR_v2.0.3 (February 1, 2012):
+	- Updated VCF format to be compatible with 1000 Genomes
+	- Allelotype now writes both .genotypes.tab and .vcf files, no need for lobstr_to_vcf.py.
+	- Allow for reading paired end bam files even when not all mates are present

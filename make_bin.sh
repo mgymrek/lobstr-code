@@ -29,7 +29,6 @@ cp -r data $1
 mkdir $1/scripts
 cp scripts/lobstr_index.py $1/scripts/
 cp scripts/*check*.py $1/scripts/
-cp scripts/lobstr_to_vcf.py $1/scripts/lobstr_to_vcf.py
 cp scripts/GetSTRInfo.py $1/scripts/GetSTRInfo.py
 cp -r tests $1
 cp -r models $1

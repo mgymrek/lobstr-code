@@ -69,7 +69,7 @@ class Genotyper {
   void FindMLE(const list<AlignedRead>& aligned_reads,
                const map<int, float>& prior_freqs,
                bool haploid, int period,
-               int* allele1, int* allele2, float* score,
+               int* allele1, int* allele2, float* score, float* maxloglik,
                float* score_allele1, float* score_allele2,
                map<pair<int,int>,float>* allelotype_likelihood_grid,
                map<pair<int,int>,float>* allelotype_posterior_grid,
@@ -79,6 +79,10 @@ class Genotyper {
   void SimpleGenotype(const list<AlignedRead>& aligned_reads,
                       int period,
                       int* allele1, int* allele2, float* score);
+
+  /* Get prior for genotype <allele1,allele2>, assuming HWE */
+  float GetPrior(int allele1, int allele2,
+                 const map<int, float>& prior_freqs);
 
   /* chromosomes to treat as haploid */
   std::vector<std::string> haploid_chroms;

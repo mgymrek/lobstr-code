@@ -86,14 +86,11 @@ Required inputs are:
 * --bam: a bam file consisting of aligned reads created during the alignment step.
 * --out: a prefix to name output files
 * --noise_model: an example noisemodel is given in the files $PATH_TO_LOBSTR/models/illumina2.* . Or you can create your own using the "train" command described above. 
-* --strinfo: a file containing metadata about each STR locus. This is included in the download at $PATH_TO_LOBSTR/data/strinfo.hg19.tab and $PATH_TO_LOBSTR/data/strinfo.hg18.tab. To create this file for a custom set of loci or for loci from a different species, see XI: BUILDING THE STRINFO FILE.
-
-
-Optional:
-* --no-rmdup: do not remove PCR duplicates
+* --strinfo: a file containing metadata about each STR locus. This is included in the download at $PATH_TO_LOBSTR/data/strinfo.hg19.tab and $PATH_TO_LOBSTR/data/strinfo.hg18.tab. To create this file for a custom set of loci or for loci from a different species, see XI: BUILDING THE STRINFO FILE. This is required if command is not "simple".
+* --index-prefix: PATH_TO_LOBSTR/lobSTR_, required if command is not "train".
 
 IV. GETTING HELP
-For more information see the website at http://jura.wi.mit.edu/erlich/lobSTR/ and the lobSTR user group mailing list (groups.google.com/group/lobstr-user-group)
+For more information on the current version see the website at http://jura.wi.mit.edu/erlich/lobSTR/ and the lobSTR user group mailing list (groups.google.com/group/lobstr-user-group)
 
 V. REQUIREMENTS
 
@@ -107,9 +104,8 @@ pkg-config
 fftw3-dev
 libboost-dev
 
-Python libraries (required only for indexing or converting lobSTR output to vcf format):
+Python libraries:
 Biopython
-PyVCF
 
 For sorting paired-end files, samtools must be installed.
 
@@ -120,14 +116,15 @@ The following files are output from lobSTR, with formats described fully at http
 $prefix.aligned.tab: all aligned reads
 $prefix.aligned.bam: aligned reads in bam format
 $prefix.genotypes.tab: genotype called at each locus
+$prefix.vcf: genotype calls in vcf format
 
+Tab-delimited outputs are redundant with the .bam and .vcf outputs and may be deprecated in later versions.
 
 VII. KNOWN BUGS
 
 - lobSTR will not produce output for chromosome names containing a "$". For now all "$" characters must be removed from chromosome names.
 
 - For very small files (< several million reads), if lobSTR is run in multiprocessing mode it may fail to write to the BAM output file. Therefore, for small files, it is recommended to run in single processor mode (-p 1).
-
 
 VIII. Building a lobSTR index
 An index built using the Tandem Repeat Finder table from UCSC is included in the index_trf/ directory of the lobSTR download.
@@ -193,22 +190,5 @@ python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py <str table> <ref.fa> > <strinfo.tab
 
 e.g.:
 python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py data/trf.ucsc.hg19.filtered.bed hg19.fa > strinfo_hg19.tab
-
-XII. CONVERTING LOBSTR OUTPUT TO VCF FORMAT
-
-For a full description of all options, do:
-
-python $PATH_TO_LOBSTR/scripts/lobstr_to_vcf.py
-
-To convert lobSTR output to VCF output:
-
-python $PATH_TO_LOBSTR/scripts/lobstr_to_vcf.py --gen <lobstr genotypes.tab file> --sample <STRING> --out STRING> --exclude <positions to exclude>
-
-Where the arguments are:
---gen: genotypes.tab file output from the allelotype step
---sample: name of the sample
---out: prefix to name output file
---exclude: positions to exclude (For downstream analysis, it is beneficial to remove any STRs with the same start position but with different motifs, as it will cause errors with vcftools. Files of positions to exclude are in data/vcf_positions_to_exclude_hg19.tab and data/vcf_positions_to_exclude_hg18.tab.
-
 
 

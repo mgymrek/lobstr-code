@@ -73,7 +73,7 @@ void show_help() {
     "                                        --command both) or read (--command classify) \n" \
     "                                        noise model parameters to.\n" \
     "                                        An example is $PATH_TO_LOBSTR/models/illumina2\n" \
-    "--index-prefix <STRING>                 (REQUIRED) prefix for lobSTR's bwa reference (must run lobstr_index.py\n" \
+    "--index-prefix <STRING>                 (REQUIRED) prefix for lobSTR's bwa reference (must run lobstr_index.py)\n" \
     "--no-rmdup:                             don't remove pcr duplicates before allelotyping\n"     \
     "--min-het-freq <FLOAT>:                 minimum frequency to make a heterozygous call\n" \
     "                                        (default: 0.25)\n" \
@@ -108,12 +108,14 @@ void show_help() {
     "                                         available are not processed.\n" \
     "Options for reporting VCF format:\n" \
     "--sample <STRING>:                       Name of sample to report in VCF file. Default to the value of --out\n" \
-    "--exclude-pos <FILE>:                        file of \"chrom\\tpos\" of positions to exclude.\n" \
-    "                                         For downstream analysis, it is beneficial to exlucde\n" \
+    "--exclude-pos <FILE>:                    File of \"chrom\\tpos\" of positions to exclude.\n" \
+    "                                         For downstream analysis, it is beneficial to exclude\n" \
     "                                         any STRs with the same starting point but different motifs,\n" \
     "                                         as this will cause errors when using vcftools.\n\n" \
+    "--include-all-alleles                    Include scores in output for all genotypes tested during grid search.\n\n" \
     "Options for filtering reads:\n" \
     "If not specified, no filters applied\n" \
+    "--chrom <STRING>:                           only look at reads from this chromosome\n" \
     "--max-diff-ref <INT>:                    filter reads differing from the\n"   \
     "                                         reference allele by more than <INT> bp.\n" \
     "--unit:                                  filter reads differing by a non-integer\n" \
@@ -133,12 +135,14 @@ void show_help() {
 void parse_commandline_options(int argc, char* argv[]) {
   enum LONG_OPTIONS {
     OPT_BAM,
+    OPT_CHROM,
     OPT_COMMAND,
     OPT_DEBUG,
     OPT_EXCLUDE_PARTIAL,
     OPT_EXCLUDE_POS,
     OPT_HAPLOID,
     OPT_HELP,
+    OPT_INCLUDE_ALL_ALLELES,
     OPT_INDEX,
     OPT_MARGINAL,
     OPT_MAX_DIFF_REF,
@@ -166,12 +170,14 @@ void parse_commandline_options(int argc, char* argv[]) {
 
   static struct option long_options[] = {
     {"bam", 1, 0, OPT_BAM},
+    {"chrom", 1, 0, OPT_CHROM},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
     {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
     {"exclude-pos", 1, 0, OPT_EXCLUDE_POS},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
+    {"include-all-alleles", 0, 0, OPT_INCLUDE_ALL_ALLELES},
     {"index-prefix", 1, 0, OPT_INDEX},
     {"include-flank", 0, 0, OPT_NO_INCLUDE_FLANK},
     {"min-allele-score", 1, 0, OPT_MARGINAL},
@@ -201,6 +207,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_BAM:
       bam_files_string = string(optarg);
       AddOption("bam", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_CHROM:
+      use_chrom = string(optarg);
+      AddOption("chrom", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_COMMAND:
       command = string(optarg);
@@ -233,6 +243,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_HELP:
       show_help();
       exit(1);
+      break;
+    case OPT_INCLUDE_ALL_ALLELES:
+      include_all_alleles = true;
+      AddOption("include-all-alleles", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_INDEX:
       index_prefix = string(optarg);
@@ -393,11 +407,13 @@ void parse_commandline_options(int argc, char* argv[]) {
     show_help();
     exit(1);
   }
-  if (index_prefix.empty()) {
+  if (index_prefix.empty() && command != "train") {
     cerr << "\n\nERROR: Must specify --index-prefix";
     show_help();
     exit(1);
   }
+  // set sample if not specified
+  if (sample.empty()) sample = output_prefix;
 }
 
 void test_logr() {
@@ -449,18 +465,20 @@ int main(int argc, char* argv[]) {
   NoiseModel nm(strinfofile, haploid_chroms);
 
   /* Load ref character for each STR */
-  FastaFileReader faReader(index_prefix+"ref.fa");
-  MSReadRecord ref_record;
-  while (faReader.GetNextRead(&ref_record)) {
-    vector<string> items;
-    string refstring = ref_record.ID;
-    split(refstring, '$', items);
-    if (items.size() == 7) {
-      int start = atoi(items.at(2).c_str())+extend;
-      string chrom = items.at(1);
-      char refnuc = items.at(6).at(0);
-      pair<string, int> locus = pair<string,int>(chrom, start);
-      ref_nucleotides.insert(pair< pair<string, int>, char >(locus, refnuc));
+  if (command != "train") {
+    FastaFileReader faReader(index_prefix+"ref.fa");
+    MSReadRecord ref_record;
+    while (faReader.GetNextRead(&ref_record)) {
+      vector<string> items;
+      string refstring = ref_record.ID;
+      split(refstring, '$', items);
+      if (items.size() == 7) {
+        int start = atoi(items.at(2).c_str())+extend;
+        string chrom = items.at(1);
+        char refnuc = items.at(6).at(0);
+        pair<string, int> locus = pair<string,int>(chrom, start);
+        ref_nucleotides.insert(pair< pair<string, int>, char >(locus, refnuc));
+      }
     }
   }
 

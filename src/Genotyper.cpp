@@ -42,8 +42,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 const float SMALL_CONST = 1e-10;
 const int PADK = 2;
-const int DEFAULT_PRIOR = 0.001;
-const float INCLUDE_IN_VCF_CUTOFF = -0.5;
+const float DEFAULT_PRIOR = 0.001;
+const float PRIOR_PSEUDOCOUNT = 0.001;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
@@ -84,9 +84,7 @@ void Genotyper::LoadPriors(const std::string& filename) {
       split(alleles.at(i), ':', astring);
       int allele = atoi(astring[0].c_str());
       float freq = atof(astring[1].c_str());
-      if (freq >0) {
-        allele_to_freq[allele] = freq;
-      }
+      allele_to_freq[allele] = freq+PRIOR_PSEUDOCOUNT;
       total += freq;
     }
     // normalize to make sure we have frequencies
@@ -119,7 +117,7 @@ float Genotyper::CalcLogLik(int a, int b,
     float y = noise_model->
       GetTransitionProb(b, diff, period, length, gc, score);
     float toadd = (x+y)/2;
-    loglik += log(toadd + SMALL_CONST);
+    loglik += log10(toadd + SMALL_CONST); // 12/30/31 changed to log10
   }
   return loglik;
 }
@@ -128,7 +126,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
                         const map<int, float>& prior_freqs,
                         bool haploid,
                         int period, int* allele1,
-                        int* allele2, float* score,
+                        int* allele2, float* score, float* maxloglik,
                         float* score_allele1, float* score_allele2,
                         map<pair<int,int>,float>* allelotype_likelihood_grid,
                         map<pair<int,int>,float>* allelotype_posterior_grid,
@@ -149,24 +147,35 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
     *score_allele2 = -1;
     return;
   }
+
   // Do grid search over (min-k*period, max+k*period)
   map<pair<int,int>,float> allelotype_to_hetfreq;
   int min_allele = *min_element(possible.begin(), possible.end()) - PADK*period;
   int max_allele = *max_element(possible.begin(), possible.end()) + PADK*period;
-  // update range based on priors
+  // update range based on priors if available
   if (!prior_freqs.empty()) {
-    int min_prior_allele = (prior_freqs.begin())->first;
+    int min_prior_allele = 100000;
+    int max_prior_allele = -100000;
+    for (map<int,float>::const_iterator it = prior_freqs.begin();
+         it != prior_freqs.end(); it++) {
+      if (it->first < min_prior_allele) {
+        min_prior_allele = it->first;
+      }
+      if (it->first > max_prior_allele) {
+        max_prior_allele = it->first;
+      }
+    }
     if (min_prior_allele < min_allele) {
       min_allele = min_prior_allele;
     }
-    int max_prior_allele = (prior_freqs.end())->first;
     if (max_prior_allele > max_allele) {
       max_allele = max_prior_allele;
     }
   }
 
-  // Get all likelihoods
-  float sum_all_posterior = 0; // sum P(R|G)P(G)
+  // Get all likelihoods, keep track of max
+  float sum_all_posterior = SMALL_CONST; // sum P(R|G)P(G)
+  pair<int,int> ml_allelotype(NULL,NULL);
   for (int candidA = min_allele; candidA <= max_allele; candidA++) {
     for (int candidB = candidA; candidB <= max_allele; candidB++) {
       int counta = 0;
@@ -174,20 +183,17 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
       float currScore = CalcLogLik(candidA, candidB,
                                    aligned_reads, period,
                                    &counta, &countb);
-      if (currScore > INCLUDE_IN_VCF_CUTOFF) {
-        if (candidA != 0 && find(alleles_to_include->begin(),
-                                 alleles_to_include->end(),
-                                 candidA) == alleles_to_include->end()) alleles_to_include->push_back(candidA);
-        if (candidB != 0 && find(alleles_to_include->begin(),
-                                 alleles_to_include->end(),
-                                 candidB) == alleles_to_include->end()) alleles_to_include->push_back(candidB);
+      if (debug || plot_info) {
+        // Plot info for likelihood grid
+        cerr << "[FindMLE]: likelihoods " << aligned_reads.front().chrom << ":" << aligned_reads.front().msStart << " "
+             << candidA << " " << candidB << " " << currScore << endl;
       }
+
+      // if haploid and a != b, don't include this as a possible allelotype
       bool include_score = true;
       if ((candidA != candidB) & haploid) {
         include_score = false;
       }
-
-      // if haploid and a != b, don't include this as a possible allelotype
       if (include_score) {
         pair<int, int> allelotype(candidA, candidB);
         allelotype_likelihood_grid->insert(pair<pair<int,int>,float>
@@ -200,21 +206,41 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
         allelotype_to_hetfreq.insert(pair<pair<int,int>,float>
                                      (allelotype, hetfreq));
       }
+
       // But, include its score in the denominator
-      float pg;
-      if (prior_freqs.empty()) {
-        pg = 1; // if not priors, ignore
-      } else {
-        if (prior_freqs.find(candidA) != prior_freqs.end() &&
-            prior_freqs.find(candidB) != prior_freqs.end()) {
-          pg = prior_freqs.at(candidA)*prior_freqs.at(candidB);
-        } else {
-          pg = DEFAULT_PRIOR;
+      // add P(R|G)P(G) = 10^(log(P(R|G))+log(P(G)))
+      float pg = GetPrior(candidA, candidB, prior_freqs);
+      sum_all_posterior += pow(10,(currScore+log10(pg)));
+
+      // update which alleles to include in ALT field
+      if (include_all_alleles) {
+        if (candidA != 0 && find(alleles_to_include->begin(),
+                                 alleles_to_include->end(),
+                                 candidA) == alleles_to_include->end()
+            && !(use_priors && prior_freqs.find(candidA) == prior_freqs.end())) alleles_to_include->push_back(candidA);
+        if (candidB != 0 && find(alleles_to_include->begin(),
+                                 alleles_to_include->end(),
+                                 candidB) == alleles_to_include->end()
+            && !(use_priors && prior_freqs.find(candidB) == prior_freqs.end())) alleles_to_include->push_back(candidB);
+      }
+
+      // update ML allelotype
+      // need to be including score. if including all alleles, must be in alleles to include or 0
+      if (include_score && (!include_all_alleles |
+                            (include_all_alleles &
+                             (find(alleles_to_include->begin(), alleles_to_include->end(), candidA)
+                              != alleles_to_include-> end() | candidA == 0) &
+                             (find(alleles_to_include->begin(), alleles_to_include->end(), candidB)
+                              != alleles_to_include-> end() | candidB == 0)))) {
+        if (currScore > *maxloglik) {
+          *maxloglik = currScore;
+          ml_allelotype.first = candidA;
+          ml_allelotype.second = candidB;
         }
       }
-      sum_all_posterior += exp(currScore)*pg;
     }
   }
+
   // Get all posteriors, keep track of max
   float bestScore = 0; // max a posteriori
   pair<int,int> best_allelotype(NULL,NULL);
@@ -223,21 +249,16 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
        it != allelotype_likelihood_grid->end(); it++) {
     const int& candidA = it->first.first;
     const int& candidB = it->first.second;
-    float pg; // prior for genotype (A,B)
-    if (prior_freqs.empty()) {
-      pg = 1;
-    } else {
-      if (prior_freqs.find(candidA) != prior_freqs.end() &&
-          prior_freqs.find(candidB) != prior_freqs.end()) {
-        pg = prior_freqs.at(candidA)*prior_freqs.at(candidB);
-      } else {
-        pg = DEFAULT_PRIOR;
-      }
+    float pg = GetPrior(candidA, candidB, prior_freqs);
+    // update genotype posterior P(R|G)P(G)/sumP(R|G)P(G) = 10^(log(currscore)+log(prior)-log(sum))
+    float currScore = pow(10,it->second + log10(pg) - log10(sum_all_posterior));
+    // take care of rounding issues, make sure at most 1
+    if (currScore > 1) {
+      currScore = 1;
     }
-    // update genotype posterior
-    float currScore = exp(it->second)*pg/sum_all_posterior;
-    if (debug) {
-      cerr << "[FindMLE]: " << aligned_reads.front().chrom << ":" << aligned_reads.front().msStart << " "
+    if (debug || plot_info) {
+      // Plot info for posterior grid
+      cerr << "[FindMLE]: posteriors " << aligned_reads.front().chrom << ":" << aligned_reads.front().msStart << " "
            << candidA << " " << candidB << " " << currScore << endl;
     }
     if (currScore >= bestScore && allelotype_to_hetfreq[it->first] >= min_het_freq) {
@@ -246,24 +267,32 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
     }
     (*allelotype_posterior_grid)[it->first] = currScore;
     // update allele score
-    allele_scores[candidA] += exp(it->second)*pg;
+    if (allele_scores.find(candidA) == allele_scores.end()) allele_scores[candidA] = 0;
+    if (allele_scores.find(candidB) == allele_scores.end()) allele_scores[candidB] = 0;
+    allele_scores[candidA] += currScore;
+    if (allele_scores[candidA] > 1) allele_scores[candidA] = 1;
     if (candidA != candidB) {
-      allele_scores[candidB] += exp(it->second)*pg;
+      allele_scores[candidB] += currScore;
+      if (allele_scores[candidB] > 1) allele_scores[candidB] = 1;
     }
   }
-
-  for (map<int,float>::const_iterator it = allele_scores.begin();
-       it != allele_scores.end(); it++) {
-    allele_scores[it->first] = it->second/sum_all_posterior;
-    if (debug) {
-      cerr << "[Marginal]: " << aligned_reads.front().chrom << ":" << aligned_reads.front().msStart << " "
-           << it->first << " " << allele_scores[it->first] << endl;
+  if (debug || plot_info) {
+    for (map<int,float>::const_iterator it = allele_scores.begin();
+         it != allele_scores.end(); it++) {
+      cerr << "[FindMLE]: alleleposteriors " << aligned_reads.front().chrom << ":" << aligned_reads.front().msStart << " "
+           << it->first << " " << it->second << endl;
     }
   }
 
   // Return scores
-  *allele1 = best_allelotype.first;
-  *allele2 = best_allelotype.second;
+  *allele1 = ml_allelotype.first;
+  *allele2 = ml_allelotype.second;
+  if (!include_all_alleles && ml_allelotype.first != 0) alleles_to_include->push_back(ml_allelotype.first);
+  if (!include_all_alleles &&
+      ml_allelotype.first != ml_allelotype.second &&
+      ml_allelotype.second != 0) {
+    alleles_to_include->push_back(ml_allelotype.second);
+  }
   *score = bestScore;
   *score_allele1 = allele_scores[*allele1];
   *score_allele2 = allele_scores[*allele2];
@@ -340,6 +369,20 @@ void Genotyper::SimpleGenotype(const list<AlignedRead>& aligned_reads,
   }
 }
 
+float Genotyper::GetPrior(int allele1, int allele2,
+                          const map<int, float>& prior_freqs) {
+  if (prior_freqs.empty()) {
+    return 1;
+  } else {
+    if (prior_freqs.find(allele1) != prior_freqs.end() &&
+        prior_freqs.find(allele2) != prior_freqs.end()) {
+      return prior_freqs.at(allele1)*prior_freqs.at(allele2);
+    } else {
+      return DEFAULT_PRIOR;
+    }
+  }
+}
+
 bool Genotyper::ProcessLocus(const std::string chrom,
                              const int str_coord,
                              const std::list<AlignedRead>& aligned_reads,
@@ -385,7 +428,8 @@ bool Genotyper::ProcessLocus(const std::string chrom,
     }
     FindMLE(aligned_reads, prior_freqs, is_haploid, str_record->period,
             &(str_record->allele1), &(str_record->allele2),
-            &(str_record->score), &(str_record->allele1_score),
+            &(str_record->score), &(str_record->max_log_lik),
+            &(str_record->allele1_score),
             &(str_record->allele2_score),
             &(str_record->likelihood_grid), 
             &(str_record->posterior_grid),
@@ -395,7 +439,6 @@ bool Genotyper::ProcessLocus(const std::string chrom,
            << " " << str_record->allele2 << endl;
     }
   }
-
   // get read strings
   if (debug) {
     cerr << "[ProcessLocus]: get read strings" << endl;
@@ -426,10 +469,6 @@ bool Genotyper::ProcessLocus(const std::string chrom,
     }
   }
   str_record->coverage = str_record->coverage - str_record->partial_coverage;
-  if (static_cast<float>(str_record->agreeing)/
-      static_cast<float>(str_record->coverage) <= min_supp_freq) {
-    return false;
-  }
   if (debug) {
     cerr << "[ProcessLocus]: coverage " << str_record->coverage << endl;
   }
@@ -473,7 +512,7 @@ bool Genotyper::ProcessLocus(const std::string chrom,
     cerr << "[ProcessLocus]: set allele string1 " << endl;
   }
   stringstream allele1_string;
-  if (str_record->allele1 == -10000 || str_record->allele2 == -10000) {
+  if (str_record->allele1 == MISSING || str_record->allele2 == MISSING) {
     allele1_string << "NA";
   } else {
     if (str_record->score >= MIN_POSTERIOR || is_haploid) {
@@ -488,7 +527,7 @@ bool Genotyper::ProcessLocus(const std::string chrom,
     cerr << "[ProcessLocus]: set allele string2 " << endl;
   }
   stringstream allele2_string;
-  if (str_record->allele1 == -10000 || str_record->allele2 == -10000) {
+  if (str_record->allele1 == MISSING || str_record->allele2 == MISSING) {
     allele2_string << "NA";
   } else if (str_record->score >= MIN_POSTERIOR || is_haploid) {
     allele2_string << str_record->allele2;
@@ -520,11 +559,12 @@ void Genotyper::Genotype(const ReadContainer& read_container,
          it = read_container.aligned_str_map_.begin();
        it != read_container.aligned_str_map_.end(); it++) {
     str_record.Reset();
-    if (ProcessLocus(it->first.first, it->first.second,
-                     it->second, &str_record)) {
-      gWriter.WriteRecord(str_record);
-      vcfWriter.WriteRecord(str_record);
-      //      errx(1,"Exit, remove when done debugging");
+    if (use_chrom.empty() || (!use_chrom.empty() && use_chrom == it->first.first)) {
+      if (ProcessLocus(it->first.first, it->first.second,
+                       it->second, &str_record)) {
+        gWriter.WriteRecord(str_record);
+        vcfWriter.WriteRecord(str_record);
+      }
     }
   }
 }

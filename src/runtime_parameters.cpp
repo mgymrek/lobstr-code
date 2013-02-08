@@ -23,8 +23,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/runtime_parameters.h"
 
 // keep track of user defined arguments
-std::string user_defined_arguments = "# version=lobSTR_v2.0.2;";
-std::string user_defined_arguments_allelotyper = "# version=allelotype_v2.0.2;";
+std::string user_defined_arguments = "# version=lobSTR_v2.0.3;";
+std::string user_defined_arguments_allelotyper = "# version=allelotype_v2.0.3;";
 
 // keep track of common ones
 std::map<std::string, std::string> canonicalMSTable;
@@ -99,6 +99,7 @@ std::string read_group = "";
 std::string bam_files_string = "";
 std::string command = "";
 std::string noise_model = "";
+std::string use_chrom = "";
 bool rmdup = true;
 float min_het_freq = 0.20;
 bool male = true;
@@ -121,6 +122,7 @@ std::string priorsfile = "";
 // vcf params
 std::string exclude_positions_file = "";
 std::string sample = "";
+bool include_all_alleles = false;
 
 // anonymizing params
 std::string str_alignment_file = "";
