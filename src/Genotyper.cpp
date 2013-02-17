@@ -66,7 +66,7 @@ void Genotyper::LoadPriors(const std::string& filename) {
     split(line, '\t', items);
     if (items.size() == 0) break;
     if (items.size() != 4) {
-      errx(1, "Error, prior file has incorrect number of columns");
+      PrintMessageDieOnError("Error, prior file has incorrect number of columns", ERROR);
     }
     string chrom = items[0];
     int start = atoi(items[1].c_str());

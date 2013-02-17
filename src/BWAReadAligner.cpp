@@ -93,12 +93,14 @@ BWAReadAligner::BWAReadAligner(map<std::string, BWT>* bwt_references,
 
 bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
   if (debug) {
-    cerr << "\n[BWAReadAligner]: processing "
+    stringstream msg;
+    msg << "[BWAReadAligner]: processing "
          << read_pair->reads.at(0).ID
          << " motif 1 " << read_pair->reads.at(0).repseq;
     if (read_pair->reads.at(0).paired) {
-      cerr << " motif 2 " << read_pair->reads.at(1).repseq << endl;
+      msg << " motif 2 " << read_pair->reads.at(1).repseq << endl;
     }
+    PrintMessageDieOnError(msg.str(), DEBUG);
   }
   
   // Initialize status variables
@@ -135,17 +137,20 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
       return false;
     }
     if (align_debug) {
-      cerr << "[BWAReadAligner]: read1 passed "
+      stringstream msg;
+      msg << "[BWAReadAligner]: read1 passed "
            << read_pair->read1_passed_alignment << endl;
-      cerr << "[BWAReadAligner]: read2 passed "
+      PrintMessageDieOnError(msg.str(), DEBUG);
+      msg.clear();
+      msg << "[BWAReadAligner]: read2 passed "
            << read_pair->read2_passed_alignment << endl;
+      PrintMessageDieOnError(msg.str(), DEBUG);
     }
     // Step 2: Determine if unique valid alignment
     if ((read_pair->read1_passed_alignment ||
          read_pair->read2_passed_alignment)) {
       if (align_debug) {
-        cerr << "[BWAReadAligner]: checking paired alignment"
-             << endl;
+        PrintMessageDieOnError("[BWAReadAligner]: checking paired alignment", DEBUG);
       }
       ALIGNMENT matealign;
       size_t num_alignments = 0;
@@ -184,10 +189,11 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
           read_pair->read1_passed_alignment &&
           read_pair->read2_passed_alignment) {
         if (align_debug) {
-          cerr << "[BWAReadAligner]: checking for compatible alignment"
-               << " read 1 size " << good_left_alignments_read1.size()
-               << " read 2 size " << good_left_alignments_read2.size()
-               << endl;
+          stringstream msg;
+          msg << "[BWAReadAligner]: checking for compatible alignment"
+              << " read 1 size " << good_left_alignments_read1.size()
+              << " read 2 size " << good_left_alignments_read2.size();
+          PrintMessageDieOnError(msg.str(), DEBUG);
         }
         // find compatible alignment
         size_t index_of_mate;
@@ -197,7 +203,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
                                     good_right_alignments_read2,
                                     &index_of_hit, &index_of_mate)) {
           if (align_debug) {
-            cerr << "[BWAReadAligner]: found compatible alignments " << endl;
+            PrintMessageDieOnError("[BWAReadAligner]: found compatible alignments", DEBUG);
           }
           if (read_pair->aligned_read_num == 0) {
             matealign = read_pair->
@@ -219,8 +225,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
       // Check that mate is compatible
       if (!read_pair->found_unique_alignment) {
         if (align_debug) {
-          cerr << "[BWAReadAligner]: checking for mate alignment"
-               << endl;
+          PrintMessageDieOnError("[BWAReadAligner]: checking for mate alignment", DEBUG);
         }
         vector<ALIGNMENT> mate_alignments;
         // Trim more harshly here
@@ -234,7 +239,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
         if (!AlignMate(*read_pair, &mate_alignments,
                        read_pair->reads.at(read_pair->aligned_read_num).repseq)) {
           if (align_debug) {
-            cerr << "[BWAReadAligner]: Mate not aligned." << endl;
+            PrintMessageDieOnError("[BWAReadAligner]: Mate not aligned.", DEBUG);
           }
         } else {
           for (size_t i = 0; i < num_alignments; i++) {
@@ -248,8 +253,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
               } else {
                 // multiple mapper, more than one good hit
                 if (align_debug) {
-                  cerr << "[BWAReadAligner]: Discarding: multiple mapper."
-                       << endl;
+                  PrintMessageDieOnError("[BWAReadAligner]: Discarding: multiple mapper.", DEBUG);
                 }
                 return false;
               }
@@ -260,7 +264,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
 
       // Step 3: Adjust alignment and output
       if (align_debug) {
-        cerr << "[BWAReadAligner]: adjust alignment and output" << endl;
+        PrintMessageDieOnError("[BWAReadAligner]: adjust alignment and output", DEBUG);
       }
       if (read_pair->found_unique_alignment) {
         ALIGNMENT final_left_alignment =
@@ -269,7 +273,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
           good_right.at(index_of_hit);
         // try stitching first
         if (align_debug) {
-          cerr << "[BWAReadAligner]: Try stitching" << endl;
+          PrintMessageDieOnError("[BWAReadAligner]: Try stitching", DEBUG);
         }
         if (StitchReads(read_pair, &final_left_alignment,
                         &final_right_alignment)) {
@@ -296,7 +300,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
           return false;
         }
         if (align_debug) {
-          cerr << "\n[BWAReadAligner]: checking single end alignment." << endl;
+          PrintMessageDieOnError("[BWAReadAligner]: checking single end alignment.", DEBUG);
         }
         // Output the alignment
         read_pair->read1_passed_alignment = true;
@@ -316,7 +320,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
                                  vector<ALIGNMENT>* good_left_alignments,
                                  vector<ALIGNMENT>* good_right_alignments) {
   if (align_debug) {
-    cerr << "[ProcessRead]: " << read->ID << " " << read->nucleotides << endl;
+    PrintMessageDieOnError("[ProcessRead]: " + read->ID + " " + read->nucleotides, DEBUG);
   }
   // do the flanks consist of all repeats?
   bool left_all_repeats = false;
@@ -330,7 +334,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   // check that we have that repseq
   if (_bwt_references->find(repseq) == _bwt_references->end()) {
     if (align_debug) {
-      cerr << "[ProcessRead]: repseq doesn't exist in ref " << repseq << endl;
+      PrintMessageDieOnError("[ProcessRead]: repseq doesn't exist in ref " + repseq, DEBUG);
     }
     return false;
   }
@@ -341,22 +345,16 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
     read->left_perfect_repeat = true;
     left_all_repeats = true;
   }
-  if (align_debug) {
-    cerr << "[ProcessRead]: left all repeats " << left_all_repeats << endl;
-  }
   if (IsPerfectRepeat(read->right_flank_nuc, repseq) ||
       IsPerfectRepeat(read->right_flank_nuc, reverseComplement(repseq))) {
     read->right_perfect_repeat = true;
     right_all_repeats = true;
   }
-  if (align_debug) {
-    cerr << "[ProcessRead]: right all repeats " << right_all_repeats << endl;
-  }
   // don't continue if both are fully repetitive
   if (left_all_repeats && right_all_repeats) return false;
 
   if (align_debug) {
-    cerr << "[ProcessRead]: align flanks" << endl;
+    PrintMessageDieOnError("[ProcessRead]: align flanks", DEBUG);
   }
   // Align the flanking regions
   bwa_seq_t* seqs = BWAAlignFlanks(*read);
@@ -364,7 +362,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   bwa_seq_t* seq_right = &seqs[1];
 
   if (align_debug) {
-    cerr << "[ProcessRead]: fill in coords" << endl;
+    PrintMessageDieOnError("[ProcessRead]: fill in coords", DEBUG);
   }
   // fill in alignment coordinates
   vector<ALIGNMENT> left_alignments;
@@ -373,7 +371,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
     if (!GetAlignmentCoordinates(seq_left, repseq, &left_alignments)) {
       bwa_free_read_seq(2, seqs);
       if (align_debug) {
-        cerr << "[ProcessRead]: no left alignment" << endl;
+        PrintMessageDieOnError("[ProcessRead]: no left alignment", DEBUG);
       }
       return false;
     }
@@ -382,7 +380,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
     if (!GetAlignmentCoordinates(seq_right, repseq, &right_alignments)) {
       bwa_free_read_seq(2, seqs);
       if (align_debug) {
-        cerr << "[ProcessRead]: no right alignment" << endl;
+        PrintMessageDieOnError("[ProcessRead]: no right alignment", DEBUG);
       }
       return false;
     }
@@ -410,11 +408,6 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
       right_alignments.clear();
       right_cleared = true;
     }
-    if (align_debug) {
-      cerr << "[ProcessRead]: checking partial "
-           << left_alignments.size() << " "
-           << right_alignments.size() << endl;
-    }
     // check if one flanking region aligns uniquely
     if (left_alignments.size() + right_alignments.size() == 1) {
       read->partial = true;
@@ -422,7 +415,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
       // Case 1: anchored the left side
       if (left_alignments.size() != 0) {
         if (align_debug) {
-          cerr << "[ProcessRead]: anchored left" << endl;
+          PrintMessageDieOnError("[ProcessRead]: anchored left", DEBUG);
         }
         right_all_repeats = true;
         // left side is anchored
@@ -439,7 +432,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
       } else if (right_alignments.size() != 0) {
         // Case 2: anchored the right side
         if (align_debug) {
-          cerr << "[ProcessRead]: anchored right" << endl;
+          PrintMessageDieOnError("[ProcessRead]: anchored right", DEBUG);
         }
         left_all_repeats = true;
         // Right side is anchored
@@ -466,12 +459,6 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   *good_left_alignments = left_refids;
   *good_right_alignments = right_refids;
 
-  if (align_debug) {
-    cerr << "[ProcessRead]: aln sizes "
-         << good_left_alignments->size() << " "
-         << good_right_alignments->size() << endl;
-  }
-
   // Don't return partial alignments if excluded
   if (read->partial & exclude_partial) return false;
   // Return true if at least one good alignment
@@ -481,7 +468,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
 
 bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
   if (align_debug) {
-    cerr << "[BWAAlignFlanks]: set up" << endl;
+    PrintMessageDieOnError("[BWAAlignFlanks]: set up", DEBUG);
   }
   // set up bwa
   int is_comp = _opts->mode&BWA_MODE_COMPREAD;
@@ -491,14 +478,14 @@ bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
   seq_right= &seqs[1];
 
   if (align_debug) {
-    cerr << "[BWAAlignFlanks]: reverse" << endl;
+    PrintMessageDieOnError("[BWAAlignFlanks]: reverse", DEBUG);
   }
   // left in for historical reasons since BWA reverses sequence
   const string& left_flank_nuc = reverseComplement(read.left_flank_nuc);
   const string& right_flank_nuc = reverseComplement(read.right_flank_nuc);
 
   if (align_debug) {
-    cerr << "[BWAAlignFlanks]: left flank" << endl;
+    PrintMessageDieOnError("[BWAAlignFlanks]: left flank", DEBUG);
   }
   // LEFT FLANKING REGION
   const string& left_qual =  reverse(read.quality_scores.
@@ -528,7 +515,7 @@ bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
   seq_left->name = strdup((const char*)read.ID.c_str());
 
   if (align_debug) {
-    cerr << "[BWAAlignFlanks]: right flank" << endl;
+    PrintMessageDieOnError("[BWAAlignFlanks]: right flank", DEBUG);
   }
   // RIGHT FLANKING REGION
   const string& right_qual = reverse(read.quality_scores.
@@ -745,11 +732,6 @@ bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
 
   if (seq->n_aln == 0) {
     bwa_free_read_seq(1, seq);
-    if (align_debug) {
-      cerr << "[AlignMate]: check mate found 0 alignments "
-           << nucs << " " << repseq << "\n"
-           << qual << endl;
-    }
     return false;
   }
 
@@ -772,10 +754,12 @@ bool BWAReadAligner::CheckMateAlignment(const vector<ALIGNMENT>&
        it != mate_alignments.end(); ++it) {
     // Check chrom, position, and strand
     if (align_debug) {
-      cerr << "[CheckMateAlignment]: check mate finds "
-           << it->chrom << " "
-           << (abs(it->pos-left_alignment.pos)) << " "
-           << it->strand << endl;
+      stringstream msg;
+      msg << "[CheckMateAlignment]: check mate finds "
+          << it->chrom << " "
+          << (abs(it->pos-left_alignment.pos)) << " "
+          << it->strand;
+      PrintMessageDieOnError(msg.str(), DEBUG);
     }
     // find start of STR read
     const int& str_pos = left_alignment.left ?
@@ -802,8 +786,7 @@ bool BWAReadAligner::FindCompatibleAlignment(const vector<ALIGNMENT>&
                                              size_t* index_of_hit,
                                              size_t* index_of_mate) {
   if (align_debug) {
-    cerr << "[FindCompatibleAlignment]: " \
-      "Looking for compatible alignment" << endl;
+    PrintMessageDieOnError("[FindCompatibleAlignment]: Looking for compatible alignment", DEBUG);
   }
   bool found_unique = false;
   // For each good left 1, check good left 2
@@ -811,23 +794,12 @@ bool BWAReadAligner::FindCompatibleAlignment(const vector<ALIGNMENT>&
     for (size_t i2 = 0; i2 < good_left2.size(); i2++) {
       const ALIGNMENT& l1 = good_left1.at(i1);
       const ALIGNMENT& l2 = good_left2.at(i2);
-      if (align_debug) {
-        cerr << "[FindCompatibleAlignment]: checking pair" << endl;
-        cerr << "[FindCompatibleAlignment]: " << l1.chrom << endl;
-        cerr << "[FindCompatibleAlignment]: " << l2.chrom << endl;
-        cerr << "[FindCompatibleAlignment]: " << l1.pos << endl;
-        cerr << "[FindCompatibleAlignment]: " << l2.pos << endl;
-        cerr << "[FindCompatibleAlignment]: " << l1.strand << endl;
-        cerr << "[FindCompatibleAlignment]: " << l2.strand << endl;
-        cerr << "[FindCompatibleAlignment]: " << l1.left << endl;
-        cerr << "[FindCompatibleAlignment]: " << l2.left << endl;
-      }
       if ((abs(l1.pos-l2.pos) <= MAX_PAIRED_DIFF) &&
           (l1.strand != l2.strand) &&
           (l1.chrom == l2.chrom)) {
         if (found_unique) {
           if (align_debug) {
-            cerr << "[BWAReadAligner]: Multiple mapper" << endl;
+            PrintMessageDieOnError("[BWAReadAligner]: Multiple mapper", DEBUG);
           }
           return false;
         } else {
@@ -847,7 +819,7 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
                                  ALIGNMENT* right_alignment) {
   try {
     if (align_debug) {
-      cerr << "[StitchReads]: stitching reads" << endl;
+      PrintMessageDieOnError("[StitchReads]: stitching reads", DEBUG);
     }
     // Set up
     const int& num_aligned_read = read_pair->aligned_read_num;
@@ -860,7 +832,7 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
                                at(1-num_aligned_read).orig_qual);
     bool best_stitch_is_backwards = false;
     if (stitch_debug || align_debug) {
-      cerr << "[StitchReads]: seq1 " << seq1 << " seq2 " << seq2 << endl;
+      PrintMessageDieOnError("[StitchReads]: seq1 " + seq1 + " seq2 " + seq2, DEBUG);
     }
     vector<float> scores;
     scores.push_back(0);
@@ -882,10 +854,6 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
       if (score/overlap_len >= max_score) {
         max_score = score/overlap_len;
         max_score_index = i;
-        if (stitch_debug) {
-          cerr << "[StitchReads]: adding score " << max_score
-               << " " << max_score_index << endl;
-        }
       }
       scores.push_back(score/overlap_len);
     }
@@ -905,23 +873,18 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
       if (score/overlap_len >= max_score) {
         max_score = score/overlap_len;
         max_score_index = i + (seq1.length() - MIN_STITCH_OVERLAP) + 1;
-        if (stitch_debug) {
-          cerr << "[StitchReads]: adding score " << max_score
-               << " " << max_score_index << endl;
-        }
       }
       scores.push_back(score/overlap_len);
     }
     if (stitch_debug) {
-      cerr << "[StitchReads]: checking for too many matches" << endl;
+      PrintMessageDieOnError("[StitchReads]: checking for too many matches", DEBUG);
     }
 
     // Check if too many matches
     for (size_t i = 0; i < scores.size(); i++) {
       if ((max_score - scores.at(i) <= STITCH_DIFF) && i != max_score_index+1) {
         if (stitch_debug) {
-          cerr << "[StitchReads]: Returning false, too many matches i "
-               << i << endl;
+          PrintMessageDieOnError("[StitchReads]: Returning false, too many matches i", DEBUG);
         }
         return false;
       }
@@ -936,24 +899,16 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
       tmp = seq1_qual;
       seq1_qual = seq2_qual;
       seq2_qual = tmp;
-      if (stitch_debug) {
-        cerr << "[StitchReads]: best stitch is backwards. New index "
-             << max_score_index << endl;
-      }
     }
 
     if (stitch_debug) {
-      cerr << "[StitchReads]: Checking that stitch is good enough " << endl;
+      PrintMessageDieOnError("[StitchReads]: Checking that stitch is good enough", DEBUG);
     }
 
     // Check if stitch is good enough
     overlap_len = seq1.length() - max_score_index - 1;
     if ((overlap_len < MIN_STITCH_OVERLAP) ||
         (max_score < STITCH_REQUIRED_SCORE)) {
-      if (stitch_debug) {
-        cerr << "[StitchReads]: Returning false, score too low "
-             << overlap_len << " " << max_score << endl;
-      }
       return false;
     }
     string stitched_string = seq1.
@@ -967,10 +922,6 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
       nb = seq2.substr(i, 1);
       qa = seq1_qual.substr(max_score_index+i, 1);
       qb = seq2_qual.substr(i, 1);
-      if (stitch_debug) {
-        cerr << "[StitchReads]: " << na << " " << nb
-             << " " << qa << " " << qb << endl;
-      }
       if (qa > qb) {
         stitched_string.append(na);
         stitched_qual.append(qa);
@@ -986,16 +937,16 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
     stitched_qual.append(seq2_qual.substr(overlap_len + 1));
 
     if (stitch_debug) {
-      cerr << "[StitchReads]: orig string 1 " << seq1 << endl;
-      cerr << "[StitchReads]: orig string 2 " << seq2 << endl;
-      cerr << "[StitchReads]: orig qual 1 " << seq1_qual << endl;
-      cerr << "[StitchReads]: orig qual 2 " << seq2_qual << endl;
-      cerr << "[StitchReads]: stitched str  " << stitched_string << endl;
+      PrintMessageDieOnError("[StitchReads]: orig string 1 " + seq1, DEBUG);
+      PrintMessageDieOnError("[StitchReads]: orig string 2 " + seq2, DEBUG);
+      PrintMessageDieOnError("[StitchReads]: orig qual 1 " + seq1_qual, DEBUG);
+      PrintMessageDieOnError("[StitchReads]: orig qual 2 " + seq2_qual, DEBUG);
+      PrintMessageDieOnError("[StitchReads]: stitched str  " + stitched_string, DEBUG);
     }
     // put stitched info in aligned read
     if (stitch_debug || align_debug) {
-      cerr << "[StitchReads]: " << stitched_string << endl;
-      cerr << "[StitchReads]: " << stitched_qual << endl;
+      PrintMessageDieOnError("[StitchReads]: " + stitched_string, DEBUG);
+      PrintMessageDieOnError("[StitchReads]: " + stitched_qual, DEBUG);
     }
     read_pair->reads.at(num_aligned_read).nucleotides = stitched_string;
     read_pair->reads.at(num_aligned_read).quality_scores = stitched_qual;
@@ -1030,8 +981,7 @@ bool BWAReadAligner::StitchReads(ReadPair* read_pair,
     return true;
   } catch(std::out_of_range & exception) {
     if (align_debug) {
-      cerr << "[StitchReads]: stitching failed. Substring out of range error."
-           << endl;
+      PrintMessageDieOnError("[StitchReads]: stitching failed. Substring out of range error.", DEBUG);
     }
     return false;
   }
@@ -1043,15 +993,11 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
                                      const ALIGNMENT& mate_alignment,
                                      bool treat_as_paired) {
   if (align_debug) {
-    cerr << "[BWAReadAligner]: Output alignment" << endl;
+    PrintMessageDieOnError("[BWAReadAligner]: Output alignment", DEBUG);
   }
   const int& aligned_read_num = read_pair->aligned_read_num;
   read_pair->treat_as_paired = treat_as_paired;
 
-  if (align_debug) {
-    cerr << "[BWAReadAligner]: Set info for aligned read ("
-         << aligned_read_num << ")" << endl;
-  }
   // Set info for aligned read
   read_pair->reads.at(aligned_read_num).chrom = left_alignment.chrom;
   read_pair->reads.at(aligned_read_num).strid = left_alignment.id;
@@ -1073,7 +1019,7 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
     read_pair->reads.at(aligned_read_num).right_flank_nuc.length();
 
   if (align_debug) {
-    cerr << "[BWAReadAligner]: Checkalignment" << endl;
+    PrintMessageDieOnError("[BWAReadAligner]: Checkalignment", DEBUG);
   }
 
   // checks to make sure the alignment is reasonable
@@ -1084,10 +1030,6 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
           read_pair->reads.at(aligned_read_num).msStart)
          | (read_pair->reads.at(aligned_read_num).rEnd <=
             read_pair->reads.at(aligned_read_num).msEnd))) {
-    if (align_debug) {
-      cerr << "[BWAReadAligner]: Discarding: forward " \
-        "strand coords don't make sense." << endl;
-    }
     return false;
   }
   // coords make sense on reverse strand
@@ -1098,8 +1040,8 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
          | (read_pair->reads.at(aligned_read_num).lEnd <=
       read_pair->reads.at(aligned_read_num).msEnd))) {
     if (align_debug) {
-      cerr << "[BWAReadAligner]: Discarding: reverse " \
-        "strand coords don't make sense." << endl;
+      PrintMessageDieOnError("[BWAReadAligner]: Discarding: reverse " \
+                             "strand coords don't make sense.", DEBUG);
     }
     return false;
   }
@@ -1111,14 +1053,13 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
       (read_pair->reads.at(aligned_read_num).lEnd < 0) |
       (read_pair->reads.at(aligned_read_num).msStart < 0)) {
     if (align_debug) {
-      cerr << "[BWAReadAligner]: Discarding: negative coords found."
-           << endl;
+      PrintMessageDieOnError("[BWAReadAligner]: Discarding: negative coords found.", DEBUG);
     }
     return false;
   }
 
   if (align_debug) {
-    cerr << "[BWAReadAligner]: Adjusting alignment" << endl;
+    PrintMessageDieOnError("[BWAReadAligner]: Adjusting alignment", DEBUG);
   }
   
   // Adjust alignment and STR call
@@ -1131,46 +1072,46 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
                          !read_pair->reads.
                          at(aligned_read_num).right_all_repeats)) {
       if (align_debug) {
-        cerr << "[BWAReadAligner]: Returning false: "\
-          " AdjustAlignment failed." << endl;
+        PrintMessageDieOnError("[BWAReadAligner]: Returning false: "  \
+                               " AdjustAlignment failed.", DEBUG);
       }
       return false;
     }
   } catch(std::out_of_range & exception) {
     if (align_debug) {
-      cerr << "[BWAReadAligner]: Returning false: " \
-        " AdjustAlignment exception." << endl;
+      PrintMessageDieOnError("[BWAReadAligner]: Returning false: "  \
+                             " AdjustAlignment exception.", DEBUG);
     }
     return false;
   }
   if (align_debug) {
-    cerr << "[BWAReadAligner]: Checking unit requirements" << endl;
+    PrintMessageDieOnError("[BWAReadAligner]: Checking unit requirements", DEBUG);
   }
   // Make sure alignment meets requirements
   if (unit && !read_pair->reads.at(aligned_read_num).partial) {
     if (read_pair->reads.at(aligned_read_num).diffFromRef %
         read_pair->reads.at(aligned_read_num).ms_repeat_best_period != 0) {
       if (align_debug) {
-        cerr << "[BWAReadAligner]: returning false (unit failed)" << endl;
+        PrintMessageDieOnError("[BWAReadAligner]: returning false (unit failed)", DEBUG);
       }
       return false;
     }
   }
   if (align_debug) {
-    cerr << "[BWAReadAligner]: Checking diff and mapq requirements" << endl;
+    PrintMessageDieOnError("[BWAReadAligner]: Checking diff and mapq requirements", DEBUG);
   }
   if ((((abs(read_pair->reads.at(aligned_read_num).diffFromRef) >
         max_diff_ref) ||
        (read_pair->reads.at(aligned_read_num).mapq >= max_mapq)) &&
        !read_pair->reads.at(aligned_read_num).partial)) {
     if (align_debug) {
-      cerr << "[BWAReadAligner]: returning false "
-           << "(maxdiffref or mapq fail)" << endl;
+      PrintMessageDieOnError("[BWAReadAligner]: returning false " \
+                             "(maxdiffref or mapq fail)", DEBUG);
     }
     return false;
   }
   if (align_debug) {
-    cerr << "[BWAReadAligner]: Checking treat as paired" << endl;
+    PrintMessageDieOnError("[BWAReadAligner]: Checking treat as paired", DEBUG);
   }
   if (treat_as_paired) {
     // need to reset nucs/quals in case we trimmed them
@@ -1182,7 +1123,7 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
     read_pair->reads.at(1-aligned_read_num).reverse =
       !read_pair->reads.at(aligned_read_num).reverse;
     if (align_debug) {
-      cerr << "[BWAReadAligner]: Checking get CIGAR" << endl;
+      PrintMessageDieOnError("[BWAReadAligner]: Checking get CIGAR", DEBUG);
     }
     // get cigar
     try {
@@ -1207,7 +1148,7 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
         read_pair->reads.at(1-aligned_read_num).quality_scores;
       nw(aseq, rseq, aln_seq, ref_seq, false, &score, &cigar_list);
       if (debug_adjust) {
-        cerr << "[BWAReadAligner]: Getting qualities for mate" << endl;
+        PrintMessageDieOnError("[BWAReadAligner]: Getting qualities for mate", DEBUG);
       }
       // update qualities. For read pairs qual is sum of the two ends' mapq
       int edit;
@@ -1234,8 +1175,8 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
         cigar_list.cigars;
     } catch(std::out_of_range & exception) {
       if (align_debug || debug_adjust) {
-        cerr << "[BWAReadAligner]: returning false, " \
-          "problem aligning mate." << endl;
+        PrintMessageDieOnError("[BWAReadAligner]: returning false, " \
+                               "problem aligning mate.", DEBUG);
       }
       return false;
     }
@@ -1254,8 +1195,8 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
   if ((_ref_sequences->find(aligned_read->strid) ==
        _ref_sequences->end())) {
     if (align_debug) {
-      cerr << "[AdjustAlignment]: returning false, " \
-        "refseq index out of range." << endl;
+      PrintMessageDieOnError("[AdjustAlignment]: returning false, " \
+                             "refseq index out of range.", DEBUG);
     }
     return false;
   }
@@ -1284,15 +1225,6 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
   // update coords
   aligned_read->read_start = start_pos - REFEXTEND;
   aligned_read->read_end = start_pos + reglen;
-
-  if (debug_adjust) {
-    cerr << "[AdjustAlignment]: Partial " << partial
-         << " Reverse " << aligned_read->reverse
-         << " left rep " << !left_aligned
-         << " right rep " << !right_aligned << endl;
-    cerr << "[AdjustAlignment]: " << rseq << endl
-         << "[AdjustAlignment]: " << aligned_seq << endl;
-  }
 
   // Global alignment read vs. region aligned to
   string aligned_seq_sw, ref_seq_sw;
@@ -1331,28 +1263,13 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
   aligned_read->cigar = cigar_list.cigars;
   aligned_read->cigar_string = cigar_list.cigar_string;
 
-  if (debug_adjust) {
-    cerr << "[AdjustAlignment]: " << aligned_read->ID << endl;
-    cerr << "[AdjustAlignment]: " << aligned_seq_sw << endl;
-    cerr << "[AdjustAlignment]: " << ref_seq_sw << endl;
-    cerr << "[AdjustAlignment]: " << sw_score << endl;
-    cerr << "[AdjustAlignment]: " << cigar_list.cigar_string << endl;
-  }
-
-  if (align_debug) {
-    cerr << "[BWAReadAligner]: checking nwscore" << endl;
-  }
   // Check if alignment is reasonably good
   if (sw_score < min_sw_score) {
-    if (align_debug) {
-      cerr << "[BWAReadAligner]: Discarding read, " \
-        "local realignment failed, low sw score." << endl;
-    }
     return false;
   }
 
   if (align_debug) {
-    cerr << "[BWAReadAligner]: adjusting partial" << endl;
+    PrintMessageDieOnError("[BWAReadAligner]: adjusting partial", DEBUG);
   }
   // Readjust if partial
   if (partial) {
@@ -1362,15 +1279,15 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
                                   left_aligned, right_aligned,
                                   start_pos, reglen)) {
         if (align_debug) {
-          cerr << "[BWAReadAligner]: returning false, " \
-            "AdjustPartialAlignment failed." << endl;
+          PrintMessageDieOnError("[BWAReadAligner]: returning false, " \
+                                "AdjustPartialAlignment failed.", DEBUG);
         }
         return false;
       }
     } catch(std::out_of_range & exception) {
       if (align_debug) {
-        cerr << "[BWAReadAligner]: returning false, " \
-          "AdjustPartialAlignment exception." << endl;
+        PrintMessageDieOnError("[BWAReadAligner]: returning false, "  \
+                               "AdjustPartialAlignment exception.", DEBUG);
       }
       return false;
     }
@@ -1379,7 +1296,7 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
   try {
     if (!aligned_read->partial) {
       if (align_debug) {
-        cerr << "[AdjustAlignment]: calling GetSTRAllele" << endl;
+        PrintMessageDieOnError("[AdjustAlignment]: calling GetSTRAllele", DEBUG);
       }
       return GetSTRAllele(aligned_read, cigar_list);
     } else {
@@ -1387,14 +1304,14 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read,
     }
   } catch(std::out_of_range & exception) {
     if (align_debug) {
-      cerr << "[AdjustAlignment]: returning false, out " \
-        "range exception." << endl;
+      PrintMessageDieOnError("[AdjustAlignment]: returning false, out " \
+                             "range exception.", DEBUG);
     }
     return false;
   }
   if (align_debug) {
-    cerr << "[AdjustAlignment]: returning false, reached "  \
-      "end of adjust." << endl;
+    PrintMessageDieOnError("[AdjustAlignment]: returning false, reached " \
+                           "end of adjust.", DEBUG);
   }
   return false;
 }
@@ -1407,9 +1324,9 @@ int BWAReadAligner::GetMapq(const std::string& aligned_sw_string,
   size_t qual_index = 0;
   int score = 0;
   if (debug_adjust) {
-    cerr << "[GetMapq]: " << aligned_sw_string << endl;
-    cerr << "[GetMapq]: " << ref_sw_string << endl;
-    cerr << "[GetMapq]: " << aligned_quals << endl;
+    PrintMessageDieOnError("[GetMapq]: " + aligned_sw_string, DEBUG);
+    PrintMessageDieOnError("[GetMapq]: " + ref_sw_string, DEBUG);
+    PrintMessageDieOnError("[GetMapq]: " + aligned_quals, DEBUG);
   }
   for (size_t i = 0; i < aligned_sw_string.length(); i++) {
     const char& alnchar = aligned_sw_string.at(i);
@@ -1419,10 +1336,6 @@ int BWAReadAligner::GetMapq(const std::string& aligned_sw_string,
         // mismatch
         if (alnchar != refchar) {
           (*edit_dist)++;
-          if (debug_adjust) {
-            cerr << "[GetMapq]: " << alnchar << " " << refchar << " "
-                 << (aligned_quals.at(qual_index)) << endl;
-          }
           score += (static_cast<int>(aligned_quals.at(qual_index))-33);
         }
       } else {
@@ -1430,9 +1343,6 @@ int BWAReadAligner::GetMapq(const std::string& aligned_sw_string,
       }
       qual_index++;
     } 
-  }
-  if (debug_adjust) {
-    cerr << "[GetMapq]: " << score << endl;
   }
   return score;
 }
@@ -1472,20 +1382,11 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
     }
   }
 
-  if (partial_debug) {
-    cerr << "read start " << start_pos << " diff from ref "
-         << diff_from_ref << " span " << span << endl;
-  }
-
   // Check if actually partially spanning
   // Case 1: starts at left. see if total span is > (str index+ms len)
   if ((!aligned_read->reverse & left_aligned) |
       (aligned_read->reverse & right_aligned)) {
     strbp = span - (aligned_read->msStart - aligned_read->read_start);
-    if (partial_debug) {
-      cerr << "case 1, left aligned strbp " << strbp
-           << " diff from ref " << diff_from_ref << endl;
-    }
     // Check if end extends beyond the read
     if (aligned_read->msEnd - aligned_read->read_start >= span) {
       // Check if reasonable
@@ -1494,14 +1395,10 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
           static_cast<int>(aligned_read->nucleotides.length()) ||
           strbp < static_cast<int>(MIN_STR_LENGTH)) {
         if (align_debug) {
-          cerr << "[BWAReadAligner]: Discarding read, partial " \
-            "alignment doesn't make sense." << endl;
+          PrintMessageDieOnError("[BWAReadAligner]: Discarding read, partial " \
+                                 "alignment doesn't make sense.", DEBUG);
         }
         return false;
-      }
-      if (partial_debug) {
-        cerr << "In case 1, updating read data" << endl;
-        cerr << "strbp " << strbp << " diff " << diff_from_ref << endl;
       }
       // Update read data
       aligned_read->partial = true;
@@ -1518,8 +1415,7 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
     } else if (!aligned_read->left_perfect_repeat &&
                !aligned_read->right_perfect_repeat) {
       if (debug_adjust) {
-        cerr << "[AdjustPartialAlignment]: actually not partial"
-             << endl;
+        PrintMessageDieOnError("[AdjustPartialAlignment]: actually not partial", DEBUG);
       }
       // aligned_read->partial = false;
       aligned_read->diffFromRef = (strbp+diff_from_ref) - ms_length;
@@ -1538,10 +1434,6 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
   if ((!aligned_read->reverse & right_aligned) |
       (aligned_read->reverse & left_aligned)) {
     strbp = span - (start_pos+reglen-aligned_read->msEnd);
-    if (partial_debug) {
-      cerr << "case 2, right aligned strbp " << strbp << " span "
-           << span << " reglen " << reglen << endl;
-    }
     // Check if beginning extends beyond the msStart
     if ((start_pos  + reglen - aligned_read->msStart) >= span) {
       // check if reasonable
@@ -1550,14 +1442,10 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
           static_cast<int>(aligned_read->nucleotides.length()) ||
           strbp <= static_cast<int>(MIN_STR_LENGTH)) {
         if (align_debug) {
-          cerr << "[BWAReadAligner]: Discarding read, partial " \
-            "alignment doesn't make sense." << endl;
+          PrintMessageDieOnError("[BWAReadAligner]: Discarding read, partial " \
+                                "alignment doesn't make sense.", DEBUG);
         }
         return false;
-      }
-      if (partial_debug) {
-        cerr << "In case 2, updating read data" << endl;
-        cerr << "strbp " << strbp << " diff " << diff_from_ref << endl;
       }
       // update read info
       aligned_read->partial = true;
@@ -1571,7 +1459,7 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
     } else if (!aligned_read->left_perfect_repeat &&
                !aligned_read->right_perfect_repeat) {
       if (debug_adjust) {
-        cerr << "[AdjustPartialAlignment]: actually not partial" << endl;
+        PrintMessageDieOnError("[AdjustPartialAlignment]: actually not partial", DEBUG);
       }
       aligned_read->diffFromRef = (strbp+diff_from_ref) - ms_length;
       // aligned_read->partial = false;
@@ -1591,20 +1479,13 @@ bool BWAReadAligner::AdjustPartialAlignment(MSReadRecord* aligned_read,
       return true;
     }
   }
-  if (debug_adjust) {
-    cerr << "[AdjustPartialAlignment]: left perfect ? "
-         << aligned_read->left_perfect_repeat << endl;
-    cerr << "[AdjustPartialAlignment]: right perfect ? "
-         << aligned_read->right_perfect_repeat << endl;
-    cerr << "[AdjustPartialAlignment]: end of adjust partial" << endl;
-  }
   return false;
 }
 
 bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
                                   const CIGAR_LIST& cigar_list) {
   if (cigar_debug) {
-    cerr << "CIGAR " << cigar_list.cigar_string << endl;
+    PrintMessageDieOnError("[GetSTRAllele] CIGAR " + cigar_list.cigar_string, DEBUG);
   }
   // index where STR starts in the read
   size_t str_index = aligned_read->msStart-aligned_read->read_start + 1;
@@ -1619,15 +1500,10 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
     if (t == 'M' || t == 'D') span += s;
   }
   size_t str_index_end = aligned_read->read_start + span - aligned_read->msEnd;
-  if (debug_adjust) {
-    cerr << "[GetSTRAllele]: dist start " << str_index << " "
-         << " dist end " << str_index_end << endl;
-  }
   if ((str_index < MIN_DIST_FROM_END || str_index_end < MIN_DIST_FROM_END)
       && aligned_read->was_partial) {
     if (debug_adjust) {
-      cerr << "[GetSTRAllele]: changing to partial, STR too close to read end"
-           << endl;
+      PrintMessageDieOnError("[GetSTRAllele]: changing to partial, STR too close to read end", DEBUG);
     }
     aligned_read->partial = true;
     return true;
@@ -1637,8 +1513,7 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
   // If alignment is too messy, get rid of it
   if (cigar_list.cigars.size() > MAX_CIGAR_SIZE) {
     if (align_debug) {
-      cerr << "[BWAReadAligner]: Discarding read, cigar score too long."
-           << endl;
+      PrintMessageDieOnError("[BWAReadAligner]: Discarding read, cigar score too long.", DEBUG);
     }
     return false;
   }
@@ -1654,22 +1529,12 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
         aligned_read->nucleotides.substr(str_index - 1, ms_length);
     }
     aligned_read->diffFromRef = 0;
-    if (align_debug) {
-      cerr << "[GetSTRAllele]: str len "
-           << (aligned_read->detected_ms_nuc.length())
-           << endl;
-    }
     return (aligned_read->detected_ms_nuc.length() > MIN_STR_LENGTH);
   }
 
   // get only cigar score spanning the STR
   const int& str_start_in_cigar =
     aligned_read->msStart - aligned_read->read_start;
-  if (cigar_debug) {
-    cerr << "ms start " << aligned_read->msStart << endl;
-    cerr << "read start " << aligned_read->read_start << endl;
-    cerr << "start in cigar " << str_start_in_cigar << endl;
-  }
   // position into the segment
   int pos = 0;
   // base pairs spanned by this cigar item
@@ -1696,10 +1561,6 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
     if (cigar_type == 'M' || cigar_type == 'D' || cigar_type == 'S') pos += bp;
     // bp to go until we hit STR
     diff = pos - str_start_in_cigar;
-    if (cigar_debug) {
-      cerr << "before: diff " << diff <<  " pos " << pos
-           << " str start " << str_start_in_cigar << endl;
-    }
     if (diff >= 0) {
       size_t cigar_index_to_include = cigar_index;
       // If left adjacent cigar is not M or S, include it
@@ -1723,13 +1584,6 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
   str_cigar_list.ResetString();
   new_cigar_list.cigars.clear();
 
-  if (cigar_debug) {
-    cerr << "after: diff " << diff <<  " pos " << pos
-         << " str start " << str_start_in_cigar << endl;
-    cerr << "str cigar string minus left flank "
-         << str_cigar_list.cigar_string << endl;
-  }
-
   // get rid of right flank cigars
   // start at beginning of STR list
   cigar_index = 0;
@@ -1737,45 +1591,36 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
   pos = diff;
   int total_str_len = static_cast<int>(ms_length);
   while (pos < total_str_len) {
-      if (cigar_index >= str_cigar_list.cigars.size()) {
-        return false;
-      }
-      bp = str_cigar_list.cigars.at(cigar_index).num;
-      cigar_type = str_cigar_list.cigars.at(cigar_index).cigar_type;
-      if (cigar_type == 'M' || cigar_type == 'D' || cigar_type == 'S')
-        pos += bp;
-      // Difference between our position and the end of the STR
-      diff = pos-total_str_len;
-      if (cigar_debug) {
-        cerr << " diff " << diff << " cigar index "
-             << cigar_index << " pos " << pos << endl;
-      }
-      if (diff >= 0) {
-        size_t cigar_index_to_include = cigar_index;
-        // If right adjacent is not M or S, include it
-        if (cigar_index < str_cigar_list.cigars.size() - 1) {
-          const char& next_type = str_cigar_list.cigars.
-            at(cigar_index+1).cigar_type;
-          if (next_type != 'M' && next_type != 'S' && diff == 0) {
-            cigar_index_to_include += 1;
-          }
+    if (cigar_index >= str_cigar_list.cigars.size()) {
+      return false;
+    }
+    bp = str_cigar_list.cigars.at(cigar_index).num;
+    cigar_type = str_cigar_list.cigars.at(cigar_index).cigar_type;
+    if (cigar_type == 'M' || cigar_type == 'D' || cigar_type == 'S')
+      pos += bp;
+    // Difference between our position and the end of the STR
+    diff = pos-total_str_len;
+    if (diff >= 0) {
+      size_t cigar_index_to_include = cigar_index;
+      // If right adjacent is not M or S, include it
+      if (cigar_index < str_cigar_list.cigars.size() - 1) {
+        const char& next_type = str_cigar_list.cigars.
+          at(cigar_index+1).cigar_type;
+        if (next_type != 'M' && next_type != 'S' && diff == 0) {
+          cigar_index_to_include += 1;
         }
-        new_cigar_list.cigars.resize(cigar_index_to_include + 1);
-        copy(str_cigar_list.cigars.begin(),
-             str_cigar_list.cigars.begin() + cigar_index_to_include + 1,
-             new_cigar_list.cigars.begin());
-        break;
       }
-      cigar_index += 1;
+      new_cigar_list.cigars.resize(cigar_index_to_include + 1);
+      copy(str_cigar_list.cigars.begin(),
+           str_cigar_list.cigars.begin() + cigar_index_to_include + 1,
+           new_cigar_list.cigars.begin());
+      break;
     }
-    str_cigar_list.cigars.clear();
-    str_cigar_list.cigars = new_cigar_list.cigars;
-    str_cigar_list.ResetString();
-    if (cigar_debug) {
-      cerr << "STR CIGAR after remove right flank "
-           << str_cigar_list.cigar_string << endl;
-    }
-
+    cigar_index += 1;
+  }
+  str_cigar_list.cigars.clear();
+  str_cigar_list.cigars = new_cigar_list.cigars;
+  str_cigar_list.ResetString();
   // set diff from ref
   diff_from_ref = 0;
   for (size_t i = 0; i < str_cigar_list.cigars.size(); i++) {
@@ -1785,12 +1630,6 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
     if (str_cigar_list.cigars.at(i).cigar_type == 'D') {
       diff_from_ref -= str_cigar_list.cigars.at(i).num;
     }
-  }
-  if (cigar_debug) {
-    cerr << "diff " << diff_from_ref << endl;
-    cerr << "ms len " << ms_length << endl;
-    cerr << "str index " << str_index << endl;
-    cerr << " nucs " << aligned_read->nucleotides << endl;
   }
 
   // set STR region
@@ -1804,14 +1643,14 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
   }
   if (ms_nuc.length() <= MIN_STR_LENGTH) {
     if (align_debug) {
-      cerr << "[BWAReadAligner]: Discarding: detected STR too short." << endl;
+      PrintMessageDieOnError("[BWAReadAligner]: Discarding: detected STR too short.", DEBUG);
     }
     return false;
   }
   aligned_read->diffFromRef = diff_from_ref;
   aligned_read->detected_ms_nuc = ms_nuc;
   if (align_debug) {
-    cerr << "[GetSTRAllele]: returning true" << endl;
+    PrintMessageDieOnError("[GetSTRAllele]: returning true", DEBUG);
   }
   return true;
 }

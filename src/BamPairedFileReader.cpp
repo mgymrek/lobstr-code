@@ -35,7 +35,7 @@ using namespace std;
 
 BamPairedFileReader::BamPairedFileReader(const std::string& _filename) {
   if (!reader.Open(_filename)) {
-    errx(1, "Could not open bam file");
+    PrintMessageDieOnError("Could not open bam file", ERROR);
   }
 }
 
@@ -55,14 +55,13 @@ bool BamPairedFileReader::GetNextRecord(ReadPair* read_pair) {
           read_pair->reads.push_back(mate);
           return true;
         } else {
-          cerr << "WARNING: Could not find pair for " << single_read.ID
-               << ". Is the bam file sorted by read name?"
-               << " If yes, some reads are missing." << endl;
+          PrintMessageDieOnError("Could not find pair for " + single_read.ID +
+                                 ". Is the bam file sorted by read name?", WARNING);
           // set single read to not paired
           read_pair->reads.at(0).paired = false;
           // back up by one read
           if (!reader.Seek(bam_file_position)) {
-            errx(1, "ERROR: could not rewind bam file reader");
+            PrintMessageDieOnError("Could not rewind bam file reader", ERROR);
           }
           return true;
         }

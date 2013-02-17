@@ -21,6 +21,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <err.h>
 #include <iostream>
 
+#include "src/common.h"
 #include "src/MultithreadData.h"
 
 MultithreadData::MultithreadData(int _slots)
@@ -44,8 +45,10 @@ void MultithreadData::increment_output_counter() {
 bool MultithreadData::input_output_counters_equal() {
   bool equal;
   pthread_mutex_lock(&counter_mutex);
-  std::cerr << "input_count = " << input_count
-            << "  output_count = " << output_count << std::endl;
+  std::stringstream msg;
+  msg << "input_count = " << input_count
+      << " output_count = " << output_count;
+  PrintMessageDieOnError(msg.str(), PROGRESS);
   equal = (output_count == input_count);
   pthread_mutex_unlock(&counter_mutex);
   return equal;

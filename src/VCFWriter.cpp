@@ -100,7 +100,7 @@ VCFWriter::VCFWriter(const string& filename)
   output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" << sample << endl;
   if (!exclude_positions_file.empty()) {
     if (my_verbose) {
-      cerr << "[allelotype] Loading positions to exclude..." << endl;
+      PrintMessageDieOnError("Loading positions to exclude", PROGRESS);
     }
     LoadPositionsToExclude();
   }
@@ -114,7 +114,7 @@ void VCFWriter::LoadPositionsToExclude() {
     split(line, '\t', items);
     if (items.size() == 0) break;
     if (items.size() != 2) {
-      errx(1, "[allelotype] ERROR: exclude-pos file has invalid format.");
+      PrintMessageDieOnError("Exclude-pos file has invalid format.", ERROR);
     }
     string chrom;
     int pos;

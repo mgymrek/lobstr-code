@@ -55,58 +55,69 @@ bool FastqFileReader::GetNextRead(MSReadRecord* read) {
     return false;
 
   // Minimal input validation
-  if (ID.empty())
-    errx(1, "Error: found empty ID in FASTQ file '%s' line %zu",
-         filename.c_str(), current_line);
-
-  if (ID.at(0) != '@')
-    errx(1, "Error: found Invalid FASTQ ID in file '%s' "\
-         "line %zu (expected '@' character)",
-         filename.c_str(), current_line);
+  if (ID.empty()) {
+    stringstream msg;
+    msg << "Found empty ID in FASTQ file " << filename << " line " << current_line;
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  if (ID.at(0) != '@') {
+    stringstream msg;
+    msg << "Found Invalid FASTQ ID in file "
+        << filename << " line " << current_line
+        << " (expected '@' character)";
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
 
   // Second line = Nucleotides
   // If we can read the ID, but not the nucleotides,
   // This is a problematic FASTQ file
   current_line++;
   if (!getline(input_stream, nuc)) {
-    errx(1, "Error reading nucleotide line from FASTQ " \
-         "file '%s' line %zu",
-         filename.c_str(), current_line);
+    stringstream msg;
+    msg << "Problem reading nucleotide line from FASTQ file "
+        << filename << " line " << current_line;
+    PrintMessageDieOnError(msg.str(), ERROR);
   }
-
-  if (nuc.empty())
-    errx(1, "Error: found empty nucleotide line in FASTQ " \
-         "file '%s' line %zu",
-         filename.c_str(), current_line);
-  if (!valid_nucleotides_string(nuc))
-    errx(1, "Error: found invalid nucleotide line in FASTQ " \
-         "file '%s' line %zu",
-         filename.c_str(), current_line);
-
+  
+  if (nuc.empty()) {
+    stringstream msg;
+    msg << "Found empty nucleotide line from FASTQ file "
+        << filename << " line " << current_line;
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  if (!valid_nucleotides_string(nuc)) {
+    stringstream msg;
+    msg << "Found invalid nucleotide line from FASTQ file "
+        << filename << " line " << current_line;
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
   // Third line = Second ID (ignored)
   current_line++;
   if (!getline(input_stream, ID2)) {
-    errx(1, "Error reading second ID line from FASTQ file '%s' line %zu",
-         filename.c_str(), current_line);
+    stringstream msg;
+    msg << "Problem reading second ID line from FASTQ file "
+        << filename << " line " << current_line;
+    PrintMessageDieOnError(msg.str(), ERROR);
   }
 
   // Fourth line = Quality scores (must be ASCII quality scores, not numeric)
 
   current_line++;
   if (!getline(input_stream, quality)) {
-    errx(1, "Error reading Quality scores line from FASTQ " \
-         "file '%s' line %zu",
-         filename.c_str(), current_line);
+    stringstream msg;
+    msg << "Problem reading quality scores line from FASTQ file "
+        << filename << " line " << current_line;
+    PrintMessageDieOnError(msg.str(), ERROR);
   }
 
-  if ( quality.length() != nuc.length() )
-    errx(1, "Error: Mismatching number of nucleotides (%zu) " \
-         "and quality-scores (%zu) in "                      \
-         "FASTQ file '%s' line '%zu'",
-         nuc.length(), quality.length(), filename.c_str(), current_line);
+  if ( quality.length() != nuc.length() ) {
+    stringstream msg;
+    msg << "Mismatching number of nucleotides and quality scores in FASTQ file "
+        << filename << " line " << current_line;
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
 
   read->ID = ID.substr(1);
-
   string trim_nucs;
   string trim_qual;
   TrimRead(nuc, quality, &trim_nucs, &trim_qual, QUAL_CUTOFF);

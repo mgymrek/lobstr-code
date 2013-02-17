@@ -34,7 +34,7 @@ using namespace std;
 
 BamFileReader::BamFileReader(const std::string& _filename) {
   if (!reader.Open(_filename)) {
-    errx(1, "Could not open bam file");
+    PrintMessageDieOnError("Could not open bam file", ERROR);
   }
 }
 

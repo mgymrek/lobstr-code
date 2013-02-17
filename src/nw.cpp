@@ -317,7 +317,6 @@ int nw_align_ag(std::vector<int > *    M,
     char switchchar = inMatchMatrix ?
       tracebackM->at(i*(L1+1)+j) :
       tracebackI->at(i*(L1+1)+j);
-    //    cout << switchchar << endl;
     switch (switchchar) {
     case 'a':
       seq_1_al += seq_1[j-1];

@@ -53,7 +53,15 @@ void AddOption(const std::string& optname,
                bool hasvalue, std::string* paramstring);
 
 // print message to command line
-void PrintMessage(const std::string& msg);
+// Exit if type is ERROR
+enum MSGTYPE {
+  ERROR = 0,
+  WARNING,
+  DEBUG,
+  PROGRESS
+};
+void PrintMessageDieOnError(const std::string& msg,
+                            MSGTYPE msgtype);
 
 // trim read based on quality scores
 void TrimRead(const std::string& input_nucs,

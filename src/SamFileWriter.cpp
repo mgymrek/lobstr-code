@@ -62,7 +62,7 @@ SamFileWriter::SamFileWriter(const string& _filename,
     ref_vector.push_back(ref_data);
   }
   if (!writer.Open(_filename, header, ref_vector)) {
-    cerr << "Could not open bam file" << endl;
+    PrintMessageDieOnError("Could not open bam file " + _filename, ERROR);
   }
 }
 

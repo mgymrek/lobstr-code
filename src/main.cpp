@@ -75,7 +75,7 @@ gap_opt_t *opts;
 
 void show_help() {
   const char* help =
-    "\n\nlobSTR [OPTIONS] " \
+    "\nlobSTR [OPTIONS] " \
     "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
     "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
     "    -o <output prefix>\n" \
@@ -348,11 +348,12 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_THREADS:
       threads = atoi(optarg);
       AddOption("threads", string(optarg), true, &user_defined_arguments);
-      if (threads <= 0)
-        errx(1, "[lobSTR-%s] ERROR: invalid number of threads", _GIT_VERSION);
-      if (threads > 1)
-        cerr << "[lobstr-" << _GIT_VERSION << "] WARNING: multithreading on small files "\
-          "(< several million reads) may fail to produce BAM output" << endl;
+      if (threads <= 0) {
+        PrintMessageDieOnError("Invalid number of threads", ERROR);
+      }
+      if (threads > 1) {
+        PrintMessageDieOnError("Multithreading on very small files may fail to produce BAM output", WARNING);
+      }
       break;
     case 'f':
     case OPT_FILES:
@@ -382,8 +383,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     case 'm':
     case OPT_MISMATCH:
       allowed_mismatches = atoi(optarg);
-      if (allowed_mismatches < 0)
-        errx(1, "[lobSTR-%s] ERROR: invalid number of mismatches", _GIT_VERSION);
+      if (allowed_mismatches < 0) {
+        PrintMessageDieOnError("Invalid number of mismatches", ERROR);
+      }
       AddOption("m", string(optarg), true, &user_defined_arguments);
       break;
     case 'b':
@@ -397,38 +399,44 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_EXTEND:
       extend = atoi(optarg);
-      if (extend <= 0)
-        errx(1, "[lobSTR-%s] ERROR: invalid extension length", _GIT_VERSION);
+      if (extend <= 0) {
+        PrintMessageDieOnError("Invalid extension length", ERROR);
+      }
       AddOption("extend", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MIN_PERIOD:
       min_period = atoi(optarg);
-      if (min_period <= 0)
-        errx(1, "[lobSTR-%s] ERROR: invalid min period", _GIT_VERSION);
+      if (min_period <= 0) {
+        PrintMessageDieOnError("Invalid min period", ERROR);
+      }
       AddOption("minperiod", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_PERIOD:
       max_period = atoi(optarg);
-      if (max_period <= 0)
-        errx(1, "[lobSTR-%s] ERROR: invalid max period", _GIT_VERSION);
+      if (max_period <= 0) {
+        PrintMessageDieOnError("Invalid max period", ERROR);
+      }
       AddOption("maxperiod", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_FLANK_LEN:
       max_flank_len = atoi(optarg);
-      if (max_flank_len <= 0)
-        errx(1, "[lobSTR-%s] ERROR: invalid max flank length", _GIT_VERSION);
+      if (max_flank_len <= 0) {
+        PrintMessageDieOnError("Invalid max flank length", ERROR);
+      }
       AddOption("maxflank", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MIN_FLANK_LEN:
       min_flank_len = atoi(optarg);
-      if (min_flank_len <= 0)
-        errx(1, "[lobSTR-%s] ERROR: invalid min flank length", _GIT_VERSION);
+      if (min_flank_len <= 0) {
+        PrintMessageDieOnError("Invalid min flank length", ERROR);
+      }
       AddOption("minflank", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_DIFF_REF:
       max_diff_ref = atoi(optarg);
-      if (max_diff_ref <=0 )
-        errx(1, "[lobSTR-%s] ERROR: invalid max diff ref", _GIT_VERSION);
+      if (max_diff_ref <=0 ) {
+        PrintMessageDieOnError("Invalid max diff ref", ERROR);
+      }
       AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_FFTW_DEBUG:
@@ -538,36 +546,33 @@ void parse_commandline_options(int argc, char* argv[]) {
 
   // any arguments left over are extra
   if (optind < argc) {
-    cerr << "[lobstr-" << _GIT_VERSION << "] ERROR: Unnecessary leftover arguments...\n";
-    show_help();
-    exit(1);
+    PrintMessageDieOnError("Unnecessary leftover arguments", ERROR);
   }
   // make sure arguments make sense
   if (fft_window_step > fft_window_size) {
-    errx(1, "[lobSTR-%s] ERROR: fft_window_step must be <=fft_window_size", _GIT_VERSION);
+    PrintMessageDieOnError("fft_window_step must be <=fft_window_size", ERROR);
   }
   if (min_period > max_period) {
-    errx(1, "[lobSTR-%s] ERROR: min_period must be <= max_period", _GIT_VERSION);
+    PrintMessageDieOnError("min_period must be <=max_period", ERROR);
   }
   if (min_flank_len > max_flank_len) {
-    errx(1, "[lobSTR-%s] ERROR: min_flank_len must be <=max_flank_len", _GIT_VERSION);
+    PrintMessageDieOnError("min_flank_len must be <= max_flank_len", ERROR);
   }
   if (min_period < 2 || max_period > 6) {
-    errx(1, "[lobSTR-%s] ERROR: lobSTR can currently only profile STRs of periods 2 through 6.", _GIT_VERSION);
+    PrintMessageDieOnError("lobSTR can currently only profile STRs for periods 2 thorugh 6", ERROR);
   }
   // check that we have the mandatory parameters
   if ((((!paired || bam) && input_files_string.empty()) ||
        (paired && !bam && (input_files_string_p1.empty() ||
                            input_files_string_p2.empty())))||
       output_prefix.empty() || index_prefix.empty()) {
-    show_help();
-    errx(1, "[lobSTR-%s] ERROR: Required arguments are mising", _GIT_VERSION);
+    PrintMessageDieOnError("Required arguments are missing", ERROR);
   }
   if (gzip && bam) {
-    errx(1, "[lobSTR-%s] ERROR: Gzip option not compatible with bam input", _GIT_VERSION);
+    PrintMessageDieOnError("Gzip option not compatible with bam input", ERROR);
   }
   if (using_s3 && s3cmd_configfile.empty()) {
-    errx(1, "[lobSTR-%s] ERROR: Must supply an s3cmd configure file.", _GIT_VERSION);
+    PrintMessageDieOnError("Must supply an s3cmd config file", ERROR);
   }
 }
 
@@ -634,7 +639,7 @@ void single_thread_process_loop(const vector<string>& files1,
     file1 = files1.at(i);
     if (paired && !bam) {
       file2 = files2.at(i);
-      cerr << "[lobstr-" << _GIT_VERSION << "] processing files " << file1 << " and " << file2 << "...\n";
+      PrintMessageDieOnError("Processing files " + file1 + " and " + file2, PROGRESS);
       if (using_s3) {
         const std::string s3cmd1 = GenerateS3Command(s3bucket,
                                                      file1,
@@ -643,41 +648,40 @@ void single_thread_process_loop(const vector<string>& files1,
                                                      file2,
                                                      s3cmd_configfile);
         if (s3debug) {
-          cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << s3cmd1 << endl;
-          cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << s3cmd2 << endl;
+          PrintMessageDieOnError("S3 debug: " + s3cmd1, PROGRESS);
+          PrintMessageDieOnError("S3 debug: " + s3cmd2, PROGRESS);
         } else {
           if (system(s3cmd1.c_str()) != 0) {
-            errx(1, "[lobSTR-%s] ERROR: problem fetching file 1 from S3", _GIT_VERSION);
+            PrintMessageDieOnError("Problem fetching file1 from S3", ERROR);
           }
           if (system(s3cmd2.c_str()) != 0) {
-            errx(1, "[lobSTR-%s] ERROR: problem fetching file 2 from S3", _GIT_VERSION);
+            PrintMessageDieOnError("Problem fetching file2 from S3", ERROR);
           }
         }
         file1 = "/mnt/lobstr/"+file1;
         file2 = "/mnt/lobstr/"+file2;
       }
       if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] WARNING: file " << file1 << " or " << file2
-             << " does not exist" << endl;
+        PrintMessageDieOnError("File " + file1 + " or " + file2 + " does not exist", WARNING);
         continue;
       }
     } else {
-      cerr << "[lobstr-" << _GIT_VERSION << "] processing file " <<  file1 << " ...\n";
+      PrintMessageDieOnError("Processing file " + file1, PROGRESS);
       if (using_s3) {
         const std::string s3cmd = GenerateS3Command(s3bucket,
                                                     file1,
                                                     s3cmd_configfile);
         if (s3debug) {
-          cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << s3cmd << endl;
+          PrintMessageDieOnError("S3 debug: " + s3cmd, PROGRESS);
         } else {
           if (system(s3cmd.c_str()) != 0) {
-            errx(1, "[lobSTR-%s] ERROR: problem fetching file from S3", _GIT_VERSION);
+            PrintMessageDieOnError("Problem fetching file from S3", ERROR);
           }
         }
         file1 = "/mnt/lobstr/"+file1;
       }
       if (!fexists(file1.c_str())) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] WARNING: file " << file1 << " does not exist" << endl;
+        PrintMessageDieOnError("File " + file1 + " does not exist", WARNING);
         continue;
       }
     }
@@ -689,7 +693,9 @@ void single_thread_process_loop(const vector<string>& files1,
       aligned = false;
       num_reads_processed += 1;
       if (num_reads_processed % READPROGRESS == 0) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] Processed " << num_reads_processed << " reads" << endl;
+        stringstream msg;
+        msg << "Processed " << num_reads_processed << " reads";
+        PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       read_pair.read_count = num_reads_processed;
       // reset fields
@@ -761,7 +767,9 @@ void single_thread_process_loop(const vector<string>& files1,
       }
     }
     delete pReader;
-    cerr << "[lobstr-" << _GIT_VERSION << "] Processed " << num_reads_processed << " reads" << endl;
+    stringstream msg;
+    msg << "Processed " << num_reads_processed << " reads";
+    PrintMessageDieOnError(msg.str(), PROGRESS);
     if (using_s3) {
       string rmcmd = "rm " + file1;
       if (paired && !bam) {
@@ -769,10 +777,10 @@ void single_thread_process_loop(const vector<string>& files1,
         rmcmd += file2;
       }
       if (s3debug) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << rmcmd << endl;
+        PrintMessageDieOnError("S3 debug: " + rmcmd, PROGRESS);
       } else {
         if (system(rmcmd.c_str()) != 0) {
-          errx(1, "[lobSTR-%s] ERROR: problem deleting file", _GIT_VERSION);
+          PrintMessageDieOnError("Problem deleting file", ERROR);
         }
       }
     }
@@ -896,14 +904,16 @@ void multi_thread_process_loop(vector<string> files1,
   for (size_t i = 0; i < threads; ++i) {
     pthread_t id;
     if (pthread_create(&id, NULL, satellite_process_consumer_thread,
-                       reinterpret_cast<void*>(&mtdata)))
-      errx(1, "[lobstr-%s] ERROR: Failed to create thread", _GIT_VERSION);
+                       reinterpret_cast<void*>(&mtdata))) {
+      PrintMessageDieOnError("Failed to create threads", ERROR);
+    }
     satellite_threads.push_back(id);
   }
 
   if (pthread_create(&writer_thread, NULL, output_writer_thread,
-                     reinterpret_cast<void*>(&mtdata)))
-    errx(1, "[lobstr-%s] ERROR: failed to create output writer thread", _GIT_VERSION);
+                     reinterpret_cast<void*>(&mtdata))) {
+    PrintMessageDieOnError("Failed to create output writer threads", ERROR);
+  }
 
   size_t counter = 1;
   std::string file1;
@@ -912,7 +922,7 @@ void multi_thread_process_loop(vector<string> files1,
     file1 = files1.at(i);
     if (paired && !bam) {
       file2 = files2.at(i);
-      cerr << "[lobstr-" << _GIT_VERSION << "]: processing files " << file1 << " and " << file2 << "...\n";
+      PrintMessageDieOnError("Processing files " + file1 + " and " + file2, PROGRESS);
       if (using_s3) {
         const std::string s3cmd1 = GenerateS3Command(s3bucket,
                                                      file1,
@@ -921,42 +931,41 @@ void multi_thread_process_loop(vector<string> files1,
                                                      file2,
                                                      s3cmd_configfile);
         if (s3debug) {
-          cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << s3cmd1 << endl;
-          cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << s3cmd2 << endl;
+          PrintMessageDieOnError("S3 debug: " + s3cmd1, PROGRESS);
+          PrintMessageDieOnError("S3 debug: " + s3cmd2, PROGRESS);
         } else {
           if (system(s3cmd1.c_str()) != 0) {
-            errx(1, "[lobSTR-%s] ERROR: problem fetching file 1 from S3", _GIT_VERSION);
+            PrintMessageDieOnError("Problem fetching file1 from S3", ERROR);
           }
           if (system(s3cmd2.c_str()) != 0) {
-            errx(1, "[lobSTR-%s] ERROR: problem fetching file 2 from S3", _GIT_VERSION);
+            PrintMessageDieOnError("Problem fetching file2 from S3", ERROR);
           }
         }
         file1 = "/mnt/lobstr/"+file1;
         file2 = "/mnt/lobstr/"+file2;
       }
       if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] WARNING: file " << file1 << " or "
-             << file2 << " does not exist" << endl;
+        PrintMessageDieOnError("File " + file1 + " or " + file2 + " does not exist", WARNING);
         continue;
       }
     } else {
-      cerr << "[lobstr-" << _GIT_VERSION << "] processing file " <<  file1 << " ...\n";
+      PrintMessageDieOnError("Processing file " + file1, PROGRESS);
       if (using_s3) {
         const std::string s3cmd = GenerateS3Command(s3bucket,
                                                     file1,
                                                     s3cmd_configfile);
         if (s3debug) {
-          cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << s3cmd << endl;
+          PrintMessageDieOnError("S3 debug: " + s3cmd, PROGRESS);
         } else {
           if (system(s3cmd.c_str()) != 0) {
-            errx(1, "[lobSTR-%s] ERROR: problem fetching file from S3", _GIT_VERSION);
+            PrintMessageDieOnError("Problem fetching file from S3", ERROR);
           }
         }
         file1 = "/mnt/lobstr/"+file1;
         file2 = "/mnt/lobstr/"+file2;
       }
       if (!fexists(file1.c_str())) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] WARNING: file " << file1 << " does not exist" << endl;
+        PrintMessageDieOnError("File " + file1 + " or " + file2 + " does not exist", WARNING);
         continue;
       }
     }
@@ -965,7 +974,9 @@ void multi_thread_process_loop(vector<string> files1,
       ReadPair *pRecord = new ReadPair;
       pRecord->read_count = counter;
       if (counter % READPROGRESS == 0) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] Processed " << counter << " reads" << endl;
+        stringstream msg;
+        msg << "Processed " << counter << " reads";
+        PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       if (!pReader->GetNextRecord(pRecord))
         break;  // no more reads
@@ -982,10 +993,10 @@ void multi_thread_process_loop(vector<string> files1,
         rmcmd += file2;
       }
       if (s3debug) {
-        cerr << "[lobstr-" << _GIT_VERSION << "] S3 debug: " << rmcmd << endl;
+        PrintMessageDieOnError("S3 debug: " + rmcmd, PROGRESS);
       } else {
         if (system(rmcmd.c_str()) != 0) {
-          errx(1, "[lobSTR-%s] ERROR: problem deleting file", _GIT_VERSION);
+          PrintMessageDieOnError("Problem deleting file", ERROR);
         }
       }
     }
@@ -1001,7 +1012,7 @@ void multi_thread_process_loop(vector<string> files1,
 
 int main(int argc, char* argv[]) {
   parse_commandline_options(argc, argv);
-  if (my_verbose) cerr << "[lobstr-" << _GIT_VERSION << "] Initializing..." << endl;
+  PrintMessageDieOnError("Initializing...", PROGRESS);
   // open file with all names
   TextFileReader tReader(index_prefix+"strdict.txt");
   string line = "";
@@ -1055,7 +1066,7 @@ int main(int argc, char* argv[]) {
     boost::split(input_files1, input_files_string_p1, boost::is_any_of(","));
     boost::split(input_files2, input_files_string_p2, boost::is_any_of(","));
     if (!input_files1.size() == input_files2.size()) {
-      errx(1, "[lobSTR-%s] ERROR: different number of files for each pair", _GIT_VERSION);
+      PrintMessageDieOnError("Different number of files for each pair", ERROR);
     }
   } else {
     boost::split(input_files, input_files_string, boost::is_any_of(","));
@@ -1071,7 +1082,7 @@ int main(int argc, char* argv[]) {
   FFT_NUC_VECTOR::initialize_fftw_plans();
 
   // run detection/alignment
-  if (my_verbose) {cerr << "[lobstr-" << _GIT_VERSION << "] Running detection/alignment..." << endl;}
+  PrintMessageDieOnError("Running detection/alignment...", PROGRESS);
   if (threads == 1) {
     if (paired && !bam) {
       single_thread_process_loop(input_files1, input_files2);

@@ -102,7 +102,7 @@ void NoiseModel::ReadSTRInfo(const string& filename) {
     split(line, '\t', items);
     if (items.size() == 0) break;
     if (items.size() != 6) {
-      errx(1, "Error, STR info file has invalid format");
+      PrintMessageDieOnError("STR info file has invalid format", ERROR);
     }
     STRINFO info;
     info.chrom = items[0];
@@ -159,12 +159,12 @@ void NoiseModel::Train(ReadContainer* read_container) {
 
   // *** Step 1: model of probability of stuttering *** //
   if (debug) {
-    cerr << "Fitting mutation prob..." << endl;
+    PrintMessageDieOnError("[NoiseModel] Fitting mutation prob", DEBUG);
   }
   FitMutationProb(reads_for_training);
   // *** Step 2: Fitting step size distribution *** //
   if (debug) {
-    cerr << "Fitting step size prob..." << endl;
+    PrintMessageDieOnError("[NoiseModel ]Fitting step size prob", DEBUG);
   }
   FitStepProb(step_size_by_period);
 }
@@ -231,12 +231,14 @@ void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) 
   pWriter.Write(ssp.str());
   read_problem(stutter_problem_filename.c_str());
   if (my_verbose) {
-    cout << "Using " << reads_for_training.size() << " reads for training."
+    stringstream msg;
+    msg << "Using " << reads_for_training.size() << " reads for training."
          << " (Required: " << MIN_READS_FOR_TRAINING << ")" << endl;
-    cout << "Training data written to " << stutter_problem_filename << endl;
+    msg << "Training data written to " << stutter_problem_filename;
+    PrintMessageDieOnError(msg.str(), PROGRESS);
   }
   if (reads_for_training.size() < MIN_READS_FOR_TRAINING) {
-    errx(1, "ERROR: Too few reads for training");
+    PrintMessageDieOnError("Too few reads for training", ERROR);
   }
 
   // set up LIBLINEAR params
@@ -252,7 +254,7 @@ void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) 
   const char* params_msg = check_parameter(&stutter_prob,
                                            &stutter_prob_params);
   if (params_msg != NULL) {
-    errx(1, params_msg);
+    PrintMessageDieOnError(string(params_msg), ERROR);
   }
   // Build model and write to file
   stutter_prob_model = train(&stutter_prob, &stutter_prob_params);
@@ -308,8 +310,10 @@ void NoiseModel::FitStepProb(const map<int, map <int,int> > & step_size_by_perio
   p_incr = static_cast<float>(num_incr)/
     static_cast<float>(total_reads);
   if (debug) {
-    cerr << "num incr " << num_incr << " total " << total_reads
-         << "pinr " << p_incr << endl;
+    stringstream msg;
+    msg << "[NoiseModel] num incr " << num_incr << " total " << total_reads
+        << "pinr " << p_incr;
+    PrintMessageDieOnError(msg.str(), DEBUG);
   }
 
   // Fill PDF for each period
@@ -325,16 +329,21 @@ void NoiseModel::FitStepProb(const map<int, map <int,int> > & step_size_by_perio
         // Set poisson probability
         prob = dpois(i, period);
         if (debug) {
-          cerr << "poisson prob " << prob << endl;
+          stringstream msg;
+          msg << "[NoiseModel] poisson " << prob;
+          PrintMessageDieOnError(msg.str(), DEBUG);
         }
         // Set non-unit probability
         prob = prob*dgeom(mmod(i, period), 1/(average_step_size.at(period-MIN_PERIOD)+1));
         if (debug) {
-          cerr << "nonunit prob " << prob << "i " 
-               << i << " period " << period 
-               << " mmod " << mmod(i, period) << " geom " 
-               << dgeom(mmod(i, period), 1/(average_step_size.at(period-MIN_PERIOD)+1))
-               << " avg stp size " << average_step_size.at(period-MIN_PERIOD) << endl;
+          stringstream msg;
+          msg << "[NoiseModel] "
+              << "nonunit prob " << prob << "i " 
+              << i << " period " << period 
+              << " mmod " << mmod(i, period) << " geom " 
+              << dgeom(mmod(i, period), 1/(average_step_size.at(period-MIN_PERIOD)+1))
+              << " avg stp size " << average_step_size.at(period-MIN_PERIOD);
+          PrintMessageDieOnError(msg.str(), DEBUG);
         }
         // Set incr/decr probability
         float prob_plus = prob * p_incr;
@@ -416,35 +425,29 @@ float NoiseModel::GetTransitionProb(int a, int b,
 bool NoiseModel::ReadNoiseModelFromFile(const string& filename) {
   // *** Step 1: Read logistic regression model ***
   if (debug) {
-    cerr << "loading stutter prob from file..." << endl;
+    PrintMessageDieOnError("[NoiseModel] Loading stutter prob from file...", DEBUG);
   }
   stutter_prob_model = load_model(stutter_model_filename.c_str());
   // *** Step 2: Read step size parameters ***
   if (debug) {
-    cerr << "loading step size params from file..." << endl;
+    PrintMessageDieOnError("[NoiseModel] Loading step size params from file...", DEBUG);
   }
   TextFileReader nFile(stepsize_model_filename.c_str());
   string line;
   if (debug) {
-    cerr << "Getting average step size " << endl;
+    PrintMessageDieOnError("[NoiseModel] Getting average step size...", DEBUG);
   }
   // Get nonunit step size
   for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
     nFile.GetNextLine(&line);
-    if (debug) {
-      cerr << "Period " << period << "  " << line << endl;
-    }
     average_step_size.push_back(atof(line.c_str()));
   }
   if (debug ) {
-    cerr << "Getting prob incr/decr..." << endl;
+    PrintMessageDieOnError("[NoiseModel] Getting prob incr/decr...", DEBUG);
   }
   // Get prob incr/decr
   nFile.GetNextLine(&line);
   p_incr = atof(line.c_str());
-  if (debug ) {
-    cerr << "pinc " << p_incr << endl;
-  }
   // Get pdf
   for (int period = MIN_PERIOD; period <= MAX_PERIOD; period++) {
     nFile.GetNextLine(&line);
@@ -452,9 +455,6 @@ bool NoiseModel::ReadNoiseModelFromFile(const string& filename) {
     split(line, ' ', items);
     if (items.size() < 3*MAX_PERIOD*2+1) return false;
     for (size_t i = 1; i < items.size(); i++) {
-      if (debug) {
-        cerr << "Period " << period << " i " << i << " " << items[i] << endl;
-      }
       pdf_model.at(period-MIN_PERIOD).at(i-1) = atof(items[i].c_str());
     }
   }

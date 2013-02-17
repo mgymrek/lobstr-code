@@ -41,9 +41,9 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
   string bamfile = "";
   for (int i = 0; i < bamfiles.size(); i++) {
     bamfile = bamfiles.at(i);
-    cerr << "[allelotype] Processing " << bamfile << endl;
+    PrintMessageDieOnError("Processing " + bamfile, PROGRESS);
     if (!reader.Open(bamfile)) {
-      cerr << "[allelotype] WARNING: could not open bam file " << bamfile << endl;
+      PrintMessageDieOnError("Could not open bam file " + bamfile, WARNING);
       continue;
     }
     std::string header_text = reader.GetHeaderText();
@@ -140,12 +140,6 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
         }
         aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);
       }
-      if (profile) {
-        cout << aligned_read.nucleotides << " "
-             << aligned_read.diffFromRef << " "
-             <<  aligned_read.period << endl;
-      }
-
       // apply filters
       if (unit) {
         if (aligned_read.diffFromRef % aligned_read.period  != 0) continue;

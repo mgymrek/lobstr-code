@@ -90,9 +90,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
                              fft_window_size, fft_window_step);
 
   if (!ed_filter.EntropyIsAboveThreshold()) {
-    if (why_not_debug) {
-      cerr << "[STRDetector]: Entropy threshold failed" << endl;
-    }
     return false;
   }
 
@@ -207,10 +204,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
 
     // check that energy is high enough
     if (best_energy < period_energy_threshold) {
-      if (why_not_debug) {
-        cerr <<"Energy below threshold " << best_energy << " "
-             << best_period << endl;
-      }
       return false;
     }
     if (fabs(next_best_energy-best_energy)/

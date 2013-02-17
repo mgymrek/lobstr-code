@@ -52,9 +52,27 @@ void AddOption(const string& optname, const string& optval,
   return;
 }
 
-void PrintMessage(const string& msg) {
+void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
+  string typestring = "";
+  switch (msgtype) {
+  case ERROR:
+    typestring = "ERROR: ";
+    break;
+  case WARNING:
+    typestring = "WARNING: ";
+    break;
+  case PROGRESS:
+    typestring = "ProgressMeter: ";
+    break;
+  case DEBUG:
+    typestring = "DEBUG: ";
+    break;
+  default:
+    errx(1,"Invalid message type. This should never happen");
+  }
   cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
-       << "-" << _GIT_VERSION << "] " << msg << endl;
+       << "-" << _GIT_VERSION << "] " << typestring << msg << endl;
+  if (msgtype == ERROR) exit(1);
 }
 
 void TrimRead(const string& input_nucs,
