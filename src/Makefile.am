@@ -45,7 +45,6 @@ noinst_headers = \
 	SamFileWriter.h \
 	STRDetector.h \
 	STRRecord.h \
-	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
 	VCFWriter.h \
@@ -151,7 +150,6 @@ liblobstr_a_SOURCES = \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
 	STRDetector.cpp \
-	TabFileWriter.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \

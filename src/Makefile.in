@@ -119,9 +119,8 @@ am_liblobstr_a_OBJECTS = BamFileReader.$(OBJEXT) \
 	HammingWindowGenerator.$(OBJEXT) MultithreadData.$(OBJEXT) \
 	nw.$(OBJEXT) runtime_parameters.$(OBJEXT) \
 	SamFileWriter.$(OBJEXT) STRDetector.$(OBJEXT) \
-	TabFileWriter.$(OBJEXT) TextFileReader.$(OBJEXT) \
-	TextFileWriter.$(OBJEXT) TukeyWindowGenerator.$(OBJEXT) \
-	ZippedFastaFileReader.$(OBJEXT) \
+	TextFileReader.$(OBJEXT) TextFileWriter.$(OBJEXT) \
+	TukeyWindowGenerator.$(OBJEXT) ZippedFastaFileReader.$(OBJEXT) \
 	ZippedFastqFileReader.$(OBJEXT) ZippedTextFileReader.$(OBJEXT) \
 	bamlite.$(OBJEXT) bntseq.$(OBJEXT) bwaseqio.$(OBJEXT) \
 	bwape.$(OBJEXT) bwase.$(OBJEXT) bwt.$(OBJEXT) bwtaln.$(OBJEXT) \
@@ -418,7 +417,6 @@ noinst_headers = \
 	SamFileWriter.h \
 	STRDetector.h \
 	STRRecord.h \
-	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
 	VCFWriter.h \
@@ -523,7 +521,6 @@ liblobstr_a_SOURCES = \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
 	STRDetector.cpp \
-	TabFileWriter.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
@@ -936,7 +933,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamReadGroupDictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamSequenceDictionary.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TabFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TukeyWindowGenerator.Po@am__quote@

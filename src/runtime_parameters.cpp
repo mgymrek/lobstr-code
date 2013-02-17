@@ -31,7 +31,6 @@ std::map<std::string, std::string> canonicalMSTable;
 
 // flags
 bool my_verbose = false;
-bool sam = true;
 bool debug = false;
 bool fastq = false;
 bool bam = false;

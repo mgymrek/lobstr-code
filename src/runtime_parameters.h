@@ -49,7 +49,6 @@ enum INPUT_TYPE {
 
 // flags
 extern bool my_verbose;
-extern bool sam;
 extern bool debug;
 extern bool fastq;
 extern bool bam;

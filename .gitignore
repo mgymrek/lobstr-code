@@ -14,3 +14,5 @@ stamp-h1
 config.log
 config.status
 src/.deps
+test.aligned.tab
+test.aligned.bam
