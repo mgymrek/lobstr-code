@@ -222,7 +222,8 @@ void parse_commandline_options(int argc, char* argv[]) {
       command = string(optarg);
       AddOption("command", string(optarg), true, &user_defined_arguments_allelotyper);
       if ((command != "train") & (command != "classify")) {
-        cerr << "\n\n[allelotype] ERROR: Command " << command
+        cerr << "\n\n[allelotype-" << _GIT_VERSION << "]"
+             <<  "ERROR: Command " << command
              << " is invalid. Command must be one of: train, classify";
         show_help();
         exit(1);
@@ -342,18 +343,18 @@ void parse_commandline_options(int argc, char* argv[]) {
 
   // any arguments left over are extra
   if (optind < argc) {
-    cerr << "\n\n[allelotype] ERROR: Unnecessary leftover arguments";
+    cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: Unnecessary leftover arguments";
     show_help();
     exit(1);
   }
   if (command.empty()) {
-    cerr << "\n\n[allelotype] ERROR: Must specify a command";
+    cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: Must specify a command";
     show_help();
     exit(1);
   }
   if (command == "train") {
     if (bam_files_string.empty() || noise_model.empty()) {
-      cerr << "\n\n[allelotype] ERROR: Required arguments are missing. " \
+      cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: Required arguments are missing. " \
         "Please specify a bam file and an output prefix";
       show_help();
       exit(1);
@@ -362,7 +363,7 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (command == "classify") {
     if (bam_files_string.empty() || noise_model.empty()
         || output_prefix.empty()) {
-      cerr << "\n\n[allelotype] ERROR: Required arguments are missing. " \
+      cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: Required arguments are missing. " \
         "Please specify a bam file, " \
         "output prefix, and noise model";
       show_help();
@@ -372,18 +373,18 @@ void parse_commandline_options(int argc, char* argv[]) {
   // check that parameters make sense
   if ((command == "train") &&
       (haploid_chroms_string.empty())) {
-    cerr << "\n\n[allelotype] ERROR: Must specify which locus are " \
+    cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: Must specify which locus are " \
       "hemizygous using the --haploid option";
     show_help();
     exit(1);
   }
   if (strinfofile.empty()) {
-    cerr << "\n\n[allelotype] ERROR: Must specify --strinfo to use noise model";
+    cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: Must specify --strinfo to use noise model";
     show_help();
     exit(1);
   }
   if (index_prefix.empty() && command != "train") {
-    cerr << "\n\n[allelotype] ERROR: Must specify --index-prefix";
+    cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: Must specify --index-prefix";
     show_help();
     exit(1);
   }
@@ -391,7 +392,7 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (sample.empty()) sample = output_prefix;
   // can't generate posteriors without priors
   if (generate_posteriors && known_alleles_file.empty()) {
-    cerr << "\n\n[allelotype] ERROR: cannot generate priors without "
+    cerr << "\n\n[allelotype-" << _GIT_VERSION << "] ERROR: cannot generate priors without "
       "known alleles file";
     show_help();
     exit(1);
@@ -402,7 +403,7 @@ int main(int argc, char* argv[]) {
   /* parse command line options */
   parse_commandline_options(argc, argv);
 
-  if (my_verbose) cerr << "[allelotype] Running allelotyping with command "
+  if (my_verbose) cerr << "[allelotype-" << _GIT_VERSION << "] Running allelotyping with command "
                        << command << endl;
 
   /* Get haploid chromosomes */
@@ -433,34 +434,34 @@ int main(int argc, char* argv[]) {
   /* Add reads to read container */
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
-  if (my_verbose) cerr << "[allelotype] Adding reads to read container" << endl;
+  if (my_verbose) cerr << "[allelotype-" << _GIT_VERSION << "] Adding reads to read container" << endl;
   ReadContainer read_container;
   read_container.AddReadsFromFile(bam_files, exclude_partial);
 
   /* Perform pcr dup removal if specified */
   if (rmdup) {
-    if (my_verbose) cerr << "[allelotype] Performing pcr duplicate removal" << endl;
+    if (my_verbose) cerr << "[allelotype-" << _GIT_VERSION << "] Performing pcr duplicate removal" << endl;
     read_container.RemovePCRDuplicates();
   }
 
   /* Train/classify */
   if (command == "train") {
-    if (my_verbose) cerr << "[allelotype] Training noise model..." << endl;
+    if (my_verbose) cerr << "[allelotype-" << _GIT_VERSION << "] Training noise model..." << endl;
     nm.Train(&read_container);
   } else if (command == "classify") {
     if (!nm.ReadNoiseModelFromFile(noise_model)) {
-      errx(1, "[allelotype] ERROR: Problem reading noise file");
+      errx(1, "[allelotype-%s] ERROR: Problem reading noise file", _GIT_VERSION);
     }
   }
-  if (my_verbose) cerr << "[allelotype] Loading reference genome..." << endl;
+  if (my_verbose) cerr << "[allelotype-" << _GIT_VERSION << "] Loading reference genome..." << endl;
   if (command == "classify") {
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides);
     // If available, load priors
     if (!known_alleles_file.empty()) {
-      if (my_verbose) cerr << "[allelotype] Loading known alleles..." << endl;
+      if (my_verbose) cerr << "[allelotype-" << _GIT_VERSION << "] Loading known alleles..." << endl;
       genotyper.LoadPriors(known_alleles_file);
     }
-    if (my_verbose) cerr << "[allelotype] Classifying allelotypes..." << endl;
+    if (my_verbose) cerr << "[allelotype-" << _GIT_VERSION << "] Classifying allelotypes..." << endl;
     if (generate_tab) {
       genotyper.Genotype(read_container,
                          output_prefix + ".genotypes.tab",

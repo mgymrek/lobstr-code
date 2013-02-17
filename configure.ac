@@ -13,7 +13,7 @@ m4_include([ax_check_zlib.m4])
 m4_include([ax_blas.m4])
 
 AC_INIT([lobSTR],
-        [2.0.3],
+        [v2.0.3],
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
@@ -21,6 +21,9 @@ AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([dist-bzip2])
 
 AM_PATH_CPPUNIT(1.9.6)
+
+GIT_VERSION=`git describe --dirty --always`
+AC_SUBST(GIT_VERSION)
 
 CXXFLAGS="$CXXFLAGS"
 CFLAGS="$CFLAGS"
@@ -71,7 +74,7 @@ case "${host_cpu}-${host_os}" in
 					  [ext_CFLAGS="-D_FILE_OFFSET_BITS=64"; AC_MSG_RESULT([no])]);;
 esac
 
-CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS}"
+CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS} -D_GIT_VERSION=\" \\\"${GIT_VERSION}\\\"\""
 CXXFLAGS="$CFLAGS"
 CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS "
 LDFLAGS="$ext_LDFLAGS" 
