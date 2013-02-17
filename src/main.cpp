@@ -227,7 +227,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_EXTEND_FLANK,
     OPT_SW,
     OPT_DEBUGADJUST,
-    OPT_NOTAB,
     OPT_PARTIALDEBUG,
     OPT_ORIG_READ,
     OPT_MAPQ,
@@ -286,7 +285,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"oldillumina", 0, 0, OPT_OLDILLUMINA},
     {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
     {"why-not", 0, 0, OPT_WHY_NOT},
-    {"no-tab", 0, 0, OPT_NOTAB},
     {"partial-debug", 0, 0, OPT_PARTIALDEBUG},
     {"orig", 0, 0, OPT_ORIG_READ},
     {"nextbest", 0, 0, OPT_CHECKNEXTBEST},
@@ -495,9 +493,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_OLDILLUMINA:
       QUALITY_CONSTANT = 64;
       AddOption("oldillumina", "", false, &user_defined_arguments);
-      break;
-    case OPT_NOTAB:
-      notab++;
       break;
     case OPT_ORIG_READ:
       include_orig_read_start++;

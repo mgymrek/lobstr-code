@@ -56,9 +56,9 @@ void GenotypeTabWriter::WriteRecord(const STRRecord& str_record) {
                 << str_record.agreeing << "\t"
                 << str_record.coverage - str_record.agreeing << "\t"
                 << str_record.readstring << "\t"
-                << str_record.score << "\t" // posterior prob. of call
-                << str_record.allele1_score << "\t" // marginal posterior prob
-                << str_record.allele2_score << "\t" // marginal posterior prob
+                << str_record.max_lik_score << "\t" // posterior prob. of call
+                << str_record.allele1_marginal_lik_score << "\t" // marginal posterior prob
+                << str_record.allele2_marginal_lik_score << "\t" // marginal posterior prob
                 << str_record.partial_coverage << "\t"
                 << str_record.max_partial_string << "\t"
                 << str_record.partialreadstring << "\t"

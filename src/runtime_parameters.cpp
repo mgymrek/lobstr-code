@@ -33,11 +33,9 @@ std::map<std::string, std::string> canonicalMSTable;
 bool my_verbose = false;
 bool sam = true;
 bool debug = false;
-bool plot_info = false;
-bool genotype_only = false;
 bool fastq = false;
 bool bam = false;
-bool notab = false;
+bool noweb = false;
 
 // threading
 size_t threads = 1;
@@ -47,8 +45,6 @@ std::string input_files_string = "";
 std::string input_files_string_p1 = "";
 std::string input_files_string_p2 = "";
 INPUT_TYPE input_type = INPUT_FASTA;
-std::string table_file = "";
-std::string genome_file = "";
 bool paired = false;
 bool gzip = false;
 
@@ -94,42 +90,28 @@ int gap_extend = 1;
 float fpr = 0.01;
 bool partial_debug = false;
 std::string read_group = "";
+bool include_orig_read_start = false;
 
 // genotyping params
 std::string bam_files_string = "";
 std::string command = "";
 std::string noise_model = "";
+std::string haploid_chroms_string = "";
+std::string strinfofile = "";
+std::string known_alleles_file = "";
 std::string use_chrom = "";
+bool generate_tab = false;
 bool rmdup = true;
-float min_het_freq = 0.20;
-bool male = true;
-bool sex_unknown = false;
-bool sex_set = false;
-int min_coverage = 1;
-std::string aligned_file = "";
-bool not_lobstr_file_detected = false;
 bool include_flank = true;
 bool print_reads = false;
-int max_matedist = 100000;
-float min_supp_freq = 0.25;
-float MIN_POSTERIOR = 0.0;
-float MIN_MARGINAL = 0.0;
-std::string haploid_chroms_string = "";
 bool exclude_partial = false;
-std::string strinfofile = "";
-std::string priorsfile = "";
+bool generate_posteriors = false;
+float min_het_freq = 0;
+int max_matedist = 100000;
 
 // vcf params
 std::string exclude_positions_file = "";
 std::string sample = "";
-bool include_all_alleles = false;
-
-// anonymizing params
-std::string str_alignment_file = "";
-std::string database_file = "";
-bool mask_n = false;
-float error_rate = 0.0001;
-bool include_orig_read_start = false;
 
 // debugging
 bool profile = false;

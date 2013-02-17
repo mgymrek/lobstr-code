@@ -41,9 +41,9 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
   string bamfile = "";
   for (int i = 0; i < bamfiles.size(); i++) {
     bamfile = bamfiles.at(i);
-    cerr << "Processing " << bamfile << endl;
+    cerr << "[allelotype] Processing " << bamfile << endl;
     if (!reader.Open(bamfile)) {
-      cerr << "Warning: could not open bam file " << bamfile << endl;
+      cerr << "[allelotype] WARNING: could not open bam file " << bamfile << endl;
       continue;
     }
     std::string header_text = reader.GetHeaderText();

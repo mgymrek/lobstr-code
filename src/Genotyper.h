@@ -41,8 +41,7 @@ class Genotyper {
  public:
   Genotyper(NoiseModel* _noise_model,
             const std::vector<std::string>& _haploid_chroms,
-            std::map<pair<std::string, int>, char>* _ref_nucleotides,
-            bool _simple);
+            std::map<pair<std::string, int>, char>* _ref_nucleotides);
   ~Genotyper();
 
   /* Load prior information on alleles and allele frequencies */
@@ -68,17 +67,7 @@ class Genotyper {
   /* Get most likely allelotype */
   void FindMLE(const list<AlignedRead>& aligned_reads,
                const map<int, float>& prior_freqs,
-               bool haploid, int period,
-               int* allele1, int* allele2, float* score, float* maxloglik,
-               float* score_allele1, float* score_allele2,
-               map<pair<int,int>,float>* allelotype_likelihood_grid,
-               map<pair<int,int>,float>* allelotype_posterior_grid,
-               vector<int>* alleles_to_include);
-
-  /* Get allelotype without using noise model */
-  void SimpleGenotype(const list<AlignedRead>& aligned_reads,
-                      int period,
-                      int* allele1, int* allele2, float* score);
+               bool haploid, STRRecord* str_record);
 
   /* Get prior for genotype <allele1,allele2>, assuming HWE */
   float GetPrior(int allele1, int allele2,
@@ -87,14 +76,11 @@ class Genotyper {
   /* chromosomes to treat as haploid */
   std::vector<std::string> haploid_chroms;
 
-  /* use the simple genotyper with no noise model */
-  bool simple;
-
   /* store the noise model parameters */
   NoiseModel* noise_model;
 
-  /* Use priors that have been loaded from a file */
-  bool use_priors;
+  /* Use information about known alleles */
+  bool use_known_alleles;
 
   /* Information on allele frequencies to use as priors */
   map<pair<string, int>, map<int, float> > allele_frequencies_per_locus;

@@ -51,11 +51,9 @@ enum INPUT_TYPE {
 extern bool my_verbose;
 extern bool sam;
 extern bool debug;
-extern bool plot_info;
-extern bool genotype_only;
 extern bool fastq;
 extern bool bam;
-extern bool notab;
+extern bool noweb;
 
 // threading
 extern size_t threads;
@@ -65,8 +63,6 @@ extern std::string input_files_string;
 extern std::string input_files_string_p1;
 extern std::string input_files_string_p2;
 extern INPUT_TYPE input_type;
-extern std::string table_file;
-extern std::string genome_file;
 extern bool paired;
 extern bool gzip;
 
@@ -112,42 +108,28 @@ extern int gap_extend;
 extern float fpr;
 extern bool partial_debug;
 extern std::string read_group;
+extern bool include_orig_read_start;
 
 // genotyping params
 extern std::string bam_files_string;
 extern std::string command;
 extern std::string noise_model;
+extern std::string haploid_chroms_string;
+extern std::string strinfofile;
+extern std::string known_alleles_file;
 extern std::string use_chrom;
+extern bool generate_tab;
 extern bool rmdup;
-extern float min_het_freq;
-extern bool male;
-extern bool sex_unknown;
-extern bool sex_set;
-extern int min_coverage;
-extern std::string aligned_file;
-extern bool non_lobstr_file_detected;
 extern bool include_flank;
 extern bool print_reads;
-extern int max_matedist;
-extern float min_supp_freq;
-extern float MIN_POSTERIOR;
-extern float MIN_MARGINAL;
-extern std::string haploid_chroms_string;
 extern bool exclude_partial;
-extern std::string strinfofile;
-extern std::string priorsfile;
+extern bool generate_posteriors;
+extern float min_het_freq;
+extern int max_matedist;
 
 // vcf params
 extern std::string exclude_positions_file;
 extern std::string sample;
-extern bool include_all_alleles;
-
-// anonymization params (deprecated)
-extern std::string str_alignment_file;
-extern std::string database_file;
-extern bool mask_n;
-extern float error_rate;
-extern bool include_orig_read_start;
 
 // debug
 extern bool profile;

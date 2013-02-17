@@ -5,3 +5,12 @@
 lobSTR
 lobSTRIndex
 allelotype
+test.genotypes.tab
+test.vcf
+autom4te.cache/*
+Makefile
+config.h
+stamp-h1
+config.log
+config.status
+src/.deps

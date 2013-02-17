@@ -26,23 +26,29 @@ using namespace std;
   Struct to keep track of info for a single STR locus
  */
 struct STRRecord {
+  // Locus properties
   std::string chrom;
   int start;
   int stop;
   std::string repseq;
   int period;
+  char ref_allele;
+  float refcopy;
+  // Data properties
   int allele1;
   int allele2;
   int coverage;
-  float score; // max a posterior
-  float max_log_lik; // maximuml ikelihood
-  float allele1_score; // marginal posterior
-  float allele2_score; // marginal posterior
+  float posterior_prob; // posterior prob. of call
+  float max_log_lik; // maximum likelihood
+  float max_lik_score; // ML/sum of all likelihoods
+  float allele1_marginal_lik_score; // marginal likelihood score
+  float allele2_marginal_lik_score; // marginal likelihood score
+  float allele1_marginal_posterior_prob; // marginal posterior prob
+  float allele2_marginal_posterior_prob; // marginal posterior prob
   int conflicting;
   int agreeing;
   int partial_coverage;
   int num_stitched;
-  float refcopy;
   int max_partial;
   std::string readstring;
   std::string partialreadstring;
@@ -50,8 +56,8 @@ struct STRRecord {
   std::string allele1_string;
   std::string allele2_string;
   std::map<pair<int,int>,float> likelihood_grid; // log10(P(R|G))
-  std::map<pair<int,int>,float> posterior_grid; // log10 P(R|G)/sum P(R|G)P(G)
-  char ref_allele;
+  std::map<int,int> spanning_reads;
+  std::map<int,int> partial_reads;
   vector<int> alleles_to_include;
   void Reset() {
     chrom = "";
@@ -59,22 +65,31 @@ struct STRRecord {
     stop = -1;
     repseq = "";
     period = -1;
+    ref_allele = 'N';
+    refcopy = 0;
     allele1 = -10000;
     allele2 = -10000;
     coverage = 0;
-    score = -1;
+    posterior_prob = -1;
     max_log_lik = -10000;
-    allele1_score = -1;
-    allele2_score = -1;
+    max_lik_score = -1;
+    allele1_marginal_lik_score = -1;
+    allele2_marginal_lik_score = -1;
+    allele1_marginal_posterior_prob = -1;
+    allele2_marginal_posterior_prob = -1;
     conflicting = 0;
     agreeing = 0;
     partial_coverage = 0;
     num_stitched = 0;
-    refcopy = -1;
-    max_partial = 0;
-    ref_allele = 'N';
+    max_partial = -10000;
+    readstring = "";
+    partialreadstring = "";
+    max_partial_string = "";
+    allele1_string = "";
+    allele2_string = "";
     likelihood_grid.clear();
-    posterior_grid.clear();
+    spanning_reads.clear();
+    partial_reads.clear();
     alleles_to_include.clear();
   }
 };

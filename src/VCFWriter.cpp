@@ -80,22 +80,27 @@ VCFWriter::VCFWriter(const string& filename)
   output_stream << "##ALT=<ID=STRVAR,Description=\"Short tandem variation\">" << endl;
   // FORMAT fields
   output_stream << "##FORMAT=<ID=ALLREADS,Number=1,Type=String,Description=\"All reads aligned to locus\">" << endl;
-  output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;  
+  output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;
+  if (generate_posteriors) {
+    output_stream << "##FORMAT=<ID=AMP,Number=1,Type=String,Description=\"Allele marginal posterior probabilities\">" << endl;
+  }
+  output_stream << "##FORMAT=<ID=AML,Number=1,Type=String,Description=\"Allele marginal likelihood ratio scores\">" << endl;
   output_stream << "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">" << endl;
   output_stream << "##FORMAT=<ID=GB,Number=1,Type=String,Description=\"Genotype given in bp difference from reference\">" << endl;
-  output_stream << "##FORMAT=<ID=GL,Number=G,Type=Float,Description=\"Genotype likelihoods (log10 scaled)\">" << endl;
   output_stream << "##FORMAT=<ID=PL,Number=G,Type=Integer,Description=\"Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification\">" << endl;
-  output_stream << "##FORMAT=<ID=GPP,Number=G,Type=Float,Description=\"Genotype Posterior probabilities (phred scaled, -10log10)\">" << endl;
+  output_stream << "##FORMAT=<ID=Q,Number=1,Type=Float,Description=\"Likelihood ratio score of allelotype call\">" << endl;
   output_stream << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
-  output_stream << "##FORMAT=<ID=PP,Number=1,Type=Float,Description=\"Posterior probability of call\">" << endl;
   output_stream << "##FORMAT=<ID=MP,Number=1,Type=Float,Description=\"Upper bound on maximum partially spanning allele\">" << endl;
   output_stream << "##FORMAT=<ID=PC,Number=1,Type=Integer,Description=\"Coverage by partially spanning reads\">" << endl;
+  if (generate_posteriors) {
+    output_stream << "##FORMAT=<ID=PP,Number=1,Type=Float,Description=\"Posterior probability of call\">" << endl;
+  }
   output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
   // header columns
   output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" << sample << endl;
   if (!exclude_positions_file.empty()) {
     if (my_verbose) {
-      cerr << "Loading positions to exclude..." << endl;
+      cerr << "[allelotype] Loading positions to exclude..." << endl;
     }
     LoadPositionsToExclude();
   }
@@ -109,7 +114,7 @@ void VCFWriter::LoadPositionsToExclude() {
     split(line, '\t', items);
     if (items.size() == 0) break;
     if (items.size() != 2) {
-      errx(1, "Error, exclude-pos file has invalid format.");
+      errx(1, "[allelotype] ERROR: exclude-pos file has invalid format.");
     }
     string chrom;
     int pos;
@@ -187,9 +192,11 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
     genotype_string << allele1_num << "/" << allele2_num;
   }
   // QUAL
-  float qual = -10*log10(1-str_record.score); // score is posterior prob of call
+  float qual = NOQUAL;
+  if (str_record.coverage > 0) {
+    qual = -10*log10(1-str_record.max_lik_score); // score is likelihood score
+  }
   if (qual > POSITIVE_INFINITY) {qual = POSITIVE_INFINITY;}
-  if (str_record.coverage == 0) {qual = NOQUAL;}
   output_stream << qual << "\t";
   // FILTER
   output_stream << ".\t";
@@ -201,86 +208,83 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                  << "REF=" << str_record.refcopy << ";"
                  << "VT=STR" << "\t";
   // FORMAT
-  output_stream << "GT:ALLREADS:ALLPARTIALREADS:DP:GB:GL:PL:GPP:MP:PC:PP:STITCH" << "\t";
+  if (generate_posteriors) {
+    output_stream << "GT:ALLREADS:ALLPARTIALREADS:AML:DP:GB:PL:Q:MP:PC:STITCH:AMP:PP" << "\t";
+  } else {
+    output_stream << "GT:ALLREADS:ALLPARTIALREADS:AML:DP:GB:PL:Q:MP:PC:STITCH" << "\t";
+  }
+
   // Sample info
-  size_t num_alleles = str_record.alleles_to_include.size()+1;
+  size_t num_alleles = str_record.alleles_to_include.size();
   size_t num_allele_pairs = (num_alleles*(num_alleles+1))/2;
   vector<float> genotype_likelihoods; // log10(lik)
   genotype_likelihoods.resize((size_t)(num_allele_pairs));
-  vector<float> genotype_posteriors; // -10*log10(posteriors)
-  genotype_posteriors.resize((size_t)(num_allele_pairs));
 
-  // go over possible genotypes
+  // go over possible genotypes. assume 0 at front of alleles to include
   for (size_t i = 0; i < num_alleles; i++) {
     for (size_t j = 0; j <= i; j++) {
-      // from http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41 F(j/k) = (k*(k+1)/2)+j.
       size_t index = i*(i+1)/2+j;
-      int a1,a2;
-      if (i == 0) {a1 = 0;}
-      else {a1 = str_record.alleles_to_include.at(i-1);}
-      if (j == 0) {a2 = 0;}
-      else {a2 = str_record.alleles_to_include.at(j-1);}
+      int a1 = str_record.alleles_to_include.at(i);
+      int a2 = str_record.alleles_to_include.at(j);
       pair<int, int> atype;
       if (a1 < a2) atype = pair<int,int>(a1,a2);
       else atype = pair<int,int>(a2,a1);
-      if (str_record.likelihood_grid.find(atype) != str_record.likelihood_grid.end()&&
-          str_record.posterior_grid.find(atype) != str_record.posterior_grid.end()) {
+      if (str_record.likelihood_grid.find(atype) != str_record.likelihood_grid.end()) {
         float lik = (str_record.likelihood_grid.at(atype));
         if (lik < NEGATIVE_INFINITY) {lik = NEGATIVE_INFINITY;}
-        float post = -10*log10(str_record.posterior_grid.at(atype));
-        if (post > POSITIVE_INFINITY) {post = POSITIVE_INFINITY;}
         genotype_likelihoods[index] = lik;
-        genotype_posteriors[index] = post;
       }
     }
   }
-  stringstream genotype_likelihoods_string;
   stringstream genotype_scaled_likelihoods_string;
-  stringstream genotype_posteriors_string;
   if (str_record.coverage == 0) {
-    genotype_likelihoods_string << ".";
     genotype_scaled_likelihoods_string << ".";
-    genotype_posteriors_string << ".";
   } else {
     for (size_t i = 0; i < genotype_likelihoods.size(); i++) {
-      genotype_likelihoods_string << genotype_likelihoods.at(i);
-      genotype_scaled_likelihoods_string << static_cast<int>(-10*(genotype_likelihoods.at(i)-str_record.max_log_lik));
-      genotype_posteriors_string << genotype_posteriors.at(i);
+      genotype_scaled_likelihoods_string << static_cast<int>
+        (-10*(genotype_likelihoods.at(i)-str_record.max_log_lik));
       if (i != genotype_likelihoods.size()-1) {
-        genotype_likelihoods_string << ",";
         genotype_scaled_likelihoods_string << ",";
-        genotype_posteriors_string << ",";
       }
     }  
   }
   stringstream gbstring;
+  stringstream marginal_posterior_string;
+  stringstream marginal_lik_score_string;
+  if (str_record.coverage == 0) {
+    gbstring << "./.";
+    marginal_posterior_string << "./.";
+    marginal_lik_score_string << "./.";
+  } else {
+    gbstring << str_record.allele1 << "/"
+             << str_record.allele2;
+    marginal_posterior_string << str_record.allele1_marginal_posterior_prob << "/"
+                              << str_record.allele2_marginal_posterior_prob;
+    marginal_lik_score_string << str_record.allele1_marginal_lik_score << "/"
+                              << str_record.allele2_marginal_lik_score;
+  }
   stringstream max_partial_string;
-  if (str_record.coverage == 0) {
-    gbstring << ".";
-  } else {
-    gbstring << str_record.allele1;
-  }
-  gbstring << "/";
-  if (str_record.coverage == 0) {
-    gbstring << ".";
-  } else {
-    gbstring << str_record.allele2;
-  }
   if (str_record.partial_coverage == 0) {
     max_partial_string << "."; 
   } else {
     max_partial_string << str_record.max_partial_string;
   }
+
+  // Output format fields
   output_stream << genotype_string.str() << ":"
                 << str_record.readstring << ":"
                 << str_record.partialreadstring << ":"
+                << marginal_lik_score_string.str() << ":"
                 << str_record.coverage << ":"
                 << gbstring.str() << ":"
-                << genotype_likelihoods_string.str() << ":"
                 << genotype_scaled_likelihoods_string.str() << ":"
-                << genotype_posteriors_string.str() << ":"
+                << str_record.max_lik_score << ":"
                 << max_partial_string.str() << ":"
                 << str_record.partial_coverage << ":"
-                << str_record.score << ":"
-                << str_record.num_stitched << endl;
+                << str_record.num_stitched;
+  if (generate_posteriors) {
+    output_stream << ":" << marginal_posterior_string.str() << ":";
+    output_stream << str_record.posterior_prob;
+  }
+  output_stream << endl;
 }
