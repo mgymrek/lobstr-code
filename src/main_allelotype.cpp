@@ -89,7 +89,8 @@ void show_help() {
     "--include-flank:                Include indels in flanking regions when\n" \
     "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
-    "-v,--verbose:                   print out helpful progress messages\n\n" \
+    "-v,--verbose:                   print out helpful progress messages\n" \
+    "--version:                      print out allelotype program version number\n\n" \
     "Options for calculating and reporting allelotypes:\n" \
     "--use-known-alleles <FILE>:     Use prior information about alleles in\n" \
     "                                the population when determining the allelotype.\n" \
@@ -170,6 +171,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_UNIT,
     OPT_USE_KNOWN_ALLELES,
     OPT_VERBOSE,
+    OPT_VERSION,
   };
 
   int ch;
@@ -203,9 +205,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"unit", 0, 0, OPT_UNIT},
     {"use-known-alleles", 1, 0, OPT_USE_KNOWN_ALLELES},
     {"verbose", 0, 0, OPT_VERBOSE},
+    {"version", 0, 0, OPT_VERSION},
     {NULL, no_argument, NULL, 0},
   };
-
+  program = ALLELOTYPE;
   ch = getopt_long(argc, argv, "hv?",
                    long_options, &option_index);
   while (ch != -1) {
@@ -329,10 +332,13 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_VERBOSE:
       my_verbose++;
       break;
+    case OPT_VERSION:
+      cerr << _GIT_VERSION << endl;
+      exit(0);
+      break;
     case '?':
       show_help();
       exit(1);
-      break;
     default:
       show_help();
       exit(1);

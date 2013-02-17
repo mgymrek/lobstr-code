@@ -47,6 +47,12 @@ enum INPUT_TYPE {
   INPUT_BAM
 };
 
+enum PROGRAM {
+  LOBSTR = 0,
+  ALLELOTYPE
+};
+extern PROGRAM program;
+
 // flags
 extern bool my_verbose;
 extern bool debug;

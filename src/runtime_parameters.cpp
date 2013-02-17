@@ -25,6 +25,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 // keep track of user defined arguments and git version
 std::string user_defined_arguments = "# version=lobSTR_"+std::string(_GIT_VERSION) + ";";
 std::string user_defined_arguments_allelotyper = "# version=allelotype_"+std::string(_GIT_VERSION) + ";";
+PROGRAM program = LOBSTR;
 
 // keep track of common ones
 std::map<std::string, std::string> canonicalMSTable;

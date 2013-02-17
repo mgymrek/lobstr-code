@@ -52,6 +52,11 @@ void AddOption(const string& optname, const string& optval,
   return;
 }
 
+void PrintMessage(const string& msg) {
+  cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
+       << "-" << _GIT_VERSION << "] " << msg << endl;
+}
+
 void TrimRead(const string& input_nucs,
               const string& input_quals,
               string* trimmed_nucs,

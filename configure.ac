@@ -13,7 +13,7 @@ m4_include([ax_check_zlib.m4])
 m4_include([ax_blas.m4])
 
 AC_INIT([lobSTR],
-        [v2.0.3],
+        [lobSTR --version or allelotype --version gives current version],
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)

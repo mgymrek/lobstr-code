@@ -52,6 +52,9 @@ void AddOption(const std::string& optname,
                const std::string& optval,
                bool hasvalue, std::string* paramstring);
 
+// print message to command line
+void PrintMessage(const std::string& msg);
+
 // trim read based on quality scores
 void TrimRead(const std::string& input_nucs,
               const std::string& input_quals,

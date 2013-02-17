@@ -98,6 +98,7 @@ void show_help() {
     "\n\nOptions:\n" \
     "-h,--help      display this help screen\n" \
     "-v,--verbose   print out useful progress messages\n" \
+    "--version      print out lobSTR program version\n" \
     "-q,--fastq     reads are in fastq format (default: fasta)\n" \
     "--bam          reads are in bam format (default: fasta)\n" \
     "--gzip         The input files are gzipped\n" \
@@ -234,6 +235,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_S3DEBUG,
     OPT_RG,
     OPT_EXCLUDE_PARTIAL,
+    OPT_VERSION,
   };
 
   int ch;
@@ -289,8 +291,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"s3debug", 0, 0, OPT_S3DEBUG},
     {"rg", 1, 0, OPT_RG},
     {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
+    {"version", 0, 0, OPT_VERSION},
     {NULL, no_argument, NULL, 0},
   };
+  program = LOBSTR;
   ch = getopt_long(argc, argv, "hvqp:f:t:g:o:m:s:d:e:g:r:u?",
                    long_options, &option_index);
   while (ch != -1) {
@@ -517,6 +521,9 @@ void parse_commandline_options(int argc, char* argv[]) {
       exclude_partial++;
       AddOption("exlude-partial", "", false, &user_defined_arguments);
       break;
+    case OPT_VERSION:
+      cerr << _GIT_VERSION << endl;
+      exit(0);
     case '?':
       show_help();
       exit(1);
