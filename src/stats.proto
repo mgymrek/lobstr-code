@@ -1,0 +1,73 @@
+package lobstrstats;
+
+// Contains training parameters
+message TrainParams {
+  // Which chromosomes used for training
+  optional string haploid_chroms = 1;
+  // How many reads used for training
+  optional int32 num_training_reads = 2;
+  // How many loci discarded for being too noisy
+  optional int32 num_discarded_loci = 3;
+  // How many loci used for training
+  optional int32 num_training_loci = 4;
+}
+
+// Parameters of stutter model
+message StepSizePDF {
+  repeated float prob = 1;
+  repeated int32 observerd = 2;
+}
+message ModelParams {
+  // Coefficients of logistic regression - 4 of these
+  repeated float sprob_coef = 1;
+  // Step model - 5 of each repeated field, one for each period
+  repeated float nonunit_stepsize = 2;
+  optional float pincr = 3;
+  repeated StepSizePDF stepsizepdf = 4;
+}
+
+// Contains information training run
+message AllelotypeTrainRun {
+  optional TrainParams trainparams = 1;
+  optional ModelParams modelparams = 2;
+}
+
+// Contains information for classify run
+message PeriodGenotypeCategory {
+  optional int32 period = 1;
+  optional float aa = 2;
+  optional float ab = 3;
+  optional float bb = 4;
+  optional float bc = 5;
+}
+message ClassifyStats {
+  optional int32 numcalls = 1;
+  optional int32 numcalls5x = 2;
+  optional int32 numcallsQ9 = 3;
+  optional float meancov = 4;
+  optional float meanscore = 6;
+  repeated PeriodGenotypeCategory pergenotypes= 7;
+}
+message AllelotypeClassifyRun {
+  optional ModelParams modelparams = 1;
+  optional ClassifyStats stats = 2;
+}
+
+// Contains general information about user and command
+message RunInfo {
+  // Time at which run was executed
+  optional string starttime = 1;
+  // Time at which run ended
+  optional string endtime = 2;
+  // Command line parameters string
+  optional string params = 3;
+  // Git version
+  optional string gitversion = 4;
+  // Machine type
+  optional string machtype = 5;
+  // Error message if failed on error
+  optional string error = 6;
+  // contains either training info or classifying info
+  optional AllelotypeTrainRun trainrun = 7;
+  optional AllelotypeClassifyRun classifyrun = 8;
+}
