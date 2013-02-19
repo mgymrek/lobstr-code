@@ -24,10 +24,13 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+#include "src/stats.pb.h"
+
 const int MIN_PERIOD = 2;
 const int MAX_PERIOD = 6;
 
 // global variables that probably shouldn't be global variables
+extern lobstrstats::RunInfo run_info;
 
 // stores user arguments for lobSTR alignment
 // used to store the bam header for allelotyping step

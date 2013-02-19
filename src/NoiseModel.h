@@ -81,7 +81,7 @@ class NoiseModel {
   /* Fit logistic model for noise/no noise decision */
   void FitMutationProb(const std::vector<AlignedRead>& reads_for_training);
 
-  /* Read regression problem from filfe */
+  /* Read regression problem from file */
   void read_problem(const char *filename);
 
   /* Fit Poisson model for number of noise steps */

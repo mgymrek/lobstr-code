@@ -22,6 +22,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "src/runtime_parameters.h"
 
+lobstrstats::RunInfo run_info;
+
 // keep track of user defined arguments and git version
 std::string user_defined_arguments = "# version=lobSTR_"+std::string(_GIT_VERSION) + ";";
 std::string user_defined_arguments_allelotyper = "# version=allelotype_"+std::string(_GIT_VERSION) + ";";

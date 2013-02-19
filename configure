@@ -622,6 +622,8 @@ build_os
 build_vendor
 build_cpu
 build
+PROTOBUF_LIBS
+PROTOBUF_CFLAGS
 FFTW_LIBS
 FFTW_CFLAGS
 PKG_CONFIG
@@ -648,6 +650,7 @@ CPPFLAGS
 LDFLAGS
 CXXFLAGS
 CXX
+MACHTYPE
 GIT_VERSION
 CPPUNIT_LIBS
 CPPUNIT_CFLAGS
@@ -739,6 +742,8 @@ CFLAGS
 PKG_CONFIG
 FFTW_CFLAGS
 FFTW_LIBS
+PROTOBUF_CFLAGS
+PROTOBUF_LIBS
 CPP
 F77
 FFLAGS'
@@ -1396,6 +1401,10 @@ Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
   FFTW_CFLAGS C compiler flags for FFTW, overriding pkg-config
   FFTW_LIBS   linker flags for FFTW, overriding pkg-config
+  PROTOBUF_CFLAGS
+              C compiler flags for PROTOBUF, overriding pkg-config
+  PROTOBUF_LIBS
+              linker flags for PROTOBUF, overriding pkg-config
   CPP         C preprocessor
   F77         Fortran 77 compiler command
   FFLAGS      Fortran 77 compiler flags
@@ -2914,7 +2923,10 @@ $as_echo "no" >&6; }
 
 
 
+# Set variables using shell commands
 GIT_VERSION=`git describe --dirty --always`
+
+MACHTYPE=`uname -m`
 
 
 CXXFLAGS="$CXXFLAGS"
@@ -4706,6 +4718,96 @@ See \`config.log' for more details." "$LINENO" 5; }
 else
 	FFTW_CFLAGS=$pkg_cv_FFTW_CFLAGS
 	FFTW_LIBS=$pkg_cv_FFTW_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	:
+fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PROTOBUF" >&5
+$as_echo_n "checking for PROTOBUF... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PROTOBUF_CFLAGS"; then
+        pkg_cv_PROTOBUF_CFLAGS="$PROTOBUF_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"protobuf\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "protobuf") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PROTOBUF_CFLAGS=`$PKG_CONFIG --cflags "protobuf" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$PROTOBUF_LIBS"; then
+        pkg_cv_PROTOBUF_LIBS="$PROTOBUF_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"protobuf\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "protobuf") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PROTOBUF_LIBS=`$PKG_CONFIG --libs "protobuf" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PROTOBUF_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "protobuf"`
+        else
+	        PROTOBUF_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "protobuf"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PROTOBUF_PKG_ERRORS" >&5
+
+	as_fn_error "Package requirements (protobuf) were not met:
+
+$PROTOBUF_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PROTOBUF_CFLAGS
+and PROTOBUF_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" "$LINENO" 5
+elif test $pkg_failed = untried; then
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PROTOBUF_CFLAGS
+and PROTOBUF_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details." "$LINENO" 5; }
+else
+	PROTOBUF_CFLAGS=$pkg_cv_PROTOBUF_CFLAGS
+	PROTOBUF_LIBS=$pkg_cv_PROTOBUF_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 	:
@@ -8525,7 +8627,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext;;
 esac
 
-CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS} -D_GIT_VERSION=\" \\\"${GIT_VERSION}\\\"\""
+CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS} -D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\""
 CXXFLAGS="$CFLAGS"
 CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS "
 LDFLAGS="$ext_LDFLAGS"

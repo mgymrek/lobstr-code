@@ -22,6 +22,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #define SRC_COMMON_H__
 
 #include <fftw3.h>
+#include <stdio.h>
 
 #include <cmath>
 #include <iomanip>
@@ -60,6 +61,11 @@ enum MSGTYPE {
   DEBUG,
   PROGRESS
 };
+
+// Output run statistics to file and to S3
+void OutputRunStatistics();
+
+// Print msg, exit if error
 void PrintMessageDieOnError(const std::string& msg,
                             MSGTYPE msgtype);
 
@@ -186,6 +192,6 @@ void debug_print_matlab_vector(const std::vector<TYPE> &v,
 
 std::vector<std::string> &split(const std::string &s, char delim,
                                 std::vector<std::string> &elems);
-
+std::string GetTime();
 
 #endif  // SRC_COMMON_H__

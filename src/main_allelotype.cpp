@@ -24,6 +24,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 
 #include <boost/algorithm/string.hpp>
+#include <ctime>
 #include <iostream>
 #include <string>
 
@@ -59,7 +60,7 @@ void show_help() {
     "--out <output_prefix> --index-prefix $PATH_TO_INDEX/lobSTR_\n\n" \
     "Classifying outputs the files: \n" \
     "   <output_prefix>.vcf \n" \
-    "   <output_prefix>.stats \n\n" \
+    "   <output_prefix>.allelotype.stats \n\n" \
     "Note: parameters are uploaded to Amazon S3 by default. This for\n" \
     "us see how people are using the tool and to help us continue to improve\n" \
     "lobSTR. To turn this function off, specify --noweb.\n\n" \
@@ -382,8 +383,18 @@ void parse_commandline_options(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
   /* parse command line options */
   parse_commandline_options(argc, argv);
+  PrintMessageDieOnError("Getting run info", PROGRESS);
+  run_info.set_starttime(GetTime());
+  if (_GIT_VERSION != NULL) {
+    run_info.set_gitversion(_GIT_VERSION);
+  } else {run_info.set_gitversion("Not available");}
+  if (_MACHTYPE != NULL) {
+    run_info.set_machtype(_MACHTYPE);
+  } else {run_info.set_machtype("Not available");}
+  run_info.set_params(user_defined_arguments_allelotyper);
 
   if (my_verbose) {
     PrintMessageDieOnError("Running allelotype with command " + command, PROGRESS);
@@ -453,5 +464,7 @@ int main(int argc, char* argv[]) {
                          output_prefix + ".vcf");
     }
   }
+  run_info.set_endtime(GetTime());
+  OutputRunStatistics();
   return 0;
 }

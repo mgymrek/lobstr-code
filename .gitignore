@@ -16,3 +16,7 @@ config.status
 src/.deps
 test.aligned.tab
 test.aligned.bam
+test.vcf
+test.aligned.stats
+test.allelotype.stats
+test.post

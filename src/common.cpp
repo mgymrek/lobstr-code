@@ -21,12 +21,19 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <err.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h> 
 
 #include <map>
+#include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+#include <google/protobuf/text_format.h>
 
 #include "src/BamFileReader.h"
 #include "src/BamPairedFileReader.h"
@@ -35,6 +42,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/FastaPairedFileReader.h"
 #include "src/FastqFileReader.h"
 #include "src/FastqPairedFileReader.h"
+#include "src/TextFileWriter.h"
 #include "src/ZippedFastaFileReader.h"
 #include "src/ZippedFastqFileReader.h"
 #include "src/runtime_parameters.h"
@@ -50,6 +58,63 @@ void AddOption(const string& optname, const string& optval,
   }
   *paramstring += ";";
   return;
+}
+
+void OutputRunStatistics() {
+  PrintMessageDieOnError("Outputting run statistics", PROGRESS);
+  TextFileWriter sWriter(output_prefix + (program == LOBSTR? ".aligned.stats":".allelotype.stats"));
+  // Output run statistics to stats file
+  string stats_string;
+  google::protobuf::TextFormat::PrintToString(run_info, &stats_string);
+  sWriter.Write(stats_string);
+  // Upload to AWS S3
+  if (!noweb) {
+    int size = run_info.ByteSize();
+    ostringstream stream;
+    run_info.SerializeToOstream(&stream);
+    string text = stream.str();
+    stringstream pd;
+    pd << "POST /test.py HTTP/1.1\r\n";
+    pd << "Host: mgymrek.scripts.mit.edu\r\n";
+    pd << "Connection: Keep-Alive\r\n";
+    pd << "Content-Type: application/octet-stream, name=\"lobSTRstats\"\r\n";
+    pd << "Content-Transfer-Encoding: binary\r\n";
+    pd << "Content-Length: " << size;
+    pd << "\r\n\r\n";
+    // PrintMessageDieOnError(pd.str(), DEBUG);
+    string post_header = pd.str();
+    struct hostent *server;
+    server = gethostbyname("mgymrek.scripts.mit.edu");
+    if (server == NULL) {
+      PrintMessageDieOnError("Server not found", ERROR);
+    }
+    struct sockaddr_in serverAddr;
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    memcpy(&serverAddr.sin_addr.s_addr,
+           server->h_addr, 
+           server->h_length);
+    serverAddr.sin_port = htons(80);
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+      PrintMessageDieOnError("Couldn't initialize socket", ERROR);
+    }
+    if (connect(sock, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
+      PrintMessageDieOnError("Failed internet connection", ERROR);
+    }
+    if (send(sock, post_header.c_str(), post_header.size(),0) < 0) {
+      PrintMessageDieOnError("Couldn't send header", ERROR);
+    }
+    if (send(sock, text.c_str(), size, 0) < 0) {
+      PrintMessageDieOnError("Couldn't send data", ERROR);
+    }
+    /*char buf[1024];
+    if (recv(sock, buf, 1024, 0) < 0) {
+      PrintMessageDieOnError("Error receiving", DEBUG);
+      }
+      cerr << buf << endl;*/
+    close(sock);
+  }
 }
 
 void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
@@ -72,7 +137,12 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   }
   cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
        << "-" << _GIT_VERSION << "] " << typestring << msg << endl;
-  if (msgtype == ERROR) exit(1);
+  if (msgtype == ERROR) {
+    run_info.set_error(msg);
+    run_info.set_endtime(GetTime());
+    OutputRunStatistics();
+    exit(1);
+  }
 }
 
 void TrimRead(const string& input_nucs,
@@ -480,4 +550,13 @@ std::vector<std::string> &split(const std::string &s,
       elems.push_back(item);
     }
     return elems;
+}
+
+std::string GetTime() {
+  stringstream t;
+  time_t et; time(&et);
+  t << ctime(&et);
+  string tstring = t.str();
+  tstring.erase(tstring.find_last_not_of(" \n\r\t")+1);
+  return tstring;
 }

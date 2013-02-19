@@ -15,9 +15,10 @@ bin_PROGRAMS = lobSTR \
 
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 
-AM_CPPFLAGS = $(FFTW_CFLAGS)
+AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS)
 
 noinst_headers = \
+	stats.pb.h \
 	BamFileReader.h \
 	BamPairedFileReader.h \
 	BWAReadAligner.h \
@@ -149,6 +150,7 @@ liblobstr_a_SOURCES = \
 	nw.cpp \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
+	stats.pb.cc \
 	STRDetector.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
@@ -242,6 +244,7 @@ libindex_a_SOURCES = \
 	cs2nt.c
 
 liballelotype_a_SOURCES = \
+	stats.pb.cc \
 	common.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
@@ -307,12 +310,12 @@ lobSTRIndex_LDFLAGS = -static  $(AM_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTR_LDADD = liblobstr.a $(FFTW_LIBS)
+lobSTR_LDADD = liblobstr.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
 lobSTR_LDFLAGS = -static $(AM_LDFLAGS)
 
 allelotype_SOURCES = 	main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
-allelotype_LDADD = liballelotype.a $(BLAS_LIBS) $(LIBS) $(FLIBS)
+allelotype_LDADD = liballelotype.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
 allelotype_LDFLAGS = -static $(AM_LDFLAGS)
 
 TESTS = lobSTRTests

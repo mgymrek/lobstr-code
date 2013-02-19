@@ -79,6 +79,9 @@ void show_help() {
     "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
     "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
     "    -o <output prefix>\n" \
+    "Note: parameters are uploaded to Amazon S3 by default. This for\n" \
+    "us see how people are using the tool and to help us continue to improve\n" \
+    "lobSTR. To turn this function off, specify --noweb.\n\n" \
     "Parameter descriptions:\n " \
     "-f,--files     file or comma-separated list of files\n" \
     "               containing reads in fasta, fastq, or bam format\n" \
@@ -91,6 +94,7 @@ void show_help() {
     "               (default: fasta)\n" \
     "-o,--out       prefix for output files. will output:\n" \
     "                  <prefix>.aligned.bam: bam file of alignments\n" \
+    "                  <prefix>.aligned.stats: give statistics about alignments\n" \
     "--index-prefix prefix for lobSTR's bwa reference (must run lobstr_index.py\n" \
     "               to create index. If the index is downloaded\n" \
     "               to PATH_TO_INDEX, this argument is\n" \
@@ -114,6 +118,7 @@ void show_help() {
     "               format (Illumina 1.3+, Illumina 1.5+) where quality\n" \
     "               scores are given as Phred + 64 rather than Phred + 33\n" \
     "--rg <STRING>  Add read group tag (RG) to BAM records.\n" \
+    "--noweb        Do not report any user information and paramters to Amazon S3.\n" \
     "\n\nAdvanced options - general:\n" \
     "-p,--threads <INT>         number of threads (default: 1)\n" \
     "--min-read-length <INT>    minimum number of nucleotides for a\n" \
@@ -197,6 +202,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_BAMPAIR,
     OPT_THREADS,
     OPT_MISMATCH,
+    OPT_NOWEB,
     OPT_RMDUP,
     OPT_FFT_WINDOW_SIZE,
     OPT_FFT_WINDOW_STEP,
@@ -250,6 +256,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"genome", 1, 0, OPT_GENOME},
     {"out", 1, 0, OPT_OUTPUT},
     {"threads", 1, 0, OPT_THREADS},
+    {"noweb", 1, 0, OPT_NOWEB},
     {"mismatch", 1, 0, OPT_MISMATCH},
     {"fft-window-size", 1, 0, OPT_FFT_WINDOW_SIZE},
     {"fft-window-step", 1, 0, OPT_FFT_WINDOW_STEP},
@@ -354,6 +361,10 @@ void parse_commandline_options(int argc, char* argv[]) {
       if (threads > 1) {
         PrintMessageDieOnError("Multithreading on very small files may fail to produce BAM output", WARNING);
       }
+      break;
+    case OPT_NOWEB:
+      noweb++;
+      AddOption("noweb", "", false, &user_defined_arguments);
       break;
     case 'f':
     case OPT_FILES:
@@ -1011,7 +1022,21 @@ void multi_thread_process_loop(vector<string> files1,
 }
 
 int main(int argc, char* argv[]) {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
   parse_commandline_options(argc, argv);
+  PrintMessageDieOnError("Getting run info", PROGRESS);
+  stringstream starttime;
+  time_t st; time(&st);
+  starttime << ctime(&st);
+  run_info.set_starttime(starttime.str());
+  if (_GIT_VERSION != NULL) {
+    run_info.set_gitversion(_GIT_VERSION);
+  } else {run_info.set_gitversion("Not available");}
+  if (_MACHTYPE != NULL) {
+    run_info.set_machtype(_MACHTYPE);
+  } else {run_info.set_machtype("Not available");}
+  run_info.set_params(user_defined_arguments_allelotyper);
+
   PrintMessageDieOnError("Initializing...", PROGRESS);
   // open file with all names
   TextFileReader tReader(index_prefix+"strdict.txt");
@@ -1098,5 +1123,10 @@ int main(int argc, char* argv[]) {
   }
   delete hamgen;
   delete tukgen;
+  stringstream endtime;
+  time_t et; time(&et);
+  endtime << ctime(&et);
+  run_info.set_endtime(endtime.str());
+  OutputRunStatistics();
   return 0;
 }

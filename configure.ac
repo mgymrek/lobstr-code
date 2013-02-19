@@ -22,8 +22,11 @@ AM_INIT_AUTOMAKE([dist-bzip2])
 
 AM_PATH_CPPUNIT(1.9.6)
 
+# Set variables using shell commands
 GIT_VERSION=`git describe --dirty --always`
 AC_SUBST(GIT_VERSION)
+MACHTYPE=`uname -m`
+AC_SUBST(MACHTYPE)
 
 CXXFLAGS="$CXXFLAGS"
 CFLAGS="$CFLAGS"
@@ -35,6 +38,7 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 
 PKG_CHECK_MODULES([FFTW], [fftw3])
+PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 ACX_PTHREAD()
 LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
@@ -74,7 +78,7 @@ case "${host_cpu}-${host_os}" in
 					  [ext_CFLAGS="-D_FILE_OFFSET_BITS=64"; AC_MSG_RESULT([no])]);;
 esac
 
-CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS} -D_GIT_VERSION=\" \\\"${GIT_VERSION}\\\"\""
+CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS} -D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\""
 CXXFLAGS="$CFLAGS"
 CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS "
 LDFLAGS="$ext_LDFLAGS" 
