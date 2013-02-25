@@ -135,7 +135,9 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   if (msgtype == ERROR) {
     run_info.error = msg;
     run_info.endtime = GetTime();
-    OutputRunStatistics();
+    if (!output_prefix.empty()) {
+      OutputRunStatistics();
+    }
     exit(1);
   }
 }

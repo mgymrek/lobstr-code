@@ -26,9 +26,10 @@ GIT_VERSION=`git describe --dirty --always`
 AC_SUBST(GIT_VERSION)
 MACHTYPE=`uname -m`
 AC_SUBST(MACHTYPE)
+
 OS=`uname`
 AC_SUBST(OS)
-if "${OS}"=="Darwin"
+if test "x$OS" = "xDarwin"
 then
 VARSTATIC=""
 AC_SUBST(VARSTATIC)
