@@ -17,9 +17,8 @@ AC_INIT([lobSTR],
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([dist-bzip2])
-
 AM_PATH_CPPUNIT(1.9.6)
 
 # Set variables using shell commands
@@ -27,6 +26,16 @@ GIT_VERSION=`git describe --dirty --always`
 AC_SUBST(GIT_VERSION)
 MACHTYPE=`uname -m`
 AC_SUBST(MACHTYPE)
+OS=`uname`
+AC_SUBST(OS)
+if "${OS}"=="Darwin"
+then
+VARSTATIC=""
+AC_SUBST(VARSTATIC)
+else
+VARSTATIC="-static"
+AC_SUBST(VARSTATIC)
+fi
 
 CXXFLAGS="$CXXFLAGS"
 CFLAGS="$CFLAGS"
@@ -38,7 +47,6 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 
 PKG_CHECK_MODULES([FFTW], [fftw3])
-PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 ACX_PTHREAD()
 LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
@@ -60,6 +68,8 @@ if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
 fi
 
 #LT_INIT([disable-shared])
+m4_pattern_allow([AM_PROG_AR])
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 user_CFLAGS=${CFLAGS}
 generic_CFLAGS="-Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized"
@@ -82,9 +92,6 @@ CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_
 CXXFLAGS="$CFLAGS"
 CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS "
 LDFLAGS="$ext_LDFLAGS" 
-
-AC_SUBST([VAR_STATIC],["-Wl,-Bstatic"])
-AC_SUBST([VAR_DYNAMIC],["-Wl,-Bdynamic"])
 
 AM_INIT_AUTOMAKE([-Wall tar-pax foreign])
 

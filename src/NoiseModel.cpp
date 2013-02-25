@@ -118,14 +118,6 @@ void NoiseModel::ReadSTRInfo(const string& filename) {
 }
 
 void NoiseModel::Train(ReadContainer* read_container) {
-  // Get containers for run stats
-  lobstrstats::TrainParams tparams;
-  lobstrstats::ModelParams mparams;
-  // Populate training data
-  tparams.set_haploid_chroms(haploid_chroms_string);
-  tparams.set_num_training_reads(0);
-  tparams.set_num_discarded_loci(0);
-  tparams.set_num_training_loci(0);
   vector<AlignedRead> reads_for_training(0);
   map<int, map <int,int> > step_size_by_period;
   for (map<pair<string, int>, list<AlignedRead> >::iterator
@@ -160,11 +152,7 @@ void NoiseModel::Train(ReadContainer* read_container) {
         if (aread.stutter && abs(aread.diffFromRef) <= 3*aread.period) {
           step_size_by_period[aread.period][aread.diffFromRef]++;
         }
-        tparams.set_num_training_reads(tparams.num_training_reads() + 1);
       }
-      tparams.set_num_training_loci(tparams.num_training_loci() + 1);
-    } else {
-      tparams.set_num_discarded_loci(tparams.num_discarded_loci() + 1);
     }
   }
 
@@ -178,12 +166,6 @@ void NoiseModel::Train(ReadContainer* read_container) {
     PrintMessageDieOnError("[NoiseModel] Fitting step size prob", DEBUG);
   }
   FitStepProb(step_size_by_period);
-
-  // Fill in run info with stats
-  lobstrstats::AllelotypeTrainRun atr;
-  atr.set_allocated_trainparams(&tparams);
-  atr.set_allocated_modelparams(&mparams);
-  run_info.set_allocated_trainrun(&atr);
 }
 
 bool NoiseModel::HasUniqueMode(const list<AlignedRead>&

@@ -18,7 +18,6 @@ AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS)
 
 noinst_headers = \
-	stats.pb.h \
 	BamFileReader.h \
 	BamPairedFileReader.h \
 	BWAReadAligner.h \
@@ -46,6 +45,7 @@ noinst_headers = \
 	SamFileWriter.h \
 	STRDetector.h \
 	STRRecord.h \
+	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
 	VCFWriter.h \
@@ -150,8 +150,8 @@ liblobstr_a_SOURCES = \
 	nw.cpp \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
-	stats.pb.cc \
 	STRDetector.cpp \
+	TabFileWriter.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
@@ -244,7 +244,6 @@ libindex_a_SOURCES = \
 	cs2nt.c
 
 liballelotype_a_SOURCES = \
-	stats.pb.cc \
 	common.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
@@ -306,17 +305,17 @@ liballelotype_a_SOURCES = \
 lobSTRIndex_SOURCES = main.c
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTRIndex_LDADD = $(AM_LDADD) libindex.a
-lobSTRIndex_LDFLAGS = -static  $(AM_LDFLAGS)
+lobSTRIndex_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTR_LDADD = liblobstr.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
-lobSTR_LDFLAGS = -static $(AM_LDFLAGS)
+lobSTR_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
 allelotype_SOURCES = 	main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
 allelotype_LDADD = liballelotype.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
-allelotype_LDFLAGS = -static $(AM_LDFLAGS)
+allelotype_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
 TESTS = lobSTRTests
 check_PROGRAMS = $(TESTS)

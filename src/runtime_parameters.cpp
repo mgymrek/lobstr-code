@@ -22,7 +22,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "src/runtime_parameters.h"
 
-lobstrstats::RunInfo run_info;
+RunInfo run_info;
 
 // keep track of user defined arguments and git version
 std::string user_defined_arguments = "# version=lobSTR_"+std::string(_GIT_VERSION) + ";";
@@ -102,7 +102,7 @@ std::string haploid_chroms_string = "";
 std::string strinfofile = "";
 std::string known_alleles_file = "";
 std::string use_chrom = "";
-bool generate_tab = false;
+bool generate_tab = true;
 bool rmdup = true;
 bool include_flank = true;
 bool print_reads = false;

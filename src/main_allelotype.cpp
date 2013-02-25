@@ -19,7 +19,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <err.h>
-#include <error.h>
 #include <getopt.h>
 #include <stdlib.h>
 
@@ -116,7 +115,6 @@ void show_help() {
     "                                Requires allele frequencies to be set with \n" \
     "                                --use-known-alleles\n" \
     "Options for reporting allelotypes:\n" \
-    "--tab                          Generate <output_prefix>.genotypes.tab file\n" \
     "--sample <STRING>:             Name of sample. Default to --out\n" \
     "--exclude-pos <FILE>:          File of \"chrom\\tpos\" of positions to exclude.\n" \
     "                               For downstream analysis, it is beneficial to exclude\n" \
@@ -383,18 +381,17 @@ void parse_commandline_options(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
   /* parse command line options */
   parse_commandline_options(argc, argv);
   PrintMessageDieOnError("Getting run info", PROGRESS);
-  run_info.set_starttime(GetTime());
+  run_info.starttime = GetTime();
   if (_GIT_VERSION != NULL) {
-    run_info.set_gitversion(_GIT_VERSION);
-  } else {run_info.set_gitversion("Not available");}
+    run_info.gitversion = _GIT_VERSION;
+  } else {run_info.gitversion = "Not available";}
   if (_MACHTYPE != NULL) {
-    run_info.set_machtype(_MACHTYPE);
-  } else {run_info.set_machtype("Not available");}
-  run_info.set_params(user_defined_arguments_allelotyper);
+    run_info.machtype = _MACHTYPE;
+  } else {run_info.machtype = "Not available";}
+  run_info.params = user_defined_arguments_allelotyper;
 
   if (my_verbose) {
     PrintMessageDieOnError("Running allelotype with command " + command, PROGRESS);
@@ -464,7 +461,7 @@ int main(int argc, char* argv[]) {
                          output_prefix + ".vcf");
     }
   }
-  run_info.set_endtime(GetTime());
+  run_info.endtime = GetTime();
   OutputRunStatistics();
   return 0;
 }

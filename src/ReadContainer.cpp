@@ -19,7 +19,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <err.h>
-#include <error.h>
 
 #include <iostream>
 #include <list>
@@ -254,7 +253,7 @@ float ReadContainer::GetAverageQualityScore(const list<AlignedRead>&
 
 float ReadContainer::GetScore(const string& quality_string) {
   if (quality_string.empty()) return 0.0;
-  float total_quality;
+  float total_quality = 0;
   for (size_t i = 0; i < quality_string.length(); i++) {
     total_quality +=  quality_string.at(i) - 33;
   }

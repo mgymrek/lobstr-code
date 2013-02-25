@@ -66,10 +66,9 @@ AR = ar
 ARFLAGS = cru
 liballelotype_a_AR = $(AR) $(ARFLAGS)
 liballelotype_a_LIBADD =
-am_liballelotype_a_OBJECTS = stats.pb.$(OBJEXT) common.$(OBJEXT) \
-	BamFileReader.$(OBJEXT) BamPairedFileReader.$(OBJEXT) \
-	FastaFileReader.$(OBJEXT) FastqFileReader.$(OBJEXT) \
-	FastaPairedFileReader.$(OBJEXT) \
+am_liballelotype_a_OBJECTS = common.$(OBJEXT) BamFileReader.$(OBJEXT) \
+	BamPairedFileReader.$(OBJEXT) FastaFileReader.$(OBJEXT) \
+	FastqFileReader.$(OBJEXT) FastaPairedFileReader.$(OBJEXT) \
 	FastqPairedFileReader.$(OBJEXT) Genotyper.$(OBJEXT) \
 	GenotypeTabWriter.$(OBJEXT) gzstream.$(OBJEXT) \
 	NoiseModel.$(OBJEXT) ReadContainer.$(OBJEXT) \
@@ -119,8 +118,8 @@ am_liblobstr_a_OBJECTS = BamFileReader.$(OBJEXT) \
 	FFT_nuc_vectors.$(OBJEXT) gzstream.$(OBJEXT) \
 	HammingWindowGenerator.$(OBJEXT) MultithreadData.$(OBJEXT) \
 	nw.$(OBJEXT) runtime_parameters.$(OBJEXT) \
-	SamFileWriter.$(OBJEXT) stats.pb.$(OBJEXT) \
-	STRDetector.$(OBJEXT) TextFileReader.$(OBJEXT) \
+	SamFileWriter.$(OBJEXT) STRDetector.$(OBJEXT) \
+	TabFileWriter.$(OBJEXT) TextFileReader.$(OBJEXT) \
 	TextFileWriter.$(OBJEXT) TukeyWindowGenerator.$(OBJEXT) \
 	ZippedFastaFileReader.$(OBJEXT) \
 	ZippedFastqFileReader.$(OBJEXT) ZippedTextFileReader.$(OBJEXT) \
@@ -157,14 +156,12 @@ am_allelotype_OBJECTS = allelotype-main_allelotype.$(OBJEXT)
 allelotype_OBJECTS = $(am_allelotype_OBJECTS)
 am__DEPENDENCIES_1 =
 allelotype_DEPENDENCIES = liballelotype.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 allelotype_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(allelotype_LDFLAGS) $(LDFLAGS) -o $@
 am_lobSTR_OBJECTS = lobSTR-main.$(OBJEXT)
 lobSTR_OBJECTS = $(am_lobSTR_OBJECTS)
-lobSTR_DEPENDENCIES = liblobstr.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+lobSTR_DEPENDENCIES = liblobstr.a $(am__DEPENDENCIES_1)
 lobSTR_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(lobSTR_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_lobSTRIndex_OBJECTS = lobSTRIndex-main.$(OBJEXT)
@@ -320,6 +317,7 @@ MACHTYPE = @MACHTYPE@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 OBJEXT = @OBJEXT@
+OS = @OS@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -329,8 +327,6 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
-PROTOBUF_CFLAGS = @PROTOBUF_CFLAGS@
-PROTOBUF_LIBS = @PROTOBUF_LIBS@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
@@ -338,8 +334,7 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-VAR_DYNAMIC = @VAR_DYNAMIC@
-VAR_STATIC = @VAR_STATIC@
+VARSTATIC = @VARSTATIC@
 VERSION = @VERSION@
 ZLIB = @ZLIB@
 abs_builddir = @abs_builddir@
@@ -398,7 +393,6 @@ top_srcdir = @top_srcdir@
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS)
 noinst_headers = \
-	stats.pb.h \
 	BamFileReader.h \
 	BamPairedFileReader.h \
 	BWAReadAligner.h \
@@ -426,6 +420,7 @@ noinst_headers = \
 	SamFileWriter.h \
 	STRDetector.h \
 	STRRecord.h \
+	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
 	VCFWriter.h \
@@ -529,8 +524,8 @@ liblobstr_a_SOURCES = \
 	nw.cpp \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
-	stats.pb.cc \
 	STRDetector.cpp \
+	TabFileWriter.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
@@ -623,7 +618,6 @@ libindex_a_SOURCES = \
 	cs2nt.c
 
 liballelotype_a_SOURCES = \
-	stats.pb.cc \
 	common.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
@@ -685,15 +679,15 @@ liballelotype_a_SOURCES = \
 lobSTRIndex_SOURCES = main.c
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTRIndex_LDADD = $(AM_LDADD) libindex.a
-lobSTRIndex_LDFLAGS = -static  $(AM_LDFLAGS)
+lobSTRIndex_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTR_LDADD = liblobstr.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
-lobSTR_LDFLAGS = -static $(AM_LDFLAGS)
+lobSTR_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 allelotype_SOURCES = main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
 allelotype_LDADD = liballelotype.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
-allelotype_LDFLAGS = -static $(AM_LDFLAGS)
+allelotype_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
 	tests/BWAReadAligner_test.h \
@@ -789,7 +783,7 @@ lobSTRTests_LDADD = $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -944,6 +938,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamReadGroupDictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamSequenceDictionary.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TabFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TukeyWindowGenerator.Po@am__quote@
@@ -1071,7 +1066,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/predict.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runtime_parameters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_dp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stats.pb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stdaln.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/train.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tron.Po@am__quote@
@@ -1427,14 +1421,14 @@ lobSTRTests-utils.obj: utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lobSTRTests-utils.obj `if test -f 'utils.c'; then $(CYGPATH_W) 'utils.c'; else $(CYGPATH_W) '$(srcdir)/utils.c'; fi`
 
-.cc.o:
+.cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
 @am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
-.cc.obj:
+.cpp.obj:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
 @am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
@@ -2826,20 +2820,6 @@ lobSTRTests-bamtools_pileup_engine.obj: utils/bamtools_pileup_engine.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='utils/bamtools_pileup_engine.cpp' object='lobSTRTests-bamtools_pileup_engine.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTRTests-bamtools_pileup_engine.obj `if test -f 'utils/bamtools_pileup_engine.cpp'; then $(CYGPATH_W) 'utils/bamtools_pileup_engine.cpp'; else $(CYGPATH_W) '$(srcdir)/utils/bamtools_pileup_engine.cpp'; fi`
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

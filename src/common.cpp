@@ -33,7 +33,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <utility>
 #include <vector>
-#include <google/protobuf/text_format.h>
 
 #include "src/BamFileReader.h"
 #include "src/BamPairedFileReader.h"
@@ -64,25 +63,21 @@ void OutputRunStatistics() {
   PrintMessageDieOnError("Outputting run statistics", PROGRESS);
   TextFileWriter sWriter(output_prefix + (program == LOBSTR? ".aligned.stats":".allelotype.stats"));
   // Output run statistics to stats file
-  string stats_string;
-  google::protobuf::TextFormat::PrintToString(run_info, &stats_string);
+  string stats_string = run_info.PrintToString();
   sWriter.Write(stats_string);
   // Upload to AWS S3
   if (!noweb) {
-    int size = run_info.ByteSize();
-    ostringstream stream;
-    run_info.SerializeToOstream(&stream);
-    string text = stream.str();
+    // Set upt POST data
+    int size = stats_string.size();
     stringstream pd;
     pd << "POST /test.py HTTP/1.1\r\n";
     pd << "Host: mgymrek.scripts.mit.edu\r\n";
     pd << "Connection: Keep-Alive\r\n";
-    pd << "Content-Type: application/octet-stream, name=\"lobSTRstats\"\r\n";
-    pd << "Content-Transfer-Encoding: binary\r\n";
+    pd << "Content-Type: text/plain, name=\"lobSTRstats\"\r\n";
     pd << "Content-Length: " << size;
     pd << "\r\n\r\n";
-    // PrintMessageDieOnError(pd.str(), DEBUG);
     string post_header = pd.str();
+    // PrintMessageDieOnError(pd.str(), DEBUG);
     struct hostent *server;
     server = gethostbyname("mgymrek.scripts.mit.edu");
     if (server == NULL) {
@@ -105,7 +100,7 @@ void OutputRunStatistics() {
     if (send(sock, post_header.c_str(), post_header.size(),0) < 0) {
       PrintMessageDieOnError("Couldn't send header", ERROR);
     }
-    if (send(sock, text.c_str(), size, 0) < 0) {
+    if (send(sock, stats_string.c_str(), size, 0) < 0) {
       PrintMessageDieOnError("Couldn't send data", ERROR);
     }
     /*char buf[1024];
@@ -138,8 +133,8 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
        << "-" << _GIT_VERSION << "] " << typestring << msg << endl;
   if (msgtype == ERROR) {
-    run_info.set_error(msg);
-    run_info.set_endtime(GetTime());
+    run_info.error = msg;
+    run_info.endtime = GetTime();
     OutputRunStatistics();
     exit(1);
   }

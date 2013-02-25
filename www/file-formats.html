@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>File formats - lobSTR</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="refresh" content="600"> 
+
+<link rel='stylesheet' href='http://cdn1.editmysite.com/editor/images/common/common-v2.css?22' type='text/css' />
+<link rel='stylesheet' type='text/css' href='files/main_style.css?1332804341' title='wsite-theme-css' />
+<style type='text/css'>
+#wsite-content div.paragraph, #wsite-content p, #wsite-content .product-description, .blog-sidebar div.paragraph, .blog-sidebar p, .wsite-form-field label, .wsite-form-field label {}
+#wsite-content h2, #wsite-content .product-title, .blog-sidebar h2{}
+#wsite-title{font-size:40px !important;}
+</style>
+<script type='text/javascript'><!--
+var STATIC_BASE = 'http://cdn1.editmysite.com/';
+var STYLE_PREFIX = 'wsite';
+//-->
+</script>
+<script type='text/javascript' src='http://cdn1.editmysite.com/libraries/prototype/1.7-custom/prototype.min.js'></script>
+<script type='text/javascript' src='http://cdn1.editmysite.com/libraries/scriptaculous/1.9.0-custom/effects.min.js'></script>
+<script type='text/javascript' src='http://cdn1.editmysite.com/editor/images/common/utilities.js?17'></script>
+<script type='text/javascript' src='http://cdn1.editmysite.com/editor/images/common/lightbox202.js?110'></script>
+<script type='text/javascript' src='http://cdn1.editmysite.com/editor/libraries/flyout_menus.js?13'></script>
+<script type='text/javascript'><!--
+var IS_ARCHIVE=1;
+function initFlyouts(){initPublishedFlyoutMenus([{"id":"155159388479881257","title":"Home","url":"index.html"},{"id":"482706786380939227","title":"Download","url":"download.html"},{"id":"911862752701740992","title":"Install","url":"install.html"},{"id":"705726613435707897","title":"Usage","url":"usage.html"},{"id":"495479748563597039","title":"File formats","url":"file-formats.html"},{"id":"262602591113460083","title":"News","url":"news.html"},{"id":"359371236662353445","title":"FAQ","url":"faq.html"},{"id":"854238589279126447","title":"Contact Us","url":"contact-us.html"}],'495479748563597039',"<li class='wsite-nav-more'><a href='#'>more...<\/a><\/li>",'active',false)}
+if (Prototype.Browser.IE) window.onload=initFlyouts; else document.observe('dom:loaded', initFlyouts);
+//-->
+</script>
+</head>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-30530333-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<body class='wsite-theme-light wsite-page-file-formats'>
+<div id="header-wrap"><div id="header-content">
+
+		<h1 id="logo"><span class='wsite-logo'><a href='index.html'><img src='uploads/1/1/4/4/11449783/1332803980.png' style='margin-top:-2px;margin-left:-17px;max-height:67px;' /></a></span></h1>
+
+		<ul><li id='pg155159388479881257'><a href='index.html'>Home</a></li><li id='pg482706786380939227'><a href='download.html'>Download</a></li><li id='pg911862752701740992'><a href='install.html'>Install</a></li><li id='pg705726613435707897'><a href='usage.html'>Usage</a></li><li id='active'><a href='file-formats.html'>File formats</a></li><li id='pg262602591113460083'><a href='news.html'>News</a></li><li id='pg359371236662353445'><a href='faq.html'>FAQ</a></li><li id='pg854238589279126447'><a href='contact-us.html'>Contact Us</a></li></ul>
+
+	</div></div>
+
+	<!-- content-wrap starts here -->
+	<div id="content-wrap"><div id="content">
+
+	<div id="main">
+
+	<div id='wsite-content' class='wsite-not-footer'>
+<div class='wsite-not-footer'>
+<h2  style=" text-align: left; ">Output file formats (v2.0.3)<br /></h2>
+<div  class="paragraph editable-text" style=" text-align: left;
+					     display: block; ">
+<h3>$prefix.aligned.tab</h3>
+A file containing all reads that were
+aligned. This file contains three two types of lines:
+<ul>
+<li>STR alignment lines: these give alignments of STR-containing
+  reads. This includes single-end and members of paired-end reads
+  aligned to an STR, as well as members of paired-end reads
+  that have been stitched together. This also includes reads that
+  only partially span an STR, in which case the allele reported gives
+  a lower bound on the true allele represented by the read. Note that
+  the partially spanning reads feature is in beta version and often
+  produces unreliable allele reports. These
+  reads are not currently used in any downstream steps. </li>
+<li>Mate alignment lines: these give alignments of the mates of
+  STR-containing reads. For paired-end alignment, only STR alignments
+  of reads whose
+  mate pairs also align in the same region are returned to ensure
+  alignment specificity. For these lines in the alignment files, all
+  fields specific to STR-aligned reads are omitted and replaced with "-".</li>
+</ul>
+
+This file has the fields:
+<ol style="">
+<li style="">Read ID</li>
+<li style="">Nucleotides</li>
+<li style="">Quality score</li>
+<li style="">STR region</li>
+<li style="">STR period</li>
+<li style="">STR motif</li>
+<li style="">Chrom</li>
+<li style="">STR start</li>
+<li style="">STR end</li>
+<li style="">Read start</li>
+<li style="">Difference from reference (# bp)</li>
+<li style="">Reference copy number (# bp)</li>
+<li style="">Strand (1=reverse, 0=forward)</li>
+<li style="">CIGAR score for alignment</li>
+<li style="">0/1 flag to indicate whether the read is partially
+  spanning</li>
+<li style="">Alignment quality score (given as the sum of quality
+  scores of bases mismatching the reference).</li>
+<li style="">0/1 flag to indicate whether this line gives the alignment of
+  the mate of an STR-containing read</li>
+<li style="">Distance between mate pairs (for paired-end read mode
+  only. For single ends this field is set to -1.)</li>
+<li style="">0/1 flag to indicate whether this alignment is the result
+  of stitching two members of a mate pair together</li>
+</ol>
+
+<h3>$prefix.aligned.bam</h3>
+A bam file containing all aligned
+reads. This file contains the same information as the aligned.tab
+file. This is in the standard bam format, with the following added
+fields:
+<ul style="">
+<li style="">XS: start position of matching STR</li>
+<li style="">XE: end position of matching STR</li>
+<li style="">XR: STR repeat</li><li style="">XC: reference copy
+  number</li>
+<li style="">XD: nucleotide length difference compared to
+  reference</li>
+<li style="">XX: 0/1 flag to indicate stitching of paired end
+  reads</li>
+<li style="">XP: 0/1 flag to indicate if an alignment is partially
+  spanning.</li>
+<li style="">XM: distance between mate pairs.</li>
+<li style="">XN: (only if given) name of the STR repeat</li>
+<li style="">XG: The extracted STR region</li>
+<li style="">XQ: map quality score of the aligned read</li>
+<li style="">RG: (only if given) read group</li>
+</ul>
+Note the bam output is not sorted.<br /><br />
+
+<h3>$prefix.genotypes.tab</h3>
+A list of all markers covered. Information is reported about both
+fully spanning STR reads and partially spanning reads. Currently the
+partially spanning reads are not taken into account when determining
+the allelotype. Also note that if lobSTR cannot confidently report two
+allelesa at a diploid locus, one allele might be reported as
+"NA". Loci in which no fully spanning reads were aligned but partially
+spanning reads were report an allelotype of "NA,NA".
+
+This file contains the following fields:
+<ol style="">
+<li style="">chromosome of matched STR</li>
+<li style="">start position of matched STR</li>
+<li style="">end position of matched STR</li>
+<li style="">STR repeat</li>
+<li style="">Period of STR repeat</li>
+<li style="">Reference copy number (TRF notation)</li>
+<li style="">Allelotype call (allele1, allele2) (given in # bp
+  difference from reference)</li>
+<li style="">Coverage</li>
+<li style="">Number of reads supporting the reported genotype</li>
+<li style="">Number of reads conflicting with the reported
+  genotype</li>
+<li style="">All alleles (given in # bp difference from
+  reference:number of reads supporting that allele) that aligned to
+  that locus separated by "/"</li>
+<li style="">Score (posterior probability of call). This field is -1
+  if no allelotype is reported.</li>
+<li style="">Allele 1 score (marginal posterior probability of the first reported
+  allele). This field is set to -1 if allele 1 is not reported.</li>
+<li style="">Allele 2 score (marginal posterior probability of the first reported
+  allele). This field is set to -1 if allele 2 is not reported.</li>
+<li style="">Coverage by partially spanning reads</li>
+<li style="">Largest lower bound on the allele number reported by a
+  partially spanning read.</li>
+<li style="">List of alleles reported for partially spanning reads
+  (same format as column 11).</li>
+<li style="">Number of stitched reads aligned to this locus</li>
+</ol>
+
+<h3>$prefix.vcf</h3>
+<h4>Required fields</h4>
+<ul>
+<li> CHROM: chromosome of the STR</li>
+<li> POS: start position of the STR. Note, since the start position is
+  used, STRs with the same start coordinate but different motifs must
+  be filtered for compatibility with downstream vcftools.</li>
+<li>ID: this field is set to ".".</li>
+<li>REF: gives the base in the reference at CHROM:POS.</li>
+<li>ALT: contains a comma separated list of "&#60;STRVAR:allele&#62;" where allele is the number of base pairs different from reference. If any STR variations were reported.
+<li>QUAL: contains -10log10(1- allele score). Missing data has QUAL -1.</li>
+<li>FILTER: this field is left blank</li>
+</ul>
+
+<h4>INFO fields</h4>
+<ul>
+<li> AC: Allele count in genotypes, for each ALT allele in the same order as listed. Not present if no alternate alleles listd.</li>
+<li> AN: Total number of alleles in called genotypes</li>
+<li> DP: Total depth</li>
+<li> END: the end coordinate of the STR</li>
+<li> MOTIF: the STR repeat motif</li>
+<li> NS: Number of samples with data </li>
+<li> REF: the reference copy number </li>
+<li> VT: variant type, set to STR </li>
+</ul>
+<h4>FORMAT fields</h4>
+<ul>
+<li> ALLREADS: string giving all alleles of all reads seen (column 11 from genotypes.tab
+  file). The format is allele1|readcount;allele2|readcount, etc.</li>
+<li> ALLPARIALREADS: string giving alleles of all partially spanning reads. These allele values give an UPPER BOUND on the true allele, and should be treated as such, not as allelotype calls. Same format as ALLREADS.</li>
+<li> CONFLICT: number of reads conflicting with the reported allelotype</li>
+<li> DP: STR coverage</li>
+<li> GB: reported allelotype given in bp difference from reference. Set to "./." for no call.</li>
+<li> GL: Genotype likelihoods, log10 scaled. Given for each possible pair of alleles from the ALT field. If j and k are the indices of the alleles in the ALT field, the (F(j/k) = (k*(k+1)/2)+j)th field gives the likelihood of allelotype (allele j, allele k) as in the standard VCF format.</li>
+<li> GPP: Genotype posterior probabilities (phred scaled, -10log10). Same order as the GL field. Set to "." if no call.</li>
+<li> GT: genotype, given as indices into the list in the ALT field as
+  in the standard VCF format. Set to "./." if no call.</li>
+<li> MP: Upper bound on maximum partially spanning allele. Set to "." if no partially spanning reads.</li>
+<li> PC: Coverage by partially spanning reads </li>
+<li> S1: allele 1 score (marginal posterior probability)</li>
+<li> S2: allele 2 score (marginal posterior probability)</li>
+<li> STITCH: Number of stitched reads</li>
+<li> SUPP: number or reads supporting the reported allelotype</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+	</div>
+
+	<!-- content-wrap ends here -->
+	</div></div>
+
+	<!-- footer starts here -->
+	<div id="footer-wrap"><div id="footer-content">
+
+		<div class="col float-left space-sep">
+			<p>
+			<span id='weeblyFooter'>Create a <a target="_top" href="http://www.weebly.com/">free web site</a> with <a target="_top" href="http://www.weebly.com/" title="free web site">Weebly</a></span>
+			</p>
+		</div>
+		<br class="clear" />
+
+	</div></div>
+	<!-- footer ends here -->
+
+
+</body>
+</html>
