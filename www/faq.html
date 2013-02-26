@@ -88,7 +88,7 @@ ends. The --bwaq acts the same as the -q parameter for
 	  BWA. Additionally, by default, lobSTR trims all flanking regions to 25bp before aligning. To avoid this step, set --maxflank to a value near the read length of the input.<br /><br/>
 
 <strong>What does the --noise_model option take?</strong><br />
-The --noise_model option takes a file name to read or write the noise model parameters to. If you specify --command classify, the allelotype program reads in the noise model file given and uses those parameters. If you specify --command train or --command both, allelotype will write to the file given to noise_model with the new trained parameters. If the file given to --noise_model exists already, in most cases allelotype will <em>overwrite</em> this file with new parameters, so it is best to specify a new file name each time you train. Also note that training is only reliable when the sample is male and contains a large number of reads aligned to sex chromosomes, so in most cases we recommend just using the --command classify option.<br /><br/>
+The --noise_model option takes a file name to read or write the noise model parameters to. If you specify --command classify, the allelotype program reads in the noise model file given and uses those parameters. If you specify --command train, allelotype will write to the file given to noise_model with the new trained parameters. Note that training is only reliable when the sample is male and contains a large number of reads aligned to sex chromosomes, so in most cases we recommend just using the --command classify option with a provided noise model.<br /><br/>
 
 <strong>lobSTR output appears in the aligned.tab file, but not the aligned.bam file</strong><br />
 In cases of very small input files (on the order of a few million reads) or specifiying a very large value to -p, the BAM output file is not properly written to. This is a known bug and will be fixed in later versions. In the case of small files, -p 1 will result in the BAM file being properly written. lobSTR has only been tested with values of -p of up to 40.<br /><br >
@@ -108,18 +108,11 @@ chromosome names.<br/><br/>
 <strong>What read lengths can lobSTR align?</strong><br />
 Because most STRs in lobSTR's reference are ~40bp, and a read must
 fully span an STR plus some flanking region in order to produce a
-unique alignment, lobSTR works best with reads of 100bp or more. High
-quality alignments can be produced with reads as short as 45bp. 36bp
+unique alignment, lobSTR works best with reads of 100bp or more. Some high
+quality alignments can be produced with reads as short as 45bp, but alignment errors are much more frequent with these short reads. 36bp
 reads cannot be reliably aligned by lobSTR.
 <br/><br/>
 
-<strong>Can I run the lobSTR allelotype tool on a BAM file aligned
-  with another program?</strong><br />
-The convertBam.py script in versions below 2.0.0 can convert BAM files
-  to the required lobSTR format for allelotyping. This option is not
-  recommended, and the best results are achieved by rerunning
-  alignment using lobSTR. This tool is not available for version 2.0.0.
-<br/><br/>
 
 
 </div>
