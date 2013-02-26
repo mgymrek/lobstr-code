@@ -2919,9 +2919,10 @@ GIT_VERSION=`git describe --dirty --always`
 
 MACHTYPE=`uname -m`
 
+
 OS=`uname`
 
-if "${OS}"=="Darwin"
+if test "x$OS" = "xDarwin"
 then
 VARSTATIC=""
 

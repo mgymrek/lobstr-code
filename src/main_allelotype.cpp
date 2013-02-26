@@ -48,7 +48,7 @@ void show_help() {
     "from a set of aligned reads:\n"                            \
     "allelotype --command train [OPTIONS] --bam <input.bam> "   \
     "--noise_model <noisemodelprefix> --strinfo <strinfo.tab> " \
-    " --haploid chrY --index-prefix $PATH_TO_INDEX/lobSTR_ \n\n" \
+    " --haploid chrY\n\n" \
     "Training outputs model files: \n" \
     "   <noisemodelprefix>.stepmodel\n" \
     "   <noisemodelprefix>.stuttermodel\n" \
@@ -77,7 +77,7 @@ void show_help() {
     "                                or read (--command classify) noise model\n" \
     "                                parameters to.\n" \
     "                                An example is $PATH_TO_LOBSTR/models/illumina2\n" \
-    "--index-prefix <STRING>         (REQUIRED) prefix for lobSTR's bwa reference\n" \
+    "--index-prefix <STRING>         (REQUIRED for --command classify) prefix for lobSTR's bwa reference\n" \
     "                                (must be same as for lobSTR alignment)\n" \
     "--no-rmdup:                     don't remove pcr duplicates before allelotyping\n" \
     "--min-het-freq <FLOAT>:         minimum frequency to make a heterozygous call\n" \
@@ -133,7 +133,7 @@ void show_help() {
     "--exclude-partial:             Do not report any information about partially\n" \
     "                               spanning reads.\n\n"
     "Additional options\n" \
-    "--noweb                        Do not report any user information and paramters to Amazon S3.\n";
+    "--noweb                        Do not report any user information and parameters to Amazon S3.\n";
   cerr << help;
   exit(1);
 }

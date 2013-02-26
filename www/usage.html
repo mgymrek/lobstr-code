@@ -85,7 +85,7 @@ if (Prototype.Browser.IE) window.onload=initFlyouts; else document.observe('dom:
       the<a href="download.html">&nbsp;downloads</a>&nbsp;page).</li>
 <li style="">Complete
       usage information can be found in the README file available with
-      the download for each version and in the <a href="lobSTR_manual_v2.0.pdf">lobSTR 2.0 manual</a>. The manual currently contains usage information for lobSTR v2.0.0. Usage is slightly different for later versions, but almost all parameters are the same. This document will be updated to reflect later versions.</li>
+      the download for each version and in the <a href="lobSTR_manual_v2.0.pdf">lobSTR 2.0 manual</a>. The manual currently contains usage information for lobSTR v2.0.0. Usage is slightly different for later versions, but most parameters are the same. This document will be updated to reflect later versions.</li>
 </ul></div>
 
 <h2  style=" text-align: left; ">On this page</h2>
@@ -111,7 +111,7 @@ To run an example using files available in the download:
 <br />&nbsp;<tt>lobSTR 	    --p1 PATH_TO_LOBSTR/tests/test_1.fq --p2
   PATH_TO_LOBSTR/tests/test_2.fq -q 	    --index-prefix PATH_TO_INDEX/lobSTR_ 	    -o test  	    </tt>
 <br><br>
-<tt>allelotype 	    --command classify 	    --bam test.aligned.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina2 	    --out test --strinfo data/strinfo.hg19.tab		</tt>    <br /><br />
+<tt>allelotype 	    --command classify 	    --bam test.aligned.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina2 	    --out test --strinfo data/strinfo.hg19.tab	--index-prefix PATH_TO_INDEX/lobSTR_	</tt>    <br /><br />
 
 This will create the example output files:
 <ul style="">
@@ -268,7 +268,9 @@ If the --plot option is specified, the following plots are generated
 	     + 64 rather than Phred + 33</li>
 <li style="">--rg STRING: Add read group tag (RG) to BAM records.</li>
 <li style="">-h, --help: display a helpful usage message</li>
-<li style="">-v, --verbose: verbose mode. Display descriptive messages</li></ul>
+<li style="">-v, --verbose: verbose mode. Display descriptive messages</li>
+<li style="">--version: print out lobSTR program version</li>
+<li style="">--noweb: Do not report any user information to Amazon S3.</li></ul>
 </ul>
 <h4>Advanced options - general</h4>
 <ul style="">
@@ -336,46 +338,52 @@ If the --plot option is specified, the following plots are generated
 <li style="">train: train the noise model based on the provided bam
   alignment. This only works on male samples with a large number of
   reads aligned to sex chromosome STRs. It is currently recommended
-  that you use the provided stutter model file. </li>
+  that you use the provided stutter model file. 
+  Training outputs the files:
+  <ul>
+    <li>$noisemodelprefix.stepmodel</li>
+    <li>$noisemodelprefix.stuttermodel</li>
+    <li>$noisemodelprefix.stutterproblem</li>
+    </ul>
+</li>
 <li style="">classify:
   generate allelotypes from the provided alignment file and using the
-  provided noise model</li>
-<li style="">both: perform both the training and classification
-  step.</li>
-<li style="">simple: perform allelotyping without using a PCR stutter
-  noise model.</li></ul>
+  provided noise model.
+  Classifying outputs the files:
+  <ul>
+    <li>$output_prefix.vcf</li>
+    <li>$output_prefix.genotypes.tab</li>
+    </ul>
 </li>
-<li style="">--bam FILE: path to the bam file containing alignments,
+</ul>
+Note, the commands "simple" and "both" have been removed. 
+</li>
+<li style="">--bam FILE: (REQUIRED) path to the bam file containing alignments,
 	     or a comma separated list of multiple lobSTR bam alignments (required). </li>
-<li style="">--noise_model STRING: prefix of files containing the noise model. A
-	     recommended noise model for Illumina data is provided
-	     in PATH_TO_LOBSTR/models/illumina2. This
-	     option is required for the commands "classify" and
-	     "both". If classifying, the noise model is read from the location at this prefix. 
-       If using command "both", the noise model is written to the location at this prefix.</li>
-<li style="">--out STRING: prefix to name output files with (required)</li>
-<li style="">--strinfo STRING: path to the file containing statistics for each STR, available in the data/ directory of the lobSTR download (required if not using the command "simple").
-<li style="">--index-prefix STRING: prefix for lobSTR's bwa reference (must run lobstr_index.py) (required if not using the command "train").
+<li style="">--noise_model STRING: (REQUIRED) prefix of files to write (--command train) or read (--command classify) noise model parametesr to.</li>
+<li style="">--out STRING: (REQUIRED) prefix to name output files with (required)</li>
+<li style="">--strinfo STRING: (REQUIRED) path to the file containing statistics for each STR, available in the data/ directory of the lobSTR download.
+<li style="">--index-prefix STRING: (REQUIRED for --command classify) prefix for lobSTR's bwa reference (must run lobstr_index.py)
 <li style="">--haploid LIST: comma separated list of chromosomes to treat as haploid (e.g. --haploid chrX,chrY) for a human male sample. If all chromosomes are haploid, you can specifiy --haploid all.
-<li style="">--sex [U|M|F]: specifies the sex of the
-	     sample. (F=female, M=male, U=unknown or not
-	     applicable). Deprecated, this option will be removed. Please use the --haploid option instead.</li>
 <li style="">--min-het-freq FLOAT: minimum alternate allele read frequency to make a heterozygous call
 <li style="">--include-flank: include indels in the flanking regions of an STR when determining the length of the STR allele </li>
 <li style="">--no-rmdup: do not remove PCR duplicates</li>
 <li style="">--help, -h: print a helpful usage message</li>
 <li style="">-v, --verbose: verbose mode, print out descriptive messages</li>
+<li style="">--version: print out allelotype program version number</li>
+<li style="">--noweb: do not report any user information and parameters to Amazon S3.</li>
 </ul>
 <h4>Advanced options - calculating and reporting genotypes</h4>
 <ul>
-<li style="">--priors FILE: Use prior information about allele frequencies when determining the allelotype. This is a tab delimited file with columns:
+<li style="">--use-known-alleles FILE: Use prior information about allele frequencies when determining the allelotype. If you want to merge VCF files downstream, they must have the same set of ALT alleles listed, and so you must specify that here. This is a tab delimited file with columns:
 <ol>
 <li>chrom</li>
 <li>start</li>
 <li>end</li>
 <li>allele1:count;allele2:count... where counts can be total counts or frequencies. 
 </ol>
- An example file  based on 1000 genomes data is available in the download at PATH-TO-LOBSTR/data/lobstr.allelepriors.hg19.min50.tab. If this option is specified, loci where no prior information is available are not processed.
+where counts can be total coutns of frequencies. Allele counts are not used unless --generate-posteriors is specified, and so can be set to dummy values if that option is not used.  An example file based on 1000 genomes data is available in the download at PATH-TO-LOBSTR/data/lobstr.allelepriors.hg19.min50.tab. If this option is specified, loci where no prior information is available are not processed.</li>
+<li style="">--generate-posteriors: generate posterior probabilities for possible allelotypes. Requires allele frequences to be set with --use-known-alleles.
 </ul>
 <h4>Advanced options - reporting VCF format</h4>
 <ul>
@@ -384,16 +392,13 @@ If the --plot option is specified, the following plots are generated
 </ul>
 <h4>Advanced options - filtering reads</h4>
 <ul>
+<li style="">--chrom STRING: only look at reads from this chromosome.
 <li style="">--max-diff-ref INT: filter reads differing from the reference allele by more than INT bp</li>
 <li style="">--unit: filter reads differing from the reference by a non-integer number of repeat copies</li>
 <li style="">--mapq INT: filter reads with mapq scores of more than INT</li>
 <li style="">--max-matedist INT: filter reads with a mate distance larger than INT bp</li>
 <li style="">--exclude-partial: do not report any information about partially spanning reads.</li>
 </ul>
-<h4>Advanced options - filtering genotypes</h4>
-<ul>
-<li style="">--min-genotype-score FLOAT: minimum posterior probability for a genotype to be reported (default 0).</li>
-<li style="">--min-allele-score FLOAT: minimum marginal probability for an allele to be reported (default 0). If an allele has a score below the minimum, it will be reported as "NA".</li></ul>
 <h4>Examples of allelotype usage</h4>
 <br>
 To train the genotyping noise model from a set of aligned reads:
@@ -410,20 +415,6 @@ allelotype --command classify [OPTIONS] --bam input.bam
 	--out output_prefix --strinfo strinfofile --index-prefix PATH_TO_INDEX/lobSTR_
 </tt>
 <br><br>
-
-To run training and classification on a set of aligned reads:
-<br>
-<tt>
-allelotype --command both [OPTIONS] --bam input.bam
-    --noise_model noisemodelprefix [--no-rmdup] --out output_prefix
---strinfo strinfofile --index-prefix PATH_TO_INDEX/lobSTR_
-</tt><br><br>
-To allelotype without using a stutter noise model:
-<br>
-<tt>
-allelotype simple [OPTIONS] --bam input.bam [--no-rmdup]
-    --out output_prefix --index-prefix PATH_TO_INDEX/lobSTR_
-</tt><br>
 
 
 <h3>lobstr_index.py</h3>
