@@ -143,7 +143,7 @@ def ClassifyAllelotypes(filename):
         # get stutter info (confident homozygous calls)
         if len(alleles) == 2:
             if ( coverage >= MIN_COV and alleles[0] == alleles[1] and percagree >= 0.9):
-                all_reads = items[ALL_READS_COL-1].split("/")
+                all_reads = items[ALL_READS_COL-1].split(";")
                 genotype = int(items[ALLELES_COL-1].split(",")[0])
                 for allele in all_reads:
                     call = int(allele.split("|")[0])
