@@ -146,8 +146,8 @@ def ClassifyAllelotypes(filename):
                 all_reads = items[ALL_READS_COL-1].split("/")
                 genotype = int(items[ALLELES_COL-1].split(",")[0])
                 for allele in all_reads:
-                    call = int(allele.split(":")[0])
-                    numreads = int(allele.split(":")[1])
+                    call = int(allele.split("|")[0])
+                    numreads = int(allele.split("|")[1])
                     step = (call-genotype)*1.0/period
                     length = ref*period + call
                     if call == genotype:
