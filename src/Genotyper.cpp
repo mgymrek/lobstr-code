@@ -301,7 +301,7 @@ bool Genotyper::ProcessLocus(const std::string chrom,
       (pair<string,int>(str_record->chrom, str_record->start))
       != ref_nucleotides->end()) {
     str_record->ref_allele = ref_nucleotides->at
-      (pair<string,int>(str_record->chrom, str_record->start));
+      (pair<string,int>(str_record->chrom, str_record->start-1));
   } else {
     return false;
   }

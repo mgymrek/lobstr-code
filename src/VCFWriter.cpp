@@ -148,7 +148,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // CHROM
   output_stream << str_record.chrom << "\t";
   // POS
-  output_stream << str_record.start+1 << "\t";
+  output_stream << str_record.start << "\t";
   // ID
   output_stream << ".\t";
   // REF
