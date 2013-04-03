@@ -47,10 +47,12 @@ const float PRIOR_PSEUDOCOUNT = 0.001;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
-                     map<pair<string,int>, char>* _ref_nucleotides) {
+                     map<pair<string,int>, char>* _ref_nucleotides,
+                     map<pair<string,int>, string>* _ref_repseq) {
   noise_model = _noise_model;
   haploid_chroms = _haploid_chroms;
   ref_nucleotides = _ref_nucleotides;
+  ref_repseq = _ref_repseq;
   use_known_alleles = false;
 }
 
@@ -298,9 +300,11 @@ bool Genotyper::ProcessLocus(const std::string chrom,
   str_record->repseq = aligned_reads.front().repseq;
   str_record->refcopy = aligned_reads.front().refCopyNum;
   if (ref_nucleotides->find
-      (pair<string,int>(str_record->chrom, str_record->start))
+      (pair<string,int>(str_record->chrom, str_record->start-1))
       != ref_nucleotides->end()) {
     str_record->ref_allele = ref_nucleotides->at
+      (pair<string,int>(str_record->chrom, str_record->start-1));
+    str_record->repseq_in_ref = ref_repseq->at
       (pair<string,int>(str_record->chrom, str_record->start-1));
   } else {
     return false;

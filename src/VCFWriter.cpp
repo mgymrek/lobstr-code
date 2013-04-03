@@ -73,8 +73,10 @@ VCFWriter::VCFWriter(const string& filename)
   output_stream << "##INFO=<ID=AC,Number=A,Type=Integer,Description=\"allele count in genotypes, for each ALT allele, in the same order as listed\">" << endl;
   output_stream << "##INFO=<ID=AN,Number=1,Type=Integer,Description=\"Total number of alleles in called genotypes\">" << endl;
   output_stream << "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of variant\">" << endl;
-  output_stream << "##INFO=<ID=MOTIF,Number=1,Type=String,Description=\"Repeat motif\">" << endl;
+  output_stream << "##INFO=<ID=MOTIF,Number=1,Type=String,Description=\"Canonical repeat motif\">" << endl;
   output_stream << "##INFO=<ID=REF,Number=1,Type=Float,Description=\"Reference copy number\">" << endl;
+  output_stream << "##INFO=<ID=RL,Number=1,Type=Integer,Description=\"Reference STR track length in bp\">" << endl;
+  output_stream << "##INFO=<ID=RU,Number=1,Type=String,Description=\"Repeat motif\">" << endl;
   output_stream << "##INFO=<ID=VT,Number=1,Type=String,Description=\"Variant type\">" << endl;
   // ALT fields
   output_stream << "##ALT=<ID=STRVAR,Description=\"Short tandem variation\">" << endl;
@@ -203,9 +205,11 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // INFO
   if (ac.str() != ".") output_stream << "AC=" << ac.str() << ";";
   output_stream  << "AN=" << (str_record.coverage==0?0:2) << ";"
-                 << "END=" << str_record.stop+1 << ";"
+                 << "END=" << str_record.stop << ";"
                  << "MOTIF=" << str_record.repseq << ";"
                  << "REF=" << str_record.refcopy << ";"
+                 << "RL=" << str_record.stop - str_record.start << ";"
+                 << "RU=" << str_record.repseq_in_ref << ";"
                  << "VT=STR" << "\t";
   // FORMAT
   if (generate_posteriors) {

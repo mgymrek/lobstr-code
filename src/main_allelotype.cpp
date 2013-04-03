@@ -42,6 +42,8 @@ using namespace std;
 
 // Keep track of reference nucleotide for each STR
 map<pair<string,int>, char> ref_nucleotides;
+// Keep track of reference repseq for each STR
+map<pair<string,int>, string> ref_repseq;
 
 void show_help() {
   const char* help = "\nTo train the genotyping noise model " \
@@ -414,9 +416,11 @@ int main(int argc, char* argv[]) {
       if (items.size() == 7) {
         int start = atoi(items.at(2).c_str())+extend;
         string chrom = items.at(1);
-        char refnuc = items.at(6).at(0);
+        string repseq_in_ref = items.at(6);
+        char refnuc = ref_record.nucleotides[extend];
         pair<string, int> locus = pair<string,int>(chrom, start);
         ref_nucleotides.insert(pair< pair<string, int>, char >(locus, refnuc));
+        ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
       }
     }
   }
@@ -444,7 +448,7 @@ int main(int argc, char* argv[]) {
     }
   }
   if (command == "classify") {
-    Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides);
+    Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq);
     // If available, load priors
     if (!known_alleles_file.empty()) {
       if (my_verbose) PrintMessageDieOnError("Loading known alleles", PROGRESS);

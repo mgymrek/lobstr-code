@@ -41,7 +41,8 @@ class Genotyper {
  public:
   Genotyper(NoiseModel* _noise_model,
             const std::vector<std::string>& _haploid_chroms,
-            std::map<pair<std::string, int>, char>* _ref_nucleotides);
+            std::map<pair<std::string, int>, char>* _ref_nucleotides,
+            std::map<pair<std::string, int>, std::string>* _ref_repseq);
   ~Genotyper();
 
   /* Load prior information on alleles and allele frequencies */
@@ -85,8 +86,11 @@ class Genotyper {
   /* Information on allele frequencies to use as priors */
   map<pair<string, int>, map<int, float> > allele_frequencies_per_locus;
 
-  /* Reference nucleotie for each locus */
+  /* Reference nucleotide for each locus */
   std::map<pair<std::string, int>, char>* ref_nucleotides;
+
+  /* Reference repseq for each locus */
+  std::map<pair<std::string, int>, std::string>* ref_repseq;
 };
 
 #endif  // SRC_GENOTYPER_H_
