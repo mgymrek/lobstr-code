@@ -41,7 +41,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 // Keep track of reference nucleotide for each STR
-map<pair<string,int>, char> ref_nucleotides;
+map<pair<string,int>, string> ref_nucleotides;
 // Keep track of reference repseq for each STR
 map<pair<string,int>, string> ref_repseq;
 
@@ -417,9 +417,9 @@ int main(int argc, char* argv[]) {
         int start = atoi(items.at(2).c_str())+extend;
         string chrom = items.at(1);
         string repseq_in_ref = items.at(6);
-        char refnuc = ref_record.nucleotides[extend];
+        string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
         pair<string, int> locus = pair<string,int>(chrom, start);
-        ref_nucleotides.insert(pair< pair<string, int>, char >(locus, refnuc));
+        ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
         ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
       }
     }

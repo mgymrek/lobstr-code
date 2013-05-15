@@ -142,6 +142,18 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   }
 }
 
+string GetReadGroup() {
+  stringstream read_group;
+  read_group << "lobSTR";
+  if (!read_group_sample.empty()) {
+    read_group << ";" << read_group_sample;
+  }
+  if (!read_group_library.empty()) {
+    read_group << ";" << read_group_library;
+  }
+  return read_group.str();
+}
+
 void TrimRead(const string& input_nucs,
               const string& input_quals,
               string* trimmed_nucs,

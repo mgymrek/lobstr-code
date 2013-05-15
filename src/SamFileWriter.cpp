@@ -43,11 +43,14 @@ SamFileWriter::SamFileWriter(const string& _filename,
   chrom_sizes = _chrom_sizes;
   SamHeader header;
   header.Comments.push_back(user_defined_arguments);
-  if (!read_group.empty()) {
-    SamReadGroup rg(read_group);
-    rg.Sample = read_group;
-    header.ReadGroups.Add(rg);
+  SamReadGroup rg(GetReadGroup());
+  if (!read_group_sample.empty()) {
+    rg.Sample = read_group_sample;
   }
+  if (!read_group_library.empty()) {
+    rg.Library = read_group_library;
+  }
+  header.ReadGroups.Add(rg);
 
   //  string header="@CO\t";
   //header += user_defined_arguments;
@@ -163,9 +166,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   // XQ: alignment quality score
   bam_alignment.AddTag("XQ", "i", read_pair.reads.at(aligned_read_num).mapq);
   // RG: read group
-  if (!read_group.empty()) {
-    bam_alignment.AddTag("RG", "Z", read_group);
-  }
+  bam_alignment.AddTag("RG", "Z", GetReadGroup());
   // NM: edit distance to reference
   bam_alignment.AddTag("NM", "i", read_pair.reads.at(aligned_read_num).edit_dist);
 
@@ -235,9 +236,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       // XQ: alignment quality score
       mate_alignment.AddTag("XQ", "f", read_pair.reads.at(aligned_read_num).mapq);
       // RG: read group
-      if (!read_group.empty()) {
-        mate_alignment.AddTag("RG", "Z", read_group);
-      }
+      mate_alignment.AddTag("RG", "Z", GetReadGroup());
       // NM: edit distance to reference
       mate_alignment.AddTag("NM", "i", read_pair.reads.at(1-aligned_read_num).edit_dist);
 

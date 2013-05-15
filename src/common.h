@@ -69,6 +69,9 @@ void OutputRunStatistics();
 void PrintMessageDieOnError(const std::string& msg,
                             MSGTYPE msgtype);
 
+// Get read group ID string
+std::string GetReadGroup();
+
 // trim read based on quality scores
 void TrimRead(const std::string& input_nucs,
               const std::string& input_quals,

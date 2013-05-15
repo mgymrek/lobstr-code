@@ -33,7 +33,7 @@ struct STRRecord {
   std::string repseq;
   std::string repseq_in_ref;
   int period;
-  char ref_allele;
+  std::string ref_allele;
   float refcopy;
   // Data properties
   int allele1;
@@ -67,7 +67,7 @@ struct STRRecord {
     repseq = "";
     repseq_in_ref = "";
     period = -1;
-    ref_allele = 'N';
+    ref_allele = "N";
     refcopy = 0;
     allele1 = -10000;
     allele2 = -10000;

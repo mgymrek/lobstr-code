@@ -91,7 +91,8 @@ int gap_open = 1;
 int gap_extend = 1;
 float fpr = 0.01;
 bool partial_debug = false;
-std::string read_group = "";
+std::string read_group_sample = "";
+std::string read_group_library = "";
 bool include_orig_read_start = false;
 
 // genotyping params

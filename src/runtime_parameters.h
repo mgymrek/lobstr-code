@@ -115,7 +115,8 @@ extern int gap_open;
 extern int gap_extend;
 extern float fpr;
 extern bool partial_debug;
-extern std::string read_group;
+extern std::string read_group_sample;
+extern std::string read_group_library;
 extern bool include_orig_read_start;
 
 // genotyping params

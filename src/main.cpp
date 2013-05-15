@@ -117,7 +117,8 @@ void show_help() {
     "--oldillumina  Specifies that quality score are given in old Phred\n" \
     "               format (Illumina 1.3+, Illumina 1.5+) where quality\n" \
     "               scores are given as Phred + 64 rather than Phred + 33\n" \
-    "--rg <STRING>  Add read group tag (RG) to BAM records.\n" \
+    "--rg-sample <STRING>  Use this in the read group SM tag\n" \
+    "--rg-lib <STRING>     Use this in the read group LB tag\n" \
     "--noweb        Do not report any user information and paramters to Amazon S3.\n" \
     "\n\nAdvanced options - general:\n" \
     "-p,--threads <INT>         number of threads (default: 1)\n" \
@@ -239,7 +240,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_USES3,
     OPT_S3CONFIG,
     OPT_S3DEBUG,
-    OPT_RG,
+    OPT_RG_SAMPLE,
+    OPT_RG_LIB,
     OPT_EXCLUDE_PARTIAL,
     OPT_VERSION,
   };
@@ -296,7 +298,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"use-s3", 1, 0, OPT_USES3},
     {"s3config", 1, 0, OPT_S3CONFIG},
     {"s3debug", 0, 0, OPT_S3DEBUG},
-    {"rg", 1, 0, OPT_RG},
+    {"rg-sample", 1, 0, OPT_RG_SAMPLE},
+    {"rg-lib", 1, 0, OPT_RG_LIB},
     {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
     {"version", 0, 0, OPT_VERSION},
     {NULL, no_argument, NULL, 0},
@@ -532,9 +535,13 @@ void parse_commandline_options(int argc, char* argv[]) {
       s3debug++;
       user_defined_arguments += "s3debug;";
       break;
-    case OPT_RG:
-      read_group = string(optarg);
-      AddOption("rg", string(optarg), true, &user_defined_arguments);
+    case OPT_RG_SAMPLE:
+      read_group_sample = string(optarg);
+      AddOption("rg-sample", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_RG_LIB:
+      read_group_library = string(optarg);
+      AddOption("rg-lib", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_EXCLUDE_PARTIAL:
       exclude_partial++;

@@ -49,10 +49,23 @@ static const std::string GetReference() {
   return "";
 }
 
-static const std::string GetSTRVar(int allele) {
+// GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, *it)
+static const std::string GetSTRVar(string refseq, string ref_repseq, int allele) {
   stringstream strvar;
-  strvar << "<STRVAR:" << allele << ">";
-  return strvar.str();
+  if (allele == 0) {
+    return refseq;
+  } else if (allele < 0) {
+    return refseq.substr(0,refseq.size()+allele);
+  } else {
+    strvar << refseq;
+    int offset = refseq.size() % ref_repseq.size();
+    stringstream toadd;
+    for (int i = 0; i < allele/static_cast<int>(ref_repseq.length()) + 1; i++) {
+      toadd << ref_repseq;
+    }
+    strvar << toadd.str().substr(offset, allele);
+    return strvar.str();
+  }
 }
 
 VCFWriter::VCFWriter(const string& filename)
@@ -72,6 +85,7 @@ VCFWriter::VCFWriter(const string& filename)
   // INFO fields
   output_stream << "##INFO=<ID=AC,Number=A,Type=Integer,Description=\"allele count in genotypes, for each ALT allele, in the same order as listed\">" << endl;
   output_stream << "##INFO=<ID=AN,Number=1,Type=Integer,Description=\"Total number of alleles in called genotypes\">" << endl;
+  output_stream << "##INFO=<ID=RPA,Number=A,Type=Float,Description=\"Repeats per allele\">" << endl;
   output_stream << "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of variant\">" << endl;
   output_stream << "##INFO=<ID=MOTIF,Number=1,Type=String,Description=\"Canonical repeat motif\">" << endl;
   output_stream << "##INFO=<ID=REF,Number=1,Type=Float,Description=\"Reference copy number\">" << endl;
@@ -158,17 +172,20 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // ALT
   stringstream ac;
   stringstream genotype_string;
+  stringstream repeats_per_allele;
   int alt_allele_count = 1;
   int allele1_num = 0;
   int allele2_num = 0;
   if (str_record.alleles_to_include.size() == 0) {
     output_stream << ".\t";
     ac << ".";
+    repeats_per_allele << ".";
   } else {
     for (vector<int>::const_iterator it = str_record.alleles_to_include.begin();
          it != str_record.alleles_to_include.end(); it++) {
       if (*it != 0) {
-        output_stream << GetSTRVar(*it);
+        output_stream << GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, *it);
+        repeats_per_allele << (static_cast<float>((*it))/static_cast<float>(str_record.repseq.size()) + str_record.refcopy);
         int count = 0;
         if (str_record.allele1 == *it) {
           count++;
@@ -182,6 +199,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
         if (*it != str_record.alleles_to_include.at(str_record.alleles_to_include.size()-1)) {
           ac << ",";
           output_stream << ",";
+          repeats_per_allele << ",";
         } 
         alt_allele_count++;
       }
@@ -209,6 +227,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                  << "MOTIF=" << str_record.repseq << ";"
                  << "REF=" << str_record.refcopy << ";"
                  << "RL=" << str_record.stop - str_record.start << ";"
+                 << "RPA=" << repeats_per_allele.str() << ";"
                  << "RU=" << str_record.repseq_in_ref << ";"
                  << "VT=STR" << "\t";
   // FORMAT
