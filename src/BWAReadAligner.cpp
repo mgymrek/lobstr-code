@@ -96,9 +96,9 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
     stringstream msg;
     msg << "[BWAReadAligner]: processing "
          << read_pair->reads.at(0).ID
-         << " motif 1 " << read_pair->reads.at(0).repseq;
+        << " motif 1 " << read_pair->reads.at(0).repseq << " " << read_pair->reads.at(0).nucleotides;
     if (read_pair->reads.at(0).paired) {
-      msg << " motif 2 " << read_pair->reads.at(1).repseq << endl;
+      msg << " motif 2 " << read_pair->reads.at(1).repseq << " " << read_pair->reads.at(1).nucleotides << endl;
     }
     PrintMessageDieOnError(msg.str(), DEBUG);
   }

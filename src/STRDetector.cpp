@@ -65,21 +65,13 @@ bool STRDetector::ProcessReadPair(ReadPair* read_pair) {
 
 bool STRDetector::ProcessRead(MSReadRecord* read) {
   // Preprocessing checks
-  if (read->nucleotides.length() < (fft_window_size-1)) {
+  if (read->nucleotides.length() < (fft_window_size-1) ||
+      calculate_N_percentage(read->nucleotides) > percent_N_discard ||
+      read->nucleotides.length() < min_read_length ||
+      read->nucleotides.length() > max_read_length) {
     return false;
   }
 
-  if (calculate_N_percentage(read->nucleotides) > percent_N_discard) {
-    return false;
-  }
-
-  if (read->nucleotides.length() < min_read_length) {
-    return false;
-  }
-
-  if (read->nucleotides.length() > max_read_length) {
-    return false;
-  }
   vector<double> window_lobe_detection;
 
   //  Step 1 - sliding window
@@ -140,13 +132,14 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   // Step 4 Period Detection
   size_t best_period = 0;
   size_t next_best_period = 0;
-  string ms_period_nuc;
   int min_period_to_try = min_period == 1 ? 2 : min_period;
-  char over_abundtant_nuc =
-    OneAbundantNucleotide(detected_microsatellite_nucleotides, 1);
-  if (over_abundtant_nuc != 0) {
+  // if contains > 80% of same nucleotide and has stretch of more than 10, use that
+  string over_abundant_nuc =
+    OneAbundantNucleotide(detected_microsatellite_nucleotides, 0.85);
+  if (over_abundant_nuc != "" &&
+      CountAbundantNucRuns(detected_microsatellite_nucleotides, over_abundant_nuc.at(0)) > 10) {
     best_period = 1;
-    ms_period_nuc = over_abundtant_nuc;
+    next_best_period = 0;
   } else {
     std::vector<double> &fft_vec = ms.summed_matrix;
     size_t lobe_width =
@@ -273,7 +266,9 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
         (best_period >= min_period) &
         (read->detected_ms_region_nuc.length() >= MIN_STR_LENGTH))) {
     string repseq;
-    if (!getMSSeq(read->detected_ms_region_nuc,
+    if (best_period == 1) {
+      repseq = over_abundant_nuc;
+    } else if (!getMSSeq(read->detected_ms_region_nuc,
                   read->ms_repeat_best_period, &repseq)) {
       return false;
     }

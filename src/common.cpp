@@ -216,7 +216,12 @@ bool getMSSeq(const string& nucs, int k, string* repeat) {
   string repseqfw;
   string repseqrev;
   string repseq;
-  if (kmer.size() < 1 || kmer.size() > 6) return false;
+  // Check that we have enough of the kmer
+  if (maxkmer < 3) return false;
+  // If the detected kmer is invalid length, give up
+  if (kmer.size() < 1 || kmer.size() > 6 ) return false;
+  // If a homopolymer, this is probably a messy locus and we give up
+  if (OneAbundantNucleotide(kmer, 1) != "") return false;
   getCanonicalMS(kmer, &repseqfw);
   getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
   repseq = getFirstString(repseqfw, repseqrev);
@@ -303,7 +308,7 @@ bool valid_nucleotides_string(const string &str) {
   return true;
 }
 
-char OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
+std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
   size_t countA = 0, countC = 0, countG = 0, countT = 0;
   for (size_t i = 0; i < nuc.length(); i++) {
     switch (nuc.at(i)) {
@@ -329,19 +334,35 @@ char OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
       default:
         errx(1, "Internal error: OneAbundantNucleotide " \
              "called with invalid nucleotide string '%s'" \
-             ", characte '%c'", nuc.c_str(), nuc.at(i));
+             ", character '%c'", nuc.c_str(), nuc.at(i));
       }
   }
   size_t threshold = nuc.length()*perc_threshold;
   if (countA >= threshold)
-    return 'A';
+    return "A";
   if (countC >= threshold)
-    return 'C';
+    return "C";
   if (countG >= threshold)
-    return 'G';
+    return "G";
   if (countT >= threshold)
-    return 'T';
-  return 0;
+    return "T";
+  return "";
+}
+
+int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
+  int runsize = 0;
+  int maxrunsize = 0;
+  for (size_t i = 0; i < nuc.size(); i++) {
+    if (nuc.at(i) == abundant_nuc) {
+      runsize++;
+    } else {
+      if (runsize > maxrunsize) {
+        maxrunsize = runsize;
+        runsize = 0;
+      }
+    }
+  }
+  return maxrunsize;
 }
 
 double calculate_N_percentage(const std::string& nuc) {

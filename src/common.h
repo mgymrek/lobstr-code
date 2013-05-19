@@ -107,7 +107,10 @@ bool fexists(const char *filename);
 bool valid_nucleotides_string(const std::string &str);
 
 // determine which nucleotide is overrepresented
-char OneAbundantNucleotide(const std::string& nuc, float perc_threshold);
+std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold);
+
+// determine max length run of single nucleotide
+int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc);
 
 // determine the magnitude of a complex number
 inline double magnitude(const fftw_complex n) {

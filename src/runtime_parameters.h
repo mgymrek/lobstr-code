@@ -26,7 +26,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/RunInfo.h"
 
-const int MIN_PERIOD = 2;
+// period range for genotyper
+const int MIN_PERIOD = 1;
 const int MAX_PERIOD = 6;
 
 // global variables that probably shouldn't be global variables

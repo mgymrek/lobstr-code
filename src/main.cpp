@@ -576,8 +576,8 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (min_flank_len > max_flank_len) {
     PrintMessageDieOnError("min_flank_len must be <= max_flank_len", ERROR);
   }
-  if (min_period < 2 || max_period > 6) {
-    PrintMessageDieOnError("lobSTR can currently only profile STRs for periods 2 thorugh 6", ERROR);
+  if (min_period < 1 || max_period > 6) {
+    PrintMessageDieOnError("lobSTR can currently only profile STRs for periods 1 thorugh 6", ERROR);
   }
   // check that we have the mandatory parameters
   if ((((!paired || bam) && input_files_string.empty()) ||
@@ -1092,7 +1092,6 @@ int main(int argc, char* argv[]) {
   opts->max_gape = gap_extend;
   // take the first INT subsequence as seed
   opts->seed_len = 5;
-  // all hits with no more than maxdiff found
 
   // get the input files
   if (paired && !bam) {
