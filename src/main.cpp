@@ -1138,10 +1138,10 @@ int main(int argc, char* argv[]) {
   time(&endtime);
   stringstream msg;
   int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << seconds_elapsed/60/60/24 << " days "
-      << (seconds_elapsed/60/60)%24 << " hours "
-      << (seconds_elapsed/60)%60 << " minutes "
-      << seconds_elapsed%60 << " seconds elapsed";
+  msg << "Done! " << seconds_elapsed/60/60/24 << ":"
+      << (seconds_elapsed/60/60)%24 << ":"
+      << (seconds_elapsed/60)%60 << ":"
+      << seconds_elapsed%60 << " elapsed";
   PrintMessageDieOnError(msg.str(), PROGRESS);
   return 0;
 }
