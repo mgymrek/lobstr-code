@@ -48,6 +48,23 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+void PrintLobSTR() {
+  stringstream msg;
+  msg << endl << endl;
+  msg << "                     _______" << endl;
+  msg << "             \\\\ //  /   -^--\\ |" << endl;
+  msg << "             ||||  / /\\_____/ /" << endl;
+  msg << " {\\         ______{ }        /         lobSTR: profiling short tandem repeats" << endl;
+  msg << " {_}{\\{\\{\\{|         \\=@____/          from high-throughput sequencing data" << endl;
+  msg << "<{_{-{-{-{-| ====---- >>>" << endl;
+  msg << " { }{/{/{/{|______  _/=@_____" << endl;
+  msg << " {/               { }        \\         Copyright (C) 2011 Melissa Gymrek" << endl;
+  msg << "            ||||  \\ \\______  \\         <mgymrek@mit.edu>" << endl;
+  msg << "             // \\\\  \\    _^_\\  |" << endl;
+  msg << "                     \\______/" << endl << endl;
+  cout << msg.str();
+}
+
 void AddOption(const string& optname, const string& optval,
                bool hasvalue, string* paramstring) {
   *paramstring += optname;
@@ -77,7 +94,6 @@ void OutputRunStatistics() {
     pd << "Content-Length: " << size;
     pd << "\r\n\r\n";
     string post_header = pd.str();
-    // PrintMessageDieOnError(pd.str(), DEBUG);
     struct hostent *server;
     server = gethostbyname("mgymrek.scripts.mit.edu");
     if (server == NULL) {
@@ -103,11 +119,6 @@ void OutputRunStatistics() {
     if (send(sock, stats_string.c_str(), size, 0) < 0) {
       PrintMessageDieOnError("Couldn't send data", ERROR);
     }
-    /*char buf[1024];
-    if (recv(sock, buf, 1024, 0) < 0) {
-      PrintMessageDieOnError("Error receiving", DEBUG);
-      }
-      cerr << buf << endl;*/
     close(sock);
   }
 }
@@ -131,7 +142,7 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
     errx(1,"Invalid message type. This should never happen");
   }
   cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
-       << "-" << _GIT_VERSION << "] " << typestring << msg << endl;
+       << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
   if (msgtype == ERROR) {
     run_info.error = msg;
     run_info.endtime = GetTime();
@@ -504,7 +515,7 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   // how many nucleotides the current cigar counts for
   size_t cigar_length = 0;
   *cigar_had_s = false;
-  for (int i = 0; i < cigar_list->cigars.size(); i++) {
+  for (size_t i = 0; i < cigar_list->cigars.size(); i++) {
     CIGAR cig = cigar_list->cigars.at(i);
     if (cig.cigar_type == 'M' || cig.cigar_type == 'I' || cig.cigar_type == 'S') {
       cigar_length += cig.num;
@@ -534,7 +545,7 @@ std::string currentDateTime() {
   struct tm tstruct;
   char buf[80];
   tstruct = *localtime(&now);
-  strftime(buf, sizeof(buf), "%Y%m%d", &tstruct);
+  strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
   return buf;
 }
 

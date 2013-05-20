@@ -383,6 +383,9 @@ void parse_commandline_options(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
+  time_t starttime, endtime;
+  time(&starttime);
+  PrintLobSTR();
   /* parse command line options */
   parse_commandline_options(argc, argv);
   PrintMessageDieOnError("Getting run info", PROGRESS);
@@ -467,5 +470,9 @@ int main(int argc, char* argv[]) {
   }
   run_info.endtime = GetTime();
   OutputRunStatistics();
+  time(&endtime);
+  stringstream msg;
+  msg << "Done! " << difftime(endtime,starttime) << " seconds elapsed";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
   return 0;
 }

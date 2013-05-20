@@ -48,6 +48,9 @@ struct REFSEQ {
   int start;
 };
 
+// super cool lobSTR ascii art
+void PrintLobSTR();
+
 // add option to params string
 void AddOption(const std::string& optname,
                const std::string& optval,

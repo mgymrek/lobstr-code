@@ -1034,6 +1034,9 @@ void multi_thread_process_loop(vector<string> files1,
 }
 
 int main(int argc, char* argv[]) {
+  PrintLobSTR();
+  time_t starttime, endtime;
+  time(&starttime);
   parse_commandline_options(argc, argv);
   PrintMessageDieOnError("Getting run info", PROGRESS);
   run_info.starttime = GetTime();
@@ -1132,5 +1135,9 @@ int main(int argc, char* argv[]) {
   delete tukgen;
   run_info.endtime = GetTime();
   OutputRunStatistics();
+  time(&endtime);
+  stringstream msg;
+  msg << "Done! " << difftime(endtime,starttime) << " seconds elapsed";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
   return 0;
 }
