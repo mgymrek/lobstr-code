@@ -472,7 +472,11 @@ int main(int argc, char* argv[]) {
   OutputRunStatistics();
   time(&endtime);
   stringstream msg;
-  msg << "Done! " << difftime(endtime,starttime) << " seconds elapsed";
+  int seconds_elapsed = difftime(endtime, starttime);
+  msg << "Done! " << seconds_elapsed/60/60/24 << " days "
+      << (seconds_elapsed/60/60)%24 << " hours " 
+      << (seconds_elapsed/60)%60 << " minutes "
+      << seconds_elapsed%60 << " seconds elapsed";
   PrintMessageDieOnError(msg.str(), PROGRESS);
   return 0;
 }
