@@ -113,7 +113,7 @@ void show_help() {
     "--bwaq         Trim read ends based on quality scores. This\n" \
     "               has the same effect as the BWA parameter -q:\n" \
     "               BWA trims a read down to argmax_x{sum_{i=x+1}^l(INT-q_i)} \n" \
-    "               if q_l<INT where l is the original read length (default 15).\n" \
+    "               if q_l<INT where l is the original read length (default 10).\n" \
     "--oldillumina  Specifies that quality score are given in old Phred\n" \
     "               format (Illumina 1.3+, Illumina 1.5+) where quality\n" \
     "               scores are given as Phred + 64 rather than Phred + 33\n" \
@@ -141,7 +141,7 @@ void show_help() {
     "                           try to align (default: 10)\n" \
     "--maxflank <INT>           length to trim the ends of flanking\n" \
     "                           regions to if they exceed that length\n" \
-    "                           (default: 25)\n" \
+    "                           (default: 100)\n" \
     "\n\nAdvanced options - alignment:\n" \
     "--max-diff-ref <INT>       maximum difference in length from\n" \
     "                           the reference sequence to report\n" \

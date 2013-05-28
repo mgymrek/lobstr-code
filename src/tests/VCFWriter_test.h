@@ -18,31 +18,26 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef SRC_VCFWRITER_H__
-#define SRC_VCFWRITER_H__
+#ifndef SRC_TESTS_VCFWRITER_H__
+#define SRC_TESTS_VCFWRITER_H__
 
-#include <stdlib.h>
+#include <cppunit/extensions/HelperMacros.h>
 
-#include <set>
-#include <string>
+#include "src/VCFWriter.h"
 
-#include "src/STRRecord.h"
-#include "src/TextFileWriter.h"
+class VCFWriterTest :
+public CppUnit::TestFixture {
+  CPPUNIT_TEST_SUITE(VCFWriterTest);
+  CPPUNIT_TEST(test_GetSTRVar);
+  CPPUNIT_TEST_SUITE_END();
 
-const int MISSING = -10000;
-
-class VCFWriter : public TextFileWriter {
  public:
-  explicit VCFWriter(const std::string& filename);
-  virtual ~VCFWriter();
-  void WriteRecord(const STRRecord& str_record);
-  void LoadPositionsToExclude();
-  std::string GetSTRVar(const std::string& refseq,
-                        const std::string& ref_repseq,
-                        int alleles);
+  void setUp();
+  void tearDown();
 
-  // list of positions to exclude for each chromosome
-  map<string, set<int> > pos_to_exclude;
+  void test_GetSTRVar();
+ private:
+  VCFWriter* _vcf_writer;
 };
 
-#endif  // SRC_VCFWRITER_H__
+#endif //  SRC_TESTS_VCFWRITER_H__

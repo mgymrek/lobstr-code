@@ -81,6 +81,8 @@ NoiseModel::NoiseModel(const string& strinfofile,
   stutter_problem_filename = noise_model + ".stutterproblem";
   stutter_model_filename = noise_model + ".stuttermodel";
   stepsize_model_filename = noise_model + ".stepmodel";
+  // Determine MIN PERIOD
+  MIN_PERIOD = DetermineMinPeriod(stepsize_model_filename);
   // Set haploid chromosomes
   haploid_chroms = haploid_chroms_;
   // initialize pdf
@@ -91,6 +93,20 @@ NoiseModel::NoiseModel(const string& strinfofile,
       v1.push_back(0);
     }
     pdf_model.push_back(v1);
+  }
+}
+
+int NoiseModel::DetermineMinPeriod(const string& stepsize_model_filename) {
+  TextFileReader modelFile(stepsize_model_filename);
+  string line;
+  int numlines = 0;
+  while (modelFile.GetNextLine(&line)) {
+    numlines += 1;
+  }
+  if (numlines == 17) {
+    return 2;
+  } else {
+    return 1;
   }
 }
 

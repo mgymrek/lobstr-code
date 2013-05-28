@@ -165,7 +165,15 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
         str_record->alleles_to_include.insert
           (str_record->alleles_to_include.begin(), it->first);
       } else {
-        str_record->alleles_to_include.push_back(it->first);
+        // check that the total allele length will be at least 1 nuc
+        if (str_record->refcopy * str_record->period > -1* it->first) {
+          str_record->alleles_to_include.push_back(it->first);
+        } else {
+          stringstream msg;
+          msg << "Attempted to load invalid allele size at "
+              << str_record->chrom << ":" << str_record->start;
+          PrintMessageDieOnError(msg.str(), WARNING);
+        }
       }
     }
   } else {
@@ -174,7 +182,14 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
         str_record->alleles_to_include.insert
           (str_record->alleles_to_include.begin(), i);
       } else {
-        str_record->alleles_to_include.push_back(i);
+        if (str_record->refcopy * str_record->period > -1*i) {
+          str_record->alleles_to_include.push_back(i);
+        } else {
+          stringstream msg;
+          msg << "Attempted to load invalid allele size at "
+              << str_record->chrom << ":" << str_record->start;
+          PrintMessageDieOnError(msg.str(), WARNING);
+        }
       }
     }
   }
@@ -298,7 +313,8 @@ bool Genotyper::ProcessLocus(const std::string chrom,
   str_record->start = aligned_reads.front().msStart;
   str_record->stop = aligned_reads.front().msEnd;
   str_record->repseq = aligned_reads.front().repseq;
-  str_record->refcopy = aligned_reads.front().refCopyNum;
+  str_record->refcopy = static_cast<float>((aligned_reads.front().msEnd-aligned_reads.front().msStart))/
+    static_cast<float>(aligned_reads.front().period);
   if (ref_nucleotides->find
       (pair<string,int>(str_record->chrom, str_record->start))
       != ref_nucleotides->end()) {

@@ -49,24 +49,6 @@ static const std::string GetReference() {
   return "";
 }
 
-// GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, *it)
-static const std::string GetSTRVar(string refseq, string ref_repseq, int allele) {
-  stringstream strvar;
-  if (allele == 0) {
-    return refseq;
-  } else if (allele < 0) {
-    return refseq.substr(0,refseq.size()+allele);
-  } else {
-    strvar << refseq;
-    int offset = refseq.size() % ref_repseq.size();
-    stringstream toadd;
-    for (int i = 0; i < allele/static_cast<int>(ref_repseq.length()) + 1; i++) {
-      toadd << ref_repseq;
-    }
-    strvar << toadd.str().substr(offset, allele);
-    return strvar.str();
-  }
-}
 
 VCFWriter::VCFWriter(const string& filename)
   : TextFileWriter(filename) {
@@ -119,6 +101,24 @@ VCFWriter::VCFWriter(const string& filename)
       PrintMessageDieOnError("Loading positions to exclude", PROGRESS);
     }
     LoadPositionsToExclude();
+  }
+}
+
+std::string VCFWriter::GetSTRVar(const string& refseq, const string& ref_repseq, int allele) {
+  stringstream strvar;
+  if (allele == 0) {
+    return refseq;
+  } else if (allele < 0) {
+    return refseq.substr(0,refseq.size()+allele);
+  } else {
+    strvar << refseq;
+    int offset = refseq.size() % ref_repseq.size();
+    stringstream toadd;
+    for (int i = 0; i < allele/static_cast<int>(ref_repseq.length()) + 2; i++) {
+      toadd << ref_repseq;
+    }
+    strvar << toadd.str().substr(offset, allele);
+    return strvar.str();
   }
 }
 
@@ -176,7 +176,9 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   int alt_allele_count = 1;
   int allele1_num = 0;
   int allele2_num = 0;
-  if (str_record.alleles_to_include.size() == 0) {
+  if ((str_record.alleles_to_include.size() == 0) ||
+      (str_record.alleles_to_include.size() == 1 && 
+       str_record.alleles_to_include.at(0) == 0)) { // only has "0" in it. evaluation order will keep from throwing exception 
     output_stream << ".\t";
     ac << ".";
     repeats_per_allele << ".";
@@ -185,7 +187,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
          it != str_record.alleles_to_include.end(); it++) {
       if (*it != 0) {
         output_stream << GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, *it);
-        repeats_per_allele << (static_cast<float>((*it))/static_cast<float>(str_record.repseq.size()) + str_record.refcopy);
+        repeats_per_allele << (static_cast<float>(*it)/static_cast<float>(str_record.repseq.size()) + str_record.refcopy);
         int count = 0;
         if (str_record.allele1 == *it) {
           count++;
@@ -226,7 +228,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                  << "END=" << str_record.stop << ";"
                  << "MOTIF=" << str_record.repseq << ";"
                  << "REF=" << str_record.refcopy << ";"
-                 << "RL=" << str_record.stop - str_record.start << ";"
+                 << "RL=" << str_record.stop - str_record.start<< ";"
                  << "RPA=" << repeats_per_allele.str() << ";"
                  << "RU=" << str_record.repseq_in_ref << ";"
                  << "VT=STR" << "\t";

@@ -5,6 +5,7 @@
 lobSTR
 lobSTRIndex
 allelotype
+lobSTRTests
 test.genotypes.tab
 test.vcf
 autom4te.cache/*

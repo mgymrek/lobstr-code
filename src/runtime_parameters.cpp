@@ -24,6 +24,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 RunInfo run_info;
 
+int MIN_PERIOD=1;
+int MAX_PERIOD=6;
+
 // keep track of user defined arguments and git version
 std::string user_defined_arguments = "# version=lobSTR_"+std::string(_GIT_VERSION) + ";";
 std::string user_defined_arguments_allelotyper = "# version=allelotype_"+std::string(_GIT_VERSION) + ";";
@@ -66,7 +69,7 @@ size_t max_period = 6;
 size_t min_period = 2;
 size_t max_period_to_try = 6;
 size_t min_flank_len = 8;
-size_t max_flank_len = 25;
+size_t max_flank_len = 100;
 float closeness = 0.3;
 float percent_N_discard = 0.05;
 float tukey_alpha = 0.5;
@@ -134,7 +137,7 @@ bool entropy_debug = false;
 
 size_t MIN_STR_LENGTH = 6;
 
-int QUAL_CUTOFF = 15;
+int QUAL_CUTOFF = 10;
 int QUALITY_CONSTANT = 33;
 
 // Amazon s3 paramters
