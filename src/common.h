@@ -72,6 +72,14 @@ void OutputRunStatistics();
 void PrintMessageDieOnError(const std::string& msg,
                             MSGTYPE msgtype);
 
+// Debug statements
+std::string GetReadDebug(const ReadPair& read_pair,
+                         const std::string& detector_err,
+                         const std::string& detector_msg,
+                         const std::string& aln_err,
+                         const std::string& aln_msg);
+                         
+
 // Get read group ID string
 std::string GetReadGroup();
 
@@ -86,7 +94,7 @@ void TrimRead(const std::string& input_nucs,
 size_t count(const std::string& s, const char& c);
 
 // get the canonicalized form of the repeat
-bool getMSSeq(const std::string& nucs, int k, std::string* repeat);
+bool getMSSeq(const std::string& nucs, int k, std::string* repeat, std::string* second_best_repeat, std::string* repseq_error);
 
 // compare seqs lexicographically
 std::string getFirstString(const std::string& seq1, const std::string& seq2);

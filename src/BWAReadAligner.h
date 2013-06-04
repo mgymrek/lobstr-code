@@ -74,7 +74,7 @@ class BWAReadAligner {
   virtual ~BWAReadAligner();
 
   // main function - align read pair
-  bool ProcessReadPair(ReadPair* read_pair);
+  bool ProcessReadPair(ReadPair* read_pair, std::string* err, std::string* messages);
 
  protected:
   // Process a single read of a pair
@@ -82,7 +82,9 @@ class BWAReadAligner {
   // in "good_*_alignments"
   bool ProcessRead(MSReadRecord* read,
                    std::vector<ALIGNMENT>* good_left_alignments,
-                   std::vector<ALIGNMENT>* good_right_alignments);
+                   std::vector<ALIGNMENT>* good_right_alignments,
+                   std::string* err,
+                   std::string* messages);
 
   // Call BWA to align flanking regions
   bwa_seq_t* BWAAlignFlanks(const MSReadRecord& read);

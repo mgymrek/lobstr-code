@@ -45,15 +45,17 @@ using namespace std;
 
 STRDetector::STRDetector() {}
 
-bool STRDetector::ProcessReadPair(ReadPair* read_pair) {
+bool STRDetector::ProcessReadPair(ReadPair* read_pair, string* err, string* messages) {
+  *err = "Detection-errors-here:";
+  *messages = "Detection-notes-here:";
   read_pair->read1_passed_detection = false;
   read_pair->read2_passed_detection = false;
-  if (ProcessRead(&read_pair->reads.at(0))) {
+  if (ProcessRead(&read_pair->reads.at(0), err, messages)) {
     read_pair->read1_passed_detection = true;
   }
   // Returns true if at least one read in the pair is detected
   if (read_pair->reads.at(0).paired) {
-    if (ProcessRead(&read_pair->reads.at(1))) {
+    if (ProcessRead(&read_pair->reads.at(1), err, messages)) {
       read_pair->read2_passed_detection = true;
     }
     return (read_pair->read1_passed_detection ||
@@ -63,12 +65,15 @@ bool STRDetector::ProcessReadPair(ReadPair* read_pair) {
   }
 }
 
-bool STRDetector::ProcessRead(MSReadRecord* read) {
+bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages) {
   // Preprocessing checks
   if (read->nucleotides.length() < (fft_window_size-1) ||
       calculate_N_percentage(read->nucleotides) > percent_N_discard ||
       read->nucleotides.length() < min_read_length ||
       read->nucleotides.length() > max_read_length) {
+    if (debug) {
+      *err += "failed-read-length-check";
+    }
     return false;
   }
 
@@ -80,11 +85,14 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   string detected_microsatellite_nucleotides = "";
   EntropyDetection ed_filter(read->nucleotides,
                              fft_window_size, fft_window_step);
-
   if (!ed_filter.EntropyIsAboveThreshold()) {
+    if (debug) {
+      stringstream msg;
+      msg << "failed-entropy-threshold-" << ed_filter.GetMaxEntropy();
+      *err += msg.str();
+    }
     return false;
   }
-
   size_t start, end;
   bool rep_end = false;
   ed_filter.FindStartEnd(&start, &end, &rep_end);
@@ -97,8 +105,12 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       nuc_end-nuc_start + 1 <= 0 ||
       nuc_start >= nuc_end ||
       nuc_end-nuc_start+1 >= read->nucleotides.size() ||
-      nuc_end >= read->nucleotides.size())
+      nuc_end >= read->nucleotides.size()) {
+    if (debug) {
+      *err += "failed-STR-region-location-sanity-check";
+    }
     return false;
+  }
 
   // allow more nucleotides in detection step
   if ((nuc_start-extend_flank >= 0) &&
@@ -112,35 +124,39 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       read->nucleotides.substr(nuc_start, nuc_end - nuc_start+1);
   }
 
-  // Step 3 - Do FFT on the newly extract microsatellite region
-  TukeyWindowGenerator *pTukeyWindowGenerator =
-    TukeyWindowGenerator::GetTukeyWindowSingleton();
-  const WindowVector *pTukeyWindow =
-    pTukeyWindowGenerator->GetWindow
-    (detected_microsatellite_nucleotides.length());
-  FFT_FOUR_NUC_VECTORS ms;
-  ms.resize(1024);
-  ms.build_plan(1024);
-  ms.set_nucleotides(detected_microsatellite_nucleotides);
-  ms.multiply_nuc_matrix_by_vector(*pTukeyWindow);
-  ms.pad_zeros_to_end(detected_microsatellite_nucleotides.length());
-  ms.execute();
-  ms.out_complex_to_magnitude();
-  ms.create_summed_matrix();
-  ms.destroy_plan();
-
-  // Step 4 Period Detection
   size_t best_period = 0;
   size_t next_best_period = 0;
   int min_period_to_try = min_period == 1 ? 2 : min_period;
-  // if contains > 80% of same nucleotide and has stretch of more than 10, use that
+
+  // if contains > 80% of same nucleotide and has stretch of more than 6, use that
   string over_abundant_nuc =
-    OneAbundantNucleotide(detected_microsatellite_nucleotides, 0.85);
+    OneAbundantNucleotide(detected_microsatellite_nucleotides, 0.9);
   if (over_abundant_nuc != "" &&
-      CountAbundantNucRuns(detected_microsatellite_nucleotides, over_abundant_nuc.at(0)) > 10) {
+      CountAbundantNucRuns(detected_microsatellite_nucleotides, over_abundant_nuc.at(0)) > 6) {
+    if (debug) {
+      *messages += "Passed-homopolymer-one-abundant-nuc-check;";
+    }
     best_period = 1;
     next_best_period = 0;
   } else {
+    // Step 3 - Do FFT on the newly extract microsatellite region
+    TukeyWindowGenerator *pTukeyWindowGenerator =
+      TukeyWindowGenerator::GetTukeyWindowSingleton();
+    const WindowVector *pTukeyWindow =
+      pTukeyWindowGenerator->GetWindow
+      (detected_microsatellite_nucleotides.length());
+    FFT_FOUR_NUC_VECTORS ms;
+    ms.resize(1024);
+    ms.build_plan(1024);
+    ms.set_nucleotides(detected_microsatellite_nucleotides);
+    ms.multiply_nuc_matrix_by_vector(*pTukeyWindow);
+    ms.pad_zeros_to_end(detected_microsatellite_nucleotides.length());
+    ms.execute();
+    ms.out_complex_to_magnitude();
+    ms.create_summed_matrix();
+    ms.destroy_plan();
+
+    // Step 4 Period Detection
     std::vector<double> &fft_vec = ms.summed_matrix;
     size_t lobe_width =
       round(1024.0 / static_cast<double>
@@ -197,6 +213,11 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
 
     // check that energy is high enough
     if (best_energy < period_energy_threshold) {
+      if (debug) {
+        stringstream msg;
+        msg << "failed-FFT-energy-threshold-" << best_energy << ";";
+        *err += msg.str();
+      }
       return false;
     }
     if (fabs(next_best_energy-best_energy)/
@@ -215,6 +236,11 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   read->ms_repeat_best_period = best_period;
   if (check_next_best) {
     read->ms_repeat_next_best_period = next_best_period;
+    if (debug) {
+      stringstream msg;
+      msg << "best-period=" << best_period << ";" << "next-best-period=" << next_best_period << ";";
+      *messages += msg.str();
+    }
   }
   
 
@@ -222,14 +248,19 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
   if ((read->ms_start >=
        static_cast<int>(read->nucleotides.length())) ||
       (read->ms_end+1 >=
-       static_cast<int>(read->nucleotides.length()))) return false;
+       static_cast<int>(read->nucleotides.length()))) {
+    if (debug) {
+      *err += "failed-second-STR-region-location-sanity-check;";
+    }
+    return false;
+  }
+
   read->left_flank_nuc = (nuc_start>0) ?
     read->nucleotides.substr(0, read->ms_start) : "-";
   read->right_flank_nuc = read->nucleotides.substr(read->ms_end+1);
   read->detected_ms_region_nuc = detected_microsatellite_nucleotides;
 
-  // adjust for max flank region lengths
-  // if repetitive end, don't trim
+  // adjust for max flank region lengths,if repetitive end, don't trim
   read->left_flank_index_from_start = 0;
   read->right_flank_index_from_end = 0;
   if ((read->left_flank_nuc.size() > max_flank_len) & !rep_end) {
@@ -258,6 +289,9 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
       quality_scores.substr(read->left_flank_index_from_start,
                             read->nucleotides.size());
   } else {
+    if (debug) {
+      *err += "failed-after-trimming-flanking-regions;";
+    }
     return false;
   }
   if ( ((read->left_flank_nuc.length() >= min_flank_len) &
@@ -265,16 +299,34 @@ bool STRDetector::ProcessRead(MSReadRecord* read) {
         (best_period <= max_period) &
         (best_period >= min_period) &
         (read->detected_ms_region_nuc.length() >= MIN_STR_LENGTH))) {
-    string repseq;
+    string repseq = "";
+    string repseq_error = "";
+    string second_best_repseq = "";
     if (best_period == 1) {
-      repseq = over_abundant_nuc;
+      repseq = getFirstString(over_abundant_nuc, reverseComplement(over_abundant_nuc));
     } else if (!getMSSeq(read->detected_ms_region_nuc,
-                  read->ms_repeat_best_period, &repseq)) {
+                         read->ms_repeat_best_period, &repseq, &second_best_repseq, &repseq_error)) {
+      if (debug) {
+        *err += "failed-STR-when-detecting-motif:" + repseq_error;
+      }
       return false;
+    } else {
+      if (debug) {
+        *err += repseq_error;
+      }
+      if (second_best_repseq.size() == 1) {
+        if (debug) {
+          *messages += "Setting-next-best-period-1;";
+        }
+        read->ms_repeat_next_best_period = 1;
+      }
     }
     read->repseq = repseq;
     return true;
   } else {
+    if (debug) {
+      *err += "failed-period-and-flanking-length-checks;";
+    }
     return false;
   }
 }

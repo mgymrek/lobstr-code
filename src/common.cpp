@@ -153,6 +153,24 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   }
 }
 
+std::string GetReadDebug(const ReadPair& read_pair,
+                         const std::string& detector_err,
+                         const std::string& detector_msg,
+                         const std::string& aln_err,
+                         const std::string& aln_msg) {
+  stringstream msg;
+  msg << "[STRDetector]: processing "
+      << read_pair.reads.at(0).ID
+      << " motif 1 ";
+  if (read_pair.reads.at(0).repseq.empty()) {
+    msg << "NA";
+  } else {
+    msg << read_pair.reads.at(0).repseq;
+  }
+  msg << " " << detector_err << " " << detector_msg << " " << aln_err << " " << aln_msg;
+  return msg.str();
+}
+
 string GetReadGroup() {
   stringstream read_group;
   read_group << "lobSTR";
@@ -206,33 +224,61 @@ size_t count(const string& s, const char& c) {
   return num;
 }
 
-
-bool getMSSeq(const string& nucs, int k, string* repeat) {
-  if (k < 1 || k > 6) return false;
-  if (static_cast<int>(nucs.size()) < k) return false;
+bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_repeat, string* err) {
+  if (k < 1 || k > 6) {
+    *err = "k-is-invalid;";
+    return false;
+  }
+  if (static_cast<int>(nucs.size()) < k) {
+    *err = "k-is-greater-than-nucleotides-length;";
+    return false;
+  }
   map<string, int> countKMers;
   size_t i;
   string subseq;
-  string kmer;
+  string kmer = "";
+  string second_best_kmer = "";
   int maxkmer = 0;
+  int second_best_maxkmer = 0;
   subseq.resize(k);
   for (i = 0; i < nucs.size() - k; i++) {
-    subseq = nucs.substr(i, k);
+    getCanonicalMS(nucs.substr(i, k), &subseq);
     countKMers[subseq]++;
     if (countKMers.at(subseq) > maxkmer) {
+      if (subseq != kmer) {
+        second_best_kmer = kmer;
+        second_best_maxkmer = maxkmer;
+      }
       kmer = subseq;
       maxkmer = countKMers.at(subseq);
+    } else if (countKMers.at(subseq) > second_best_maxkmer) {
+      second_best_kmer = subseq;
+      second_best_maxkmer = countKMers.at(subseq);
     }
   }
   string repseqfw;
   string repseqrev;
   string repseq;
   // Check that we have enough of the kmer
-  if (maxkmer < 3) return false;
+  if (maxkmer < 3) {
+    *err = "Not-enough-occurrences-of-kmer-" + kmer + ";";
+    return false;
+  }
   // If the detected kmer is invalid length, give up
-  if (kmer.size() < 1 || kmer.size() > 6 ) return false;
-  // If a homopolymer, this is probably a messy locus and we give up
-  if (OneAbundantNucleotide(kmer, 1) != "") return false;
+  if (kmer.size() < 1 || kmer.size() > 6 ) {
+    *err = "Detected-kmer-is-invalid-size;";
+    return false;
+  }
+  // If a homopolymer, we probably misdetected this and it is really a homopolymer, set that as second best
+  if (k != 1 && OneAbundantNucleotide(kmer, 1) != "") {
+    *err = "Setting-next-best-to-mononucleotide;";
+    if (second_best_maxkmer >= 3) {
+      *second_best_repeat = getFirstString(OneAbundantNucleotide(kmer, 1), reverseComplement(OneAbundantNucleotide(kmer, 1)));
+      kmer = second_best_kmer;
+    } else {
+      kmer = OneAbundantNucleotide(kmer, 1);
+    }
+  }
   getCanonicalMS(kmer, &repseqfw);
   getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
   repseq = getFirstString(repseqfw, repseqrev);
