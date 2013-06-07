@@ -176,7 +176,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
         }
       }
     }
-  } else {
+  } else if (!use_known_alleles) {
     for (int i = min_allele; i <= max_allele; i++) {
       if (i == 0) {
         str_record->alleles_to_include.insert

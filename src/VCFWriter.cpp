@@ -65,7 +65,6 @@ VCFWriter::VCFWriter(const string& filename)
     output_stream << "##reference=file://" << GetReference() << endl;
   }
   // INFO fields
-  output_stream << "##INFO=<ID=AC,Number=A,Type=Integer,Description=\"allele count in genotypes, for each ALT allele, in the same order as listed\">" << endl;
   output_stream << "##INFO=<ID=AN,Number=1,Type=Integer,Description=\"Total number of alleles in called genotypes\">" << endl;
   output_stream << "##INFO=<ID=RPA,Number=A,Type=Float,Description=\"Repeats per allele\">" << endl;
   output_stream << "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of variant\">" << endl;
@@ -78,22 +77,22 @@ VCFWriter::VCFWriter(const string& filename)
   output_stream << "##ALT=<ID=STRVAR,Description=\"Short tandem variation\">" << endl;
   // FORMAT fields
   output_stream << "##FORMAT=<ID=ALLREADS,Number=1,Type=String,Description=\"All reads aligned to locus\">" << endl;
-  output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;
-  if (generate_posteriors) {
-    output_stream << "##FORMAT=<ID=AMP,Number=1,Type=String,Description=\"Allele marginal posterior probabilities\">" << endl;
-  }
   output_stream << "##FORMAT=<ID=AML,Number=1,Type=String,Description=\"Allele marginal likelihood ratio scores\">" << endl;
   output_stream << "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">" << endl;
   output_stream << "##FORMAT=<ID=GB,Number=1,Type=String,Description=\"Genotype given in bp difference from reference\">" << endl;
   output_stream << "##FORMAT=<ID=PL,Number=G,Type=Integer,Description=\"Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification\">" << endl;
   output_stream << "##FORMAT=<ID=Q,Number=1,Type=Float,Description=\"Likelihood ratio score of allelotype call\">" << endl;
   output_stream << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
-  output_stream << "##FORMAT=<ID=MP,Number=1,Type=Float,Description=\"Upper bound on maximum partially spanning allele\">" << endl;
-  output_stream << "##FORMAT=<ID=PC,Number=1,Type=Integer,Description=\"Coverage by partially spanning reads\">" << endl;
+  output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
   if (generate_posteriors) {
+    output_stream << "##FORMAT=<ID=AMP,Number=1,Type=String,Description=\"Allele marginal posterior probabilities\">" << endl;
     output_stream << "##FORMAT=<ID=PP,Number=1,Type=Float,Description=\"Posterior probability of call\">" << endl;
   }
-  output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
+  if (!exclude_partial) {
+  output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;
+    output_stream << "##FORMAT=<ID=MP,Number=1,Type=Float,Description=\"Upper bound on maximum partially spanning allele\">" << endl;
+    output_stream << "##FORMAT=<ID=PC,Number=1,Type=Integer,Description=\"Coverage by partially spanning reads\">" << endl;
+  }
   // header columns
   output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" << sample << endl;
   if (!exclude_positions_file.empty()) {
@@ -170,7 +169,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // REF
   output_stream << str_record.ref_allele << "\t";
   // ALT
-  stringstream ac;
   stringstream genotype_string;
   stringstream repeats_per_allele;
   int alt_allele_count = 1;
@@ -180,7 +178,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
       (str_record.alleles_to_include.size() == 1 && 
        str_record.alleles_to_include.at(0) == 0)) { // only has "0" in it. evaluation order will keep from throwing exception 
     output_stream << ".\t";
-    ac << ".";
     repeats_per_allele << ".";
   } else {
     for (vector<int>::const_iterator it = str_record.alleles_to_include.begin();
@@ -197,9 +194,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
           count++;
           allele2_num = alt_allele_count;
         }
-        ac << count;
         if (*it != str_record.alleles_to_include.at(str_record.alleles_to_include.size()-1)) {
-          ac << ",";
           output_stream << ",";
           repeats_per_allele << ",";
         } 
@@ -223,7 +218,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // FILTER
   output_stream << ".\t";
   // INFO
-  if (ac.str() != ".") output_stream << "AC=" << ac.str() << ";";
   output_stream  << "AN=" << (str_record.coverage==0?0:2) << ";"
                  << "END=" << str_record.stop << ";"
                  << "MOTIF=" << str_record.repseq << ";"
@@ -233,11 +227,14 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                  << "RU=" << str_record.repseq_in_ref << ";"
                  << "VT=STR" << "\t";
   // FORMAT
+  output_stream << "GT:ALLREADS:AML:DP:GB:PL:Q:STITCH";
   if (generate_posteriors) {
-    output_stream << "GT:ALLREADS:ALLPARTIALREADS:AML:DP:GB:PL:Q:MP:PC:STITCH:AMP:PP" << "\t";
-  } else {
-    output_stream << "GT:ALLREADS:ALLPARTIALREADS:AML:DP:GB:PL:Q:MP:PC:STITCH" << "\t";
+    output_stream << ":AMP:PP";
   }
+  if (!exclude_partial) {
+    output_stream << ":ALLPARTIALREADS:MP:PC";
+  }
+  output_stream << "\t";
 
   // Sample info
   size_t num_alleles = str_record.alleles_to_include.size();
@@ -298,18 +295,20 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // Output format fields
   output_stream << genotype_string.str() << ":"
                 << str_record.readstring << ":"
-                << str_record.partialreadstring << ":"
                 << marginal_lik_score_string.str() << ":"
                 << str_record.coverage << ":"
                 << gbstring.str() << ":"
                 << genotype_scaled_likelihoods_string.str() << ":"
                 << str_record.max_lik_score << ":"
-                << max_partial_string.str() << ":"
-                << str_record.partial_coverage << ":"
                 << str_record.num_stitched;
   if (generate_posteriors) {
     output_stream << ":" << marginal_posterior_string.str() << ":";
     output_stream << str_record.posterior_prob;
+  }
+  if (!exclude_partial) {
+    output_stream << ":" << str_record.partialreadstring
+		  << ":" << max_partial_string.str()
+		  << ":" << str_record.partial_coverage;
   }
   output_stream << endl;
 }
