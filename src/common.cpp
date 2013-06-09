@@ -52,7 +52,7 @@ void PrintLobSTR() {
   stringstream msg;
   msg << endl << endl;
   msg << "                       _______" << endl;
-  msg << "             \\\\ //  /   -^--\\ |" << endl;
+  msg << "             \\\\ //  /     -^--\\ |" << endl;
   msg << "             ||||  / /\\_____/ /" << endl;
   msg << " {\\         ______{ }        /         lobSTR: profiling short tandem repeats" << endl;
   msg << " {_}{\\{\\{\\{|         \\=@____/          from high-throughput sequencing data" << endl;
