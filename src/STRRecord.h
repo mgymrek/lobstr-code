@@ -39,13 +39,10 @@ struct STRRecord {
   int allele1;
   int allele2;
   int coverage;
-  float posterior_prob; // posterior prob. of call
   float max_log_lik; // maximum likelihood
   float max_lik_score; // ML/sum of all likelihoods
   float allele1_marginal_lik_score; // marginal likelihood score
   float allele2_marginal_lik_score; // marginal likelihood score
-  float allele1_marginal_posterior_prob; // marginal posterior prob
-  float allele2_marginal_posterior_prob; // marginal posterior prob
   int conflicting;
   int agreeing;
   int partial_coverage;
@@ -72,13 +69,10 @@ struct STRRecord {
     allele1 = -10000;
     allele2 = -10000;
     coverage = 0;
-    posterior_prob = -1;
     max_log_lik = -10000;
     max_lik_score = -1;
     allele1_marginal_lik_score = -1;
     allele2_marginal_lik_score = -1;
-    allele1_marginal_posterior_prob = -1;
-    allele2_marginal_posterior_prob = -1;
     conflicting = 0;
     agreeing = 0;
     partial_coverage = 0;

@@ -84,10 +84,6 @@ VCFWriter::VCFWriter(const string& filename)
   output_stream << "##FORMAT=<ID=Q,Number=1,Type=Float,Description=\"Likelihood ratio score of allelotype call\">" << endl;
   output_stream << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
   output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
-  if (generate_posteriors) {
-    output_stream << "##FORMAT=<ID=AMP,Number=1,Type=String,Description=\"Allele marginal posterior probabilities\">" << endl;
-    output_stream << "##FORMAT=<ID=PP,Number=1,Type=Float,Description=\"Posterior probability of call\">" << endl;
-  }
   if (!exclude_partial) {
   output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;
     output_stream << "##FORMAT=<ID=MP,Number=1,Type=Float,Description=\"Upper bound on maximum partially spanning allele\">" << endl;
@@ -228,9 +224,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                  << "VT=STR" << "\t";
   // FORMAT
   output_stream << "GT:ALLREADS:AML:DP:GB:PL:Q:STITCH";
-  if (generate_posteriors) {
-    output_stream << ":AMP:PP";
-  }
   if (!exclude_partial) {
     output_stream << ":ALLPARTIALREADS:MP:PC";
   }
@@ -271,17 +264,13 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
     }  
   }
   stringstream gbstring;
-  stringstream marginal_posterior_string;
   stringstream marginal_lik_score_string;
   if (str_record.coverage == 0) {
     gbstring << "./.";
-    marginal_posterior_string << "./.";
     marginal_lik_score_string << "./.";
   } else {
     gbstring << str_record.allele1 << "/"
              << str_record.allele2;
-    marginal_posterior_string << str_record.allele1_marginal_posterior_prob << "/"
-                              << str_record.allele2_marginal_posterior_prob;
     marginal_lik_score_string << str_record.allele1_marginal_lik_score << "/"
                               << str_record.allele2_marginal_lik_score;
   }
@@ -301,10 +290,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
                 << genotype_scaled_likelihoods_string.str() << ":"
                 << str_record.max_lik_score << ":"
                 << str_record.num_stitched;
-  if (generate_posteriors) {
-    output_stream << ":" << marginal_posterior_string.str() << ":";
-    output_stream << str_record.posterior_prob;
-  }
   if (!exclude_partial) {
     output_stream << ":" << str_record.partialreadstring
 		  << ":" << max_partial_string.str()

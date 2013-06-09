@@ -53,50 +53,9 @@ Genotyper::Genotyper(NoiseModel* _noise_model,
   haploid_chroms = _haploid_chroms;
   ref_nucleotides = _ref_nucleotides;
   ref_repseq = _ref_repseq;
-  use_known_alleles = false;
 }
 
 Genotyper::~Genotyper() {}
-
-void Genotyper::LoadPriors(const std::string& filename) {
-  use_known_alleles = true;
-  TextFileReader priorfile(filename);
-  string line;
-  while (priorfile.GetNextLine(&line)) {
-    // get locus
-    vector<string> items;
-    split(line, '\t', items);
-    if (items.size() == 0) break;
-    if (items.size() != 4) {
-      PrintMessageDieOnError("Error, prior file has incorrect number of columns", ERROR);
-    }
-    string chrom = items[0];
-    int start = atoi(items[1].c_str());
-    pair<string, int> locus = pair<string,int>(chrom, start);
-    // get allele freqs for each
-    map<int, float> allele_to_freq;
-    string allele_freq_string = items[3];
-    vector<string> alleles;
-    split(allele_freq_string, ';', alleles);
-    float total = 0;
-    for (size_t i = 0; i < alleles.size(); i++) {
-      vector<string> astring;
-      split(alleles.at(i), ':', astring);
-      int allele = atoi(astring[0].c_str());
-      float freq = atof(astring[1].c_str());
-      allele_to_freq[allele] = freq+PRIOR_PSEUDOCOUNT;
-      total += freq;
-    }
-    // normalize to make sure we have frequencies
-    for (map<int, float>::iterator it = allele_to_freq.begin();
-         it != allele_to_freq.end(); it++) {
-      allele_to_freq[it->first] = it->second/total;
-    }
-    // insert into allele freqs
-    allele_frequencies_per_locus[locus] = allele_to_freq;
-  }
-  return;
-}
 
 float Genotyper::CalcLogLik(int a, int b,
                             const list<AlignedRead>& aligned_reads,
@@ -125,7 +84,6 @@ float Genotyper::CalcLogLik(int a, int b,
 }
 
 void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
-                        const map<int, float>& prior_freqs,
                         bool haploid, STRRecord* str_record) {
   // Get all possible alleles and set other info while we're at it
   float allele;
@@ -156,47 +114,27 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   // Do grid search over (min-k*period, max+k*period)
   int min_allele = *min_element(possible.begin(), possible.end()) - PADK*str_record->period;
   int max_allele = *max_element(possible.begin(), possible.end()) + PADK*str_record->period;
-  // update range based on priors if available.
   // Update alleles to include
   // Add 0 right away at the front
   str_record->alleles_to_include.insert
     (str_record->alleles_to_include.begin(), 0);
-  if (!prior_freqs.empty()) {
-    for (map<int,float>::const_iterator it = prior_freqs.begin();
-         it != prior_freqs.end(); it++) {
-      if (it->first != 0) { // we already added 0
-        // check that the total allele length will be at least 1 nuc
-        if (str_record->refcopy * str_record->period > -1* it->first) {
-          str_record->alleles_to_include.push_back(it->first);
-        } else {
-          stringstream msg;
-          msg << "Attempted to load invalid allele size at "
-              << str_record->chrom << ":" << str_record->start;
-          PrintMessageDieOnError(msg.str(), WARNING);
-        }
-      }
-    }
-  } else if (!use_known_alleles) {
-    for (int i = min_allele; i <= max_allele; i++) {
-      if (i != 0) {
-        if (str_record->refcopy * str_record->period > -1*i) {
-          str_record->alleles_to_include.push_back(i);
-        } else {
-          stringstream msg;
-          msg << "Attempted to load invalid allele size at "
-              << str_record->chrom << ":" << str_record->start;
-          PrintMessageDieOnError(msg.str(), WARNING);
-        }
+  for (int i = min_allele; i <= max_allele; i++) {
+    if (i != 0) {
+      if (str_record->refcopy * str_record->period > -1*i) {
+	str_record->alleles_to_include.push_back(i);
+      } else {
+	stringstream msg;
+	msg << "Attempted to load invalid allele size at "
+	    << str_record->chrom << ":" << str_record->start;
+	PrintMessageDieOnError(msg.str(), WARNING);
       }
     }
   }
 
   // Get all likelihoods, keep track of max
-  float sum_all_posterior = SMALL_CONST; // sum P(R|G)P(G)
   float sum_all_likelihoods = SMALL_CONST; // sum P(R|G)
-  // Keep track of numerators for marginal likelihood and posteriors
+  // Keep track of numerators for marginal likelihood
   map<int,float> marginal_lik_score_numerator; // sum P(R|G) by allele
-  map<int,float> marginal_posterior_numerator; // sum P(R|G)P(G) by allele
   for (size_t i = 0; i < str_record->alleles_to_include.size(); i++) {
     for (size_t j = i; j < str_record->alleles_to_include.size(); j++) {
       pair<int, int> allelotype(str_record->alleles_to_include.at(i),
@@ -225,15 +163,10 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
       }
       // But, include its score in the denominator
       // add P(R|G)P(G) = 10^(log(P(R|G))+log(P(G)))
-      float pg = GetPrior(allelotype.first, allelotype.second, prior_freqs);
-      float posterior_term = pow(10, (currScore+log10(pg)));
       float likelihood_term = pow(10, currScore);
-      sum_all_posterior += posterior_term;
       sum_all_likelihoods += likelihood_term;
-      marginal_posterior_numerator[allelotype.first] += posterior_term;
       marginal_lik_score_numerator[allelotype.first] += likelihood_term;
       if (allelotype.first != allelotype.second) {
-        marginal_posterior_numerator[allelotype.second] += posterior_term;
         marginal_lik_score_numerator[allelotype.second] += likelihood_term;
       }
 
@@ -248,10 +181,6 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   }
 
   // Get scores
-  str_record->posterior_prob =
-    pow(10,str_record->max_log_lik)*
-    GetPrior(str_record->allele1, str_record->allele2, prior_freqs)/
-    sum_all_posterior;
   str_record->max_lik_score =
     pow(10,str_record->max_log_lik)/sum_all_likelihoods;
   str_record->allele1_marginal_lik_score =
@@ -260,13 +189,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   str_record->allele2_marginal_lik_score =
     marginal_lik_score_numerator[str_record->allele2]/
     sum_all_likelihoods;
-  str_record->allele1_marginal_posterior_prob =
-    marginal_posterior_numerator[str_record->allele1]/
-    sum_all_posterior;
-  str_record->allele2_marginal_posterior_prob =
-    marginal_posterior_numerator[str_record->allele2]/
-    sum_all_posterior;
-  
+
   // Get agreeing/conflicting
   str_record->agreeing =
     str_record->spanning_reads[str_record->allele1];
@@ -276,20 +199,6 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   str_record->conflicting =
     str_record->coverage -
     str_record->agreeing;
-}
-
-float Genotyper::GetPrior(int allele1, int allele2,
-                          const map<int, float>& prior_freqs) {
-  if (prior_freqs.empty()) {
-    return 1;
-  } else {
-    if (prior_freqs.find(allele1) != prior_freqs.end() &&
-        prior_freqs.find(allele2) != prior_freqs.end()) {
-      return prior_freqs.at(allele1)*prior_freqs.at(allele2);
-    } else {
-      return DEFAULT_PRIOR;
-    }
-  }
 }
 
 bool Genotyper::ProcessLocus(const std::string chrom,
@@ -323,16 +232,8 @@ bool Genotyper::ProcessLocus(const std::string chrom,
     return false;
   }
   if (str_record->repseq.empty()) return false;
-  // Get known alleles
-  map<int, float> prior_freqs;
-  if (use_known_alleles) {
-    pair<string, int> locus(str_record->chrom, str_record->start);
-    if (allele_frequencies_per_locus.find(locus) != allele_frequencies_per_locus.end()) {
-      prior_freqs = allele_frequencies_per_locus[locus]; 
-    } 
-  }
   // Get allelotype call and scores
-  FindMLE(aligned_reads, prior_freqs, is_haploid, str_record);
+  FindMLE(aligned_reads, is_haploid, str_record);
   // Get read strings
   stringstream readstring;
   if (str_record->coverage  == 0) {

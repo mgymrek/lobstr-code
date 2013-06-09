@@ -69,7 +69,8 @@ void show_help() {
     "--command [train|classify]:     (REQUIRED) specify which of the tasks\n" \
     "                                described above to perform\n" \
     "--bam <f1.bam,[f2.bam, ...]>:   (REQUIRED) comma-separated list\n" \
-    "                                of bam files to analyze\n" \
+    "                                of bam files to analyze. Each sample should have\n \
+    "                                "a unique read group.\n" \
     "--strinfo <strinfo.tab>:        (REQUIRED)\n" \
     "                                File containing statistics for each STR,\n" \
     "                                available in the data/ directory of the\n" \
@@ -87,35 +88,15 @@ void show_help() {
     "--haploid <chrX,[chrY,...]>:    comma-separated list of chromosomes\n" \
     "                                that should be forced to have homozygous\n" \
     "                                calls. Specify --haploid all if the organism\n" \
-    "                                is haploid\n" \
+    "                                is haploid. Will be applied to all samples.\n" \
     "--include-flank:                Include indels in flanking regions when\n" \
     "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
     "-v,--verbose:                   print out helpful progress messages\n" \
     "--version:                      print out allelotype program version number\n\n" \
     "Options for calculating and reporting allelotypes:\n" \
-    "--use-known-alleles <FILE>:     Use prior information about alleles in\n" \
-    "                                the population when determining the allelotype.\n" \
-    "                                NOTE: if you want to merge VCF files downstream,\n" \
-    "                                they must have the same set of ALT alleles listed,\n" \
-    "                                and so you must specify that here.\n" \
-    "                                This is a tab delimited file with columns: \n" \
-    "                                     1. chrom\n" \
-    "                                     2. start\n" \
-    "                                     3. end\n" \
-    "                                     4. <allele1>:<count>;<allele2>:<count>...\n" \
-    "                                where counts can be total counts or frequencies.\n" \
-    "                                An example file based on 1000 genomes data is\n" \
-    "                                available in the download at\n" \
-    "                                <PATH-TO-LOBSTR>/data/lobstr.allelepriors.hg19.min50.tab.\n" \
-    "                                If this option is specified, only loci and alleles\n" \
-    "                                included in <FILE> will be considered. Allele counts\n" \
-    "                                are not used unless --generate-posteriors is specified,\n" \
-    "                                and can be set to dummy values if not used.\n" \
-    "--generate-posteriors           Generate posterior probabilities for\n" \
-    "                                possible allelotypes.\n" \
-    "                                Requires allele frequencies to be set with \n" \
-    "                                --use-known-alleles\n" \
+    "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
+    "                                For more than one annotation, use comma-separated list of files\n" \
     "Options for reporting allelotypes:\n" \
     "--sample <STRING>:             Name of sample. Default to --out\n" \
     "--exclude-pos <FILE>:          File of \"chrom\\tpos\" of positions to exclude.\n" \
@@ -145,13 +126,13 @@ void show_help() {
  */
 void parse_commandline_options(int argc, char* argv[]) {
   enum LONG_OPTIONS {
+    OPT_ANNOTATION,
     OPT_BAM,
     OPT_CHROM,
     OPT_COMMAND,
     OPT_DEBUG,
     OPT_EXCLUDE_PARTIAL,
     OPT_EXCLUDE_POS,
-    OPT_GENERATE_POSTERIORS,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_FLANK,
@@ -170,7 +151,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_STRINFO,
     OPT_TAB,
     OPT_UNIT,
-    OPT_USE_KNOWN_ALLELES,
     OPT_VERBOSE,
     OPT_VERSION,
   };
@@ -179,13 +159,13 @@ void parse_commandline_options(int argc, char* argv[]) {
   int option_index = 0;
 
   static struct option long_options[] = {
+    {"annotation", 1, 0, OPT_ANNOTATION},
     {"bam", 1, 0, OPT_BAM},
     {"chrom", 1, 0, OPT_CHROM},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
     {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
     {"exclude-pos", 1, 0, OPT_EXCLUDE_POS},
-    {"generate-posteriors", 0, 0, OPT_GENERATE_POSTERIORS},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
     {"include-flank", 0, 0, OPT_INCLUDE_FLANK},
@@ -204,7 +184,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"strinfo", 1, 0, OPT_STRINFO},
     {"tab", 0, 0, OPT_TAB},
     {"unit", 0, 0, OPT_UNIT},
-    {"use-known-alleles", 1, 0, OPT_USE_KNOWN_ALLELES},
     {"verbose", 0, 0, OPT_VERBOSE},
     {"version", 0, 0, OPT_VERSION},
     {NULL, no_argument, NULL, 0},
@@ -214,6 +193,9 @@ void parse_commandline_options(int argc, char* argv[]) {
                    long_options, &option_index);
   while (ch != -1) {
     switch (ch) {
+    case OPT_ANNOTATION:
+      annotation_files_string = string(optarg);
+      AddOption("annotation", string(optarg), true, &user_defined_arguments_allelotyper);
     case OPT_BAM:
       bam_files_string = string(optarg);
       AddOption("bam", string(optarg), true, &user_defined_arguments_allelotyper);
@@ -240,10 +222,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_EXCLUDE_POS:
       exclude_positions_file = string(optarg);
       AddOption("exclude-pos", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
-    case OPT_GENERATE_POSTERIORS:
-      generate_posteriors++;
-      AddOption("generate-posteriors", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);
@@ -322,10 +300,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       unit = true;
       AddOption("unit", "", false, &user_defined_arguments_allelotyper);
       break;
-    case OPT_USE_KNOWN_ALLELES:
-      known_alleles_file = string(optarg);
-      AddOption("use-known-alleles", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
     case 'v':
     case OPT_VERBOSE:
       my_verbose++;
@@ -376,10 +350,6 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
   // set sample if not specified
   if (sample.empty()) sample = output_prefix;
-  // can't generate posteriors without priors
-  if (generate_posteriors && known_alleles_file.empty()) {
-    PrintMessageDieOnError("Cannot generate priors without known alleles file", ERROR);
-  }
 }
 
 int main(int argc, char* argv[]) {
@@ -428,6 +398,14 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  /* Load annotations */
+  if (!annotation_files_string.empty()) {
+    if (my_verbose) {
+      PrintMessageDieOnError("Loading annotations", PROGRESS);
+    }
+    // TODO
+  }
+
   /* Add reads to read container */
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
@@ -452,11 +430,6 @@ int main(int argc, char* argv[]) {
   }
   if (command == "classify") {
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq);
-    // If available, load priors
-    if (!known_alleles_file.empty()) {
-      if (my_verbose) PrintMessageDieOnError("Loading known alleles", PROGRESS);
-      genotyper.LoadPriors(known_alleles_file);
-    }
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
     if (generate_tab) {
       genotyper.Genotype(read_container,

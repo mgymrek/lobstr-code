@@ -99,19 +99,18 @@ std::string read_group_library = "";
 bool include_orig_read_start = false;
 
 // genotyping params
+std::string annotation_files_string = "";
 std::string bam_files_string = "";
 std::string command = "";
 std::string noise_model = "";
 std::string haploid_chroms_string = "";
 std::string strinfofile = "";
-std::string known_alleles_file = "";
 std::string use_chrom = "";
 bool generate_tab = true;
 bool rmdup = true;
 bool include_flank = true;
 bool print_reads = false;
 bool exclude_partial = false;
-bool generate_posteriors = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
 

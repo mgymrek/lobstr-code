@@ -121,19 +121,18 @@ extern std::string read_group_library;
 extern bool include_orig_read_start;
 
 // genotyping params
+extern std::string annotation_files_string;
 extern std::string bam_files_string;
 extern std::string command;
 extern std::string noise_model;
 extern std::string haploid_chroms_string;
 extern std::string strinfofile;
-extern std::string known_alleles_file;
 extern std::string use_chrom;
 extern bool generate_tab;
 extern bool rmdup;
 extern bool include_flank;
 extern bool print_reads;
 extern bool exclude_partial;
-extern bool generate_posteriors;
 extern float min_het_freq;
 extern int max_matedist;
 

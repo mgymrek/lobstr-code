@@ -45,9 +45,6 @@ class Genotyper {
             std::map<pair<std::string, int>, std::string>* _ref_repseq);
   ~Genotyper();
 
-  /* Load prior information on alleles and allele frequencies */
-  void LoadPriors(const std::string& filename);
-
   /* determine allelotypes and write to file */
   void Genotype(const ReadContainer& read_container,
                 const std::string& output_file,
@@ -67,24 +64,13 @@ class Genotyper {
 
   /* Get most likely allelotype */
   void FindMLE(const list<AlignedRead>& aligned_reads,
-               const map<int, float>& prior_freqs,
                bool haploid, STRRecord* str_record);
-
-  /* Get prior for genotype <allele1,allele2>, assuming HWE */
-  float GetPrior(int allele1, int allele2,
-                 const map<int, float>& prior_freqs);
 
   /* chromosomes to treat as haploid */
   std::vector<std::string> haploid_chroms;
 
   /* store the noise model parameters */
   NoiseModel* noise_model;
-
-  /* Use information about known alleles */
-  bool use_known_alleles;
-
-  /* Information on allele frequencies to use as priors */
-  map<pair<string, int>, map<int, float> > allele_frequencies_per_locus;
 
   /* Reference nucleotide for each locus */
   std::map<pair<std::string, int>, std::string>* ref_nucleotides;
