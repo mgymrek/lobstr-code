@@ -51,7 +51,7 @@ using namespace std;
 void PrintLobSTR() {
   stringstream msg;
   msg << endl << endl;
-  msg << "                     _______" << endl;
+  msg << "                       _______" << endl;
   msg << "             \\\\ //  /   -^--\\ |" << endl;
   msg << "             ||||  / /\\_____/ /" << endl;
   msg << " {\\         ______{ }        /         lobSTR: profiling short tandem repeats" << endl;
