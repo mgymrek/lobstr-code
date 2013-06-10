@@ -47,14 +47,12 @@ Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
                      map<pair<string,int>, string>* _ref_nucleotides,
                      map<pair<string,int>, string>* _ref_repseq,
-		     const string& output_file,
 		     const string& vcf_file) {
   noise_model = _noise_model;
   haploid_chroms = _haploid_chroms;
   ref_nucleotides = _ref_nucleotides;
   ref_repseq = _ref_repseq;
 
-  gWriter = new GenotypeTabWriter(output_file);
   vcfWriter = new VCFWriter(vcf_file);
 }
 
@@ -289,12 +287,10 @@ bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
   
 void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   STRRecord str_record;
-  // get chrom and start coord
   str_record.Reset();
   if (use_chrom.empty() ||
       (!use_chrom.empty() && use_chrom == read_list.front().chrom)) {
     if (ProcessLocus(read_list, &str_record)) {
-      if (generate_tab) gWriter->WriteRecord(str_record);
       vcfWriter->WriteRecord(str_record);
     }
   }

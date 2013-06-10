@@ -27,7 +27,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-#include "src/GenotypeTabWriter.h"
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
 #include "src/STRRecord.h"
@@ -45,7 +44,6 @@ class Genotyper {
             const std::vector<std::string>& _haploid_chroms,
             std::map<pair<std::string, int>, std::string>* _ref_nucleotides,
             std::map<pair<std::string, int>, std::string>* _ref_repseq,
-	    const std::string& output_file,
 	    const std::string& vcf_file);
   ~Genotyper();
 
@@ -79,7 +77,6 @@ class Genotyper {
   std::map<pair<std::string, int>, std::string>* ref_repseq;
 
   /* File writers */
-  GenotypeTabWriter* gWriter;
   VCFWriter* vcfWriter;
 };
 

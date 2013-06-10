@@ -106,7 +106,6 @@ std::string noise_model = "";
 std::string haploid_chroms_string = "";
 std::string strinfofile = "";
 std::string use_chrom = "";
-bool generate_tab = true;
 bool rmdup = true;
 bool include_flank = true;
 bool print_reads = false;

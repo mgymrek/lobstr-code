@@ -128,7 +128,6 @@ extern std::string noise_model;
 extern std::string haploid_chroms_string;
 extern std::string strinfofile;
 extern std::string use_chrom;
-extern bool generate_tab;
 extern bool rmdup;
 extern bool include_flank;
 extern bool print_reads;

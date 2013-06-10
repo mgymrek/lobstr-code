@@ -150,7 +150,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_PROFILE,
     OPT_SAMPLE,
     OPT_STRINFO,
-    OPT_TAB,
     OPT_UNIT,
     OPT_VERBOSE,
     OPT_VERSION,
@@ -183,7 +182,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"reads", 0, 0, OPT_PRINT_READS},
     {"sample", 1, 0, OPT_SAMPLE},
     {"strinfo", 1, 0, OPT_STRINFO},
-    {"tab", 0, 0, OPT_TAB},
     {"unit", 0, 0, OPT_UNIT},
     {"verbose", 0, 0, OPT_VERBOSE},
     {"version", 0, 0, OPT_VERSION},
@@ -292,10 +290,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_STRINFO:
       strinfofile = string(optarg);
       AddOption("strinfo", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
-    case OPT_TAB:
-      generate_tab++;
-      AddOption("tab", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_UNIT:
       unit = true;
@@ -441,13 +435,7 @@ int main(int argc, char* argv[]) {
   }
   if (command == "classify") {
     std::string tabfile = "";
-    if (generate_tab) {
-      tabfile = output_prefix + ".genotypes.tab";
-    } else {
-      tabfile = "/dev/null";
-    }
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
-			tabfile,
 			output_prefix + ".vcf");
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
     for (size_t i = 0; i < reference_strs.size(); i++) {
