@@ -27,9 +27,11 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+#include "src/GenotypeTabWriter.h"
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
 #include "src/STRRecord.h"
+#include "src/VCFWriter.h"
 
 using namespace std;
 
@@ -42,19 +44,17 @@ class Genotyper {
   Genotyper(NoiseModel* _noise_model,
             const std::vector<std::string>& _haploid_chroms,
             std::map<pair<std::string, int>, std::string>* _ref_nucleotides,
-            std::map<pair<std::string, int>, std::string>* _ref_repseq);
+            std::map<pair<std::string, int>, std::string>* _ref_repseq,
+	    const std::string& output_file,
+	    const std::string& vcf_file);
   ~Genotyper();
 
   /* determine allelotypes and write to file */
-  void Genotype(const ReadContainer& read_container,
-                const std::string& output_file,
-                const std::string& vcf_file);
+  void Genotype(const list<AlignedRead>& read_list);
 
  private:
   /* Process all reads at a single locus */
-  bool ProcessLocus(const std::string chrom,
-                    const int str_coord,
-                    const std::list<AlignedRead>& aligned_reads,
+  bool ProcessLocus(const std::list<AlignedRead>& aligned_reads,
                     STRRecord* str_record);
 
   /* Get log likelihood of an allelotype */
@@ -77,6 +77,10 @@ class Genotyper {
 
   /* Reference repseq for each locus */
   std::map<pair<std::string, int>, std::string>* ref_repseq;
+
+  /* File writers */
+  GenotypeTabWriter* gWriter;
+  VCFWriter* vcfWriter;
 };
 
 #endif  // SRC_GENOTYPER_H_

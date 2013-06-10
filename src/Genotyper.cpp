@@ -33,11 +33,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/common.h"
 #include "src/Genotyper.h"
-#include "src/GenotypeTabWriter.h"
 #include "src/runtime_parameters.h"
 #include "src/TextFileReader.h"
 #include "src/TextFileWriter.h"
-#include "src/VCFWriter.h"
 
 using namespace std;
 const float SMALL_CONST = 1e-10;
@@ -48,11 +46,16 @@ const float PRIOR_PSEUDOCOUNT = 0.001;
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
                      map<pair<string,int>, string>* _ref_nucleotides,
-                     map<pair<string,int>, string>* _ref_repseq) {
+                     map<pair<string,int>, string>* _ref_repseq,
+		     const string& output_file,
+		     const string& vcf_file) {
   noise_model = _noise_model;
   haploid_chroms = _haploid_chroms;
   ref_nucleotides = _ref_nucleotides;
   ref_repseq = _ref_repseq;
+
+  gWriter = new GenotypeTabWriter(output_file);
+  vcfWriter = new VCFWriter(vcf_file);
 }
 
 Genotyper::~Genotyper() {}
@@ -201,10 +204,11 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
     str_record->agreeing;
 }
 
-bool Genotyper::ProcessLocus(const std::string chrom,
-                             const int str_coord,
-                             const std::list<AlignedRead>& aligned_reads,
+bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
                              STRRecord* str_record) {
+  // Pull out the chrom and start_coord
+  string chrom = aligned_reads.front().chrom;
+
   // Deal with haploid
   bool is_haploid = false;
   if ((find(haploid_chroms.begin(), haploid_chroms.end(), chrom) != haploid_chroms.end() ||
@@ -283,23 +287,15 @@ bool Genotyper::ProcessLocus(const std::string chrom,
   return true;
 }
   
-void Genotyper::Genotype(const ReadContainer& read_container,
-                         const std::string& output_file,
-                         const std::string& vcf_file) {
-  GenotypeTabWriter gWriter(output_file);
-  VCFWriter vcfWriter(vcf_file);
+void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   STRRecord str_record;
-  // collect info on each locus
-  for (map<pair<string, int>, list<AlignedRead> >::const_iterator
-         it = read_container.aligned_str_map_.begin();
-       it != read_container.aligned_str_map_.end(); it++) {
-    str_record.Reset();
-    if (use_chrom.empty() || (!use_chrom.empty() && use_chrom == it->first.first)) {
-      if (ProcessLocus(it->first.first, it->first.second,
-                       it->second, &str_record)) {
-        if (generate_tab) gWriter.WriteRecord(str_record);
-        vcfWriter.WriteRecord(str_record);
-      }
+  // get chrom and start coord
+  str_record.Reset();
+  if (use_chrom.empty() ||
+      (!use_chrom.empty() && use_chrom == read_list.front().chrom)) {
+    if (ProcessLocus(read_list, &str_record)) {
+      if (generate_tab) gWriter->WriteRecord(str_record);
+      vcfWriter->WriteRecord(str_record);
     }
   }
 }

@@ -29,10 +29,12 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 #include "src/cigar.h"
+#include "src/ReferenceSTR.h"
 #include "src/api/BamReader.h"
 
 using namespace std;
 using BamTools::BamReader;
+using BamTools::BamRegion;
 using BamTools::BamAlignment;
 using BamTools::SamHeader;
 using BamTools::RefData;
@@ -43,6 +45,7 @@ struct AlignedRead {
   std::string chrom;
   int msStart;
   int msEnd;
+  std::string read_group; // identifies a unique sample
   int read_start;
   std::string nucleotides;
   std::string qualities;
@@ -69,7 +72,13 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(vector<std::string> bamfiles, bool exclude_partial);
+  void AddReadsFromFile(vector<std::string> bamfiles,
+			bool exclude_partial,
+			const ReferenceSTR& ref_str);
+
+  /* Get reads at an STR coordinate */
+  void GetReadsAtCoord(std::pair<std::string, int> coord,
+		       std::list<AlignedRead>* reads);
 
   /* Remove pcr duplicates */
   void RemovePCRDuplicates();

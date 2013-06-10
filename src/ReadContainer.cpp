@@ -1,3 +1,4 @@
+
 /*
 Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 
@@ -36,23 +37,37 @@ using namespace std;
 ReadContainer::ReadContainer() {}
 
 void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
-                                     bool exclude_partial) {
+                                     bool exclude_partial,
+				     const ReferenceSTR& ref_str) {
   string bamfile = "";
   for (int i = 0; i < bamfiles.size(); i++) {
     bamfile = bamfiles.at(i);
-    PrintMessageDieOnError("Processing " + bamfile, PROGRESS);
     if (!reader.Open(bamfile)) {
-      PrintMessageDieOnError("Could not open bam file " + bamfile, WARNING);
+      PrintMessageDieOnError("Could not open bam file " + bamfile, ERROR);
       continue;
+    }
+    if (!reader.OpenIndex(bamfile + ".bai")) {
+      PrintMessageDieOnError("Could not find index for bam file " + bamfile + ".bai", ERROR);
     }
     std::string header_text = reader.GetHeaderText();
     user_defined_arguments = header_text;
-    //  const BamTools::SamHeader header = reader.GetHeader();
-    /*  user_defined_arguments = header.HasComments()?
-        header.Comments.at(0):
-        "# lobSTR alignment parameters not available"; // for allelotyper store header here
-    */
     const BamTools::RefVector references = reader.GetReferenceData();
+    if (ref_str.chrom != "NA") {
+      // determing refid
+      int refid = -1;
+      for (int i = 0; i < references.size(); i++) {
+	if (references.at(i).RefName == ref_str.chrom) {
+	  refid = i;
+	}
+      }
+      if (refid == -1) {
+	PrintMessageDieOnError("Could not locate STR reference chromosome in bam file", ERROR);
+      }
+      BamTools::BamRegion bam_region(refid, ref_str.start-extend, refid, ref_str.stop+extend);
+      if (!reader.SetRegion(bam_region)) {
+	PrintMessageDieOnError("Could not set bam region", ERROR);
+      }
+    }  
     BamTools::BamAlignment aln;
     while (reader.GetNextAlignment(aln)) {
       AlignedRead aligned_read;
@@ -71,6 +86,18 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
       // get msEnd
       if (!aln.GetTag("XE", aligned_read.msEnd)) {
         aligned_read.msEnd = 0;
+      }
+      // check that these match the ref str
+      if (ref_str.chrom != "NA") {
+	if (aligned_read.chrom != ref_str.chrom ||
+	    aligned_read.msStart != ref_str.start ||
+	    aligned_read.msEnd != ref_str.stop) {
+	  continue;
+	}
+      }
+      // get read group
+      if (!aln.GetTag("RG", aligned_read.read_group)) {
+	PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
       }
       // get mapq
       if (!aln.GetTag("XQ", aligned_read.mapq)) {
@@ -159,12 +186,19 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
       if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
         aligned_str_map_.at(coord).push_back(aligned_read);
       } else {
-        list<AlignedRead> aligned_read_list;
+	list<AlignedRead> aligned_read_list;
         aligned_read_list.push_back(aligned_read);
         aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
                                 (coord, aligned_read_list));
       }
     }
+  }
+}
+
+void ReadContainer::GetReadsAtCoord(pair<string,int> coord,
+				    list<AlignedRead>* reads) {
+  if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
+    *reads = aligned_str_map_.at(coord);
   }
 }
 

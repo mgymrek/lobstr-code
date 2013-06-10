@@ -34,6 +34,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/linear.h"
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
+#include "src/ReferenceSTR.h"
 #include "src/runtime_parameters.h"
 
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
@@ -378,7 +379,11 @@ int main(int argc, char* argv[]) {
   /* initialize noise model */
   NoiseModel nm(strinfofile, haploid_chroms);
 
-  /* Load ref character for each STR */
+  /* Load ref character and ref object for each STR */
+  if (my_verbose) {
+    PrintMessageDieOnError("Loading reference STRs", PROGRESS);
+  }
+  vector<ReferenceSTR> reference_strs;
   if (command != "train") {
     FastaFileReader faReader(index_prefix+"ref.fa");
     MSReadRecord ref_record;
@@ -387,8 +392,15 @@ int main(int argc, char* argv[]) {
       string refstring = ref_record.ID;
       split(refstring, '$', items);
       if (items.size() == 7) {
+	string chrom = items.at(1); 
         int start = atoi(items.at(2).c_str())+extend;
-        string chrom = items.at(1);
+	int str_start = atoi(items.at(2).c_str());
+	int str_end = atoi(items.at(3).c_str());
+	ReferenceSTR ref_str;
+	ref_str.start = str_start+extend;
+	ref_str.stop = str_end-extend;
+	ref_str.chrom = chrom;
+	reference_strs.push_back(ref_str);
         string repseq_in_ref = items.at(6);
         string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
         pair<string, int> locus = pair<string,int>(chrom, start);
@@ -406,21 +418,20 @@ int main(int argc, char* argv[]) {
     // TODO
   }
 
-  /* Add reads to read container */
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
-  if (my_verbose) PrintMessageDieOnError("Adding reads to read container", PROGRESS);
-  ReadContainer read_container;
-  read_container.AddReadsFromFile(bam_files, exclude_partial);
-
-  /* Perform pcr dup removal if specified */
-  if (rmdup) {
-    if (my_verbose) PrintMessageDieOnError("Performing PCR duplicate removal", PROGRESS);
-    read_container.RemovePCRDuplicates();
-  }
 
   /* Train/classify */
   if (command == "train") {
+    ReadContainer read_container;
+    ReferenceSTR dummy_ref_str;
+    dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
+    read_container.AddReadsFromFile(bam_files, exclude_partial, dummy_ref_str);
+    /* Perform pcr dup removal if specified */
+    if (rmdup) {
+      if (my_verbose) PrintMessageDieOnError("Performing PCR duplicate removal", PROGRESS);
+      read_container.RemovePCRDuplicates();
+    }
     if (my_verbose) PrintMessageDieOnError("Training noise model", PROGRESS);
     nm.Train(&read_container);
   } else if (command == "classify") {
@@ -429,16 +440,35 @@ int main(int argc, char* argv[]) {
     }
   }
   if (command == "classify") {
-    Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq);
-    if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
+    std::string tabfile = "";
     if (generate_tab) {
-      genotyper.Genotype(read_container,
-                         output_prefix + ".genotypes.tab",
-                         output_prefix + ".vcf");
+      tabfile = output_prefix + ".genotypes.tab";
     } else {
-      genotyper.Genotype(read_container,
-                         "/dev/null",
-                         output_prefix + ".vcf");
+      tabfile = "/dev/null";
+    }
+    Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
+			tabfile,
+			output_prefix + ".vcf");
+    if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
+    for (size_t i = 0; i < reference_strs.size(); i++) {
+      ReadContainer str_container;
+      str_container.AddReadsFromFile(bam_files, exclude_partial, reference_strs.at(i));
+      pair<string, int> coord(reference_strs.at(i).chrom, reference_strs.at(i).start);
+      list<AlignedRead> aligned_reads;
+      str_container.GetReadsAtCoord(coord, &aligned_reads);
+      if (aligned_reads.size() > 0) {
+	if (my_verbose) {
+	  stringstream msg;
+	  msg << "Processing locus " << reference_strs.at(i).chrom << ":"
+	      << reference_strs.at(i).start << "-"
+	      << reference_strs.at(i).stop;
+	  PrintMessageDieOnError(msg.str(), PROGRESS);
+	}
+	if (rmdup) {
+	  str_container.RemovePCRDuplicates();
+	}
+	genotyper.Genotype(aligned_reads);
+      }
     }
   }
   run_info.endtime = GetTime();

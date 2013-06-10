@@ -24,7 +24,7 @@ using namespace std;
 
 /*
   Struct to keep track of info for a single STR locus
- */
+*/
 struct STRRecord {
   // Locus properties
   std::string chrom;

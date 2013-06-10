@@ -41,6 +41,7 @@ noinst_headers = \
 	HammingWindowGenerator.h \
 	TukeyWindowGenerator.h \
 	ReadPair.h \
+	ReferenceSTR.h \
 	runtime_parameters.h \
 	SamFileWriter.h \
 	STRDetector.h \
