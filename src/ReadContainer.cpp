@@ -1,4 +1,3 @@
-
 /*
 Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 
@@ -36,7 +35,7 @@ using namespace std;
 
 ReadContainer::ReadContainer() {}
 
-void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
+void ReadContainer::AddReadsFromFile(const vector<string>& bamfiles,
                                      bool exclude_partial,
 				     const ReferenceSTR& ref_str) {
   string bamfile = "";
@@ -44,7 +43,6 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
     bamfile = bamfiles.at(i);
     if (!reader.Open(bamfile)) {
       PrintMessageDieOnError("Could not open bam file " + bamfile, ERROR);
-      continue;
     }
     if (!reader.OpenIndex(bamfile + ".bai")) {
       PrintMessageDieOnError("Could not find index for bam file " + bamfile + ".bai", ERROR);
@@ -195,7 +193,7 @@ void ReadContainer::AddReadsFromFile(vector<string> bamfiles,
   }
 }
 
-void ReadContainer::GetReadsAtCoord(pair<string,int> coord,
+void ReadContainer::GetReadsAtCoord(const pair<string,int>& coord,
 				    list<AlignedRead>* reads) {
   if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
     *reads = aligned_str_map_.at(coord);
@@ -311,6 +309,5 @@ int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read,
   // set STR region
   return diff_from_ref;
 }
-
 
 ReadContainer::~ReadContainer() {}

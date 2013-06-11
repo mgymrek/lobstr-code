@@ -415,6 +415,17 @@ int main(int argc, char* argv[]) {
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
 
+  /* Determine samples */
+  if (my_verbose) {
+    PrintMessageDieOnError("Determining samples to process", PROGRESS);
+  }
+  vector<string> samples_list;
+  GetSamplesFromBamFiles(bam_files, &samples_list);
+  if (samples_list.size() == 0) {
+    PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
+  }
+  PrintMessageDieOnError("Debug",ERROR);
+
   /* Train/classify */
   if (command == "train") {
     ReadContainer read_container;

@@ -53,7 +53,7 @@ class Genotyper {
  private:
   /* Process all reads at a single locus */
   bool ProcessLocus(const std::list<AlignedRead>& aligned_reads,
-                    STRRecord* str_record);
+                    STRRecord* str_record, bool is_haploid);
 
   /* Get log likelihood of an allelotype */
   float CalcLogLik(int a, int b,

@@ -79,6 +79,9 @@ std::string GetReadDebug(const ReadPair& read_pair,
                          const std::string& aln_err,
                          const std::string& aln_msg);
                          
+// Get samples from bam files using read groups
+void GetSamplesFromBamFiles(const std::vector<std::string>& bamfiles,
+			    std::vector<std::string>* samples_list);
 
 // Get read group ID string
 std::string GetReadGroup();

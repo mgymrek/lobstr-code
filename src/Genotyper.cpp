@@ -203,37 +203,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 }
 
 bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
-                             STRRecord* str_record) {
-  // Pull out the chrom and start_coord
-  string chrom = aligned_reads.front().chrom;
-
-  // Deal with haploid
-  bool is_haploid = false;
-  if ((find(haploid_chroms.begin(), haploid_chroms.end(), chrom) != haploid_chroms.end() ||
-       find(haploid_chroms.begin(), haploid_chroms.end(), "all") != haploid_chroms.end())) {
-    is_haploid = true;
-  }
-
-  // Get STR properties
-  if (aligned_reads.size() == 0) return false;
-  str_record->period = aligned_reads.front().period;
-  str_record->chrom = chrom;
-  str_record->start = aligned_reads.front().msStart;
-  str_record->stop = aligned_reads.front().msEnd;
-  str_record->repseq = aligned_reads.front().repseq;
-  str_record->refcopy = static_cast<float>((aligned_reads.front().msEnd-aligned_reads.front().msStart))/
-    static_cast<float>(aligned_reads.front().period);
-  if (ref_nucleotides->find
-      (pair<string,int>(str_record->chrom, str_record->start))
-      != ref_nucleotides->end()) {
-    str_record->ref_allele = ref_nucleotides->at
-      (pair<string,int>(str_record->chrom, str_record->start));
-    str_record->repseq_in_ref = ref_repseq->at
-      (pair<string,int>(str_record->chrom, str_record->start));
-  } else {
-    return false;
-  }
-  if (str_record->repseq.empty()) return false;
+                             STRRecord* str_record, bool is_haploid) {
   // Get allelotype call and scores
   FindMLE(aligned_reads, is_haploid, str_record);
   // Get read strings
@@ -288,9 +258,45 @@ bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
 void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   STRRecord str_record;
   str_record.Reset();
+  // Pull out the chrom and start_coord
+  string chrom = read_list.front().chrom;
+
+  // Deal with haploid
+  bool is_haploid = false;
+  if ((find(haploid_chroms.begin(), haploid_chroms.end(), chrom) != haploid_chroms.end() ||
+       find(haploid_chroms.begin(), haploid_chroms.end(), "all") != haploid_chroms.end())) {
+    is_haploid = true;
+  }
+
+  // Get STR properties
+  if (read_list.size() == 0) return;
+  str_record.period = read_list.front().period;
+  str_record.chrom = chrom;
+  str_record.start = read_list.front().msStart;
+  str_record.stop = read_list.front().msEnd;
+  str_record.repseq = read_list.front().repseq;
+  str_record.refcopy = static_cast<float>((read_list.front().msEnd-
+					   read_list.front().msStart))/
+    static_cast<float>(read_list.front().period);
+  if (ref_nucleotides->find
+      (pair<string,int>(str_record.chrom, str_record.start))
+      != ref_nucleotides->end()) {
+    str_record.ref_allele = ref_nucleotides->at
+      (pair<string,int>(str_record.chrom, str_record.start));
+    str_record.repseq_in_ref = ref_repseq->at
+      (pair<string,int>(str_record.chrom, str_record.start));
+  } else {
+    return;
+  }
+  if (str_record.repseq.empty()) return;
+
+  // Determine allele range and divide reads to each sample
+  // TODO
+
+  // TODO make this get alleles for each sample, iterate through samples and add to str_record
   if (use_chrom.empty() ||
       (!use_chrom.empty() && use_chrom == read_list.front().chrom)) {
-    if (ProcessLocus(read_list, &str_record)) {
+    if (ProcessLocus(read_list, &str_record, is_haploid)) {
       vcfWriter->WriteRecord(str_record);
     }
   }

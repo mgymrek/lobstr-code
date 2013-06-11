@@ -171,6 +171,35 @@ std::string GetReadDebug(const ReadPair& read_pair,
   return msg.str();
 }
 
+void GetSamplesFromBamFiles(const vector<string>& bamfiles,
+			    vector<string>* samples_list) {
+  BamTools::BamReader reader;
+  string bamfile = "";
+  for (size_t i = 0; i < bamfiles.size(); i++) {
+    bamfile = bamfiles.at(i);
+    if (!reader.Open(bamfile)) {
+      PrintMessageDieOnError("Could not open bam file " + bamfile, ERROR);
+    }
+    BamTools::SamHeader header = reader.GetHeader();
+    if (!header.HasReadGroups()) {
+      PrintMessageDieOnError("No read groups in " + bamfile, ERROR);
+    }
+    BamTools::SamReadGroupDictionary read_groups = header.ReadGroups;
+    for (BamTools::SamReadGroupIterator it = read_groups.Begin();
+	 it != read_groups.End(); it++) {
+      const BamTools::SamReadGroup& rg = *it;
+      if (!rg.HasSample()) {
+	PrintMessageDieOnError("No sample in read group for " + bamfile, ERROR);
+      }
+      string rg_sample = rg.Sample;
+      if (my_verbose) {
+	PrintMessageDieOnError("Adding sample " + rg_sample, PROGRESS);
+      }
+      samples_list->push_back(rg_sample);
+    }
+  }
+}
+
 string GetReadGroup() {
   stringstream read_group;
   read_group << "lobSTR";

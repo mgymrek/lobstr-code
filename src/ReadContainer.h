@@ -72,12 +72,12 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(vector<std::string> bamfiles,
+  void AddReadsFromFile(const vector<std::string>& bamfiles,
 			bool exclude_partial,
 			const ReferenceSTR& ref_str);
 
   /* Get reads at an STR coordinate */
-  void GetReadsAtCoord(std::pair<std::string, int> coord,
+  void GetReadsAtCoord(const std::pair<std::string, int>& coord,
 		       std::list<AlignedRead>* reads);
 
   /* Remove pcr duplicates */
