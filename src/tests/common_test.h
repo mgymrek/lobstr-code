@@ -30,6 +30,8 @@ public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(CommonTest);
   CPPUNIT_TEST(test_TrimRead);
   CPPUNIT_TEST(test_getMSSeq);
+  CPPUNIT_TEST(test_getCanonicalRepeat);
+  CPPUNIT_TEST(test_getCanonicalMS);
   CPPUNIT_TEST(test_IsPerfectRepeat);
   CPPUNIT_TEST(test_reverseComplement);
   CPPUNIT_TEST(test_reverse);
@@ -41,6 +43,8 @@ public CppUnit::TestFixture {
  private:
   void test_TrimRead();
   void test_getMSSeq();
+  void test_getCanonicalRepeat();
+  void test_getCanonicalMS();
   void test_IsPerfectRepeat();
   void test_reverseComplement();
   void test_reverse();

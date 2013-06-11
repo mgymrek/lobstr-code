@@ -44,6 +44,9 @@ extern std::string user_defined_arguments_allelotyper;
 // canonical MS so we don't have to recompute it all the time
 extern std::map<std::string, std::string> canonicalMSTable;
 
+// mapping between a kmer and the canonical version of its smallest repeating subunit
+extern std::map<std::string, std::string> canonicalRepeatTable;
+
 // enums
 enum INPUT_TYPE {
   INPUT_FASTA = 0,

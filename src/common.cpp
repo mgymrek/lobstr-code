@@ -256,9 +256,7 @@ bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_rep
       second_best_maxkmer = countKMers.at(subseq);
     }
   }
-  string repseqfw;
-  string repseqrev;
-  string repseq;
+  
   // Check that we have enough of the kmer
   if (maxkmer < 3) {
     *err = "Not-enough-occurrences-of-kmer-" + kmer + ";";
@@ -279,10 +277,7 @@ bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_rep
       kmer = OneAbundantNucleotide(kmer, 1);
     }
   }
-  getCanonicalMS(kmer, &repseqfw);
-  getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
-  repseq = getFirstString(repseqfw, repseqrev);
-  *repeat = repseq;
+  *repeat = getCanonicalRepeat(kmer);
   return true;
 }
 
@@ -479,8 +474,38 @@ std::string reverse(const std::string& s) {
   return rev;
 }
 
+std::string getCanonicalRepeat(const std::string& msnucs) {
+  if (canonicalRepeatTable.find(msnucs) != canonicalRepeatTable.end())
+    return canonicalRepeatTable.at(msnucs);
+
+  string subunit = msnucs;
+  for (int segLen = 1; segLen < msnucs.size(); segLen++) {
+    if(msnucs.size() % segLen == 0){
+      string seq = msnucs.substr(0, segLen);
+      bool match = true;
+
+      for (int seg = 0; seg < msnucs.size()/segLen; seg++) {
+	if (msnucs.substr(seg*segLen, segLen) != seq) {
+	  match = false;
+	  break;
+	}
+      }
+
+      if (match) {
+	subunit = seq;
+	break;
+      }
+    }
+  }
+
+  string canonical;
+  getCanonicalMS(subunit, &canonical);
+  canonicalRepeatTable.insert(pair<string,string>(msnucs, canonical));
+  return canonical;
+}
+
+
 void getCanonicalMS(const string& msnucs, string* canonical) {
-  // common ones
   // first check to see if it is hashed already
   if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
     *canonical = canonicalMSTable.at(msnucs);
@@ -489,23 +514,21 @@ void getCanonicalMS(const string& msnucs, string* canonical) {
   string newseq;
   size_t size = msnucs.size();
   size_t i;
-  size_t j;
   *canonical = msnucs;
   newseq.resize(size);
-  for (i = 1; i < size ; i++) {
-    newseq = msnucs.substr(size-i, size) + msnucs.substr(0, size-i);
-    // if newsq > canon, make it canon
-    for (j = 0; j < size; j++) {
-      if (nucToNumber(newseq[j]) < nucToNumber((*canonical)[j])) {
-        *canonical = newseq;
-        break;
-      } else if (nucToNumber(newseq[j]) > nucToNumber((*canonical)[j])) {
-        break;
-      }
-    }
+  for (i = 1; i < size; i++) {
+    newseq     = msnucs.substr(size-i, size) + msnucs.substr(0, size-i);
+    *canonical = getFirstString(*canonical, newseq);
   }
-  canonicalMSTable.insert(pair<string, string>
-                          (msnucs, *canonical));
+  
+  string revcomp = reverseComplement(msnucs);
+  *canonical     = getFirstString(*canonical, revcomp);
+  for (i = 1; i < size; i++) {
+    newseq     = revcomp.substr(size-i, size) + revcomp.substr(0, size-i);
+    *canonical = getFirstString(*canonical, newseq);
+  }
+  
+  canonicalMSTable.insert(pair<string, string>(msnucs, *canonical));
 }
 
 IFileReader* create_file_reader(const string& filename1,
