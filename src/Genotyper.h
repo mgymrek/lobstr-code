@@ -48,7 +48,8 @@ class Genotyper {
   ~Genotyper();
 
   /* determine allelotypes and write to file */
-  void Genotype(const list<AlignedRead>& read_list);
+  void Genotype(const list<AlignedRead>& read_list,
+		const list<std::string>& samples);
 
  private:
   /* Process all reads at a single locus */

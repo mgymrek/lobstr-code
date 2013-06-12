@@ -35,28 +35,30 @@ struct STRRecord {
   int period;
   std::string ref_allele;
   float refcopy;
-  // Data properties
-  int allele1;
-  int allele2;
-  int coverage;
-  float max_log_lik; // maximum likelihood
-  float max_lik_score; // ML/sum of all likelihoods
-  float allele1_marginal_lik_score; // marginal likelihood score
-  float allele2_marginal_lik_score; // marginal likelihood score
-  int conflicting;
-  int agreeing;
-  int partial_coverage;
-  int num_stitched;
-  int max_partial;
-  std::string readstring;
-  std::string partialreadstring;
-  std::string max_partial_string;
-  std::string allele1_string;
-  std::string allele2_string;
-  std::map<pair<int,int>,float> likelihood_grid; // log10(P(R|G))
-  std::map<int,int> spanning_reads;
-  std::map<int,int> partial_reads;
-  vector<int> alleles_to_include;
+  // list of samples
+  vector<std::string> samples;
+  // Data properties. each is a vector, indexed by sample number
+  vector<int> allele1;
+  vector<int> allele2;
+  vector<int> coverage;
+  vector<float> max_log_lik; // maximum likelihood
+  vector<float> max_lik_score; // ML/sum of all likelihoods
+  vector<float> allele1_marginal_lik_score; // marginal likelihood score
+  vector<float> allele2_marginal_lik_score; // marginal likelihood score
+  vector<int> conflicting;
+  vector<int> agreeing;
+  vector<int> partial_coverage;
+  vector<int> num_stitched;
+  vector<int> max_partial;
+  vector<std::string> readstring;
+  vector<std::string> partialreadstring;
+  vector<std::string> max_partial_string;
+  vector<std::string> allele1_string;
+  vector<std::string> allele2_string;
+  vector<std::map<pair<int,int>,float> > likelihood_grid; // log10(P(R|G))
+  vector<std::map<int,int> > spanning_reads;
+  vector<std::map<int,int> > partial_reads;
+  vecotr<vector<int> >alleles_to_include;
   void Reset() {
     chrom = "";
     start = -1;
@@ -66,23 +68,24 @@ struct STRRecord {
     period = -1;
     ref_allele = "N";
     refcopy = 0;
-    allele1 = -10000;
-    allele2 = -10000;
-    coverage = 0;
-    max_log_lik = -10000;
-    max_lik_score = -1;
-    allele1_marginal_lik_score = -1;
-    allele2_marginal_lik_score = -1;
-    conflicting = 0;
-    agreeing = 0;
-    partial_coverage = 0;
-    num_stitched = 0;
-    max_partial = -10000;
-    readstring = "";
-    partialreadstring = "";
-    max_partial_string = "";
-    allele1_string = "";
-    allele2_string = "";
+    samples.clear();
+    allele1.clear();
+    allele2.clear();
+    coverage.clear();
+    max_log_lik.clear();
+    max_lik_score.clear();
+    allele1_marginal_lik_score.clear();
+    allele2_marginal_lik_score.clear();
+    conflicting.clear();
+    agreeing.clear();
+    partial_coverage.clear();
+    num_stitched.clear();
+    max_partial.clear();
+    readstring.clear();
+    partialreadstring.clear();
+    max_partial_string.clear();
+    allele1_string.clear();
+    allele2_string.clear();
     likelihood_grid.clear();
     spanning_reads.clear();
     partial_reads.clear();

@@ -99,7 +99,6 @@ void show_help() {
     "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
     "                                For more than one annotation, use comma-separated list of files\n" \
     "Options for reporting allelotypes:\n" \
-    "--sample <STRING>:             Name of sample. Default to --out\n" \
     "--exclude-pos <FILE>:          File of \"chrom\\tpos\" of positions to exclude.\n" \
     "                               For downstream analysis, it is beneficial to exclude\n" \
     "                               any STRs with the same starting point but different motifs,\n" \
@@ -148,7 +147,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_OUTPUT,
     OPT_PRINT_READS,
     OPT_PROFILE,
-    OPT_SAMPLE,
     OPT_STRINFO,
     OPT_UNIT,
     OPT_VERBOSE,
@@ -180,7 +178,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"out", 1, 0, OPT_OUTPUT},
     {"profile", 0, 0, OPT_PROFILE},
     {"reads", 0, 0, OPT_PRINT_READS},
-    {"sample", 1, 0, OPT_SAMPLE},
     {"strinfo", 1, 0, OPT_STRINFO},
     {"unit", 0, 0, OPT_UNIT},
     {"verbose", 0, 0, OPT_VERBOSE},
@@ -283,10 +280,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_PROFILE:
       profile++;
       break;
-    case OPT_SAMPLE:
-      sample = string(optarg);
-      AddOption("sample", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
     case OPT_STRINFO:
       strinfofile = string(optarg);
       AddOption("strinfo", string(optarg), true, &user_defined_arguments_allelotyper);
@@ -343,8 +336,6 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (index_prefix.empty() && command != "train") {
     PrintMessageDieOnError("Must specify --index-prefix for classifying", ERROR);
   }
-  // set sample if not specified
-  if (sample.empty()) sample = output_prefix;
 }
 
 int main(int argc, char* argv[]) {
@@ -424,7 +415,6 @@ int main(int argc, char* argv[]) {
   if (samples_list.size() == 0) {
     PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
   }
-  PrintMessageDieOnError("Debug",ERROR);
 
   /* Train/classify */
   if (command == "train") {
@@ -466,7 +456,7 @@ int main(int argc, char* argv[]) {
 	if (rmdup) {
 	  str_container.RemovePCRDuplicates();
 	}
-	genotyper.Genotype(aligned_reads);
+	genotyper.Genotype(aligned_reads, samples_list);
       }
     }
   }

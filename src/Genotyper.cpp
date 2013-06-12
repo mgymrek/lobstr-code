@@ -255,9 +255,12 @@ bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
   return true;
 }
   
-void Genotyper::Genotype(const list<AlignedRead>& read_list) {
+void Genotyper::Genotype(const list<AlignedRead>& read_list,
+			 const list<string>& samples) {
   STRRecord str_record;
   str_record.Reset();
+  // set samples
+  str_record.samples = samples;
   // Pull out the chrom and start_coord
   string chrom = read_list.front().chrom;
 
@@ -292,12 +295,15 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
 
   // Determine allele range and divide reads to each sample
   // TODO
+  vector<list<AlignedRead> > sample_reads;
 
   // TODO make this get alleles for each sample, iterate through samples and add to str_record
   if (use_chrom.empty() ||
       (!use_chrom.empty() && use_chrom == read_list.front().chrom)) {
-    if (ProcessLocus(read_list, &str_record, is_haploid)) {
-      vcfWriter->WriteRecord(str_record);
+    for (size_t i = 0; i < samples.size(); i++) {
+      if (ProcessLocus(sample_reads.at(i), &str_record, is_haploid)) {
+	vcfWriter->WriteRecord(str_record);
+      }
     }
   }
 }

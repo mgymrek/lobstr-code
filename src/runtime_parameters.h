@@ -137,7 +137,6 @@ extern int max_matedist;
 
 // vcf params
 extern std::string exclude_positions_file;
-extern std::string sample;
 
 // debug
 extern bool profile;

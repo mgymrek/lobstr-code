@@ -115,7 +115,6 @@ int max_matedist = 100000;
 
 // vcf params
 std::string exclude_positions_file = "";
-std::string sample = "";
 
 // debugging
 bool profile = false;
