@@ -46,33 +46,41 @@ void CommonTest::test_TrimRead() {
 }
 
 void CommonTest::test_getMSSeq() {
+  std::string err, second_repseq;
   // Case 1: simple
   std::string nucs = "ATATATATATATATATAT";
   int k = 2;
   std::string repeat;
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat));
+  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
   CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AT");
 
   // Case 2: mismatches
   nucs = "ATATATATATATGTATATAT";
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat));
+  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
   CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AT");
   
   // Case 3: indels
   nucs = "ATATATATATTATATATATAT";
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat));
+  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
   CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AT");
   
   // Case 4: both
   nucs = "CAGCAGCAGCAGCAGGCAGCAGCAT";
   k = 3;
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat));
+  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
   CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AGC");
 
   // Case 5: nucs too short
   nucs = "CCG";
   k = 6;
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq should have failed", !getMSSeq(nucs, k, &repeat));
+  CPPUNIT_ASSERT_MESSAGE("getMSSeq should have failed", !getMSSeq(nucs, k, &repeat, &second_repseq, &err));
+
+  // Case 6: ambiguity between mono and other repeat type
+  nucs = "TTTTGTTTTGTTTTGTTTTTTTTTTTTTTTTTTTTTTT";
+  k = 5;
+  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
+  CPPUNIT_ASSERT_MESSAGE("wrong primary motif returned", repeat == "AAAAC");
+  CPPUNIT_ASSERT_MESSAGE("wrong secondary motif return", second_repseq == "A");
 }
 
 void CommonTest::test_getMinPermutation() {

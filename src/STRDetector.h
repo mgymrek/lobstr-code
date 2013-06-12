@@ -27,9 +27,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 class STRDetector : public ISatellite {
  public:
   STRDetector();
-  bool ProcessReadPair(ReadPair* read_pair);
+  bool ProcessReadPair(ReadPair* read_pair, std::string* err, std::string* messages);
  private:
-  bool ProcessRead(MSReadRecord* read);
+  bool ProcessRead(MSReadRecord* read, std::string* err, std::string* messages);
 };
 
 #endif  // SRC_STRDETECTOR_H__

@@ -157,14 +157,14 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   int min_allele = *min_element(possible.begin(), possible.end()) - PADK*str_record->period;
   int max_allele = *max_element(possible.begin(), possible.end()) + PADK*str_record->period;
   // update range based on priors if available.
-  // Update alleles to include, make sure 0 is at the front
+  // Update alleles to include
+  // Add 0 right away at the front
+  str_record->alleles_to_include.insert
+    (str_record->alleles_to_include.begin(), 0);
   if (!prior_freqs.empty()) {
     for (map<int,float>::const_iterator it = prior_freqs.begin();
          it != prior_freqs.end(); it++) {
-      if (it->first == 0) {
-        str_record->alleles_to_include.insert
-          (str_record->alleles_to_include.begin(), it->first);
-      } else {
+      if (it->first != 0) { // we already added 0
         // check that the total allele length will be at least 1 nuc
         if (str_record->refcopy * str_record->period > -1* it->first) {
           str_record->alleles_to_include.push_back(it->first);
@@ -176,12 +176,9 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
         }
       }
     }
-  } else {
+  } else if (!use_known_alleles) {
     for (int i = min_allele; i <= max_allele; i++) {
-      if (i == 0) {
-        str_record->alleles_to_include.insert
-          (str_record->alleles_to_include.begin(), i);
-      } else {
+      if (i != 0) {
         if (str_record->refcopy * str_record->period > -1*i) {
           str_record->alleles_to_include.push_back(i);
         } else {

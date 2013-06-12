@@ -153,6 +153,24 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   }
 }
 
+std::string GetReadDebug(const ReadPair& read_pair,
+                         const std::string& detector_err,
+                         const std::string& detector_msg,
+                         const std::string& aln_err,
+                         const std::string& aln_msg) {
+  stringstream msg;
+  msg << "[STRDetector]: processing "
+      << read_pair.reads.at(0).ID
+      << " motif 1 ";
+  if (read_pair.reads.at(0).repseq.empty()) {
+    msg << "NA";
+  } else {
+    msg << read_pair.reads.at(0).repseq;
+  }
+  msg << " " << detector_err << " " << detector_msg << " " << aln_err << " " << aln_msg;
+  return msg.str();
+}
+
 string GetReadGroup() {
   stringstream read_group;
   read_group << "lobSTR";

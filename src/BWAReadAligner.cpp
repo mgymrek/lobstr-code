@@ -91,18 +91,7 @@ BWAReadAligner::BWAReadAligner(map<std::string, BWT>* bwt_references,
   stitch_debug = false;
 }
 
-bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
-  if (debug) {
-    stringstream msg;
-    msg << "[BWAReadAligner]: processing "
-         << read_pair->reads.at(0).ID
-        << " motif 1 " << read_pair->reads.at(0).repseq << " " << read_pair->reads.at(0).nucleotides;
-    if (read_pair->reads.at(0).paired) {
-      msg << " motif 2 " << read_pair->reads.at(1).repseq << " " << read_pair->reads.at(1).nucleotides << endl;
-    }
-    PrintMessageDieOnError(msg.str(), DEBUG);
-  }
-  
+bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* messages) {
   // Initialize status variables
   read_pair->read1_passed_alignment = false;
   read_pair->read2_passed_alignment = false;
@@ -120,14 +109,14 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
     if (read_pair->read1_passed_detection) {
       if (ProcessRead(&read_pair->reads.at(0),
                       &good_left_alignments_read1,
-                      &good_right_alignments_read1)) {
+                      &good_right_alignments_read1, err, messages)) {
         read_pair->read1_passed_alignment = true;
       }
     }
     if (read_pair->read2_passed_detection) {
       if (ProcessRead(&read_pair->reads.at(1),
                       &good_left_alignments_read2,
-                      &good_right_alignments_read2)) {
+                      &good_right_alignments_read2, err, messages)) {
         read_pair->read2_passed_alignment = true;
       }
     }
@@ -294,7 +283,7 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
     if (read_pair->read1_passed_detection) {
       if (ProcessRead(&read_pair->reads.at(0),
                       &good_left_alignments_read1,
-                      &good_right_alignments_read1)) {
+                      &good_right_alignments_read1, err, messages)) {
         // Get rid of multi mappers
         if (good_left_alignments_read1.size() > 1) {
           return false;
@@ -318,7 +307,11 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair) {
 
 bool BWAReadAligner::ProcessRead(MSReadRecord* read,
                                  vector<ALIGNMENT>* good_left_alignments,
-                                 vector<ALIGNMENT>* good_right_alignments) {
+                                 vector<ALIGNMENT>* good_right_alignments,
+                                 string* err,
+                                 string* messages) {
+  *err = "Alignment-errors-here:";
+  *messages = "Alignment-notes-here:";
   if (align_debug) {
     PrintMessageDieOnError("[ProcessRead]: " + read->ID + " " + read->nucleotides, DEBUG);
   }
@@ -333,9 +326,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
 
   // check that we have that repseq
   if (_bwt_references->find(repseq) == _bwt_references->end()) {
-    if (align_debug) {
-      PrintMessageDieOnError("[ProcessRead]: repseq doesn't exist in ref " + repseq, DEBUG);
-    }
+    *err += "Repseq-doesn't-exist-in-ref;";
     return false;
   }
 
@@ -351,7 +342,10 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
     right_all_repeats = true;
   }
   // don't continue if both are fully repetitive
-  if (left_all_repeats && right_all_repeats) return false;
+  if (left_all_repeats && right_all_repeats) {
+    *err += "Left-and-right-flanks-are-fully-repeitive;";
+    return false;
+  }
 
   if (align_debug) {
     PrintMessageDieOnError("[ProcessRead]: align flanks", DEBUG);
@@ -370,18 +364,14 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   if (!left_all_repeats) {
     if (!GetAlignmentCoordinates(seq_left, repseq, &left_alignments)) {
       bwa_free_read_seq(2, seqs);
-      if (align_debug) {
-        PrintMessageDieOnError("[ProcessRead]: no left alignment", DEBUG);
-      }
+      *err += "No-left-alignment;";
       return false;
     }
   }
   if (!right_all_repeats) {
     if (!GetAlignmentCoordinates(seq_right, repseq, &right_alignments)) {
       bwa_free_read_seq(2, seqs);
-      if (align_debug) {
-        PrintMessageDieOnError("[ProcessRead]: no right alignment", DEBUG);
-      }
+      *err += "No-right-alignment;";
       return false;
     }
   }
@@ -447,9 +437,11 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
         left_refids.push_back(left_refid);
         right_refids.push_back(right_refid);
       } else {
+        *err += "Partial-alignment-failed;";
         return false;
       }
     } else {
+      *err += "Partial-alignment-failed:no-unique-flank-alignment;";
       return false;
     }
   }
@@ -460,7 +452,10 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   *good_right_alignments = right_refids;
 
   // Don't return partial alignments if excluded
-  if (read->partial & exclude_partial) return false;
+  if (read->partial & exclude_partial) {
+    *err += "Partial-alignment;";
+    return false;
+  }
   // Return true if at least one good alignment
   return (good_left_alignments->size() >= 1 &&
           good_right_alignments->size() >= 1);

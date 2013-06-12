@@ -79,7 +79,7 @@ void show_help() {
     "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
     "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
     "    -o <output prefix>\n" \
-    "Note: parameters are uploaded to Amazon S3 by default. This for\n" \
+    "Note: parameters are uploaded to Amazon S3 by default. This is for\n" \
     "us see how people are using the tool and to help us continue to improve\n" \
     "lobSTR. To turn this function off, specify --noweb.\n\n" \
     "Parameter descriptions:\n " \
@@ -742,13 +742,21 @@ void single_thread_process_loop(const vector<string>& files1,
       if (read_pair.reads.at(0).paired) bases += read_pair.reads.at(1).nucleotides.length();
 
       // STEP 1: Sensing
-      if (!pDetector->ProcessReadPair(&read_pair)) {
+      string det_err, det_messages;
+      if (!pDetector->ProcessReadPair(&read_pair, &det_err, &det_messages)) {
+        if (debug) {
+          PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, "NA", "NA") + " (detection-fail)", DEBUG);
+        }
         continue;
       }
 
       // STEP 2: Alignment
-      if (pAligner->ProcessReadPair(&read_pair)) {
+      string aln_err, aln_messages;
+      if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {
         aligned = true;
+        if (debug) { // if aligned, what was the repseq we aligned to
+          PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-1)", DEBUG);
+        }
       } else {
         read_pair.read1_passed_detection = false;
         read_pair.read2_passed_detection = false;
@@ -756,8 +764,9 @@ void single_thread_process_loop(const vector<string>& files1,
         if (read_pair.reads.at(0).ms_repeat_next_best_period != 0) {
           read_pair.reads.at(0).ms_repeat_best_period =
             read_pair.reads.at(0).ms_repeat_next_best_period;
+          string err, second_best_repseq;
           if (getMSSeq(read_pair.reads.at(0).detected_ms_region_nuc,
-                       read_pair.reads.at(0).ms_repeat_best_period, &repseq)) {
+                       read_pair.reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
             read_pair.reads.at(0).repseq = repseq;
             read_pair.read1_passed_detection = true;
           }
@@ -766,9 +775,10 @@ void single_thread_process_loop(const vector<string>& files1,
           if (read_pair.reads.at(1).ms_repeat_next_best_period != 0) {
             read_pair.reads.at(1).ms_repeat_best_period =
               read_pair.reads.at(1).ms_repeat_next_best_period;
+            string err, second_best_repseq;
             if (getMSSeq(read_pair.reads.at(1).detected_ms_region_nuc,
                          read_pair.reads.at(1).ms_repeat_best_period,
-                         &repseq)) {
+                         &repseq, &second_best_repseq, &err)) {
               read_pair.reads.at(1).repseq = repseq;
               read_pair.read2_passed_detection = true;
             }
@@ -776,14 +786,21 @@ void single_thread_process_loop(const vector<string>& files1,
         }
         if (read_pair.read1_passed_detection ||
             read_pair.read2_passed_detection) {
-          if (pAligner->ProcessReadPair(&read_pair)) {
+          if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {
             aligned = true;
+            if (debug) { // if aligned, what was the repseq we aligned to
+              PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-2)", DEBUG);
+            }
           }
         }
       }
       if (aligned) {
         pWriter.WriteRecord(read_pair);
         samWriter.WriteRecord(read_pair);
+      } else {
+        if (debug) { // if didn't align, print this
+          PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (not-aligned)", DEBUG);
+        }
       }
     }
     delete pReader;
@@ -849,14 +866,15 @@ void* satellite_process_consumer_thread(void *arg) {
     }
 
     // STEP 1: Sensing
-    if (!pDetector->ProcessReadPair(pReadRecord)) {
+    string err, messages;
+    if (!pDetector->ProcessReadPair(pReadRecord, &err, &messages)) {
       pMT_DATA->increment_output_counter();
       delete pReadRecord;
       continue;
     }
 
     // STEP 2: Alignment
-    if (pAligner->ProcessReadPair(pReadRecord)) {
+    if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
       aligned = true;
     } else {
       pReadRecord->read1_passed_detection = false;
@@ -865,8 +883,9 @@ void* satellite_process_consumer_thread(void *arg) {
       if (pReadRecord->reads.at(0).ms_repeat_next_best_period != 0) {
         pReadRecord->reads.at(0).ms_repeat_best_period =
           pReadRecord->reads.at(0).ms_repeat_next_best_period;
+        string err, second_best_repseq;
         if (getMSSeq(pReadRecord->reads.at(0).detected_ms_region_nuc,
-                     pReadRecord->reads.at(0).ms_repeat_best_period, &repseq)) {
+                     pReadRecord->reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
           pReadRecord->reads.at(0).repseq = repseq;
           pReadRecord->read1_passed_detection = true;
         }
@@ -875,9 +894,10 @@ void* satellite_process_consumer_thread(void *arg) {
         if (pReadRecord->reads.at(1).ms_repeat_next_best_period != 0) {
           pReadRecord->reads.at(1).ms_repeat_best_period =
             pReadRecord->reads.at(1).ms_repeat_next_best_period;
+          string err, second_best_repseq;
           if (getMSSeq(pReadRecord->reads.at(1).detected_ms_region_nuc,
                        pReadRecord->reads.at(1).ms_repeat_best_period,
-                       &repseq)) {
+                       &repseq, &second_best_repseq, &err)) {
             pReadRecord->reads.at(1).repseq = repseq;
             pReadRecord->read2_passed_detection = true;
           }
@@ -885,7 +905,7 @@ void* satellite_process_consumer_thread(void *arg) {
       }
       if (pReadRecord->read1_passed_detection ||
           pReadRecord->read2_passed_detection) {
-        if (pAligner->ProcessReadPair(pReadRecord)) {
+        if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
           aligned = true;
         }
       }
