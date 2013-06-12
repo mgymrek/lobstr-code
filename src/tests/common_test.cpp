@@ -75,6 +75,13 @@ void CommonTest::test_getMSSeq() {
   CPPUNIT_ASSERT_MESSAGE("getMSSeq should have failed", !getMSSeq(nucs, k, &repeat));
 }
 
+void CommonTest::test_getMinPermutation() {
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("A") == "A");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("G") == "G");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TACG") == "ACGT");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TAGTACTAT") == "ACTATTAGT");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("CGCTCCC") == "CCCCGCT");
+}
 
 void CommonTest::test_getCanonicalRepeat() {
   CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AAAAAAA") == "A");

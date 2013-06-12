@@ -40,6 +40,9 @@ extern std::string user_defined_arguments;
 // store allelotyper user parameters
 extern std::string user_defined_arguments_allelotyper;
 
+// mapping between a kmer and its smallest cyclic permutation
+extern std::map<std::string, std::string> permutationTable;
+
 // keep track of mappings between a kmer and its
 // canonical MS so we don't have to recompute it all the time
 extern std::map<std::string, std::string> canonicalMSTable;

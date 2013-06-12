@@ -35,6 +35,9 @@ PROGRAM program = LOBSTR;
 // keep track of common ones
 std::map<std::string, std::string> canonicalMSTable;
 
+// mapping between a kmer and its smallest cyclic permutation
+std::map<std::string, std::string> permutationTable;
+
 // mapping between a kmer and the canonical version of its smallest repeating subunit
 std::map<std::string, std::string> canonicalRepeatTable;
 

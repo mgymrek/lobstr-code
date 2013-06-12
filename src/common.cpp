@@ -207,31 +207,59 @@ size_t count(const string& s, const char& c) {
 }
 
 
-bool getMSSeq(const string& nucs, int k, string* repeat) {
-  if (k < 1 || k > 6) return false;
-  if (static_cast<int>(nucs.size()) < k) return false;
+bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_repeat, string* err) {
+  if (k < 1 || k > 6) {
+    *err = "k-is-invalid;";
+    return false;
+  }
+  if (static_cast<int>(nucs.size()) < k) {
+    *err = "k-is-greater-than-nucleotides-length;";
+    return false;
+  }
   map<string, int> countKMers;
   size_t i;
   string subseq;
-  string kmer;
+  string kmer = "";
+  string second_best_kmer = "";
   int maxkmer = 0;
+  int second_best_maxkmer = 0;
   subseq.resize(k);
   for (i = 0; i < nucs.size() - k; i++) {
-    subseq = nucs.substr(i, k);
+    subseq = getMinPermutation(nucs.substr(i, k));
     countKMers[subseq]++;
     if (countKMers.at(subseq) > maxkmer) {
+      if (subseq != kmer) {
+        second_best_kmer = kmer;
+        second_best_maxkmer = maxkmer;
+      }
       kmer = subseq;
       maxkmer = countKMers.at(subseq);
+    } else if (countKMers.at(subseq) > second_best_maxkmer) {
+      second_best_kmer = subseq;
+      second_best_maxkmer = countKMers.at(subseq);
     }
   }
   
   // Check that we have enough of the kmer
-  if (maxkmer < 3) return false;
+  if (maxkmer < 3) {
+    *err = "Not-enough-occurrences-of-kmer-" + kmer + ";";
+    return false;
+  }
   // If the detected kmer is invalid length, give up
-  if (kmer.size() < 1 || kmer.size() > 6 ) return false;
-  // If a homopolymer, this is probably a messy locus and we give up
-  if (OneAbundantNucleotide(kmer, 1) != "") return false;
-
+  if (kmer.size() < 1 || kmer.size() > 6 ) {
+    *err = "Detected-kmer-is-invalid-size;";
+    return false;
+  }
+  // If a homopolymer, we probably misdetected this and it is really a homopolymer, set that as second best
+  if (k != 1 && OneAbundantNucleotide(kmer, 1) != "") {
+    *err = "Setting-next-best-to-mononucleotide;";
+    if (second_best_maxkmer >= 3) {
+      *second_best_repeat = getFirstString(OneAbundantNucleotide(kmer, 1), reverseComplement(OneAbundantNucleotide(kmer, 1)));
+      kmer = second_best_kmer;
+    } else {
+      kmer = OneAbundantNucleotide(kmer, 1);
+    }
+  }
   *repeat = getCanonicalRepeat(kmer);
   return true;
 }
@@ -429,17 +457,32 @@ std::string reverse(const std::string& s) {
   return rev;
 }
 
+std::string getMinPermutation(const std::string& msnucs){
+  if (permutationTable.find(msnucs) != permutationTable.end())
+    return permutationTable.at(msnucs);
+
+  std::string minPerm = msnucs;
+  for(size_t i = 1; i < msnucs.size(); i++){
+    std::string otherPerm = msnucs.substr(i)+msnucs.substr(0,i);
+    minPerm = getFirstString(minPerm, otherPerm);
+  }
+
+  permutationTable.insert(pair<string,string>(msnucs, minPerm));
+  return minPerm;
+}
+
+
 std::string getCanonicalRepeat(const std::string& msnucs) {
   if (canonicalRepeatTable.find(msnucs) != canonicalRepeatTable.end())
     return canonicalRepeatTable.at(msnucs);
 
-  string subunit = msnucs;
-  for (int segLen = 1; segLen < msnucs.size(); segLen++) {
+  std::string subunit = msnucs;
+  for (size_t segLen = 1; segLen < msnucs.size(); segLen++) {
     if(msnucs.size() % segLen == 0){
-      string seq = msnucs.substr(0, segLen);
+      std::string seq = msnucs.substr(0, segLen);
       bool match = true;
 
-      for (int seg = 0; seg < msnucs.size()/segLen; seg++) {
+      for (size_t seg = 0; seg < msnucs.size()/segLen; seg++) {
 	if (msnucs.substr(seg*segLen, segLen) != seq) {
 	  match = false;
 	  break;
@@ -453,7 +496,7 @@ std::string getCanonicalRepeat(const std::string& msnucs) {
     }
   }
 
-  string canonical;
+  std::string canonical;
   getCanonicalMS(subunit, &canonical);
   canonicalRepeatTable.insert(pair<string,string>(msnucs, canonical));
   return canonical;
@@ -461,28 +504,12 @@ std::string getCanonicalRepeat(const std::string& msnucs) {
 
 
 void getCanonicalMS(const string& msnucs, string* canonical) {
-  // first check to see if it is hashed already
   if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
     *canonical = canonicalMSTable.at(msnucs);
     return;
   }
-  string newseq;
-  size_t size = msnucs.size();
-  size_t i;
-  *canonical = msnucs;
-  newseq.resize(size);
-  for (i = 1; i < size; i++) {
-    newseq     = msnucs.substr(size-i, size) + msnucs.substr(0, size-i);
-    *canonical = getFirstString(*canonical, newseq);
-  }
-  
-  string revcomp = reverseComplement(msnucs);
-  *canonical     = getFirstString(*canonical, revcomp);
-  for (i = 1; i < size; i++) {
-    newseq     = revcomp.substr(size-i, size) + revcomp.substr(0, size-i);
-    *canonical = getFirstString(*canonical, newseq);
-  }
-  
+
+  *canonical = getFirstString(getMinPermutation(msnucs), getMinPermutation(reverseComplement(msnucs)));
   canonicalMSTable.insert(pair<string, string>(msnucs, *canonical));
 }
 

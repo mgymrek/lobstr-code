@@ -135,6 +135,9 @@ std::string reverse(const std::string& s);
 // get the complement of a nucleotide
 char complement(const char nucleotide);
 
+// get the minimum cyclic permutation of the provided sequence 
+std::string getMinPermutation(const std::string& msnucs);
+
 // get the canonical version of the smallest repeating subunit
 std::string getCanonicalRepeat(const std::string& msnucs);
 
