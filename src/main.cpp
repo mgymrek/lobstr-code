@@ -749,7 +749,6 @@ void single_thread_process_loop(const vector<string>& files1,
         }
         continue;
       }
-
       // STEP 2: Alignment
       string aln_err, aln_messages;
       if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {

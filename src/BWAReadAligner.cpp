@@ -400,6 +400,10 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
     }
     // check if one flanking region aligns uniquely
     if (left_alignments.size() + right_alignments.size() == 1) {
+      /*      if (exclude_partial) {
+	*err += "Quitting-found-partial-alignment;";
+	return false;
+	}*/
       read->partial = true;
       read->was_partial = true;
       // Case 1: anchored the left side
