@@ -132,8 +132,6 @@ void show_help() {
     "--mapq <INT>:                  filter reads with mapq scores of more than\n" \
     "                               <INT>.\n" \
     "--max-matedist <INT>:          Filter reads with a mate distance larger than <INT> bp.\n\n"
-    "--exclude-partial:             Do not report any information about partially\n" \
-    "                               spanning reads.\n\n"
     "Additional options\n" \
     "--noweb                        Do not report any user information and parameters to Amazon S3.\n";
   cerr << help;
@@ -149,7 +147,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHROM,
     OPT_COMMAND,
     OPT_DEBUG,
-    OPT_EXCLUDE_PARTIAL,
     OPT_EXCLUDE_POS,
     OPT_GENERATE_POSTERIORS,
     OPT_HAPLOID,
@@ -183,7 +180,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chrom", 1, 0, OPT_CHROM},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
-    {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
     {"exclude-pos", 1, 0, OPT_EXCLUDE_POS},
     {"generate-posteriors", 0, 0, OPT_GENERATE_POSTERIORS},
     {"haploid", 1, 0, OPT_HAPLOID},
@@ -232,10 +228,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_DEBUG:
       debug = true;
-      break;
-    case OPT_EXCLUDE_PARTIAL:
-      exclude_partial++;
-      AddOption("exclude-partial", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_EXCLUDE_POS:
       exclude_positions_file = string(optarg);
@@ -433,7 +425,7 @@ int main(int argc, char* argv[]) {
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
   if (my_verbose) PrintMessageDieOnError("Adding reads to read container", PROGRESS);
   ReadContainer read_container;
-  read_container.AddReadsFromFile(bam_files, exclude_partial);
+  read_container.AddReadsFromFile(bam_files);
 
   /* Perform pcr dup removal if specified */
   if (rmdup) {

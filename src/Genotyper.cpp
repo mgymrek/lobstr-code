@@ -106,7 +106,7 @@ float Genotyper::CalcLogLik(int a, int b,
   float loglik = 0;
   for (list<AlignedRead>::const_iterator
          it = aligned_reads.begin(); it != aligned_reads.end(); it++) {
-    if ((*it).partial == 1 || (*it).mate) continue;
+    if ((*it).mate) continue;
     int diff = (*it).diffFromRef;
     int length = (*it).msEnd-(*it).msStart + diff;
     pair<string, int> coord((*it).chrom, (*it).msStart);
@@ -129,25 +129,15 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
                         bool haploid, STRRecord* str_record) {
   // Get all possible alleles and set other info while we're at it
   float allele;
-  bool partial = false;
   set<int> possible;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); ++it) {
     if (it->mate) continue;
-    partial = it->partial;
     allele = it->diffFromRef;
-    if (!partial) {
-      possible.insert((*it).diffFromRef);
-      str_record->coverage++;
-      str_record->spanning_reads[allele]++;
-    } else {
-      str_record->partial_coverage++;
-      str_record->partial_reads[allele]++;
-      if (allele > str_record->max_partial) {
-        str_record->max_partial = allele;
-      }
-    }
-    if (it->stitched && !partial) str_record->num_stitched++;
+    possible.insert((*it).diffFromRef);
+    str_record->coverage++;
+    str_record->spanning_reads[allele]++;
+    if (it->stitched) str_record->num_stitched++;
   }
   if (str_record->coverage == 0) {
     return;
@@ -347,23 +337,6 @@ bool Genotyper::ProcessLocus(const std::string chrom,
     }
   }
   str_record->readstring = readstring.str();
-  // set partial readstring
-  stringstream partialreadstring;
-  if (str_record->partial_coverage == 0) partialreadstring << "NA";
-  for (map<int, int>::const_iterator vi = str_record->partial_reads.begin();
-       vi != str_record->partial_reads.end(); vi++) {
-    if (vi != str_record->partial_reads.begin()) {
-      partialreadstring << ";";
-    }
-    partialreadstring << vi->first << "|" << vi->second;
-  }
-  str_record->partialreadstring = partialreadstring.str();
-  stringstream max_partial_string;
-  if (str_record->partial_coverage != 0) {
-    max_partial_string << str_record->max_partial;
-  } else {max_partial_string << "NA";}
-  str_record->max_partial_string = max_partial_string.str();
-
   // set allele string, deal with low scores
   stringstream allele1_string;
   if (str_record->allele1 == MISSING || str_record->allele2 == MISSING) {

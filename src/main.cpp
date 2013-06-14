@@ -146,9 +146,6 @@ void show_help() {
     "--max-diff-ref <INT>       maximum difference in length from\n" \
     "                           the reference sequence to report\n" \
     "                           (default: 50bp)\n" \
-    "--exclude-partial          Do not report reads only partially spanning\n" \
-    "                           an STR. It is recommended to set this option unless \n" \
-    "                           you wish to specifically analyze partially spanning reads.\n" \
     "--extend <INT>             Number of bp the reference was extended\n" \
     "                           when building the index.\n" \
     "                           Must be same as --extend parameter used \n" \
@@ -231,7 +228,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_EXTEND_FLANK,
     OPT_SW,
     OPT_DEBUGADJUST,
-    OPT_PARTIALDEBUG,
     OPT_ORIG_READ,
     OPT_MAPQ,
     OPT_BWAQ,
@@ -242,7 +238,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_S3DEBUG,
     OPT_RG_SAMPLE,
     OPT_RG_LIB,
-    OPT_EXCLUDE_PARTIAL,
     OPT_VERSION,
   };
 
@@ -292,7 +287,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"oldillumina", 0, 0, OPT_OLDILLUMINA},
     {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
     {"why-not", 0, 0, OPT_WHY_NOT},
-    {"partial-debug", 0, 0, OPT_PARTIALDEBUG},
     {"orig", 0, 0, OPT_ORIG_READ},
     {"nextbest", 0, 0, OPT_CHECKNEXTBEST},
     {"use-s3", 1, 0, OPT_USES3},
@@ -300,7 +294,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"s3debug", 0, 0, OPT_S3DEBUG},
     {"rg-sample", 1, 0, OPT_RG_SAMPLE},
     {"rg-lib", 1, 0, OPT_RG_LIB},
-    {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
     {"version", 0, 0, OPT_VERSION},
     {NULL, no_argument, NULL, 0},
   };
@@ -315,9 +308,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_PROFILE:
       profile++;
-      break;
-    case OPT_PARTIALDEBUG:
-      partial_debug++;
       break;
     case OPT_WHY_NOT:
       why_not_debug++;
@@ -542,10 +532,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_RG_LIB:
       read_group_library = string(optarg);
       AddOption("rg-lib", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_EXCLUDE_PARTIAL:
-      exclude_partial++;
-      AddOption("exlude-partial", "", false, &user_defined_arguments);
       break;
     case OPT_VERSION:
       cerr << _GIT_VERSION << endl;

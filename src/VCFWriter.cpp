@@ -88,11 +88,6 @@ VCFWriter::VCFWriter(const string& filename)
     output_stream << "##FORMAT=<ID=AMP,Number=1,Type=String,Description=\"Allele marginal posterior probabilities\">" << endl;
     output_stream << "##FORMAT=<ID=PP,Number=1,Type=Float,Description=\"Posterior probability of call\">" << endl;
   }
-  if (!exclude_partial) {
-  output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;
-    output_stream << "##FORMAT=<ID=MP,Number=1,Type=Float,Description=\"Upper bound on maximum partially spanning allele\">" << endl;
-    output_stream << "##FORMAT=<ID=PC,Number=1,Type=Integer,Description=\"Coverage by partially spanning reads\">" << endl;
-  }
   // header columns
   output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" << sample << endl;
   if (!exclude_positions_file.empty()) {
@@ -152,8 +147,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
       return;
     }  
   }
-  if ((str_record.allele1 == -10000 || str_record.allele2 == -10000) &&
-      str_record.partial_coverage == 0) {
+  if ((str_record.allele1 == -10000 || str_record.allele2 == -10000)) {
     return;
   }
   if (!(str_record.stop > 0 && str_record.start > 8 &&
@@ -231,9 +225,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   if (generate_posteriors) {
     output_stream << ":AMP:PP";
   }
-  if (!exclude_partial) {
-    output_stream << ":ALLPARTIALREADS:MP:PC";
-  }
   output_stream << "\t";
 
   // Sample info
@@ -285,12 +276,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
     marginal_lik_score_string << str_record.allele1_marginal_lik_score << "/"
                               << str_record.allele2_marginal_lik_score;
   }
-  stringstream max_partial_string;
-  if (str_record.partial_coverage == 0) {
-    max_partial_string << "."; 
-  } else {
-    max_partial_string << str_record.max_partial_string;
-  }
 
   // Output format fields
   output_stream << genotype_string.str() << ":"
@@ -304,11 +289,6 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   if (generate_posteriors) {
     output_stream << ":" << marginal_posterior_string.str() << ":";
     output_stream << str_record.posterior_prob;
-  }
-  if (!exclude_partial) {
-    output_stream << ":" << str_record.partialreadstring
-		  << ":" << max_partial_string.str()
-		  << ":" << str_record.partial_coverage;
   }
   output_stream << endl;
 }

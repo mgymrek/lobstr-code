@@ -38,8 +38,7 @@ GenotypeTabWriter::GenotypeTabWriter(const string& filename)
 GenotypeTabWriter::~GenotypeTabWriter() {}
 
 void GenotypeTabWriter::WriteRecord(const STRRecord& str_record) {
-  if (((str_record.allele1 == -10000 || str_record.allele2 == -10000) &&
-        str_record.partial_coverage == 0)
+  if (((str_record.allele1 == -10000 || str_record.allele2 == -10000))
       && (str_record.stop > 0 && str_record.start > 0 &&
           str_record.stop > str_record.start)) {
     return;
@@ -59,8 +58,5 @@ void GenotypeTabWriter::WriteRecord(const STRRecord& str_record) {
                 << str_record.max_lik_score << "\t" // posterior prob. of call
                 << str_record.allele1_marginal_lik_score << "\t" // marginal posterior prob
                 << str_record.allele2_marginal_lik_score << "\t" // marginal posterior prob
-                << str_record.partial_coverage << "\t"
-                << str_record.max_partial_string << "\t"
-                << str_record.partialreadstring << "\t"
                 << str_record.num_stitched << endl;
 }

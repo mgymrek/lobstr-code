@@ -66,11 +66,11 @@ bool STRDetector::ProcessReadPair(ReadPair* read_pair, string* err, string* mess
 }
 
 bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages) {
+  // Get the size of the read so we don't keep computing
+  size_t read_length = read->nucleotides.size();
   // Preprocessing checks
-  if (read->nucleotides.length() < (fft_window_size-1) ||
-      calculate_N_percentage(read->nucleotides) > percent_N_discard ||
-      read->nucleotides.length() < min_read_length ||
-      read->nucleotides.length() > max_read_length) {
+  if (read_length < (fft_window_size-1) ||
+      calculate_N_percentage(read->nucleotides) > percent_N_discard) {
     if (debug) {
       *err += "failed-read-length-check";
     }
@@ -100,12 +100,12 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
   nuc_start = start * fft_window_step;  // + extend_flank;
   nuc_end = (end + 2) * fft_window_step;  // - extend_flank;
 
-  if (nuc_start >= read->nucleotides.length() ||
+  if (nuc_start >= read_length ||
       nuc_start <= 0 ||
       nuc_end-nuc_start + 1 <= 0 ||
       nuc_start >= nuc_end ||
-      nuc_end-nuc_start+1 >= read->nucleotides.size() ||
-      nuc_end >= read->nucleotides.size()) {
+      nuc_end-nuc_start+1 >= read_length ||
+      nuc_end >= read_length) {
     if (debug) {
       *err += "failed-STR-region-location-sanity-check";
     }
@@ -114,8 +114,8 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
 
   // allow more nucleotides in detection step
   if ((nuc_start-extend_flank >= 0) &&
-      (nuc_start-extend_flank < read->nucleotides.size()) &&
-      (nuc_end + extend_flank + 1 < read->nucleotides.size())) {
+      (nuc_start-extend_flank < read_length) &&
+      (nuc_end + extend_flank + 1 < read_length)) {
     detected_microsatellite_nucleotides =
       read->nucleotides.substr(nuc_start-extend_flank,
                                nuc_end - nuc_start+1+2*extend_flank);
@@ -246,9 +246,9 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
 
   // set indices of left, STR, and right regions
   if ((read->ms_start >=
-       static_cast<int>(read->nucleotides.length())) ||
+       static_cast<int>(read_length)) ||
       (read->ms_end+1 >=
-       static_cast<int>(read->nucleotides.length()))) {
+       static_cast<int>(read_length))) {
     if (debug) {
       *err += "failed-second-STR-region-location-sanity-check;";
     }
@@ -281,13 +281,14 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
                     read->left_flank_index_from_start);
 
   if (((read->left_flank_index_from_start+nuc_len) <=
-       read->nucleotides.size()) &
+       read_length) &
       ((read->left_flank_index_from_start+nuc_len) >= 0)) {
     read->nucleotides = read->
       orig_nucleotides.substr(read->left_flank_index_from_start, nuc_len);
+    read_length = read->nucleotides.size();
     read->quality_scores = read->
       quality_scores.substr(read->left_flank_index_from_start,
-                            read->nucleotides.size());
+                            read_length);
   } else {
     if (debug) {
       *err += "failed-after-trimming-flanking-regions;";

@@ -348,17 +348,10 @@ bool fexists(const char *filename) {
 }
 
 bool valid_nucleotides_string(const string &str) {
-  if (str.empty())
+  if (str.empty()) {
     return false;
-  for (size_t i = 0 ; i < str.length(); ++i) {
-    const char ch = str[i];
-    if ( (ch != 'A') && (ch != 'C') && (ch != 'G') && (ch != 'T') &&
-         (ch != 'N') &&
-         (ch != 'a') && (ch != 'c') && (ch != 'g') && (ch != 't') &&
-         (ch != 'n') )
-      return false;
   }
-  return true;
+  return str.find_first_not_of("ACGTNacgtn");
 }
 
 std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {

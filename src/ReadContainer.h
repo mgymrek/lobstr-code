@@ -51,7 +51,6 @@ struct AlignedRead {
   int period;
   int diffFromRef;
   float refCopyNum;
-  int partial;
   int mate;
   bool strand;
   int stitched;
@@ -69,7 +68,7 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(vector<std::string> bamfiles, bool exclude_partial);
+  void AddReadsFromFile(vector<std::string> bamfiles);
 
   /* Remove pcr duplicates */
   void RemovePCRDuplicates();

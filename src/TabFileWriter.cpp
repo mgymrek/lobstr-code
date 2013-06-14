@@ -44,7 +44,6 @@ TabFileWriter::TabFileWriter(const string& filename)
                 << "refCopyNum" << "\t"
                 << "reverse" << "\t"
                 << "cigar" << "\t"
-                << "partial" << "\t"
                 << "score"
                 << "\tmate dist\tstitched" << endl;
 }
@@ -71,7 +70,6 @@ void TabFileWriter::WriteRecord(const ReadPair& read_pair) {
                 << read_pair.reads.at(aligned_read_num).refCopyNum << "\t"
                 << read_pair.reads.at(aligned_read_num).reverse << "\t"
                 << read_pair.reads.at(aligned_read_num).cigar_string << "\t"
-                << read_pair.reads.at(aligned_read_num).partial << "\t"
                 << read_pair.reads.at(aligned_read_num).mapq << "\t"
                 << paired_dist << "\t"
                 << (!read_pair.treat_as_paired && paired) << endl;

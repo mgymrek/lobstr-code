@@ -48,17 +48,12 @@ struct STRRecord {
   float allele2_marginal_posterior_prob; // marginal posterior prob
   int conflicting;
   int agreeing;
-  int partial_coverage;
   int num_stitched;
-  int max_partial;
   std::string readstring;
-  std::string partialreadstring;
-  std::string max_partial_string;
   std::string allele1_string;
   std::string allele2_string;
   std::map<pair<int,int>,float> likelihood_grid; // log10(P(R|G))
   std::map<int,int> spanning_reads;
-  std::map<int,int> partial_reads;
   vector<int> alleles_to_include;
   void Reset() {
     chrom = "";
@@ -81,17 +76,12 @@ struct STRRecord {
     allele2_marginal_posterior_prob = -1;
     conflicting = 0;
     agreeing = 0;
-    partial_coverage = 0;
     num_stitched = 0;
-    max_partial = -10000;
     readstring = "";
-    partialreadstring = "";
-    max_partial_string = "";
     allele1_string = "";
     allele2_string = "";
     likelihood_grid.clear();
     spanning_reads.clear();
-    partial_reads.clear();
     alleles_to_include.clear();
   }
 };
