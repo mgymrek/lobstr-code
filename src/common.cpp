@@ -160,12 +160,12 @@ std::string GetReadDebug(const ReadPair& read_pair,
                          const std::string& aln_msg) {
   stringstream msg;
   msg << "[STRDetector]: processing "
-      << read_pair.reads.at(0).ID
+      << read_pair.reads[0].ID
       << " motif 1 ";
-  if (read_pair.reads.at(0).repseq.empty()) {
+  if (read_pair.reads[0].repseq.empty()) {
     msg << "NA";
   } else {
-    msg << read_pair.reads.at(0).repseq;
+    msg << read_pair.reads[0].repseq;
   }
   msg << " " << detector_err << " " << detector_msg << " " << aln_err << " " << aln_msg;
   return msg.str();
@@ -190,7 +190,7 @@ void TrimRead(const string& input_nucs,
               int cutoff) {
   // if last bp is fine, return as is
   size_t l = input_nucs.length();
-  if (static_cast<int>(input_quals.at(l - 1) - QUALITY_CONSTANT)
+  if (static_cast<int>(input_quals[l - 1] - QUALITY_CONSTANT)
       >= cutoff) {
     *trimmed_nucs = input_nucs;
     *trimmed_quals = input_quals;
@@ -205,7 +205,7 @@ void TrimRead(const string& input_nucs,
   for (size_t x = min_read_length; x <= l; x++) {
     int score = 0;
     for (size_t i = x+1; i < l; i++) {
-      score += (cutoff-(input_quals.at(i)-QUALITY_CONSTANT));
+      score += (cutoff-(input_quals[i]-QUALITY_CONSTANT));
     }
     if (score >= max_score) {
       max_score = score;
@@ -219,7 +219,7 @@ void TrimRead(const string& input_nucs,
 size_t count(const string& s, const char& c) {
   size_t num = 0;
   for (size_t i = 0; i < s.length(); i++) {
-    if (s.at(i) == c) num++;
+    if (s[i] == c) num++;
   }
   return num;
 }
@@ -245,16 +245,16 @@ bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_rep
   for (i = 0; i < nucs.size() - k; i++) {
     subseq = getMinPermutation(nucs.substr(i, k));
     countKMers[subseq]++;
-    if (countKMers.at(subseq) > maxkmer) {
+    if (countKMers[subseq] > maxkmer) {
       if (subseq != kmer) {
         second_best_kmer = kmer;
         second_best_maxkmer = maxkmer;
       }
       kmer = subseq;
-      maxkmer = countKMers.at(subseq);
-    } else if (countKMers.at(subseq) > second_best_maxkmer) {
+      maxkmer = countKMers[subseq];
+    } else if (countKMers[subseq] > second_best_maxkmer) {
       second_best_kmer = subseq;
-      second_best_maxkmer = countKMers.at(subseq);
+      second_best_maxkmer = countKMers[subseq];
     }
   }
   
@@ -323,7 +323,7 @@ float GetQualityScore(const std::string& quality_score) {
   if (quality_score.length() == 0) return 0;
   float total_quality = 0;
   for (size_t i = 0; i < quality_score.length(); ++i) {
-    int qs = quality_score.at(i);
+    int qs = quality_score[i];
     total_quality += qs - 33;
   }
   return total_quality/quality_score.size();
@@ -357,7 +357,7 @@ bool valid_nucleotides_string(const string &str) {
 std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
   size_t countA = 0, countC = 0, countG = 0, countT = 0;
   for (size_t i = 0; i < nuc.length(); i++) {
-    switch (nuc.at(i)) {
+    switch (nuc[i]) {
       case 'A':
       case 'a':
         countA++;
@@ -378,10 +378,8 @@ std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) 
       case 'n':
         break;
       default:
-        errx(1, "Internal error: OneAbundantNucleotide " \
-             "called with invalid nucleotide string '%s'" \
-             ", character '%c'", nuc.c_str(), nuc.at(i));
-      }
+	PrintMessageDieOnError("ERROR: invalid nucleotide string " + nuc, ERROR);
+    }
   }
   size_t threshold = nuc.length()*perc_threshold;
   if (countA >= threshold)
@@ -399,7 +397,7 @@ int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
   int runsize = 0;
   int maxrunsize = 0;
   for (size_t i = 0; i < nuc.size(); i++) {
-    if (nuc.at(i) == abundant_nuc) {
+    if (nuc[i] == abundant_nuc) {
       runsize++;
     } else {
       if (runsize > maxrunsize) {
@@ -414,7 +412,7 @@ int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
 double calculate_N_percentage(const std::string& nuc) {
   size_t n_count = 0;
   for (size_t i = 0; i < nuc.length(); i++)
-    if (nuc.at(i) == 'N' || nuc.at(i) == 'n')
+    if (nuc[i] == 'N' || nuc[i] == 'n')
       n_count++;
   return (static_cast<double>(n_count))/
     (static_cast<double>(nuc.length()));
@@ -470,7 +468,7 @@ std::string reverse(const std::string& s) {
 
 std::string getMinPermutation(const std::string& msnucs){
   if (permutationTable.find(msnucs) != permutationTable.end())
-    return permutationTable.at(msnucs);
+    return permutationTable[msnucs];
 
   std::string minPerm = msnucs;
   for(size_t i = 1; i < msnucs.size(); i++){
@@ -485,7 +483,7 @@ std::string getMinPermutation(const std::string& msnucs){
 
 std::string getCanonicalRepeat(const std::string& msnucs) {
   if (canonicalRepeatTable.find(msnucs) != canonicalRepeatTable.end())
-    return canonicalRepeatTable.at(msnucs);
+    return canonicalRepeatTable[msnucs];
 
   std::string subunit = msnucs;
   for (size_t segLen = 1; segLen < msnucs.size(); segLen++) {
@@ -516,7 +514,7 @@ std::string getCanonicalRepeat(const std::string& msnucs) {
 
 void getCanonicalMS(const string& msnucs, string* canonical) {
   if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
-    *canonical = canonicalMSTable.at(msnucs);
+    *canonical = canonicalMSTable[msnucs];
     return;
   }
 
@@ -578,7 +576,7 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   size_t cigar_length = 0;
   *cigar_had_s = false;
   for (size_t i = 0; i < cigar_list->cigars.size(); i++) {
-    CIGAR cig = cigar_list->cigars.at(i);
+    CIGAR cig = cigar_list->cigars[i];
     if (cig.cigar_type == 'M' || cig.cigar_type == 'I' || cig.cigar_type == 'S') {
       cigar_length += cig.num;
     }
@@ -588,8 +586,8 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   int diff = nucs.length() - cigar_length;
   if (diff > 0) {
     *added_s = true;
-    if (cigar_list->cigars.at(cigar_list->cigars.size()-1).cigar_type == 'M') {
-      cigar_list->cigars.at(cigar_list->cigars.size()-1).num += diff;
+    if (cigar_list->cigars[cigar_list->cigars.size()-1].cigar_type == 'M') {
+      cigar_list->cigars[cigar_list->cigars.size()-1].num += diff;
     } else {
       CIGAR cig;
       cig.num = diff;

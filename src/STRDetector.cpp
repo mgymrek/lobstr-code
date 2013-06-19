@@ -263,14 +263,14 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
   // adjust for max flank region lengths,if repetitive end, don't trim
   read->left_flank_index_from_start = 0;
   read->right_flank_index_from_end = 0;
-  if ((read->left_flank_nuc.size() > max_flank_len) & !rep_end) {
+  if ((read->left_flank_nuc.size() > max_flank_len)) {
     string left_flank = read->left_flank_nuc;
     read->left_flank_nuc = left_flank.substr(left_flank.length()-
                                              max_flank_len, max_flank_len);
     read->left_flank_index_from_start = left_flank.length() -
       max_flank_len;
   }
-  if ((read->right_flank_nuc.size() > max_flank_len) & !rep_end) {
+  if ((read->right_flank_nuc.size() > max_flank_len)) {
     string right_flank = read->right_flank_nuc;
     read->right_flank_nuc = right_flank.substr(0, max_flank_len);
     read->right_flank_index_from_end = right_flank.length() - max_flank_len;

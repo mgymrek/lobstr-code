@@ -125,11 +125,11 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
     if (align_debug) {
       stringstream msg;
       msg << "[BWAReadAligner]: read1 passed "
-           << read_pair->read1_passed_alignment << endl;
+           << read_pair->read1_passed_alignment;
       PrintMessageDieOnError(msg.str(), DEBUG);
       msg.clear();
       msg << "[BWAReadAligner]: read2 passed "
-           << read_pair->read2_passed_alignment << endl;
+           << read_pair->read2_passed_alignment;
       PrintMessageDieOnError(msg.str(), DEBUG);
     }
     // Step 2: Determine if unique valid alignment
@@ -202,9 +202,6 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
       // Still didn't find alignment, or only one aligned,
       // Check that mate is compatible
       if (!read_pair->found_unique_alignment) {
-        if (align_debug) {
-          PrintMessageDieOnError("[BWAReadAligner]: checking for mate alignment", DEBUG);
-        }
         vector<ALIGNMENT> mate_alignments;
 	// make sure mate isn't ginormous
 	if (read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.size()
@@ -222,6 +219,9 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
                  &trim_nucs, &trim_quals, MATE_TRIM_QUAL);
         read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides = trim_nucs;
         read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual = trim_quals;
+        if (align_debug) {
+          PrintMessageDieOnError("[BWAReadAligner]: checking for mate alignment " + trim_nucs + " " + trim_quals, DEBUG);
+        }
         if (!AlignMate(*read_pair, &mate_alignments,
                        read_pair->reads.at(read_pair->aligned_read_num).repseq)) {
           if (align_debug) {
@@ -261,16 +261,25 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
         if (align_debug) {
           PrintMessageDieOnError("[BWAReadAligner]: Try stitching", DEBUG);
         }
-        if (StitchReads(read_pair, &final_left_alignment,
+	if (StitchReads(read_pair, &final_left_alignment,
                         &final_right_alignment)) {
-          return OutputAlignment(read_pair, final_left_alignment,
-                                 final_right_alignment,
-                                 matealign, false);
+          if (OutputAlignment(read_pair, final_left_alignment,
+			      final_right_alignment,
+			      matealign, false)) {
+	    return true;
+	  }
         } else {
-          return OutputAlignment(read_pair, final_left_alignment,
-                                 final_right_alignment,
-                                 matealign, true);
-        }
+          if (OutputAlignment(read_pair, final_left_alignment,
+			      final_right_alignment,
+			      matealign, true)) {
+	    return true;
+	  }
+	}
+	// If we made it this far and didn't align, reset the
+	// read so we don't try again
+	read_pair->reads.at(0).ms_repeat_next_best_period = 0;
+	read_pair->reads.at(1).ms_repeat_next_best_period = 0;
+	return false;
       }
     }
   } else {  // single end reads
@@ -293,9 +302,15 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
         read_pair->found_unique_alignment = true;
         read_pair->aligned_read_num = 0;
         ALIGNMENT dummy_matealign;
-        return OutputAlignment(read_pair, good_left_alignments_read1.front(),
-                               good_right_alignments_read1.front(),
-                               dummy_matealign, false);
+        if (OutputAlignment(read_pair, good_left_alignments_read1.front(),
+			    good_right_alignments_read1.front(),
+			    dummy_matealign, false)) {
+	  return true;
+	} else {
+	  // reset read so we don't try again
+	  read_pair->reads.at(0).ms_repeat_next_best_period = 0;
+	  return false;
+	}
       }
     }
   }
@@ -310,7 +325,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   *err = "Alignment-errors-here:";
   *messages = "Alignment-notes-here:";
   if (align_debug) {
-    PrintMessageDieOnError("[ProcessRead]: " + read->ID + " " + read->nucleotides, DEBUG);
+    PrintMessageDieOnError("[ProcessRead]: " + read->ID + " " + read->left_flank_nuc + " " + read->right_flank_nuc, DEBUG);
   }
   // do the flanks consist of all repeats?
   bool left_all_repeats = false;
@@ -346,6 +361,10 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
     PrintMessageDieOnError("[ProcessRead]: align flanks", DEBUG);
   }
   // Align the flanking regions
+  if (read->left_flank_nuc.size() > read->quality_scores.size() ||
+      read->right_flank_nuc.size() > read->quality_scores.size()) {
+    PrintMessageDieOnError("[ProcessRead]: Internal error: quality score length invalid", WARNING);
+  }
   bwa_seq_t* seqs = BWAAlignFlanks(*read);
   bwa_seq_t* seq_left = &seqs[0];
   bwa_seq_t* seq_right = &seqs[1];
@@ -417,6 +436,10 @@ bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
   // LEFT FLANKING REGION
   const string& left_qual =  reverse(read.quality_scores.
                                      substr(0, left_flank_nuc.length()));
+  if (left_qual.size() != left_flank_nuc.size()) {
+    PrintMessageDieOnError("[BWAAlignFlanks]: Qual size does not match nuc size", WARNING);
+    return seqs;
+  }
   seq_left->bc[0] = 0;
   seq_left->tid = -1;
   seq_left->qual = 0;
@@ -952,18 +975,10 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
   }
   
   // Adjust alignment and STR call
-  try {
-    if (!AdjustAlignment(&read_pair->reads.at(aligned_read_num))) {
-      if (align_debug) {
-        PrintMessageDieOnError("[BWAReadAligner]: Returning false: "  \
-                               " AdjustAlignment failed.", DEBUG);
-      }
-      return false;
-    }
-  } catch(std::out_of_range & exception) {
+  if (!AdjustAlignment(&read_pair->reads.at(aligned_read_num))) {
     if (align_debug) {
-      PrintMessageDieOnError("[BWAReadAligner]: Returning false: "  \
-                             " AdjustAlignment exception.", DEBUG);
+      PrintMessageDieOnError("[BWAReadAligner]: Returning false: "	\
+			     " AdjustAlignment failed.", DEBUG);
     }
     return false;
   }
@@ -1008,60 +1023,60 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
       PrintMessageDieOnError("[BWAReadAligner]: Checking get CIGAR", DEBUG);
     }
     // get cigar
+    CIGAR_LIST cigar_list;
+    string aln_seq, ref_seq;
+    int score;
+    const size_t& reglen = read_pair->reads.
+      at(1-aligned_read_num).nucleotides.length();
+    const REFSEQ& refseq = _ref_sequences->
+      at(read_pair->reads.at(aligned_read_num).strid);
+    const size_t& start_pos = read_pair->reads.
+      at(1-aligned_read_num).reverse ?
+      mate_alignment.pos : mate_alignment.pos-1;
+    string rseq;
     try {
-      CIGAR_LIST cigar_list;
-      string aln_seq, ref_seq;
-      int score;
-      const size_t& reglen = read_pair->reads.
-        at(1-aligned_read_num).nucleotides.length();
-      const REFSEQ& refseq = _ref_sequences->
-        at(read_pair->reads.at(aligned_read_num).strid);
-      const size_t& start_pos = read_pair->reads.
-        at(1-aligned_read_num).reverse ?
-        mate_alignment.pos : mate_alignment.pos-1;
-      const string& rseq = refseq.sequence.
-        substr(start_pos - refseq.start, reglen);
-      const string& aseq = read_pair->reads.at(1-aligned_read_num).reverse ?
-        reverseComplement(read_pair->reads.at(1-aligned_read_num).nucleotides) :
-        read_pair->reads.at(1-aligned_read_num).nucleotides;
-      const string& aligned_seq_quals =
-        read_pair->reads.at(1-aligned_read_num).reverse ?
-        reverse(read_pair->reads.at(1-aligned_read_num).quality_scores) :
-        read_pair->reads.at(1-aligned_read_num).quality_scores;
-      nw(aseq, rseq, aln_seq, ref_seq, false, &score, &cigar_list);
-      if (debug_adjust) {
-        PrintMessageDieOnError("[BWAReadAligner]: Getting qualities for mate", DEBUG);
-      }
-      // update qualities. For read pairs qual is sum of the two ends' mapq
-      int edit;
-      int mate_mapq = GetMapq(aln_seq, ref_seq,
-                              aligned_seq_quals, &edit);
-      const int& read_mapq = read_pair->reads.at(aligned_read_num).mapq;
-      read_pair->reads.at(1-aligned_read_num).mapq = mate_mapq+read_mapq;
-      read_pair->reads.at(1-aligned_read_num).edit_dist = edit;
-      read_pair->reads.at(aligned_read_num).mapq = mate_mapq+read_mapq;
-      
-      // need this to make it work out
-      if (!read_pair->reads.at(1-aligned_read_num).reverse) {
-        read_pair->reads.at(1-aligned_read_num).read_start--;
-      }
-
-      // make sure CIGAR is valid
-      bool added_s;
-      bool cigar_had_s;
-      GenerateCorrectCigar(&cigar_list,read_pair->reads.at(1-aligned_read_num).
-                           nucleotides, &added_s, &cigar_had_s);
-      read_pair->reads.at(1-aligned_read_num).cigar_string =
-        cigar_list.cigar_string;
-      read_pair->reads.at(1-aligned_read_num).cigar =
-        cigar_list.cigars;
+      rseq = refseq.sequence.
+	substr(start_pos - refseq.start, reglen);
     } catch(std::out_of_range & exception) {
-      if (align_debug || debug_adjust) {
-        PrintMessageDieOnError("[BWAReadAligner]: returning false, " \
-                               "problem aligning mate.", DEBUG);
-      }
-      return false;
+      PrintMessageDieOnError("[BWAReadAligner]: Could not determine ref sequence for " +
+			     read_pair->reads.at(1-aligned_read_num).ID +
+			     "read extends outside of STR reference range", WARNING);
+      return false;      
     }
+    const string& aseq = read_pair->reads.at(1-aligned_read_num).reverse ?
+      reverseComplement(read_pair->reads.at(1-aligned_read_num).nucleotides) :
+      read_pair->reads.at(1-aligned_read_num).nucleotides;
+    const string& aligned_seq_quals =
+      read_pair->reads.at(1-aligned_read_num).reverse ?
+      reverse(read_pair->reads.at(1-aligned_read_num).quality_scores) :
+      read_pair->reads.at(1-aligned_read_num).quality_scores;
+    nw(aseq, rseq, aln_seq, ref_seq, false, &score, &cigar_list);
+    if (debug_adjust) {
+      PrintMessageDieOnError("[BWAReadAligner]: Getting qualities for mate", DEBUG);
+    }
+    // update qualities. For read pairs qual is sum of the two ends' mapq
+    int edit;
+    int mate_mapq = GetMapq(aln_seq, ref_seq,
+			    aligned_seq_quals, &edit);
+    const int& read_mapq = read_pair->reads.at(aligned_read_num).mapq;
+    read_pair->reads.at(1-aligned_read_num).mapq = mate_mapq+read_mapq;
+    read_pair->reads.at(1-aligned_read_num).edit_dist = edit;
+    read_pair->reads.at(aligned_read_num).mapq = mate_mapq+read_mapq;
+    
+    // need this to make it work out
+    if (!read_pair->reads.at(1-aligned_read_num).reverse) {
+      read_pair->reads.at(1-aligned_read_num).read_start--;
+    }
+    
+    // make sure CIGAR is valid
+    bool added_s;
+    bool cigar_had_s;
+    GenerateCorrectCigar(&cigar_list,read_pair->reads.at(1-aligned_read_num).
+			 nucleotides, &added_s, &cigar_had_s);
+    read_pair->reads.at(1-aligned_read_num).cigar_string =
+      cigar_list.cigar_string;
+    read_pair->reads.at(1-aligned_read_num).cigar =
+      cigar_list.cigars;
   }
   return true;
 }
@@ -1083,7 +1098,15 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   size_t start_pos = !aligned_read->reverse ?
     aligned_read->lStart-1 : aligned_read->rStart;
   // get sequences to pairwise align
-  const string& rseq = refseq.sequence.substr(start_pos - refseq.start-REFEXTEND, reglen+REFEXTEND);
+  string rseq;
+  try {
+    rseq = refseq.sequence.substr(start_pos - refseq.start-REFEXTEND, reglen+REFEXTEND);
+  } catch(std::out_of_range & exception) { 
+    PrintMessageDieOnError("[AdjustAlignment]:  Could not determine ref sequence for " +
+			     aligned_read->ID +
+			     "read extends outside of STR reference range", WARNING);
+    return false;
+  }
   const string& aligned_seq = !aligned_read->reverse ?
     aligned_read->nucleotides :
     reverseComplement(aligned_read->nucleotides);
@@ -1145,8 +1168,8 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
     return GetSTRAllele(aligned_read, cigar_list);
   } catch(std::out_of_range & exception) {
     if (align_debug) {
-      PrintMessageDieOnError("[AdjustAlignment]: returning false, out " \
-                             "range exception.", DEBUG);
+      PrintMessageDieOnError("[AdjustAlignment]: Problem adjusting read " +
+			     aligned_read->ID, WARNING);
     }
     return false;
   }

@@ -73,7 +73,7 @@ m4_pattern_allow([AM_PROG_AR])
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 user_CFLAGS=${CFLAGS}
-generic_CFLAGS="-Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized"
+generic_CFLAGS="-Wall -Wno-strict-aliasing -gdwarf-2 -Wuninitialized"
 ext_CFLAGS=""
 debug_CFLAGS=""
 case "${host_cpu}-${host_os}" in
@@ -91,7 +91,7 @@ esac
 
 CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS} -D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\""
 CXXFLAGS="$CFLAGS"
-CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS "
+CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS"
 LDFLAGS="$ext_LDFLAGS" 
 
 AM_INIT_AUTOMAKE([-Wall tar-pax foreign])
