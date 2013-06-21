@@ -44,17 +44,26 @@ class Genotyper {
             const std::vector<std::string>& _haploid_chroms,
             std::map<pair<std::string, int>, std::string>* _ref_nucleotides,
             std::map<pair<std::string, int>, std::string>* _ref_repseq,
-	    const std::string& vcf_file);
+	    const std::string& vcf_file,
+	    const std::vector<std::string>& _samples);
   ~Genotyper();
 
   /* determine allelotypes and write to file */
-  void Genotype(const list<AlignedRead>& read_list,
-		const list<std::string>& samples);
+  void Genotype(const list<AlignedRead>& read_list);
 
  private:
   /* Process all reads at a single locus */
   bool ProcessLocus(const std::list<AlignedRead>& aligned_reads,
                     STRRecord* str_record, bool is_haploid);
+
+  /* Get list of alleles to use */
+  bool GetAlleles(const std::list<AlignedRead>& aligned_reads,
+		  std::vector<int>* alleles);
+
+  /* Divide reads to one list per sample */
+  bool GetReadsPerSample(const std::list<AlignedRead>& aligned_reads,
+			 const std::vector<string>& samples,
+			 std::vector<std::list<AlignedRead> >* sample_reads);
 
   /* Get log likelihood of an allelotype */
   float CalcLogLik(int a, int b,
@@ -63,6 +72,7 @@ class Genotyper {
 
   /* Get most likely allelotype */
   void FindMLE(const list<AlignedRead>& aligned_reads,
+	       map<int,int> spanning_reads,
                bool haploid, STRRecord* str_record);
 
   /* chromosomes to treat as haploid */
@@ -76,6 +86,9 @@ class Genotyper {
 
   /* Reference repseq for each locus */
   std::map<pair<std::string, int>, std::string>* ref_repseq;
+
+  /* List of samples */
+  std::vector<std::string> samples;
 
   /* File writers */
   VCFWriter* vcfWriter;

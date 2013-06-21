@@ -37,6 +37,7 @@ struct STRRecord {
   float refcopy;
   // list of samples
   vector<std::string> samples;
+  int numcalls;
   // Data properties. each is a vector, indexed by sample number
   vector<int> allele1;
   vector<int> allele2;
@@ -47,18 +48,13 @@ struct STRRecord {
   vector<float> allele2_marginal_lik_score; // marginal likelihood score
   vector<int> conflicting;
   vector<int> agreeing;
-  vector<int> partial_coverage;
   vector<int> num_stitched;
-  vector<int> max_partial;
   vector<std::string> readstring;
-  vector<std::string> partialreadstring;
-  vector<std::string> max_partial_string;
   vector<std::string> allele1_string;
   vector<std::string> allele2_string;
   vector<std::map<pair<int,int>,float> > likelihood_grid; // log10(P(R|G))
   vector<std::map<int,int> > spanning_reads;
-  vector<std::map<int,int> > partial_reads;
-  vecotr<vector<int> >alleles_to_include;
+  vector<int> alleles_to_include;
   void Reset() {
     chrom = "";
     start = -1;
@@ -69,6 +65,7 @@ struct STRRecord {
     ref_allele = "N";
     refcopy = 0;
     samples.clear();
+    numcalls = 0;
     allele1.clear();
     allele2.clear();
     coverage.clear();
@@ -78,17 +75,11 @@ struct STRRecord {
     allele2_marginal_lik_score.clear();
     conflicting.clear();
     agreeing.clear();
-    partial_coverage.clear();
     num_stitched.clear();
-    max_partial.clear();
     readstring.clear();
-    partialreadstring.clear();
-    max_partial_string.clear();
     allele1_string.clear();
     allele2_string.clear();
     likelihood_grid.clear();
-    spanning_reads.clear();
-    partial_reads.clear();
     alleles_to_include.clear();
   }
 };

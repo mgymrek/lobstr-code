@@ -435,10 +435,10 @@ int main(int argc, char* argv[]) {
     }
   }
   if (command == "classify") {
-    std::string tabfile = "";
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
-			output_prefix + ".vcf");
+			output_prefix + ".vcf", samples_list);
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
+    std::string current_chrom;
     for (size_t i = 0; i < reference_strs.size(); i++) {
       ReadContainer str_container;
       str_container.AddReadsFromFile(bam_files, exclude_partial, reference_strs.at(i));
@@ -447,16 +447,17 @@ int main(int argc, char* argv[]) {
       str_container.GetReadsAtCoord(coord, &aligned_reads);
       if (aligned_reads.size() > 0) {
 	if (my_verbose) {
-	  stringstream msg;
-	  msg << "Processing locus " << reference_strs.at(i).chrom << ":"
-	      << reference_strs.at(i).start << "-"
-	      << reference_strs.at(i).stop;
-	  PrintMessageDieOnError(msg.str(), PROGRESS);
+	  if (reference_strs.at(i).chrom != current_chrom) {
+	    stringstream msg;
+	    msg << "Processing locus " << reference_strs.at(i).chrom;
+	    PrintMessageDieOnError(msg.str(), PROGRESS);
+	    current_chrom = reference_strs.at(i).chrom;
+	  }
 	}
 	if (rmdup) {
 	  str_container.RemovePCRDuplicates();
 	}
-	genotyper.Genotype(aligned_reads, samples_list);
+	genotyper.Genotype(aligned_reads);
       }
     }
   }
