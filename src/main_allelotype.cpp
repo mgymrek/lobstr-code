@@ -374,16 +374,18 @@ int main(int argc, char* argv[]) {
         int start = atoi(items.at(2).c_str())+extend;
 	int str_start = atoi(items.at(2).c_str());
 	int str_end = atoi(items.at(3).c_str());
-	ReferenceSTR ref_str;
-	ref_str.start = str_start+extend;
-	ref_str.stop = str_end-extend;
-	ref_str.chrom = chrom;
-	reference_strs.push_back(ref_str);
-        string repseq_in_ref = items.at(6);
-        string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
-        pair<string, int> locus = pair<string,int>(chrom, start);
-        ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
-        ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
+	if (use_chrom.empty() || use_chrom == chrom) {
+	  ReferenceSTR ref_str;
+	  ref_str.start = str_start+extend;
+	  ref_str.stop = str_end-extend;
+	  ref_str.chrom = chrom;
+	  reference_strs.push_back(ref_str);
+	  string repseq_in_ref = items.at(6);
+	  string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
+	  pair<string, int> locus = pair<string,int>(chrom, start);
+	  ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
+	  ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
+	}
       }
     }
   }
@@ -435,24 +437,26 @@ int main(int argc, char* argv[]) {
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
     std::string current_chrom;
     for (size_t i = 0; i < reference_strs.size(); i++) {
-      ReadContainer str_container;
-      str_container.AddReadsFromFile(bam_files, reference_strs.at(i));
-      pair<string, int> coord(reference_strs.at(i).chrom, reference_strs.at(i).start);
-      list<AlignedRead> aligned_reads;
-      str_container.GetReadsAtCoord(coord, &aligned_reads);
-      if (aligned_reads.size() > 0) {
-	if (my_verbose) {
-	  if (reference_strs.at(i).chrom != current_chrom) {
-	    stringstream msg;
-	    msg << "Processing locus " << reference_strs.at(i).chrom;
-	    PrintMessageDieOnError(msg.str(), PROGRESS);
-	    current_chrom = reference_strs.at(i).chrom;
+      if (use_chrom.empty() || (use_chrom == reference_strs.at(i).chrom)) {
+	ReadContainer str_container;
+	str_container.AddReadsFromFile(bam_files, reference_strs.at(i));
+	pair<string, int> coord(reference_strs.at(i).chrom, reference_strs.at(i).start);
+	list<AlignedRead> aligned_reads;
+	str_container.GetReadsAtCoord(coord, &aligned_reads);
+	if (aligned_reads.size() > 0) {
+	  if (my_verbose) {
+	    if (reference_strs.at(i).chrom != current_chrom) {
+	      stringstream msg;
+	      msg << "Processing locus " << reference_strs.at(i).chrom;
+	      PrintMessageDieOnError(msg.str(), PROGRESS);
+	      current_chrom = reference_strs.at(i).chrom;
+	    }
 	  }
+	  if (rmdup) {
+	    str_container.RemovePCRDuplicates();
+	  }
+	  genotyper.Genotype(aligned_reads);
 	}
-	if (rmdup) {
-	  str_container.RemovePCRDuplicates();
-	}
-	genotyper.Genotype(aligned_reads);
       }
     }
   }
