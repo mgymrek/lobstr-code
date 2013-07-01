@@ -35,6 +35,7 @@ struct STRRecord {
   int period;
   std::string ref_allele;
   float refcopy;
+  std::string name;
   // list of samples
   vector<std::string> samples;
   int numcalls;
@@ -65,6 +66,7 @@ struct STRRecord {
     ref_allele = "N";
     refcopy = 0;
     samples.clear();
+    name = "";
     numcalls = 0;
     allele1.clear();
     allele2.clear();

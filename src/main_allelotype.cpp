@@ -113,8 +113,6 @@ void show_help() {
     "--mapq <INT>:                  filter reads with mapq scores of more than\n" \
     "                               <INT>.\n" \
     "--max-matedist <INT>:          Filter reads with a mate distance larger than <INT> bp.\n\n"
-    "--exclude-partial:             Do not report any information about partially\n" \
-    "                               spanning reads.\n\n"
     "Additional options\n" \
     "--noweb                        Do not report any user information and parameters to Amazon S3.\n";
   cerr << help;
@@ -131,7 +129,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHROM,
     OPT_COMMAND,
     OPT_DEBUG,
-    OPT_EXCLUDE_PARTIAL,
     OPT_EXCLUDE_POS,
     OPT_HAPLOID,
     OPT_HELP,
@@ -162,7 +159,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chrom", 1, 0, OPT_CHROM},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
-    {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
     {"exclude-pos", 1, 0, OPT_EXCLUDE_POS},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
@@ -192,6 +188,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_ANNOTATION:
       annotation_files_string = string(optarg);
       AddOption("annotation", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
     case OPT_BAM:
       bam_files_string = string(optarg);
       AddOption("bam", string(optarg), true, &user_defined_arguments_allelotyper);
@@ -210,10 +207,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_DEBUG:
       debug = true;
-      break;
-    case OPT_EXCLUDE_PARTIAL:
-      exclude_partial++;
-      AddOption("exclude-partial", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_EXCLUDE_POS:
       exclude_positions_file = string(optarg);
@@ -395,14 +388,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  /* Load annotations */
-  if (!annotation_files_string.empty()) {
-    if (my_verbose) {
-      PrintMessageDieOnError("Loading annotations", PROGRESS);
-    }
-    // TODO
-  }
-
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
 
@@ -421,7 +406,7 @@ int main(int argc, char* argv[]) {
     ReadContainer read_container;
     ReferenceSTR dummy_ref_str;
     dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
-    read_container.AddReadsFromFile(bam_files, exclude_partial, dummy_ref_str);
+    read_container.AddReadsFromFile(bam_files, dummy_ref_str);
     /* Perform pcr dup removal if specified */
     if (rmdup) {
       if (my_verbose) PrintMessageDieOnError("Performing PCR duplicate removal", PROGRESS);
@@ -437,11 +422,21 @@ int main(int argc, char* argv[]) {
   if (command == "classify") {
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
 			output_prefix + ".vcf", samples_list);
+    // Load annotations
+    if (!annotation_files_string.empty()) {
+      vector<string>annotation_files;
+      boost::split(annotation_files, annotation_files_string, boost::is_any_of(","));
+      if (my_verbose) {
+	PrintMessageDieOnError("Loading annotations", PROGRESS);
+      }
+      genotyper.LoadAnnotations(annotation_files);
+    }
+    // Classify allelotypes
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
     std::string current_chrom;
     for (size_t i = 0; i < reference_strs.size(); i++) {
       ReadContainer str_container;
-      str_container.AddReadsFromFile(bam_files, exclude_partial, reference_strs.at(i));
+      str_container.AddReadsFromFile(bam_files, reference_strs.at(i));
       pair<string, int> coord(reference_strs.at(i).chrom, reference_strs.at(i).start);
       list<AlignedRead> aligned_reads;
       str_container.GetReadsAtCoord(coord, &aligned_reads);

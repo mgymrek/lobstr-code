@@ -54,7 +54,6 @@ struct AlignedRead {
   int period;
   int diffFromRef;
   float refCopyNum;
-  int partial;
   int mate;
   bool strand;
   int stitched;
@@ -73,7 +72,6 @@ class ReadContainer {
 
   /* Add reads from a bam file */
   void AddReadsFromFile(const vector<std::string>& bamfiles,
-			bool exclude_partial,
 			const ReferenceSTR& ref_str);
 
   /* Get reads at an STR coordinate */

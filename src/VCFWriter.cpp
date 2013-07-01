@@ -151,7 +151,11 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // POS
   output_stream << str_record.start << "\t";
   // ID
-  output_stream << ".\t";
+  if (str_record.name.empty()) {
+    output_stream << ".\t";
+  } else {
+    output_stream << str_record.name << "\t";
+  }
   // REF
   output_stream << str_record.ref_allele << "\t";
   // ALT

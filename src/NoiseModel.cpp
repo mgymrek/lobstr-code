@@ -157,7 +157,6 @@ void NoiseModel::Train(ReadContainer* read_container) {
     if (HasUniqueMode(aligned_reads, &unique_mode)) {
       for (list<AlignedRead>::const_iterator it2 =
              aligned_reads.begin(); it2 != aligned_reads.end(); it2++) {
-        if (it2->partial) continue;
         if (it2->mapq != 0) continue;
         AlignedRead aread;
         aread.chrom = it2->chrom; aread.msStart = it2->msStart;

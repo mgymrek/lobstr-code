@@ -36,6 +36,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/runtime_parameters.h"
 #include "src/TextFileReader.h"
 #include "src/TextFileWriter.h"
+#include "src/ZippedTextFileReader.h"
 
 using namespace std;
 const float SMALL_CONST = 1e-10;
@@ -59,6 +60,55 @@ Genotyper::Genotyper(NoiseModel* _noise_model,
 
 Genotyper::~Genotyper() {}
 
+void Genotyper::LoadAnnotations(const vector<std::string> annot_files) {
+  string line;
+  for (size_t i = 0; i < annot_files.size(); i++) {
+    const string& vcf_file = annot_files.at(i);
+    if (my_verbose) {
+      PrintMessageDieOnError("Loading annotations from file " + vcf_file, PROGRESS);
+    }
+    // First check that the VCF is zipped and indexed
+    if (!fexists(vcf_file.c_str())) {
+      PrintMessageDieOnError("File " + vcf_file + " does not exist", ERROR);
+    }
+    if (vcf_file.find(".vcf.gz") == std::string::npos) {
+      PrintMessageDieOnError("File " + vcf_file + " is not a zipped VCF file", ERROR);
+    }
+    const string index_file = vcf_file + ".tbi";
+    if (!fexists(index_file.c_str())) {
+      PrintMessageDieOnError("VCF file " + vcf_file + " is not indexed", ERROR);
+    }
+    ZippedTextFileReader vcfReader(annot_files.at(i));
+    while (vcfReader.GetNextLine(&line)) {
+      if (!line.empty()) {
+	if (line[0] != '#') {
+	  STRAnnotation annot;
+	  // Get locus info
+	  vector<string> items;
+	  split(line, '\t', items);
+	  annot.chrom = items[0];
+	  annot.msStart = atoi(items[1].c_str());
+	  annot.name = items[2];
+	  int ref_len = static_cast<int>(items[3].size());
+	  // Get alt alleles
+	  string alt_alleles_string = items[4];
+	  vector<string> alt_alleles;
+	  split(alt_alleles_string, ',', alt_alleles);
+	  annot.alleles.resize(alt_alleles.size());
+	  for (size_t j = 0; j < alt_alleles.size(); j++) {
+	    int diff = static_cast<int>(alt_alleles.at(j).size())-ref_len;
+	    annot.alleles.at(j) = diff;
+	  }
+	  if (my_verbose) {
+	    PrintMessageDieOnError("Loading annotation: " + annot.name, PROGRESS);
+	  }
+	  annotations[pair<string,int>(annot.chrom, annot.msStart)] = annot;
+	}
+      }
+    }
+  }
+}
+
 bool Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
 			   vector<int>* alleles) {
   if (aligned_reads.size() == 0) return false;
@@ -72,6 +122,21 @@ bool Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
     }
   }
   return true;
+}
+
+void Genotyper::CleanAllelesList(int reflen, vector<int>* alleles) {
+  vector<int> alleles_to_keep(0);
+  for (vector<int>::const_iterator it = alleles->begin();
+       it != alleles->end(); it++) {
+    int total_len = reflen + (*it);
+    if (total_len > 0) {
+      alleles_to_keep.push_back(*it);
+    } else {
+      PrintMessageDieOnError("Attempt to load invalid allele size", WARNING);
+    }
+  }
+  alleles->resize(alleles_to_keep.size());
+  *alleles = alleles_to_keep;
 }
 
 bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
@@ -101,7 +166,6 @@ float Genotyper::CalcLogLik(int a, int b,
   float loglik = 0;
   for (list<AlignedRead>::const_iterator
          it = aligned_reads.begin(); it != aligned_reads.end(); it++) {
-    if ((*it).partial == 1 || (*it).mate) continue;
     int diff = (*it).diffFromRef;
     int length = (*it).msEnd-(*it).msStart + diff;
     pair<string, int> coord((*it).chrom, (*it).msStart);
@@ -316,8 +380,25 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   }
   if (str_record.repseq.empty()) return;
 
-  // Determine allele range
-  if (!GetAlleles(read_list, &str_record.alleles_to_include)) {return;}
+  // Check if in our list of annotations
+  bool is_annotated = false;
+  if (annotations.find(pair<string,int>(str_record.chrom, str_record.start)) !=
+      annotations.end()) {
+    is_annotated = true;
+    const STRAnnotation annot = annotations[pair<string,int>(str_record.chrom, str_record.start)];
+    if (my_verbose) {
+      PrintMessageDieOnError("Processing annotated locus " + annot.name, PROGRESS);
+    }
+    str_record.name = annot.name;
+    str_record.alleles_to_include = annot.alleles;
+  } else {
+    // Determine allele range
+    if (!GetAlleles(read_list, &str_record.alleles_to_include)) {return;}
+  }
+
+  // Clean alleles list to remove things with length < 0
+  CleanAllelesList(str_record.stop - str_record.start,
+		   &str_record.alleles_to_include);
 
   // Divide reads for each sample
   vector<list<AlignedRead> > sample_reads;
@@ -331,24 +412,26 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     ProcessLocus(sample_reads.at(i), &str_record, is_haploid);
   }
   // Reset alleles to include based on what we called
-  str_record.alleles_to_include.clear();
-  for (size_t i = 0; i < str_record.samples.size(); i++) {
-    int allele1 = str_record.allele1.at(i);
-    int allele2 = str_record.allele2.at(i);
-    // allele 1
-    if (allele1 != 0) {
-      if (std::find(str_record.alleles_to_include.begin(),
-		    str_record.alleles_to_include.end(),
-		    allele1) == str_record.alleles_to_include.end()) {
-	str_record.alleles_to_include.push_back(allele1);
+  if (!is_annotated) {
+    str_record.alleles_to_include.clear();
+    for (size_t i = 0; i < str_record.samples.size(); i++) {
+      int allele1 = str_record.allele1.at(i);
+      int allele2 = str_record.allele2.at(i);
+      // allele 1
+      if (allele1 != 0) {
+	if (std::find(str_record.alleles_to_include.begin(),
+		      str_record.alleles_to_include.end(),
+		      allele1) == str_record.alleles_to_include.end()) {
+	  str_record.alleles_to_include.push_back(allele1);
+	}
       }
-    }
-    // allele 2
-    if (allele2 != 0) {
-      if (std::find(str_record.alleles_to_include.begin(),
-		    str_record.alleles_to_include.end(),
-		    allele2) == str_record.alleles_to_include.end()) {
-	str_record.alleles_to_include.push_back(allele2);
+      // allele 2
+      if (allele2 != 0) {
+	if (std::find(str_record.alleles_to_include.begin(),
+		      str_record.alleles_to_include.end(),
+		      allele2) == str_record.alleles_to_include.end()) {
+	  str_record.alleles_to_include.push_back(allele2);
+	}
       }
     }
   }

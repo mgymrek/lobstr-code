@@ -188,10 +188,13 @@ void GetSamplesFromBamFiles(const vector<string>& bamfiles,
     for (BamTools::SamReadGroupIterator it = read_groups.Begin();
 	 it != read_groups.End(); it++) {
       const BamTools::SamReadGroup& rg = *it;
+      string rg_sample;
       if (!rg.HasSample()) {
-	PrintMessageDieOnError("No sample in read group for " + bamfile, ERROR);
+	PrintMessageDieOnError("No sample in read group for " + bamfile, WARNING);
+	rg_sample = rg.ID;
+      } else {
+	rg_sample = rg.Sample;
       }
-      string rg_sample = rg.Sample;
       if (my_verbose) {
 	PrintMessageDieOnError("Adding sample " + rg_sample, PROGRESS);
       }

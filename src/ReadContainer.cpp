@@ -36,7 +36,6 @@ using namespace std;
 ReadContainer::ReadContainer() {}
 
 void ReadContainer::AddReadsFromFile(const vector<string>& bamfiles,
-                                     bool exclude_partial,
 				     const ReferenceSTR& ref_str) {
   string bamfile = "";
   for (int i = 0; i < bamfiles.size(); i++) {
@@ -117,10 +116,6 @@ void ReadContainer::AddReadsFromFile(const vector<string>& bamfiles,
       if (!aln.GetTag("XR", aligned_read.repseq)) {
         aligned_read.repseq="";
       }
-      // get partial
-      if (!aln.GetTag("XP", aligned_read.partial)) {
-        aligned_read.partial = 0;
-      }
       // get if mate pair
       if (aln.IsSecondMate()) {
         aligned_read.mate = 1;
@@ -152,16 +147,6 @@ void ReadContainer::AddReadsFromFile(const vector<string>& bamfiles,
         cigar_list.ResetString();
         GenerateCorrectCigar(&cigar_list, aln.QueryBases,
                              &added_s, &cigar_had_s);
-        if (added_s) {
-          aligned_read.partial = 1;
-        }
-        // added 08/10/12 to get rid of reads clipped
-        // at ends that incorrectly return ref allele
-        // should change to make sure aligned portion
-        // doesn't end too close to str end
-        if (cigar_had_s) {
-          aligned_read.partial = 1;
-        }
         aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);
       }
       // apply filters
@@ -171,7 +156,6 @@ void ReadContainer::AddReadsFromFile(const vector<string>& bamfiles,
       if (abs(aligned_read.diffFromRef) > max_diff_ref) continue;
       if (aligned_read.mapq > max_mapq) continue;
       if (aligned_read.matedist > max_matedist) continue;
-      if (aligned_read.partial & exclude_partial) continue;
       if (aligned_read.mate) continue;
 
       // get ref copy num

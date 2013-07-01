@@ -34,6 +34,13 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+struct STRAnnotation {
+  std::string chrom;
+  int msStart;
+  std::string name;
+  std::vector<int> alleles;
+};
+
 /*
   Class to determine allelotypes at each locus
  */
@@ -48,6 +55,9 @@ class Genotyper {
 	    const std::vector<std::string>& _samples);
   ~Genotyper();
 
+  /* Load annotations to use */
+  void LoadAnnotations(const vector<std::string> annot_files);
+
   /* determine allelotypes and write to file */
   void Genotype(const list<AlignedRead>& read_list);
 
@@ -59,6 +69,9 @@ class Genotyper {
   /* Get list of alleles to use */
   bool GetAlleles(const std::list<AlignedRead>& aligned_reads,
 		  std::vector<int>* alleles);
+
+  /* Get rid of alleles with length < 0*/
+  void CleanAllelesList(int reflen, std::vector<int>* alleles);
 
   /* Divide reads to one list per sample */
   bool GetReadsPerSample(const std::list<AlignedRead>& aligned_reads,
@@ -89,6 +102,9 @@ class Genotyper {
 
   /* List of samples */
   std::vector<std::string> samples;
+
+  /* annotations */
+  std::map<pair<std::string, int>, STRAnnotation> annotations;
 
   /* File writers */
   VCFWriter* vcfWriter;
