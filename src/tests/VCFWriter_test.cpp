@@ -28,7 +28,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 CPPUNIT_TEST_SUITE_REGISTRATION(VCFWriterTest);
 
 void VCFWriterTest::setUp() {
-  _vcf_writer = new VCFWriter("/dev/null");
+  vector<string> samples;
+  _vcf_writer = new VCFWriter("/dev/null", samples);
 }
 
 void VCFWriterTest::tearDown() {

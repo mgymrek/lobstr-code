@@ -29,10 +29,14 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 #include "src/cigar.h"
+#include "src/ReferenceSTR.h"
 #include "src/api/BamReader.h"
+#include "src/api/BamMultiReader.h"
 
 using namespace std;
 using BamTools::BamReader;
+using BamTools::BamMultiReader;
+using BamTools::BamRegion;
 using BamTools::BamAlignment;
 using BamTools::SamHeader;
 using BamTools::RefData;
@@ -43,6 +47,7 @@ struct AlignedRead {
   std::string chrom;
   int msStart;
   int msEnd;
+  std::string read_group; // identifies a unique sample
   int read_start;
   std::string nucleotides;
   std::string qualities;
@@ -64,11 +69,15 @@ struct AlignedRead {
  */
 class ReadContainer {
  public:
-  ReadContainer();
+  ReadContainer(vector<std::string> filenames);
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(vector<std::string> bamfiles);
+  void AddReadsFromFile(const ReferenceSTR& ref_str);
+
+  /* Get reads at an STR coordinate */
+  void GetReadsAtCoord(const std::pair<std::string, int>& coord,
+		       std::list<AlignedRead>* reads);
 
   /* Remove pcr duplicates */
   void RemovePCRDuplicates();
@@ -93,7 +102,10 @@ class ReadContainer {
   int GetSTRAllele(const AlignedRead& aligned_read,
                    const CIGAR_LIST& cigar_list);
 
-  BamTools::BamReader reader;
+  /* Bam file reader */
+  BamTools::BamMultiReader reader;
+  BamTools::RefVector references;
+  map<std::string, int> chrom_to_refid;
 };
 
 #endif  // SRC_READCONTAINER_H_

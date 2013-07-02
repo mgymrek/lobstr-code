@@ -33,9 +33,12 @@ const int MISSING = -10000;
 
 class VCFWriter : public TextFileWriter {
  public:
-  explicit VCFWriter(const std::string& filename);
+  explicit VCFWriter(const std::string& filename,
+		     const std::vector<std::string>& samples);
   virtual ~VCFWriter();
   void WriteRecord(const STRRecord& str_record);
+  void WriteSample(const STRRecord& str_record, size_t sample_index,
+		   std::map<int,int> allele_to_index);
   void LoadPositionsToExclude();
   std::string GetSTRVar(const std::string& refseq,
                         const std::string& ref_repseq,

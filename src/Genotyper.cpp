@@ -33,11 +33,10 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/common.h"
 #include "src/Genotyper.h"
-#include "src/GenotypeTabWriter.h"
 #include "src/runtime_parameters.h"
 #include "src/TextFileReader.h"
 #include "src/TextFileWriter.h"
-#include "src/VCFWriter.h"
+#include "src/ZippedTextFileReader.h"
 
 using namespace std;
 const float SMALL_CONST = 1e-10;
@@ -48,54 +47,122 @@ const float PRIOR_PSEUDOCOUNT = 0.001;
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
                      map<pair<string,int>, string>* _ref_nucleotides,
-                     map<pair<string,int>, string>* _ref_repseq) {
+                     map<pair<string,int>, string>* _ref_repseq,
+		     const string& vcf_file,
+		     const vector<string>& _samples,
+		     const map<string,string>& _rg_id_to_sample) {
   noise_model = _noise_model;
   haploid_chroms = _haploid_chroms;
   ref_nucleotides = _ref_nucleotides;
   ref_repseq = _ref_repseq;
-  use_known_alleles = false;
+  samples = _samples;
+  rg_id_to_sample = _rg_id_to_sample;
+  vcfWriter = new VCFWriter(vcf_file, samples);
 }
 
 Genotyper::~Genotyper() {}
 
-void Genotyper::LoadPriors(const std::string& filename) {
-  use_known_alleles = true;
-  TextFileReader priorfile(filename);
+void Genotyper::LoadAnnotations(const vector<std::string> annot_files) {
   string line;
-  while (priorfile.GetNextLine(&line)) {
-    // get locus
-    vector<string> items;
-    split(line, '\t', items);
-    if (items.size() == 0) break;
-    if (items.size() != 4) {
-      PrintMessageDieOnError("Error, prior file has incorrect number of columns", ERROR);
+  for (size_t i = 0; i < annot_files.size(); i++) {
+    const string& vcf_file = annot_files.at(i);
+    if (my_verbose) {
+      PrintMessageDieOnError("Loading annotations from file " + vcf_file, PROGRESS);
     }
-    string chrom = items[0];
-    int start = atoi(items[1].c_str());
-    pair<string, int> locus = pair<string,int>(chrom, start);
-    // get allele freqs for each
-    map<int, float> allele_to_freq;
-    string allele_freq_string = items[3];
-    vector<string> alleles;
-    split(allele_freq_string, ';', alleles);
-    float total = 0;
-    for (size_t i = 0; i < alleles.size(); i++) {
-      vector<string> astring;
-      split(alleles.at(i), ':', astring);
-      int allele = atoi(astring[0].c_str());
-      float freq = atof(astring[1].c_str());
-      allele_to_freq[allele] = freq+PRIOR_PSEUDOCOUNT;
-      total += freq;
+    // First check that the VCF is zipped and indexed
+    if (!fexists(vcf_file.c_str())) {
+      PrintMessageDieOnError("File " + vcf_file + " does not exist", ERROR);
     }
-    // normalize to make sure we have frequencies
-    for (map<int, float>::iterator it = allele_to_freq.begin();
-         it != allele_to_freq.end(); it++) {
-      allele_to_freq[it->first] = it->second/total;
+    if (vcf_file.find(".vcf.gz") == std::string::npos) {
+      PrintMessageDieOnError("File " + vcf_file + " is not a zipped VCF file", ERROR);
     }
-    // insert into allele freqs
-    allele_frequencies_per_locus[locus] = allele_to_freq;
+    const string index_file = vcf_file + ".tbi";
+    if (!fexists(index_file.c_str())) {
+      PrintMessageDieOnError("VCF file " + vcf_file + " is not indexed", ERROR);
+    }
+    ZippedTextFileReader vcfReader(annot_files.at(i));
+    while (vcfReader.GetNextLine(&line)) {
+      if (!line.empty()) {
+	if (line[0] != '#') {
+	  STRAnnotation annot;
+	  // Get locus info
+	  vector<string> items;
+	  split(line, '\t', items);
+	  annot.chrom = items[0];
+	  annot.msStart = atoi(items[1].c_str());
+	  annot.name = items[2];
+	  int ref_len = static_cast<int>(items[3].size());
+	  // Get alt alleles
+	  string alt_alleles_string = items[4];
+	  vector<string> alt_alleles;
+	  split(alt_alleles_string, ',', alt_alleles);
+	  annot.alleles.resize(alt_alleles.size());
+	  for (size_t j = 0; j < alt_alleles.size(); j++) {
+	    int diff = static_cast<int>(alt_alleles.at(j).size())-ref_len;
+	    annot.alleles.at(j) = diff;
+	  }
+	  if (my_verbose) {
+	    PrintMessageDieOnError("Loading annotation: " + annot.name, PROGRESS);
+	  }
+	  annotations[pair<string,int>(annot.chrom, annot.msStart)] = annot;
+	}
+      }
+    }
   }
-  return;
+}
+
+bool Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
+			   vector<int>* alleles) {
+  if (aligned_reads.size() == 0) return false;
+  alleles->clear();
+  alleles->push_back(0);
+  for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
+       it != aligned_reads.end(); ++it) {
+    if (it->mate) continue;
+    if (it->diffFromRef != 0 && std::find(alleles->begin(), alleles->end(), it->diffFromRef) == alleles->end()) {
+      alleles->push_back(it->diffFromRef);
+    }
+  }
+  return true;
+}
+
+void Genotyper::CleanAllelesList(int reflen, vector<int>* alleles) {
+  vector<int> alleles_to_keep(0);
+  for (vector<int>::const_iterator it = alleles->begin();
+       it != alleles->end(); it++) {
+    int total_len = reflen + (*it);
+    if (total_len > 0) {
+      alleles_to_keep.push_back(*it);
+    } else {
+      PrintMessageDieOnError("Attempt to load invalid allele size", WARNING);
+    }
+  }
+  alleles->resize(alleles_to_keep.size());
+  *alleles = alleles_to_keep;
+}
+
+bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
+				  const vector<string>& samples,
+				  const map<string,string>& rg_id_to_sample,
+				  vector<list<AlignedRead> >* sample_reads) {
+  sample_reads->clear();
+  // Get map of sample->index
+  map<string,size_t> sample_to_index;
+  for (size_t i = 0; i < samples.size(); i++) {
+    sample_to_index[samples[i]] = i;
+    sample_reads->push_back(list<AlignedRead>(0));
+  }
+  // Go through each read and add to appropriate list
+  for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
+       it != aligned_reads.end(); it++) {
+    if (rg_id_to_sample.find(it->read_group) !=
+	rg_id_to_sample.end()) {
+      string sample = rg_id_to_sample.at(it->read_group);
+      int i = sample_to_index[sample];
+      sample_reads->at(i).push_back(*it);
+    }
+  }
+  return true;
 }
 
 float Genotyper::CalcLogLik(int a, int b,
@@ -106,7 +173,6 @@ float Genotyper::CalcLogLik(int a, int b,
   float loglik = 0;
   for (list<AlignedRead>::const_iterator
          it = aligned_reads.begin(); it != aligned_reads.end(); it++) {
-    if ((*it).mate) continue;
     int diff = (*it).diffFromRef;
     int length = (*it).msEnd-(*it).msStart + diff;
     pair<string, int> coord((*it).chrom, (*it).msStart);
@@ -125,68 +191,27 @@ float Genotyper::CalcLogLik(int a, int b,
 }
 
 void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
-                        const map<int, float>& prior_freqs,
+			map<int,int> spanning_reads,
                         bool haploid, STRRecord* str_record) {
-  // Get all possible alleles and set other info while we're at it
-  float allele;
-  set<int> possible;
-  for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
-       it != aligned_reads.end(); ++it) {
-    if (it->mate) continue;
-    allele = it->diffFromRef;
-    possible.insert((*it).diffFromRef);
-    str_record->coverage++;
-    str_record->spanning_reads[allele]++;
-    if (it->stitched) str_record->num_stitched++;
-  }
-  if (str_record->coverage == 0) {
-    return;
-  }
-
-  // Do grid search over (min-k*period, max+k*period)
-  int min_allele = *min_element(possible.begin(), possible.end()) - PADK*str_record->period;
-  int max_allele = *max_element(possible.begin(), possible.end()) + PADK*str_record->period;
-  // update range based on priors if available.
-  // Update alleles to include
-  // Add 0 right away at the front
-  str_record->alleles_to_include.insert
-    (str_record->alleles_to_include.begin(), 0);
-  if (!prior_freqs.empty()) {
-    for (map<int,float>::const_iterator it = prior_freqs.begin();
-         it != prior_freqs.end(); it++) {
-      if (it->first != 0) { // we already added 0
-        // check that the total allele length will be at least 1 nuc
-        if (str_record->refcopy * str_record->period > -1* it->first) {
-          str_record->alleles_to_include.push_back(it->first);
-        } else {
-          stringstream msg;
-          msg << "Attempted to load invalid allele size at "
-              << str_record->chrom << ":" << str_record->start;
-          PrintMessageDieOnError(msg.str(), WARNING);
-        }
-      }
-    }
-  } else if (!use_known_alleles) {
-    for (int i = min_allele; i <= max_allele; i++) {
-      if (i != 0) {
-        if (str_record->refcopy * str_record->period > -1*i) {
-          str_record->alleles_to_include.push_back(i);
-        } else {
-          stringstream msg;
-          msg << "Attempted to load invalid allele size at "
-              << str_record->chrom << ":" << str_record->start;
-          PrintMessageDieOnError(msg.str(), WARNING);
-        }
-      }
-    }
-  }
-
   // Get all likelihoods, keep track of max
-  float sum_all_posterior = SMALL_CONST; // sum P(R|G)P(G)
   float sum_all_likelihoods = SMALL_CONST; // sum P(R|G)
-  // Keep track of numerators for marginal likelihood and posteriors
+  // Keep track of numerators for marginal likelihood
   map<int,float> marginal_lik_score_numerator; // sum P(R|G) by allele
-  map<int,float> marginal_posterior_numerator; // sum P(R|G)P(G) by allele
+
+  // Things we will add to str record vectors
+  map<pair<int,int>, float> likelihood_grid;
+  int allele1 = MISSING;
+  int allele2 = MISSING;
+  float ref_log_lik = -1000000;
+  float prob_ref = 0;
+  float max_log_lik = -1000000;
+  float max_lik_score = 0;
+  float allele1_marginal_lik_score = 0;
+  float allele2_marginal_lik_score = 0;
+  int coverage = aligned_reads.size();
+  int conflicting = 0;
+  int agreeing = 0;
+
   for (size_t i = 0; i < str_record->alleles_to_include.size(); i++) {
     for (size_t j = i; j < str_record->alleles_to_include.size(); j++) {
       pair<int, int> allelotype(str_record->alleles_to_include.at(i),
@@ -200,7 +225,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
                                    aligned_reads, str_record->period,
                                    &counta, &countb);
       // Insert likelihood to grid
-      str_record->likelihood_grid.insert
+      likelihood_grid.insert
         (pair<pair<int,int>,float>(allelotype, currScore));
       // Insert het freq into grid
       float hetfreq = 1.0;
@@ -215,77 +240,128 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
       }
       // But, include its score in the denominator
       // add P(R|G)P(G) = 10^(log(P(R|G))+log(P(G)))
-      float pg = GetPrior(allelotype.first, allelotype.second, prior_freqs);
-      float posterior_term = pow(10, (currScore+log10(pg)));
       float likelihood_term = pow(10, currScore);
-      sum_all_posterior += posterior_term;
       sum_all_likelihoods += likelihood_term;
-      marginal_posterior_numerator[allelotype.first] += posterior_term;
       marginal_lik_score_numerator[allelotype.first] += likelihood_term;
       if (allelotype.first != allelotype.second) {
-        marginal_posterior_numerator[allelotype.second] += posterior_term;
         marginal_lik_score_numerator[allelotype.second] += likelihood_term;
       }
 
       // update ML allelotype, must have include_score true
-      if (include_score && currScore > str_record->max_log_lik &&
+      if (debug) {
+	stringstream msg;
+	msg << "[Genotyper.cpp]: " << currScore << " " << max_log_lik << " "
+	    << allelotype.first << "," << allelotype.second;
+	PrintMessageDieOnError(msg.str(), DEBUG);
+      }
+      if (include_score && currScore > max_log_lik &&
           hetfreq >= min_het_freq) {
-        str_record->max_log_lik = currScore;
-        str_record->allele1 = allelotype.first;
-        str_record->allele2 = allelotype.second;
+        max_log_lik = currScore;
+        allele1 = allelotype.first;
+        allele2 = allelotype.second;
+      }
+      if (allele1 == 0 && allele2 == 0) {
+	ref_log_lik = currScore;
       }
     }
   }
 
   // Get scores
-  str_record->posterior_prob =
-    pow(10,str_record->max_log_lik)*
-    GetPrior(str_record->allele1, str_record->allele2, prior_freqs)/
-    sum_all_posterior;
-  str_record->max_lik_score =
-    pow(10,str_record->max_log_lik)/sum_all_likelihoods;
-  str_record->allele1_marginal_lik_score =
-    marginal_lik_score_numerator[str_record->allele1]/
+  max_lik_score =
+    pow(10,max_log_lik)/sum_all_likelihoods;
+  allele1_marginal_lik_score =
+    marginal_lik_score_numerator[allele1]/
     sum_all_likelihoods;
-  str_record->allele2_marginal_lik_score =
-    marginal_lik_score_numerator[str_record->allele2]/
+  allele2_marginal_lik_score =
+    marginal_lik_score_numerator[allele2]/
     sum_all_likelihoods;
-  str_record->allele1_marginal_posterior_prob =
-    marginal_posterior_numerator[str_record->allele1]/
-    sum_all_posterior;
-  str_record->allele2_marginal_posterior_prob =
-    marginal_posterior_numerator[str_record->allele2]/
-    sum_all_posterior;
-  
+  prob_ref = ref_log_lik - log10(sum_all_likelihoods);
+
   // Get agreeing/conflicting
-  str_record->agreeing =
-    str_record->spanning_reads[str_record->allele1];
-  if (str_record->allele1 != str_record->allele2) {
-    str_record->agreeing += str_record->spanning_reads[str_record->allele2];
+  agreeing = spanning_reads[allele1];
+  if (allele1 != allele2) {
+    agreeing += spanning_reads[allele2];
   }
-  str_record->conflicting =
-    str_record->coverage -
-    str_record->agreeing;
+  conflicting = coverage - agreeing;
+
+  // Add things to STRRecord
+  if (coverage != 0) {
+    str_record->numcalls++;
+  }
+  str_record->allele1.push_back(allele1);
+  str_record->allele2.push_back(allele2);
+  str_record->coverage.push_back(coverage);
+  str_record->prob_ref.push_back(prob_ref);
+  str_record->max_log_lik.push_back(max_log_lik);
+  str_record->max_lik_score.push_back(max_lik_score);
+  str_record->allele1_marginal_lik_score.push_back(allele1_marginal_lik_score);
+  str_record->allele2_marginal_lik_score.push_back(allele2_marginal_lik_score);
+  str_record->conflicting.push_back(conflicting);
+  str_record->agreeing.push_back(agreeing);
+  str_record->likelihood_grid.push_back(likelihood_grid);
+  return;
 }
 
-float Genotyper::GetPrior(int allele1, int allele2,
-                          const map<int, float>& prior_freqs) {
-  if (prior_freqs.empty()) {
-    return 1;
+bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
+                             STRRecord* str_record, bool is_haploid) {
+  int num_stitched = 0;
+  map<int,int> spanning_reads;
+  for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
+       it != aligned_reads.end(); it++) {
+    const AlignedRead& ar = *it;
+    if (ar.stitched) num_stitched++;
+    spanning_reads[ar.diffFromRef]++;
+  }
+  str_record->num_stitched.push_back(num_stitched);
+
+  // Get allelotype call and scores
+  FindMLE(aligned_reads, spanning_reads, is_haploid, str_record);
+  if (debug) {
+    stringstream msg;
+    msg << "[Genotyper.cpp]: " << str_record->allele1.back() << "," << str_record->allele2.back();
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
+
+  // Get read strings
+  stringstream readstring;
+  if (aligned_reads.size()  == 0) {
+    readstring << "NA";
   } else {
-    if (prior_freqs.find(allele1) != prior_freqs.end() &&
-        prior_freqs.find(allele2) != prior_freqs.end()) {
-      return prior_freqs.at(allele1)*prior_freqs.at(allele2);
-    } else {
-      return DEFAULT_PRIOR;
+    for (map<int, int>::const_iterator vi = spanning_reads.begin();
+         vi != spanning_reads.end(); vi++) {
+      if (vi != spanning_reads.begin()) {
+        readstring << ";";
+      }
+      readstring << vi->first << "|" << vi->second;
     }
   }
+  str_record->readstring.push_back(readstring.str());
+  // set allele string, deal with low scores
+  stringstream allele1_string;
+  if (str_record->allele1.back() == MISSING || str_record->allele2.back() == MISSING) {
+    allele1_string << "NA";
+  } else {
+    allele1_string << str_record->allele1.back();
+  }
+  stringstream allele2_string;
+  if (str_record->allele1.back() == MISSING || str_record->allele2.back() == MISSING) {
+    allele2_string << "NA";
+  } else {
+    allele2_string << str_record->allele2.back();
+  }
+  str_record->allele1_string.push_back(allele1_string.str());
+  str_record->allele2_string.push_back(allele2_string.str());
+  return true;
 }
+  
+void Genotyper::Genotype(const list<AlignedRead>& read_list) {
+  STRRecord str_record;
+  str_record.Reset();
+  // set samples
+  str_record.samples = samples;
+  // Pull out the chrom and start_coord
+  string chrom = read_list.front().chrom;
 
-bool Genotyper::ProcessLocus(const std::string chrom,
-                             const int str_coord,
-                             const std::list<AlignedRead>& aligned_reads,
-                             STRRecord* str_record) {
   // Deal with haploid
   bool is_haploid = false;
   if ((find(haploid_chroms.begin(), haploid_chroms.end(), chrom) != haploid_chroms.end() ||
@@ -294,84 +370,88 @@ bool Genotyper::ProcessLocus(const std::string chrom,
   }
 
   // Get STR properties
-  if (aligned_reads.size() == 0) return false;
-  str_record->period = aligned_reads.front().period;
-  str_record->chrom = chrom;
-  str_record->start = aligned_reads.front().msStart;
-  str_record->stop = aligned_reads.front().msEnd;
-  str_record->repseq = aligned_reads.front().repseq;
-  str_record->refcopy = static_cast<float>((aligned_reads.front().msEnd-aligned_reads.front().msStart))/
-    static_cast<float>(aligned_reads.front().period);
+  if (read_list.size() == 0) return;
+  str_record.period = read_list.front().period;
+  str_record.chrom = chrom;
+  if (!(use_chrom.empty() ||
+	(!use_chrom.empty() && use_chrom == read_list.front().chrom))) {return;}
+  str_record.start = read_list.front().msStart;
+  str_record.stop = read_list.front().msEnd;
+  str_record.repseq = read_list.front().repseq;
+  str_record.refcopy = static_cast<float>((read_list.front().msEnd-
+					   read_list.front().msStart))/
+    static_cast<float>(read_list.front().period);
   if (ref_nucleotides->find
-      (pair<string,int>(str_record->chrom, str_record->start))
+      (pair<string,int>(str_record.chrom, str_record.start))
       != ref_nucleotides->end()) {
-    str_record->ref_allele = ref_nucleotides->at
-      (pair<string,int>(str_record->chrom, str_record->start));
-    str_record->repseq_in_ref = ref_repseq->at
-      (pair<string,int>(str_record->chrom, str_record->start));
+    str_record.ref_allele = ref_nucleotides->at
+      (pair<string,int>(str_record.chrom, str_record.start));
+    str_record.repseq_in_ref = ref_repseq->at
+      (pair<string,int>(str_record.chrom, str_record.start));
   } else {
-    return false;
+    return;
   }
-  if (str_record->repseq.empty()) return false;
-  // Get known alleles
-  map<int, float> prior_freqs;
-  if (use_known_alleles) {
-    pair<string, int> locus(str_record->chrom, str_record->start);
-    if (allele_frequencies_per_locus.find(locus) != allele_frequencies_per_locus.end()) {
-      prior_freqs = allele_frequencies_per_locus[locus]; 
-    } 
-  }
-  // Get allelotype call and scores
-  FindMLE(aligned_reads, prior_freqs, is_haploid, str_record);
-  // Get read strings
-  stringstream readstring;
-  if (str_record->coverage  == 0) {
-    readstring << "NA";
-  } else {
-    for (map<int, int>::const_iterator vi = str_record->spanning_reads.begin();
-         vi != str_record->spanning_reads.end(); vi++) {
-      if (vi != str_record->spanning_reads.begin()) {
-        readstring << ";";
-      }
-      readstring << vi->first << "|" << vi->second;
+  if (str_record.repseq.empty()) return;
+
+  // Check if in our list of annotations
+  bool is_annotated = false;
+  if (annotations.find(pair<string,int>(str_record.chrom, str_record.start)) !=
+      annotations.end()) {
+    is_annotated = true;
+    const STRAnnotation annot = annotations[pair<string,int>(str_record.chrom, str_record.start)];
+    if (my_verbose) {
+      PrintMessageDieOnError("Processing annotated locus " + annot.name, PROGRESS);
     }
-  }
-  str_record->readstring = readstring.str();
-  // set allele string, deal with low scores
-  stringstream allele1_string;
-  if (str_record->allele1 == MISSING || str_record->allele2 == MISSING) {
-    allele1_string << "NA";
+    str_record.name = annot.name;
+    str_record.alleles_to_include = annot.alleles;
   } else {
-    allele1_string << str_record->allele1;
+    // Determine allele range
+    if (!GetAlleles(read_list, &str_record.alleles_to_include)) {return;}
   }
-  stringstream allele2_string;
-  if (str_record->allele1 == MISSING || str_record->allele2 == MISSING) {
-    allele2_string << "NA";
-  } else {
-    allele2_string << str_record->allele2;
+
+  // Clean alleles list to remove things with length < 0
+  CleanAllelesList(str_record.stop - str_record.start,
+		   &str_record.alleles_to_include);
+
+  // Divide reads for each sample
+  vector<list<AlignedRead> > sample_reads;
+  if (!GetReadsPerSample(read_list, samples, rg_id_to_sample, &sample_reads)) {return;}
+
+  // Process each sample
+  for (size_t i = 0; i < samples.size(); i++) {
+    if (debug) {
+      PrintMessageDieOnError("[Genotyper.cpp]: Processing sample " + samples.at(i), DEBUG);
+    }
+    ProcessLocus(sample_reads.at(i), &str_record, is_haploid);
   }
-  str_record->allele1_string = allele1_string.str();
-  str_record->allele2_string = allele2_string.str();
-  return true;
-}
-  
-void Genotyper::Genotype(const ReadContainer& read_container,
-                         const std::string& output_file,
-                         const std::string& vcf_file) {
-  GenotypeTabWriter gWriter(output_file);
-  VCFWriter vcfWriter(vcf_file);
-  STRRecord str_record;
-  // collect info on each locus
-  for (map<pair<string, int>, list<AlignedRead> >::const_iterator
-         it = read_container.aligned_str_map_.begin();
-       it != read_container.aligned_str_map_.end(); it++) {
-    str_record.Reset();
-    if (use_chrom.empty() || (!use_chrom.empty() && use_chrom == it->first.first)) {
-      if (ProcessLocus(it->first.first, it->first.second,
-                       it->second, &str_record)) {
-        if (generate_tab) gWriter.WriteRecord(str_record);
-        vcfWriter.WriteRecord(str_record);
+  // Reset alleles to include based on what we called
+  if (!is_annotated) {
+    str_record.alleles_to_include.clear();
+    for (size_t i = 0; i < str_record.samples.size(); i++) {
+      int allele1 = str_record.allele1.at(i);
+      int allele2 = str_record.allele2.at(i);
+      // allele 1
+      if (allele1 != 0) {
+	if (std::find(str_record.alleles_to_include.begin(),
+		      str_record.alleles_to_include.end(),
+		      allele1) == str_record.alleles_to_include.end()) {
+	  str_record.alleles_to_include.push_back(allele1);
+	}
+      }
+      // allele 2
+      if (allele2 != 0) {
+	if (std::find(str_record.alleles_to_include.begin(),
+		      str_record.alleles_to_include.end(),
+		      allele2) == str_record.alleles_to_include.end()) {
+	  str_record.alleles_to_include.push_back(allele2);
+	}
       }
     }
+  }
+  std::sort(str_record.alleles_to_include.begin(),
+	    str_record.alleles_to_include.end());
+  str_record.alleles_to_include.insert(str_record.alleles_to_include.begin(), 0);
+  if (str_record.numcalls > 0) {
+    vcfWriter->WriteRecord(str_record);
   }
 }

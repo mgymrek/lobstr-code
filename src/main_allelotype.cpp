@@ -34,6 +34,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/linear.h"
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
+#include "src/ReferenceSTR.h"
 #include "src/runtime_parameters.h"
 
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
@@ -69,7 +70,8 @@ void show_help() {
     "--command [train|classify]:     (REQUIRED) specify which of the tasks\n" \
     "                                described above to perform\n" \
     "--bam <f1.bam,[f2.bam, ...]>:   (REQUIRED) comma-separated list\n" \
-    "                                of bam files to analyze\n" \
+    "                                of bam files to analyze. Each sample should have\n \
+    "                                "a unique read group.\n" \
     "--strinfo <strinfo.tab>:        (REQUIRED)\n" \
     "                                File containing statistics for each STR,\n" \
     "                                available in the data/ directory of the\n" \
@@ -87,37 +89,16 @@ void show_help() {
     "--haploid <chrX,[chrY,...]>:    comma-separated list of chromosomes\n" \
     "                                that should be forced to have homozygous\n" \
     "                                calls. Specify --haploid all if the organism\n" \
-    "                                is haploid\n" \
+    "                                is haploid. Will be applied to all samples.\n" \
     "--include-flank:                Include indels in flanking regions when\n" \
     "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
     "-v,--verbose:                   print out helpful progress messages\n" \
     "--version:                      print out allelotype program version number\n\n" \
     "Options for calculating and reporting allelotypes:\n" \
-    "--use-known-alleles <FILE>:     Use prior information about alleles in\n" \
-    "                                the population when determining the allelotype.\n" \
-    "                                NOTE: if you want to merge VCF files downstream,\n" \
-    "                                they must have the same set of ALT alleles listed,\n" \
-    "                                and so you must specify that here.\n" \
-    "                                This is a tab delimited file with columns: \n" \
-    "                                     1. chrom\n" \
-    "                                     2. start\n" \
-    "                                     3. end\n" \
-    "                                     4. <allele1>:<count>;<allele2>:<count>...\n" \
-    "                                where counts can be total counts or frequencies.\n" \
-    "                                An example file based on 1000 genomes data is\n" \
-    "                                available in the download at\n" \
-    "                                <PATH-TO-LOBSTR>/data/lobstr.allelepriors.hg19.min50.tab.\n" \
-    "                                If this option is specified, only loci and alleles\n" \
-    "                                included in <FILE> will be considered. Allele counts\n" \
-    "                                are not used unless --generate-posteriors is specified,\n" \
-    "                                and can be set to dummy values if not used.\n" \
-    "--generate-posteriors           Generate posterior probabilities for\n" \
-    "                                possible allelotypes.\n" \
-    "                                Requires allele frequencies to be set with \n" \
-    "                                --use-known-alleles\n" \
+    "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
+    "                                For more than one annotation, use comma-separated list of files\n" \
     "Options for reporting allelotypes:\n" \
-    "--sample <STRING>:             Name of sample. Default to --out\n" \
     "--exclude-pos <FILE>:          File of \"chrom\\tpos\" of positions to exclude.\n" \
     "                               For downstream analysis, it is beneficial to exclude\n" \
     "                               any STRs with the same starting point but different motifs,\n" \
@@ -143,12 +124,12 @@ void show_help() {
  */
 void parse_commandline_options(int argc, char* argv[]) {
   enum LONG_OPTIONS {
+    OPT_ANNOTATION,
     OPT_BAM,
     OPT_CHROM,
     OPT_COMMAND,
     OPT_DEBUG,
     OPT_EXCLUDE_POS,
-    OPT_GENERATE_POSTERIORS,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_FLANK,
@@ -163,11 +144,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_OUTPUT,
     OPT_PRINT_READS,
     OPT_PROFILE,
-    OPT_SAMPLE,
     OPT_STRINFO,
-    OPT_TAB,
     OPT_UNIT,
-    OPT_USE_KNOWN_ALLELES,
     OPT_VERBOSE,
     OPT_VERSION,
   };
@@ -176,12 +154,12 @@ void parse_commandline_options(int argc, char* argv[]) {
   int option_index = 0;
 
   static struct option long_options[] = {
+    {"annotation", 1, 0, OPT_ANNOTATION},
     {"bam", 1, 0, OPT_BAM},
     {"chrom", 1, 0, OPT_CHROM},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
     {"exclude-pos", 1, 0, OPT_EXCLUDE_POS},
-    {"generate-posteriors", 0, 0, OPT_GENERATE_POSTERIORS},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
     {"include-flank", 0, 0, OPT_INCLUDE_FLANK},
@@ -196,11 +174,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"out", 1, 0, OPT_OUTPUT},
     {"profile", 0, 0, OPT_PROFILE},
     {"reads", 0, 0, OPT_PRINT_READS},
-    {"sample", 1, 0, OPT_SAMPLE},
     {"strinfo", 1, 0, OPT_STRINFO},
-    {"tab", 0, 0, OPT_TAB},
     {"unit", 0, 0, OPT_UNIT},
-    {"use-known-alleles", 1, 0, OPT_USE_KNOWN_ALLELES},
     {"verbose", 0, 0, OPT_VERBOSE},
     {"version", 0, 0, OPT_VERSION},
     {NULL, no_argument, NULL, 0},
@@ -210,6 +185,10 @@ void parse_commandline_options(int argc, char* argv[]) {
                    long_options, &option_index);
   while (ch != -1) {
     switch (ch) {
+    case OPT_ANNOTATION:
+      annotation_files_string = string(optarg);
+      AddOption("annotation", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
     case OPT_BAM:
       bam_files_string = string(optarg);
       AddOption("bam", string(optarg), true, &user_defined_arguments_allelotyper);
@@ -232,10 +211,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_EXCLUDE_POS:
       exclude_positions_file = string(optarg);
       AddOption("exclude-pos", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
-    case OPT_GENERATE_POSTERIORS:
-      generate_posteriors++;
-      AddOption("generate-posteriors", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);
@@ -298,25 +273,13 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_PROFILE:
       profile++;
       break;
-    case OPT_SAMPLE:
-      sample = string(optarg);
-      AddOption("sample", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
     case OPT_STRINFO:
       strinfofile = string(optarg);
       AddOption("strinfo", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
-    case OPT_TAB:
-      generate_tab++;
-      AddOption("tab", "", false, &user_defined_arguments_allelotyper);
-      break;
     case OPT_UNIT:
       unit = true;
       AddOption("unit", "", false, &user_defined_arguments_allelotyper);
-      break;
-    case OPT_USE_KNOWN_ALLELES:
-      known_alleles_file = string(optarg);
-      AddOption("use-known-alleles", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case 'v':
     case OPT_VERBOSE:
@@ -366,12 +329,6 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (index_prefix.empty() && command != "train") {
     PrintMessageDieOnError("Must specify --index-prefix for classifying", ERROR);
   }
-  // set sample if not specified
-  if (sample.empty()) sample = output_prefix;
-  // can't generate posteriors without priors
-  if (generate_posteriors && known_alleles_file.empty()) {
-    PrintMessageDieOnError("Cannot generate priors without known alleles file", ERROR);
-  }
 }
 
 int main(int argc, char* argv[]) {
@@ -400,7 +357,11 @@ int main(int argc, char* argv[]) {
   /* initialize noise model */
   NoiseModel nm(strinfofile, haploid_chroms);
 
-  /* Load ref character for each STR */
+  /* Load ref character and ref object for each STR */
+  if (my_verbose) {
+    PrintMessageDieOnError("Loading reference STRs", PROGRESS);
+  }
+  vector<ReferenceSTR> reference_strs;
   if (command != "train") {
     FastaFileReader faReader(index_prefix+"ref.fa");
     MSReadRecord ref_record;
@@ -409,32 +370,51 @@ int main(int argc, char* argv[]) {
       string refstring = ref_record.ID;
       split(refstring, '$', items);
       if (items.size() == 7) {
+	string chrom = items.at(1); 
         int start = atoi(items.at(2).c_str())+extend;
-        string chrom = items.at(1);
-        string repseq_in_ref = items.at(6);
-        string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
-        pair<string, int> locus = pair<string,int>(chrom, start);
-        ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
-        ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
+	int str_start = atoi(items.at(2).c_str());
+	int str_end = atoi(items.at(3).c_str());
+	if (use_chrom.empty() || use_chrom == chrom) {
+	  ReferenceSTR ref_str;
+	  ref_str.start = str_start+extend;
+	  ref_str.stop = str_end-extend;
+	  ref_str.chrom = chrom;
+	  reference_strs.push_back(ref_str);
+	  string repseq_in_ref = items.at(6);
+	  string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
+	  pair<string, int> locus = pair<string,int>(chrom, start);
+	  ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
+	  ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
+	}
       }
     }
   }
 
-  /* Add reads to read container */
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
-  if (my_verbose) PrintMessageDieOnError("Adding reads to read container", PROGRESS);
-  ReadContainer read_container;
-  read_container.AddReadsFromFile(bam_files);
 
-  /* Perform pcr dup removal if specified */
-  if (rmdup) {
-    if (my_verbose) PrintMessageDieOnError("Performing PCR duplicate removal", PROGRESS);
-    read_container.RemovePCRDuplicates();
+  /* Determine samples */
+  if (my_verbose) {
+    PrintMessageDieOnError("Determining samples to process", PROGRESS);
+  }
+  vector<string> samples_list;
+  map<string,string> rg_id_to_sample;
+  GetSamplesFromBamFiles(bam_files, &samples_list, &rg_id_to_sample);
+  if (samples_list.size() == 0) {
+    PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
   }
 
   /* Train/classify */
   if (command == "train") {
+    ReadContainer read_container(bam_files);
+    ReferenceSTR dummy_ref_str;
+    dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
+    read_container.AddReadsFromFile(dummy_ref_str);
+    /* Perform pcr dup removal if specified */
+    if (rmdup) {
+      if (my_verbose) PrintMessageDieOnError("Performing PCR duplicate removal", PROGRESS);
+      read_container.RemovePCRDuplicates();
+    }
     if (my_verbose) PrintMessageDieOnError("Training noise model", PROGRESS);
     nm.Train(&read_container);
   } else if (command == "classify") {
@@ -443,21 +423,43 @@ int main(int argc, char* argv[]) {
     }
   }
   if (command == "classify") {
-    Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq);
-    // If available, load priors
-    if (!known_alleles_file.empty()) {
-      if (my_verbose) PrintMessageDieOnError("Loading known alleles", PROGRESS);
-      genotyper.LoadPriors(known_alleles_file);
+    // Initialize genotyper
+    Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
+			output_prefix + ".vcf", samples_list, rg_id_to_sample);
+    // Load annotations
+    if (!annotation_files_string.empty()) {
+      vector<string>annotation_files;
+      boost::split(annotation_files, annotation_files_string, boost::is_any_of(","));
+      if (my_verbose) {
+	PrintMessageDieOnError("Loading annotations", PROGRESS);
+      }
+      genotyper.LoadAnnotations(annotation_files);
     }
+    // Classify allelotypes
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
-    if (generate_tab) {
-      genotyper.Genotype(read_container,
-                         output_prefix + ".genotypes.tab",
-                         output_prefix + ".vcf");
-    } else {
-      genotyper.Genotype(read_container,
-                         "/dev/null",
-                         output_prefix + ".vcf");
+    ReadContainer str_container(bam_files);
+    std::string current_chrom;
+    for (size_t i = 0; i < reference_strs.size(); i++) {
+      if (use_chrom.empty() || (use_chrom == reference_strs.at(i).chrom)) {
+	if (my_verbose) {
+	  if (reference_strs.at(i).chrom != current_chrom) {
+	    stringstream msg;
+	    msg << "Processing locus " << reference_strs.at(i).chrom;
+	      PrintMessageDieOnError(msg.str(), PROGRESS);
+	      current_chrom = reference_strs.at(i).chrom;
+	  }
+	}
+	str_container.AddReadsFromFile(reference_strs.at(i));
+	pair<string, int> coord(reference_strs.at(i).chrom, reference_strs.at(i).start);
+	list<AlignedRead> aligned_reads;
+	str_container.GetReadsAtCoord(coord, &aligned_reads);
+	if (aligned_reads.size() > 0) {
+	  if (rmdup) {
+	    str_container.RemovePCRDuplicates();
+	  }
+	  genotyper.Genotype(aligned_reads);
+	}
+      }
     }
   }
   run_info.endtime = GetTime();
