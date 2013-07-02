@@ -405,10 +405,10 @@ int main(int argc, char* argv[]) {
 
   /* Train/classify */
   if (command == "train") {
-    ReadContainer read_container;
+    ReadContainer read_container(bam_files);
     ReferenceSTR dummy_ref_str;
     dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
-    read_container.AddReadsFromFile(bam_files, dummy_ref_str);
+    read_container.AddReadsFromFile(dummy_ref_str);
     /* Perform pcr dup removal if specified */
     if (rmdup) {
       if (my_verbose) PrintMessageDieOnError("Performing PCR duplicate removal", PROGRESS);
@@ -422,6 +422,7 @@ int main(int argc, char* argv[]) {
     }
   }
   if (command == "classify") {
+    // Initialize genotyper
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
 			output_prefix + ".vcf", samples_list);
     // Load annotations
@@ -435,23 +436,23 @@ int main(int argc, char* argv[]) {
     }
     // Classify allelotypes
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
+    ReadContainer str_container(bam_files);
     std::string current_chrom;
     for (size_t i = 0; i < reference_strs.size(); i++) {
       if (use_chrom.empty() || (use_chrom == reference_strs.at(i).chrom)) {
-	ReadContainer str_container;
-	str_container.AddReadsFromFile(bam_files, reference_strs.at(i));
+	if (my_verbose) {
+	  if (reference_strs.at(i).chrom != current_chrom) {
+	    stringstream msg;
+	    msg << "Processing locus " << reference_strs.at(i).chrom;
+	      PrintMessageDieOnError(msg.str(), PROGRESS);
+	      current_chrom = reference_strs.at(i).chrom;
+	  }
+	}
+	str_container.AddReadsFromFile(reference_strs.at(i));
 	pair<string, int> coord(reference_strs.at(i).chrom, reference_strs.at(i).start);
 	list<AlignedRead> aligned_reads;
 	str_container.GetReadsAtCoord(coord, &aligned_reads);
 	if (aligned_reads.size() > 0) {
-	  if (my_verbose) {
-	    if (reference_strs.at(i).chrom != current_chrom) {
-	      stringstream msg;
-	      msg << "Processing locus " << reference_strs.at(i).chrom;
-	      PrintMessageDieOnError(msg.str(), PROGRESS);
-	      current_chrom = reference_strs.at(i).chrom;
-	    }
-	  }
 	  if (rmdup) {
 	    str_container.RemovePCRDuplicates();
 	  }
