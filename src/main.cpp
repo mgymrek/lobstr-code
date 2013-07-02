@@ -47,7 +47,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/SamFileWriter.h"
 #include "src/STRDetector.h"
 #include "src/runtime_parameters.h"
-#include "src/TabFileWriter.h"
 #include "src/TukeyWindowGenerator.h"
 
 using namespace std;
@@ -632,7 +631,6 @@ void DestroyReferences() {
 void single_thread_process_loop(const vector<string>& files1,
                                 const vector<string>& files2) {
   ReadPair read_pair;
-  TabFileWriter pWriter(output_prefix + ".aligned.tab");
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   STRDetector *pDetector = new STRDetector();
   BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references,
@@ -780,7 +778,6 @@ void single_thread_process_loop(const vector<string>& files1,
         }
       }
       if (aligned) {
-        pWriter.WriteRecord(read_pair);
         samWriter.WriteRecord(read_pair);
       } else {
         if (debug) { // if didn't align, print this
@@ -909,16 +906,13 @@ void* satellite_process_consumer_thread(void *arg) {
 
 void* output_writer_thread(void *arg) {
   MultithreadData *pMT_DATA = reinterpret_cast<MultithreadData*>(arg);
-  TabFileWriter *pWriter = new TabFileWriter(output_prefix + ".aligned.tab");
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   while (1) {
     ReadPair *pReadRecord = pMT_DATA->get_new_output();
-    pWriter->WriteRecord(*pReadRecord);
     samWriter.WriteRecord(*pReadRecord);
     delete pReadRecord;
     pMT_DATA->increment_output_counter();
   }
-  delete pWriter;
   delete pMT_DATA;
   pthread_exit(reinterpret_cast<void*>(arg));
 }

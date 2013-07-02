@@ -118,9 +118,8 @@ am_liblobstr_a_OBJECTS = BamFileReader.$(OBJEXT) \
 	HammingWindowGenerator.$(OBJEXT) MultithreadData.$(OBJEXT) \
 	nw.$(OBJEXT) runtime_parameters.$(OBJEXT) \
 	SamFileWriter.$(OBJEXT) STRDetector.$(OBJEXT) \
-	TabFileWriter.$(OBJEXT) TextFileReader.$(OBJEXT) \
-	TextFileWriter.$(OBJEXT) TukeyWindowGenerator.$(OBJEXT) \
-	ZippedFastaFileReader.$(OBJEXT) \
+	TextFileReader.$(OBJEXT) TextFileWriter.$(OBJEXT) \
+	TukeyWindowGenerator.$(OBJEXT) ZippedFastaFileReader.$(OBJEXT) \
 	ZippedFastqFileReader.$(OBJEXT) ZippedTextFileReader.$(OBJEXT) \
 	bamlite.$(OBJEXT) bntseq.$(OBJEXT) bwaseqio.$(OBJEXT) \
 	bwape.$(OBJEXT) bwase.$(OBJEXT) bwt.$(OBJEXT) bwtaln.$(OBJEXT) \
@@ -190,7 +189,6 @@ am_lobSTRTests_OBJECTS = lobSTRTests-main_test.$(OBJEXT) \
 	lobSTRTests-runtime_parameters.$(OBJEXT) \
 	lobSTRTests-SamFileWriter.$(OBJEXT) \
 	lobSTRTests-STRDetector.$(OBJEXT) \
-	lobSTRTests-TabFileWriter.$(OBJEXT) \
 	lobSTRTests-TextFileReader.$(OBJEXT) \
 	lobSTRTests-TextFileWriter.$(OBJEXT) \
 	lobSTRTests-TukeyWindowGenerator.$(OBJEXT) \
@@ -421,7 +419,6 @@ noinst_headers = \
 	SamFileWriter.h \
 	STRDetector.h \
 	STRRecord.h \
-	TabFileWriter.h \
 	TextFileReader.h \
 	TextFileWriter.h \
 	VCFWriter.h \
@@ -526,7 +523,6 @@ liblobstr_a_SOURCES = \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
 	STRDetector.cpp \
-	TabFileWriter.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
@@ -715,7 +711,6 @@ lobSTRTests_SOURCES = \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
 	STRDetector.cpp \
-	TabFileWriter.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
@@ -940,7 +935,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamReadGroupDictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamSequenceDictionary.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TabFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TukeyWindowGenerator.Po@am__quote@
@@ -1025,7 +1019,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-SamReadGroupDictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-SamSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-SamSequenceDictionary.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-TabFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-TextFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-TextFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lobSTRTests-TukeyWindowGenerator.Po@am__quote@
@@ -2264,20 +2257,6 @@ lobSTRTests-STRDetector.obj: STRDetector.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='STRDetector.cpp' object='lobSTRTests-STRDetector.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTRTests-STRDetector.obj `if test -f 'STRDetector.cpp'; then $(CYGPATH_W) 'STRDetector.cpp'; else $(CYGPATH_W) '$(srcdir)/STRDetector.cpp'; fi`
-
-lobSTRTests-TabFileWriter.o: TabFileWriter.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTRTests-TabFileWriter.o -MD -MP -MF $(DEPDIR)/lobSTRTests-TabFileWriter.Tpo -c -o lobSTRTests-TabFileWriter.o `test -f 'TabFileWriter.cpp' || echo '$(srcdir)/'`TabFileWriter.cpp
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/lobSTRTests-TabFileWriter.Tpo $(DEPDIR)/lobSTRTests-TabFileWriter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TabFileWriter.cpp' object='lobSTRTests-TabFileWriter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTRTests-TabFileWriter.o `test -f 'TabFileWriter.cpp' || echo '$(srcdir)/'`TabFileWriter.cpp
-
-lobSTRTests-TabFileWriter.obj: TabFileWriter.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTRTests-TabFileWriter.obj -MD -MP -MF $(DEPDIR)/lobSTRTests-TabFileWriter.Tpo -c -o lobSTRTests-TabFileWriter.obj `if test -f 'TabFileWriter.cpp'; then $(CYGPATH_W) 'TabFileWriter.cpp'; else $(CYGPATH_W) '$(srcdir)/TabFileWriter.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/lobSTRTests-TabFileWriter.Tpo $(DEPDIR)/lobSTRTests-TabFileWriter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='TabFileWriter.cpp' object='lobSTRTests-TabFileWriter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lobSTRTests-TabFileWriter.obj `if test -f 'TabFileWriter.cpp'; then $(CYGPATH_W) 'TabFileWriter.cpp'; else $(CYGPATH_W) '$(srcdir)/TabFileWriter.cpp'; fi`
 
 lobSTRTests-TextFileReader.o: TextFileReader.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lobSTRTests_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT lobSTRTests-TextFileReader.o -MD -MP -MF $(DEPDIR)/lobSTRTests-TextFileReader.Tpo -c -o lobSTRTests-TextFileReader.o `test -f 'TextFileReader.cpp' || echo '$(srcdir)/'`TextFileReader.cpp
