@@ -81,11 +81,9 @@ if (Prototype.Browser.IE) window.onload=initFlyouts; else document.observe('dom:
       the&nbsp;<a href="download.html" style=""
 		  title="">lobSTR</a>&nbsp;package.</li>
 <li style="">Download
-      the lobSTR index (available on
+      the lobSTR resource bundle for the appropriate reference genome (available on
       the<a href="download.html">&nbsp;downloads</a>&nbsp;page).</li>
-<li style="">Complete
-      usage information can be found in the README file available with
-      the download for each version and in the <a href="lobSTR_manual_v2.0.pdf">lobSTR 2.0 manual</a>. The manual currently contains usage information for lobSTR v2.0.0. Usage is slightly different for later versions, but most parameters are the same. This document will be updated to reflect later versions.</li>
+<li style="">Many details can be found in the <a href="lobSTR_manual_v2.0.pdf">lobSTR 2.0 manual</a>. The manual currently contains usage information for lobSTR v2.0.0. Usage is slightly different for later versions, but most parameters are the same. This document will be updated to reflect later versions.</li>
 </ul></div>
 
 <h2  style=" text-align: left; ">On this page</h2>
@@ -93,7 +91,6 @@ if (Prototype.Browser.IE) window.onload=initFlyouts; else document.observe('dom:
 					     display: block; ">
 <ul style=""><li style="">Basic usage</li><li style="">Building a
     custom index</li>
-<li style="">Running lobSTR quality controls</li>
 <li style="">Detailed description of all command line options</li></ul></div>
 
 <h2  style=" text-align: left; ">Basic usage (v2.0.3)<br /></h2>
@@ -117,7 +114,6 @@ This will create the example output files:
 <ul style="">
 <li style="">test.aligned.tab</li>
 <li style="">test.aligned.bam</li>
-<li style="">test.genotypes.tab</li>
 <li style="">test.vcf</li>
 </ul>
 To see a description of the output file formats, see<a href="file-formats.html" title="">&nbsp;file formats</a>. To see all available parameters, run&nbsp;<tt>lobSTR --help</tt>&nbsp;and&nbsp;<tt>allelotype --help</tt>.<br /></div>
@@ -156,80 +152,6 @@ Example:
 The lobSTR package provides scripts to gather statistics on alignment
 and allelotype output to help users ensure the quality of lobSTR
 results.
-<h3>Alignment quality checks</h3>
-General usage:<br>
-<tt>python scripts/lobSTR_alignment_checks.py -f $ALIGNED.TAB [--plot]</tt><br>
-<br>
-The following alignment statistics are written to standard output:
-<ul>
-<li>Number of aligned reads.</li>
-<li>% of reads that were stitched, single ends, and mates of single
-  ends. The number of single ends and mates should be the same for
-  paired-end files. The number of reads stitched depends on the insert
-  size of the library. Smaller insert sizes between pairs results in
-  more reads that can be stitched.</li>
-<li>% of reads that are partially spanning an STR</li>
-<li>% of reads aligned on the reverse strand. This should be very
-  close to 50%</li>
-<li>Mean insert size between aligned paired ends (for paired samples
-  only). This is usually near several hundred base pairs.</li>
-<li>% Alignments differing by a non-integer number of repeats from the
-  reference. This should be in the 1-5% range. If this number is too
-  high, it may be an indication that the alignment is of poor
-  quality. This usually occurs when there are high error rates at
-  homopolymer runs (454, IonTorrent).</li>
-</ul>
-If the --plot option is specified, the following plots are generated
-       in the directory of the aligned file:
-<ul>
-<li> Insert size distribution (for paired samples only)</li>
-<li> Quality  score distribution (for fully spanning reads only)</li>
-<li> Difference from reference distribution (separated by
-  period). This should be centered near 0.</li>
-</ul>
-
-<h3>Allelotype quality checks</h3>
-
-General usage:<br>
-<tt>python scripts/lobSTR_allelotype_checks.py -f $GENOTYPES.TAB [--plot]</tt><br>
-<br>
-The following allelotype statistics are written to standard output:
-<ul>
-<li> Number of calls with coverage >= 1.</li>
-<li> Number of calls with coverage >= 5.</li>
-<li> Mean coverage (only including fully spanning reads). This is
-  usually around half or less of the genomic coverage.</li>
-<li> Mean % of reads agreeing with the call. Ths should be above 95%
-  in most cases. Lower numbers indicate a high amount of PCR stutter
-  noise or poor alignment quality.</li>
-<li> STR period vs fraction in each category (homozygous reference,
-  heterozygous reference/non-reference, homozygous non-reference,
-  heterozygous non-reference/non-reference.</li>
-</ul>
-If the --plot option is specified, the following plots are generated
-       in the directory of the genotypes.tab file:
-<ul>
-<li> STR coverage distribution.</li>
-<li> Bar plot of STR period vs fraction in each category as described
-  above.</li>
-<li> Distribution of the distance between alleles for heterozygous
-  calls (separated by period).</li>
-<li> Distribution of percentage of agreeing reads. </li>
-<li> Distribution of allelotype scores.</li>
-<li> Distribution of difference from reference for each allele
-  called. </li>
-<li> Plot of the number of non-unit repeat alleles called. For each
-  period, the number of alleles reported for each number of bp modulo
-  the period is reported.</li>
-<li> Stutter noise profile plots. For each period, a heatmap is
-  produced. The x-axis gives the "true" allele caleld by lobSTR. The
-  y-axis gives the allele supported by each read. The value of the
-  color indicates the number of reads. Off-diagonal cells result from
-  stutter noise which indicates false repeat alleles. These plots are
-  generally quite messy for period 2 and much cleaner for periods 3-6.</li>
-</ul>
-
-
 
 <h2  style=" text-align: left; ">Detailed description of command line options<br /></h2>
 <div  class="paragraph editable-text" style=" text-align: left;
@@ -266,7 +188,8 @@ If the --plot option is specified, the following plots are generated
 	     are reported in the old Phred format (Illumina 1.3+,
 	     Illumina 1.5+) where quality scores are given as Phred
 	     + 64 rather than Phred + 33</li>
-<li style="">--rg STRING: Add read group tag (RG) to BAM records.</li>
+<li style="">--rg-sample STRING: Use this in the read group SM tag. Allelotype will assume all reads with the same sample should be processed as a single individual.</li
+<li style="">--rg-lib STRING: Use this in the read group LB tag</li>
 <li style="">-h, --help: display a helpful usage message</li>
 <li style="">-v, --verbose: verbose mode. Display descriptive messages</li>
 <li style="">--version: print out lobSTR program version</li>
@@ -302,7 +225,6 @@ If the --plot option is specified, the following plots are generated
 <li style="">--max-diff-ref INT: Only report reads differing by at
 	     most this number of bp from the reference allele
 	     (default: 50)</li>
-<li style="">--exclude-partial: do not report any alignments for partially spanning reads. </li>
 <li style="">--extend INT: Number of bp the reference was extended
                            when building the index (default: 1000bp).
                            Must be same as --extend parameter used
@@ -360,11 +282,12 @@ Note, the commands "simple" and "both" have been removed.
 </li>
 <li style="">--bam FILE: (REQUIRED) path to the bam file containing alignments,
 	     or a comma separated list of multiple lobSTR bam alignments (required). </li>
-<li style="">--noise_model STRING: (REQUIRED) prefix of files to write (--command train) or read (--command classify) noise model parametesr to.</li>
+<li style="">--noise_model STRING: (REQUIRED) prefix of files to write (--command train) or read (--command classify) noise model parameters to.</li>
 <li style="">--out STRING: (REQUIRED) prefix to name output files with (required)</li>
 <li style="">--strinfo STRING: (REQUIRED) path to the file containing statistics for each STR, available in the data/ directory of the lobSTR download.
 <li style="">--index-prefix STRING: (REQUIRED for --command classify) prefix for lobSTR's bwa reference (must run lobstr_index.py)
-<li style="">--haploid LIST: comma separated list of chromosomes to treat as haploid (e.g. --haploid chrX,chrY) for a human male sample. If all chromosomes are haploid, you can specifiy --haploid all.
+<li style="">--haploid LIST: comma separated list of chromosomes to treat as haploid (e.g. --haploid chrX,chrY) for a human male sample. If all chromosomes are haploid, you can specifiy --haploid all.</li>
+<li style="">--annotation VCFFILE: annotate a set of STRs. Annotation sets are available in the resource bundle. This is useful for comparing to capillary callsets such as those from the Marshfield panel.</li>
 <li style="">--min-het-freq FLOAT: minimum alternate allele read frequency to make a heterozygous call
 <li style="">--include-flank: include indels in the flanking regions of an STR when determining the length of the STR allele </li>
 <li style="">--no-rmdup: do not remove PCR duplicates</li>
@@ -373,21 +296,8 @@ Note, the commands "simple" and "both" have been removed.
 <li style="">--version: print out allelotype program version number</li>
 <li style="">--noweb: do not report any user information and parameters to Amazon S3.</li>
 </ul>
-<h4>Advanced options - calculating and reporting genotypes</h4>
-<ul>
-<li style="">--use-known-alleles FILE: Use prior information about allele frequencies when determining the allelotype. If you want to merge VCF files downstream, they must have the same set of ALT alleles listed, and so you must specify that here. This is a tab delimited file with columns:
-<ol>
-<li>chrom</li>
-<li>start</li>
-<li>end</li>
-<li>allele1:count;allele2:count... where counts can be total counts or frequencies. 
-</ol>
-where counts can be total coutns of frequencies. Allele counts are not used unless --generate-posteriors is specified, and so can be set to dummy values if that option is not used.  An example file based on 1000 genomes data is available in the download at PATH-TO-LOBSTR/data/lobstr.allelepriors.hg19.min50.tab. If this option is specified, loci where no prior information is available are not processed.</li>
-<li style="">--generate-posteriors: generate posterior probabilities for possible allelotypes. Requires allele frequences to be set with --use-known-alleles.
-</ul>
 <h4>Advanced options - reporting VCF format</h4>
 <ul>
-<li style="">--sample STRING: Name of sample to report in VCF file. Default to the value of --out.</li>
 <li style="">--exclude-pos FILE: File of "chrom\tpos" of positions to exclude. For downstream analysis, it is beneficial to exclude any STRs with the same starting point but different motifs, as this will cause errors when using vcftools.
 </ul>
 <h4>Advanced options - filtering reads</h4>
@@ -397,7 +307,6 @@ where counts can be total coutns of frequencies. Allele counts are not used unle
 <li style="">--unit: filter reads differing from the reference by a non-integer number of repeat copies</li>
 <li style="">--mapq INT: filter reads with mapq scores of more than INT</li>
 <li style="">--max-matedist INT: filter reads with a mate distance larger than INT bp</li>
-<li style="">--exclude-partial: do not report any information about partially spanning reads.</li>
 </ul>
 <h4>Examples of allelotype usage</h4>
 <br>
@@ -435,23 +344,6 @@ allelotype --command classify [OPTIONS] --bam input.bam
   the same value when you call lobSTR to ensure that the output
   coordinates are accurate (default 1000bp).</li></ul>
 
-<h3>lobSTR_alignment_checks.py</h3>
-<b>NOTE:</b> lobSTR check scripts and tab files are being deprecated, and will be replaced by an option to report stats automatically when running lobSTR/allelotype.
-<ul style="">
-<li>-f FILE: lobSTR aligned.tab file</li>
-<li>--plot: flag to denote that quality control plots should be
-    produced. This requires that numpy and matplotlib are
-    installed. Output plots are written to the same directory as FILE.
-</ul>
-
-<h3>lobSTR_allelotype_checks.py</h3>
-<b>NOTE:</b> lobSTR check scripts and tab files are being deprecated, and will be replaced by an option to report stats automatically when running lobSTR/allelotype.
-<ul style="">
-<li>-f FILE: lobSTR genotypes.tab file</li>
-<li>--plot: flag to denote that quality control plots should be
-    produced. This requires that numpy and matplotlib are
-    installed. Output plots are written to the same directory as FILE.
-</ul>
 </div>
 
 </div>
