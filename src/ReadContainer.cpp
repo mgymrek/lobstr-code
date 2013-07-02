@@ -34,22 +34,21 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 ReadContainer::ReadContainer(vector<std::string> filenames) {
-
-void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
-  string bamfile = "";
-  string index = "";
-  vector<string> index_filenames;
+  string bamfile;
+  vector<string> index_files;
+  // Open bam files
   for (size_t i = 0; i < filenames.size(); i++) {
     bamfile = filenames.at(i);
-    index = bamfile + ".bai";
-    index_filenames.push_back(index);
+    index_files.push_back(bamfile + ".bai");
     if (!reader.OpenFile(bamfile)) {
-      PrintMessageDieOnError("Could not open bam file " + bamfile, ERROR);
+      PrintMessageDieOnError("Could not open " + bamfile, ERROR);
     }
   }
-  if (!reader.OpenIndexes(index_filenames)) {
-    PrintMessageDieOnError("Could not open indexes for bam files", ERROR);
+  // Check indexes
+  if (!reader.OpenIndexes(index_files)) {
+    PrintMessageDieOnError("Could not open index files", ERROR);
   }
+  // get chrom_to_refid
   references = reader.GetReferenceData();
   for (size_t i = 0; i < references.size(); i++) {
     chrom_to_refid[references.at(i).RefName] = static_cast<int>(i);
