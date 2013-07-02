@@ -35,6 +35,12 @@ PROGRAM program = LOBSTR;
 // keep track of common ones
 std::map<std::string, std::string> canonicalMSTable;
 
+// mapping between a kmer and its smallest cyclic permutation
+std::map<std::string, std::string> permutationTable;
+
+// mapping between a kmer and the canonical version of its smallest repeating subunit
+std::map<std::string, std::string> canonicalRepeatTable;
+
 // flags
 bool my_verbose = false;
 bool debug = false;
@@ -69,7 +75,7 @@ size_t max_period = 6;
 size_t min_period = 2;
 size_t max_period_to_try = 6;
 size_t min_flank_len = 8;
-size_t max_flank_len = 100;
+size_t max_flank_len = 50;
 float closeness = 0.3;
 float percent_N_discard = 0.05;
 float tukey_alpha = 0.5;
@@ -93,7 +99,6 @@ std::string index_prefix = "";
 int gap_open = 1;
 int gap_extend = 1;
 float fpr = 0.01;
-bool partial_debug = false;
 std::string read_group_sample = "";
 std::string read_group_library = "";
 bool include_orig_read_start = false;
@@ -109,7 +114,6 @@ std::string use_chrom = "";
 bool rmdup = true;
 bool include_flank = true;
 bool print_reads = false;
-bool exclude_partial = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
 

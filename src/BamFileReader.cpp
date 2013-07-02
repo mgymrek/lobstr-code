@@ -31,7 +31,6 @@ using BamTools::BamReader;
 using BamTools::BamAlignment;
 
 using namespace std;
-
 BamFileReader::BamFileReader(const std::string& _filename) {
   if (!reader.Open(_filename)) {
     PrintMessageDieOnError("Could not open bam file", ERROR);

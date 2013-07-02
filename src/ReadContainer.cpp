@@ -34,6 +34,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 ReadContainer::ReadContainer(vector<std::string> filenames) {
+
+void ReadContainer::AddReadsFromFile(vector<string> bamfiles) {
   string bamfile = "";
   string index = "";
   vector<string> index_filenames;

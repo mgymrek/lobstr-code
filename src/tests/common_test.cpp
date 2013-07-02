@@ -83,6 +83,46 @@ void CommonTest::test_getMSSeq() {
   CPPUNIT_ASSERT_MESSAGE("wrong secondary motif return", second_repseq == "A");
 }
 
+void CommonTest::test_getMinPermutation() {
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("A") == "A");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("G") == "G");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TACG") == "ACGT");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TAGTACTAT") == "ACTATTAGT");
+  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("CGCTCCC") == "CCCCGCT");
+}
+
+void CommonTest::test_getCanonicalRepeat() {
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AAAAAAA") == "A");
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("TTT") == "A");
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("ATCGATC") == "ATCATCG");
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("TATATA") == "AT");
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AGTCAGTC") == "ACTG");
+}
+
+
+void CommonTest::test_getCanonicalMS() {
+  std::string seq;
+  getCanonicalMS("AAAAA", &seq);
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "AAAAA");
+  
+  getCanonicalMS("C", &seq);
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "C");
+
+  getCanonicalMS("T", &seq);
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "A");
+
+  getCanonicalMS("GGG", &seq);
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "CCC");
+
+  getCanonicalMS("CGACG", &seq);
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "ACGCG");
+
+  getCanonicalMS("GCTGC", &seq);
+  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "AGCGC");
+}
+
+
+
 void CommonTest::test_IsPerfectRepeat() {
   // Case 1: perfect repeat
   std::string nucs = "ATATATATATATATATATATAT";

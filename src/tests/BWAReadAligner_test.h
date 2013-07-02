@@ -31,7 +31,6 @@ public CppUnit::TestFixture {
   CPPUNIT_TEST(test_StitchReads);
   CPPUNIT_TEST(test_GetMapq);
   CPPUNIT_TEST(test_GetSTRAllele);
-  CPPUNIT_TEST(test_AdjustPartialAlignment);
   CPPUNIT_TEST_SUITE_END();
 
  public:
@@ -41,7 +40,6 @@ public CppUnit::TestFixture {
   void test_StitchReads();
   void test_GetMapq();
   void test_GetSTRAllele();
-  void test_AdjustPartialAlignment();
  private:
   BWAReadAligner* _aligner;
 };

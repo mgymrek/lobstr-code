@@ -142,18 +142,11 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   bam_alignment.AddTag("XC", "f", read_pair.reads.
                        at(aligned_read_num).refCopyNum);
   // XG: repeat region
-  if (read_pair.reads.at(aligned_read_num).partial) {
-    bam_alignment.AddTag("XG", "Z", NASTRING);
-  } else {
-    bam_alignment.AddTag("XG", "Z", read_pair.reads.
-                         at(aligned_read_num).detected_ms_nuc);
-  }
+  bam_alignment.AddTag("XG", "Z", read_pair.reads.
+		       at(aligned_read_num).detected_ms_nuc);
   // XW: mapq
   bam_alignment.AddTag("XW", "i", read_pair.reads.
                        at(aligned_read_num).mapq);
-  // XP: partial alignment
-  bam_alignment.AddTag("XP", "i", static_cast<int>
-                       (read_pair.reads.at(aligned_read_num).partial));
   // XX: stitched
   bam_alignment.AddTag("XX", "i", static_cast<int>
                        (!read_pair.treat_as_paired && paired));

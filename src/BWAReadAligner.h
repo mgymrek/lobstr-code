@@ -89,12 +89,6 @@ class BWAReadAligner {
   // Call BWA to align flanking regions
   bwa_seq_t* BWAAlignFlanks(const MSReadRecord& read);
 
-  // Update partial flanking region from aligned one
-  void UpdatePartialFlank(const ALIGNMENT& aligned_flank,
-                          ALIGNMENT* unaligned_flank,
-                          int nuc_size, int aligned_flank_size,
-                          int unaligned_flank_size);
-
   // Get info from ref fields of index
   void ParseRefid(const std::string& refstring, ALIGNMENT* refid);
 
@@ -145,22 +139,13 @@ class BWAReadAligner {
 
   // Perform local realignment, adjust exact STR boundaries
   // update cigar score.
-  bool AdjustAlignment(MSReadRecord* aligned_read, bool partial,
-                       bool left_aligned, bool right_aligned);
+  bool AdjustAlignment(MSReadRecord* aligned_read);
 
   // Calculate map quality score
   int GetMapq(const std::string& aligned_sw_string,
               const std::string& ref_sw_string,
               const std::string& aligned_quals,
               int* edit_dist);
-
-  // Adjust partial read alignments
-  // If found to be completely spanning, update
-  // aligned_read
-  bool AdjustPartialAlignment(MSReadRecord* aligned_read,
-                              const CIGAR_LIST& cigar_list,
-                              bool left_aligned, bool right_aligned,
-                              int start_pos, int reglen);
 
   // Refine the cigar score and recalculate number of repeats
   bool GetSTRAllele(MSReadRecord* aligned_read,
@@ -178,7 +163,6 @@ class BWAReadAligner {
 
   // Debug params
   bool cigar_debug;
-  bool partial_debug;
   bool stitch_debug;
 };
 

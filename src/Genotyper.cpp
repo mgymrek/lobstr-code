@@ -336,7 +336,6 @@ bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
     }
   }
   str_record->readstring.push_back(readstring.str());
-
   // set allele string, deal with low scores
   stringstream allele1_string;
   if (str_record->allele1.back() == MISSING || str_record->allele2.back() == MISSING) {

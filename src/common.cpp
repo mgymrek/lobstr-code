@@ -161,12 +161,12 @@ std::string GetReadDebug(const ReadPair& read_pair,
                          const std::string& aln_msg) {
   stringstream msg;
   msg << "[STRDetector]: processing "
-      << read_pair.reads.at(0).ID
+      << read_pair.reads[0].ID
       << " motif 1 ";
-  if (read_pair.reads.at(0).repseq.empty()) {
+  if (read_pair.reads[0].repseq.empty()) {
     msg << "NA";
   } else {
-    msg << read_pair.reads.at(0).repseq;
+    msg << read_pair.reads[0].repseq;
   }
   msg << " " << detector_err << " " << detector_msg << " " << aln_err << " " << aln_msg;
   return msg.str();
@@ -228,7 +228,7 @@ void TrimRead(const string& input_nucs,
               int cutoff) {
   // if last bp is fine, return as is
   size_t l = input_nucs.length();
-  if (static_cast<int>(input_quals.at(l - 1) - QUALITY_CONSTANT)
+  if (static_cast<int>(input_quals[l - 1] - QUALITY_CONSTANT)
       >= cutoff) {
     *trimmed_nucs = input_nucs;
     *trimmed_quals = input_quals;
@@ -243,7 +243,7 @@ void TrimRead(const string& input_nucs,
   for (size_t x = min_read_length; x <= l; x++) {
     int score = 0;
     for (size_t i = x+1; i < l; i++) {
-      score += (cutoff-(input_quals.at(i)-QUALITY_CONSTANT));
+      score += (cutoff-(input_quals[i]-QUALITY_CONSTANT));
     }
     if (score >= max_score) {
       max_score = score;
@@ -257,10 +257,11 @@ void TrimRead(const string& input_nucs,
 size_t count(const string& s, const char& c) {
   size_t num = 0;
   for (size_t i = 0; i < s.length(); i++) {
-    if (s.at(i) == c) num++;
+    if (s[i] == c) num++;
   }
   return num;
 }
+
 
 bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_repeat, string* err) {
   if (k < 1 || k > 6) {
@@ -280,23 +281,21 @@ bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_rep
   int second_best_maxkmer = 0;
   subseq.resize(k);
   for (i = 0; i < nucs.size() - k; i++) {
-    getCanonicalMS(nucs.substr(i, k), &subseq);
+    subseq = getMinPermutation(nucs.substr(i, k));
     countKMers[subseq]++;
-    if (countKMers.at(subseq) > maxkmer) {
+    if (countKMers[subseq] > maxkmer) {
       if (subseq != kmer) {
         second_best_kmer = kmer;
         second_best_maxkmer = maxkmer;
       }
       kmer = subseq;
-      maxkmer = countKMers.at(subseq);
-    } else if (countKMers.at(subseq) > second_best_maxkmer) {
+      maxkmer = countKMers[subseq];
+    } else if (countKMers[subseq] > second_best_maxkmer) {
       second_best_kmer = subseq;
-      second_best_maxkmer = countKMers.at(subseq);
+      second_best_maxkmer = countKMers[subseq];
     }
   }
-  string repseqfw;
-  string repseqrev;
-  string repseq;
+  
   // Check that we have enough of the kmer
   if (maxkmer < 3) {
     *err = "Not-enough-occurrences-of-kmer-" + kmer + ";";
@@ -317,10 +316,7 @@ bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_rep
       kmer = OneAbundantNucleotide(kmer, 1);
     }
   }
-  getCanonicalMS(kmer, &repseqfw);
-  getCanonicalMS(reverseComplement(repseqfw), &repseqrev);
-  repseq = getFirstString(repseqfw, repseqrev);
-  *repeat = repseq;
+  *repeat = getCanonicalRepeat(kmer);
   return true;
 }
 
@@ -365,7 +361,7 @@ float GetQualityScore(const std::string& quality_score) {
   if (quality_score.length() == 0) return 0;
   float total_quality = 0;
   for (size_t i = 0; i < quality_score.length(); ++i) {
-    int qs = quality_score.at(i);
+    int qs = quality_score[i];
     total_quality += qs - 33;
   }
   return total_quality/quality_score.size();
@@ -390,23 +386,16 @@ bool fexists(const char *filename) {
 }
 
 bool valid_nucleotides_string(const string &str) {
-  if (str.empty())
+  if (str.empty()) {
     return false;
-  for (size_t i = 0 ; i < str.length(); ++i) {
-    const char ch = str[i];
-    if ( (ch != 'A') && (ch != 'C') && (ch != 'G') && (ch != 'T') &&
-         (ch != 'N') &&
-         (ch != 'a') && (ch != 'c') && (ch != 'g') && (ch != 't') &&
-         (ch != 'n') )
-      return false;
   }
-  return true;
+  return str.find_first_not_of("ACGTNacgtn");
 }
 
 std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
   size_t countA = 0, countC = 0, countG = 0, countT = 0;
   for (size_t i = 0; i < nuc.length(); i++) {
-    switch (nuc.at(i)) {
+    switch (nuc[i]) {
       case 'A':
       case 'a':
         countA++;
@@ -427,10 +416,8 @@ std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) 
       case 'n':
         break;
       default:
-        errx(1, "Internal error: OneAbundantNucleotide " \
-             "called with invalid nucleotide string '%s'" \
-             ", character '%c'", nuc.c_str(), nuc.at(i));
-      }
+	PrintMessageDieOnError("ERROR: invalid nucleotide string " + nuc, ERROR);
+    }
   }
   size_t threshold = nuc.length()*perc_threshold;
   if (countA >= threshold)
@@ -448,7 +435,7 @@ int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
   int runsize = 0;
   int maxrunsize = 0;
   for (size_t i = 0; i < nuc.size(); i++) {
-    if (nuc.at(i) == abundant_nuc) {
+    if (nuc[i] == abundant_nuc) {
       runsize++;
     } else {
       if (runsize > maxrunsize) {
@@ -463,7 +450,7 @@ int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
 double calculate_N_percentage(const std::string& nuc) {
   size_t n_count = 0;
   for (size_t i = 0; i < nuc.length(); i++)
-    if (nuc.at(i) == 'N' || nuc.at(i) == 'n')
+    if (nuc[i] == 'N' || nuc[i] == 'n')
       n_count++;
   return (static_cast<double>(n_count))/
     (static_cast<double>(nuc.length()));
@@ -517,33 +504,60 @@ std::string reverse(const std::string& s) {
   return rev;
 }
 
-void getCanonicalMS(const string& msnucs, string* canonical) {
-  // common ones
-  // first check to see if it is hashed already
-  if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
-    *canonical = canonicalMSTable.at(msnucs);
-    return;
+std::string getMinPermutation(const std::string& msnucs){
+  if (permutationTable.find(msnucs) != permutationTable.end())
+    return permutationTable[msnucs];
+
+  std::string minPerm = msnucs;
+  for(size_t i = 1; i < msnucs.size(); i++){
+    std::string otherPerm = msnucs.substr(i)+msnucs.substr(0,i);
+    minPerm = getFirstString(minPerm, otherPerm);
   }
-  string newseq;
-  size_t size = msnucs.size();
-  size_t i;
-  size_t j;
-  *canonical = msnucs;
-  newseq.resize(size);
-  for (i = 1; i < size ; i++) {
-    newseq = msnucs.substr(size-i, size) + msnucs.substr(0, size-i);
-    // if newsq > canon, make it canon
-    for (j = 0; j < size; j++) {
-      if (nucToNumber(newseq[j]) < nucToNumber((*canonical)[j])) {
-        *canonical = newseq;
-        break;
-      } else if (nucToNumber(newseq[j]) > nucToNumber((*canonical)[j])) {
-        break;
+
+  permutationTable.insert(pair<string,string>(msnucs, minPerm));
+  return minPerm;
+}
+
+
+std::string getCanonicalRepeat(const std::string& msnucs) {
+  if (canonicalRepeatTable.find(msnucs) != canonicalRepeatTable.end())
+    return canonicalRepeatTable[msnucs];
+
+  std::string subunit = msnucs;
+  for (size_t segLen = 1; segLen < msnucs.size(); segLen++) {
+    if(msnucs.size() % segLen == 0){
+      std::string seq = msnucs.substr(0, segLen);
+      bool match = true;
+
+      for (size_t seg = 0; seg < msnucs.size()/segLen; seg++) {
+	if (msnucs.substr(seg*segLen, segLen) != seq) {
+	  match = false;
+	  break;
+	}
+      }
+
+      if (match) {
+	subunit = seq;
+	break;
       }
     }
   }
-  canonicalMSTable.insert(pair<string, string>
-                          (msnucs, *canonical));
+
+  std::string canonical;
+  getCanonicalMS(subunit, &canonical);
+  canonicalRepeatTable.insert(pair<string,string>(msnucs, canonical));
+  return canonical;
+}
+
+
+void getCanonicalMS(const string& msnucs, string* canonical) {
+  if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
+    *canonical = canonicalMSTable[msnucs];
+    return;
+  }
+
+  *canonical = getFirstString(getMinPermutation(msnucs), getMinPermutation(reverseComplement(msnucs)));
+  canonicalMSTable.insert(pair<string, string>(msnucs, *canonical));
 }
 
 IFileReader* create_file_reader(const string& filename1,
@@ -600,7 +614,7 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   size_t cigar_length = 0;
   *cigar_had_s = false;
   for (size_t i = 0; i < cigar_list->cigars.size(); i++) {
-    CIGAR cig = cigar_list->cigars.at(i);
+    CIGAR cig = cigar_list->cigars[i];
     if (cig.cigar_type == 'M' || cig.cigar_type == 'I' || cig.cigar_type == 'S') {
       cigar_length += cig.num;
     }
@@ -610,8 +624,8 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   int diff = nucs.length() - cigar_length;
   if (diff > 0) {
     *added_s = true;
-    if (cigar_list->cigars.at(cigar_list->cigars.size()-1).cigar_type == 'M') {
-      cigar_list->cigars.at(cigar_list->cigars.size()-1).num += diff;
+    if (cigar_list->cigars[cigar_list->cigars.size()-1].cigar_type == 'M') {
+      cigar_list->cigars[cigar_list->cigars.size()-1].num += diff;
     } else {
       CIGAR cig;
       cig.num = diff;
