@@ -56,6 +56,7 @@ struct STRRecord {
   vector<std::map<pair<int,int>,float> > likelihood_grid; // log10(P(R|G))
   vector<std::map<int,int> > spanning_reads;
   vector<int> alleles_to_include;
+  vector<float> prob_ref; // P(R|0)/sum all likelihoods
   void Reset() {
     chrom = "";
     start = -1;
@@ -71,6 +72,7 @@ struct STRRecord {
     allele1.clear();
     allele2.clear();
     coverage.clear();
+    prob_ref.clear();
     max_log_lik.clear();
     max_lik_score.clear();
     allele1_marginal_lik_score.clear();

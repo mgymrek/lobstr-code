@@ -185,8 +185,12 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
     output_stream << "\t";
   }
 
-  // QUAL - TODO, how to make multi sample QUAL
-  float qual = NOQUAL;
+  // QUAL
+  float qual = 0;
+  for (size_t i = 0; i < str_record.prob_ref.size(); i++) {
+    qual += -10*(str_record.prob_ref.at(i));
+  }
+  if (qual < 0) qual = 0;
   output_stream << qual << "\t";
   // FILTER
   output_stream << ".\t";

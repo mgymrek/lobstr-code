@@ -195,6 +195,8 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   map<pair<int,int>, float> likelihood_grid;
   int allele1 = MISSING;
   int allele2 = MISSING;
+  float ref_log_lik = -1000000;
+  float prob_ref = 0;
   float max_log_lik = -1000000;
   float max_lik_score = 0;
   float allele1_marginal_lik_score = 0;
@@ -251,6 +253,9 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
         allele1 = allelotype.first;
         allele2 = allelotype.second;
       }
+      if (allele1 == 0 && allele2 == 0) {
+	ref_log_lik = currScore;
+      }
     }
   }
 
@@ -263,6 +268,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   allele2_marginal_lik_score =
     marginal_lik_score_numerator[allele2]/
     sum_all_likelihoods;
+  prob_ref = ref_log_lik - log10(sum_all_likelihoods);
 
   // Get agreeing/conflicting
   agreeing = spanning_reads[allele1];
@@ -278,6 +284,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   str_record->allele1.push_back(allele1);
   str_record->allele2.push_back(allele2);
   str_record->coverage.push_back(coverage);
+  str_record->prob_ref.push_back(prob_ref);
   str_record->max_log_lik.push_back(max_log_lik);
   str_record->max_lik_score.push_back(max_lik_score);
   str_record->allele1_marginal_lik_score.push_back(allele1_marginal_lik_score);
