@@ -139,9 +139,6 @@ extern bool print_reads;
 extern float min_het_freq;
 extern int max_matedist;
 
-// vcf params
-extern std::string exclude_positions_file;
-
 // debug
 extern bool profile;
 extern bool fftw_debug;

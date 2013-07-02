@@ -97,12 +97,7 @@ void show_help() {
     "--version:                      print out allelotype program version number\n\n" \
     "Options for calculating and reporting allelotypes:\n" \
     "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
-    "                                For more than one annotation, use comma-separated list of files\n" \
-    "Options for reporting allelotypes:\n" \
-    "--exclude-pos <FILE>:          File of \"chrom\\tpos\" of positions to exclude.\n" \
-    "                               For downstream analysis, it is beneficial to exclude\n" \
-    "                               any STRs with the same starting point but different motifs,\n" \
-    "                               as this will cause errors when using vcftools.\n\n" \
+    "                                For more than one annotation, use comma-separated list of files\n\n" \
     "Options for filtering reads:\n" \
     "If not specified, no filters applied\n" \
     "--chrom <STRING>:              only look at reads from this chromosome\n" \
@@ -129,7 +124,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHROM,
     OPT_COMMAND,
     OPT_DEBUG,
-    OPT_EXCLUDE_POS,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_FLANK,
@@ -159,7 +153,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chrom", 1, 0, OPT_CHROM},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
-    {"exclude-pos", 1, 0, OPT_EXCLUDE_POS},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
     {"include-flank", 0, 0, OPT_INCLUDE_FLANK},
@@ -207,10 +200,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_DEBUG:
       debug = true;
-      break;
-    case OPT_EXCLUDE_POS:
-      exclude_positions_file = string(optarg);
-      AddOption("exclude-pos", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);

@@ -87,12 +87,6 @@ VCFWriter::VCFWriter(const string& filename, const vector<string>& samples)
     output_stream << "\t" << (*it);
   }
   output_stream << endl;
-  if (!exclude_positions_file.empty()) {
-    if (my_verbose) {
-      PrintMessageDieOnError("Loading positions to exclude", PROGRESS);
-    }
-    LoadPositionsToExclude();
-  }
 }
 
 std::string VCFWriter::GetSTRVar(const string& refseq, const string& ref_repseq, int allele) {
@@ -113,37 +107,9 @@ std::string VCFWriter::GetSTRVar(const string& refseq, const string& ref_repseq,
   }
 }
 
-void VCFWriter::LoadPositionsToExclude() {
-  TextFileReader expos(exclude_positions_file);
-  string line;
-  while (expos.GetNextLine(&line)) {
-    vector<string> items;
-    split(line, '\t', items);
-    if (items.size() == 0) break;
-    if (items.size() != 2) {
-      PrintMessageDieOnError("Exclude-pos file has invalid format.", ERROR);
-    }
-    string chrom;
-    int pos;
-    chrom = items[0];
-    pos = atoi(items[1].c_str());
-    if (pos_to_exclude.find(chrom) == pos_to_exclude.end()) {
-      set<int> pos_list;
-      pos_to_exclude[chrom] = pos_list;
-    }
-    pos_to_exclude[chrom].insert(pos);
-  }
-}
-
 VCFWriter::~VCFWriter() {}
 
 void VCFWriter::WriteRecord(const STRRecord& str_record) {
-  if (pos_to_exclude.find(str_record.chrom) !=
-      pos_to_exclude.end()) {
-    if (pos_to_exclude[str_record.chrom].count(str_record.start) != 0) {
-      return;
-    }  
-  }
   // CHROM
   output_stream << str_record.chrom << "\t";
   // POS
