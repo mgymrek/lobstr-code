@@ -398,7 +398,8 @@ int main(int argc, char* argv[]) {
     PrintMessageDieOnError("Determining samples to process", PROGRESS);
   }
   vector<string> samples_list;
-  GetSamplesFromBamFiles(bam_files, &samples_list);
+  map<string,string> rg_id_to_sample;
+  GetSamplesFromBamFiles(bam_files, &samples_list, &rg_id_to_sample);
   if (samples_list.size() == 0) {
     PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
   }
@@ -424,7 +425,7 @@ int main(int argc, char* argv[]) {
   if (command == "classify") {
     // Initialize genotyper
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
-			output_prefix + ".vcf", samples_list);
+			output_prefix + ".vcf", samples_list, rg_id_to_sample);
     // Load annotations
     if (!annotation_files_string.empty()) {
       vector<string>annotation_files;

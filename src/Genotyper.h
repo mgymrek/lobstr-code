@@ -52,7 +52,8 @@ class Genotyper {
             std::map<pair<std::string, int>, std::string>* _ref_nucleotides,
             std::map<pair<std::string, int>, std::string>* _ref_repseq,
 	    const std::string& vcf_file,
-	    const std::vector<std::string>& _samples);
+	    const std::vector<std::string>& _samples,
+	    const std::map<std::string,std::string>& _rg_id_to_sample);
   ~Genotyper();
 
   /* Load annotations to use */
@@ -76,6 +77,7 @@ class Genotyper {
   /* Divide reads to one list per sample */
   bool GetReadsPerSample(const std::list<AlignedRead>& aligned_reads,
 			 const std::vector<string>& samples,
+			 const std::map<std::string,std::string>& rg_id_to_sample,
 			 std::vector<std::list<AlignedRead> >* sample_reads);
 
   /* Get log likelihood of an allelotype */
@@ -102,6 +104,7 @@ class Genotyper {
 
   /* List of samples */
   std::vector<std::string> samples;
+  std::map<std::string,std::string> rg_id_to_sample;
 
   /* annotations */
   std::map<pair<std::string, int>, STRAnnotation> annotations;

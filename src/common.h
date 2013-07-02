@@ -27,6 +27,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -81,7 +82,8 @@ std::string GetReadDebug(const ReadPair& read_pair,
                          
 // Get samples from bam files using read groups
 void GetSamplesFromBamFiles(const std::vector<std::string>& bamfiles,
-			    std::vector<std::string>* samples_list);
+			    std::vector<std::string>* samples_list,
+			    std::map<std::string, std::string>* rg_id_to_sample);
 
 // Get read group ID string
 std::string GetReadGroup();

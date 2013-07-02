@@ -49,12 +49,14 @@ Genotyper::Genotyper(NoiseModel* _noise_model,
                      map<pair<string,int>, string>* _ref_nucleotides,
                      map<pair<string,int>, string>* _ref_repseq,
 		     const string& vcf_file,
-		     const vector<string>& _samples) {
+		     const vector<string>& _samples,
+		     const map<string,string>& _rg_id_to_sample) {
   noise_model = _noise_model;
   haploid_chroms = _haploid_chroms;
   ref_nucleotides = _ref_nucleotides;
   ref_repseq = _ref_repseq;
   samples = _samples;
+  rg_id_to_sample = _rg_id_to_sample;
   vcfWriter = new VCFWriter(vcf_file, samples);
 }
 
@@ -141,6 +143,7 @@ void Genotyper::CleanAllelesList(int reflen, vector<int>* alleles) {
 
 bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
 				  const vector<string>& samples,
+				  const map<string,string>& rg_id_to_sample,
 				  vector<list<AlignedRead> >* sample_reads) {
   sample_reads->clear();
   // Get map of sample->index
@@ -152,8 +155,12 @@ bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
   // Go through each read and add to appropriate list
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
-    int i = sample_to_index[it->read_group];
-    sample_reads->at(i).push_back(*it);
+    if (rg_id_to_sample.find(it->read_group) !=
+	rg_id_to_sample.end()) {
+      string sample = rg_id_to_sample.at(it->read_group);
+      int i = sample_to_index[sample];
+      sample_reads->at(i).push_back(*it);
+    }
   }
   return true;
 }
@@ -409,7 +416,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
 
   // Divide reads for each sample
   vector<list<AlignedRead> > sample_reads;
-  if (!GetReadsPerSample(read_list, samples, &sample_reads)) {return;}
+  if (!GetReadsPerSample(read_list, samples, rg_id_to_sample, &sample_reads)) {return;}
 
   // Process each sample
   for (size_t i = 0; i < samples.size(); i++) {

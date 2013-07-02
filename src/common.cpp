@@ -26,6 +26,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <netinet/in.h>
 #include <netdb.h> 
 
+#include <algorithm>
 #include <map>
 #include <iostream>
 #include <fstream>
@@ -172,7 +173,8 @@ std::string GetReadDebug(const ReadPair& read_pair,
 }
 
 void GetSamplesFromBamFiles(const vector<string>& bamfiles,
-			    vector<string>* samples_list) {
+			    vector<string>* samples_list,
+			    map<string,string>* rg_id_to_sample) {
   BamTools::BamReader reader;
   string bamfile = "";
   for (size_t i = 0; i < bamfiles.size(); i++) {
@@ -198,7 +200,11 @@ void GetSamplesFromBamFiles(const vector<string>& bamfiles,
       if (my_verbose) {
 	PrintMessageDieOnError("Adding sample " + rg_sample, PROGRESS);
       }
-      samples_list->push_back(rg_sample);
+      rg_id_to_sample->insert(pair<string,string>(rg.ID,rg_sample));
+      if (find(samples_list->begin(), samples_list->end(), rg_sample) ==
+	  samples_list->end()) {
+	samples_list->push_back(rg_sample);
+      }
     }
   }
 }
