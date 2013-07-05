@@ -327,6 +327,7 @@ int main(int argc, char* argv[]) {
   /* parse command line options */
   parse_commandline_options(argc, argv);
   PrintMessageDieOnError("Getting run info", PROGRESS);
+  run_info.Reset();
   run_info.starttime = GetTime();
   if (_GIT_VERSION != NULL) {
     run_info.gitversion = _GIT_VERSION;

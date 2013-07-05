@@ -51,6 +51,17 @@ static const std::string GetReference() {
 
 VCFWriter::VCFWriter(const string& filename, const vector<string>& samples)
   : TextFileWriter(filename) {
+  // update run info
+  run_info.samples = samples;
+  run_info.num_calls.resize(samples.size());
+  run_info.num_calls5x.resize(samples.size());
+  run_info.total_coverage.resize(samples.size());
+  run_info.total_agree.resize(samples.size());
+  run_info.calltype_by_period.resize(6);
+  for (size_t i = 0; i < 6; i++) {
+    run_info.calltype_by_period.at(i).resize(4);
+  }
+  // VCF header
   string lobstr_header = user_defined_arguments;
   lobstr_header = string_replace(lobstr_header, "@CO\t# version=", "");
   lobstr_header = string_replace(lobstr_header, "\n", "");
@@ -184,8 +195,31 @@ void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
     output_stream << "./.";
     return;
   } else {
-      genotype_string << allele_to_index[str_record.allele1.at(sample_index)] << "/"
-		      << allele_to_index[str_record.allele2.at(sample_index)];
+    run_info.num_calls.at(sample_index)++;
+    if (str_record.coverage.at(sample_index) >= 5) {
+      run_info.num_calls5x.at(sample_index)++;
+    }
+    run_info.total_coverage.at(sample_index) += str_record.coverage.at(sample_index);
+    run_info.total_agree.at(sample_index) += static_cast<float>(str_record.agreeing.at(sample_index))/
+      static_cast<float>(str_record.coverage.at(sample_index));
+    size_t calltype_index = -1;
+    const int& allele1 = allele_to_index[str_record.allele1.at(sample_index)];
+    const int& allele2 = allele_to_index[str_record.allele2.at(sample_index)];
+    if (allele1 == allele2) {
+      if (allele1 == 0) {
+	calltype_index = 0;
+      } else {
+	calltype_index = 2;
+      }
+    } else {
+      if (allele1 == 0 || allele2 == 0) {
+	calltype_index = 1;
+      } else {
+	calltype_index = 3;
+      }
+    }
+    run_info.calltype_by_period.at(str_record.period-1).at(calltype_index)++;
+    genotype_string << allele1 << "/" << allele2;
   }
 
   size_t num_alleles = str_record.alleles_to_include.size();
