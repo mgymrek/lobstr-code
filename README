@@ -68,7 +68,7 @@ Several examples of setting the file path parameters:
 * --index-prefix: path and prefix of lobSTR index: You can download the lobSTR index from the lobSTR downloads page. Unzip the index to an folder PATH-TO-INDEX. To specify this as the index, use:
 --index-prefix PATH-TO-INDEX/lobSTR_
 
-Change the path accordingly to match the path where the index is stored. An index for hg18 and hg19 is available for download on the lobSTR website
+Change the path accordingly to match the path where the index is stored. An index for hg19 is available for download on the lobSTR website
 
 Part II: allelotyping
 
@@ -113,12 +113,8 @@ VI. OUTPUT
 
 The following files are output from lobSTR, with formats described fully at http://club/lobSTR/file-formats.html:
 
-$prefix.aligned.tab: all aligned reads
 $prefix.aligned.bam: aligned reads in bam format
-$prefix.genotypes.tab: genotype called at each locus
 $prefix.vcf: genotype calls in vcf format
-
-Tab-delimited outputs are redundant with the .bam and .vcf outputs and may be deprecated in later versions.
 
 VII. KNOWN BUGS
 
@@ -139,7 +135,6 @@ Where --str is the table resulting from running the Tandem Repeat Finder tool.
 The resulting argument to --index-prefix for lobSTR will then be $out_dir/lobSTR
 
 --extend gives how many bp around an STR locus to include in the reference. By default, this is set to 1000bp in order to allow enough sequence to align mate pairs of STR-containing reads. Note that the --extend parameter must be set to the SAME value for lobSTR alignment as it was set to during index building.
-
 
 IX. Running lobSTR on the Amazon Cloud
 
@@ -172,12 +167,11 @@ lobSTR --index-prefix $index_path/lobSTR_ --extend 1000 -q --bwaq 10 --mapq 100 
 
 X. Quality control checks for lobSTR results
 
-The following scripts output helpful statistics about the quality of lobSTR alignment and allelotyping results:
+lobSTR outputs the files:
+<prefix>.aligned.stats
+<prefix>.allelotype.stats
 
-python scripts/lobSTR_alignment_checks.py -f <aligned.tab file> [--plot]
-python scripts/lobSTR_allelotype_checks.py -f <genotypes.tab file> [--plot]
-
-For each, specifying the optional --plot flag will output quality control plots. This option requires that matplotlib be installed.
+with information about each run.
 
 A description of the normal range of values reported, as well as a description of the plots produced, is given on the usage page of the website.
 
@@ -190,5 +184,3 @@ python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py <str table> <ref.fa> > <strinfo.tab
 
 e.g.:
 python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py data/trf.ucsc.hg19.filtered.bed hg19.fa > strinfo_hg19.tab
-
-
