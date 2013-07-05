@@ -81,7 +81,7 @@ void OutputRunStatistics() {
   PrintMessageDieOnError("Outputting run statistics", PROGRESS);
   TextFileWriter sWriter(output_prefix + (program == LOBSTR? ".aligned.stats":".allelotype.stats"));
   // Output run statistics to stats file
-  string stats_string = run_info.PrintToString();
+  string stats_string = run_info.PrintToString((program == LOBSTR ? 0: 1));
   sWriter.Write(stats_string);
   // Upload to AWS S3
   if (!noweb) {

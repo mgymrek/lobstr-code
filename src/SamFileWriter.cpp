@@ -52,9 +52,6 @@ SamFileWriter::SamFileWriter(const string& _filename,
   }
   header.ReadGroups.Add(rg);
 
-  //  string header="@CO\t";
-  //header += user_defined_arguments;
-  //header +="\n";
   RefVector ref_vector;
   for (map<string, int>::const_iterator it = chrom_sizes.begin();
        it != chrom_sizes.end(); ++it) {
@@ -74,6 +71,25 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   const int& paired_dist = read_pair.treat_as_paired ?
     abs(read_pair.reads.at(aligned_read_num).read_start-
         read_pair.reads.at(1-aligned_read_num).read_start) : -1;
+  // Update run info for this read
+  run_info.num_aligned_reads++;
+  run_info.total_insert += paired_dist;
+  if (read_pair.treat_as_paired) {
+    run_info.num_aligned_reads++;
+    run_info.num_mates++;
+  } 
+  if (!read_pair.treat_as_paired && paired) {
+    run_info.num_stitched++;
+  } else {
+    run_info.num_single++;
+  }
+  if (read_pair.reads.at(aligned_read_num).reverse) {
+    run_info.num_reverse++;
+  }
+  if (read_pair.reads.at(aligned_read_num).diffFromRef %
+      static_cast<int>(read_pair.reads.at(aligned_read_num).repseq.length()) != 0) {
+    run_info.num_nonunit++;
+  }
   // Write aligned read
   BamAlignment bam_alignment;
   bam_alignment.Name = read_pair.reads.at(aligned_read_num).ID;
@@ -150,6 +166,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   // XX: stitched
   bam_alignment.AddTag("XX", "i", static_cast<int>
                        (!read_pair.treat_as_paired && paired));
+
   // XM: distance between read and mate start pos
   bam_alignment.AddTag("XM", "i", paired_dist);
   // XN: name of STR repeat
