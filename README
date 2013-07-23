@@ -85,7 +85,7 @@ Required inputs are:
   - "simple" performs allelotyping without using a noise model
 * --bam: a bam file consisting of aligned reads created during the alignment step.
 * --out: a prefix to name output files
-* --noise_model: an example noisemodel is given in the files $PATH_TO_LOBSTR/models/illumina2.* . Or you can create your own using the "train" command described above. 
+* --noise_model: an example noisemodel is given in the files $PATH_TO_LOBSTR/models/illumina_v2.0.3.* . Or you can create your own using the "train" command described above. 
 * --strinfo: a file containing metadata about each STR locus. This is included in the download at $PATH_TO_LOBSTR/data/strinfo.hg19.tab and $PATH_TO_LOBSTR/data/strinfo.hg18.tab. To create this file for a custom set of loci or for loci from a different species, see XI: BUILDING THE STRINFO FILE. This is required if command is not "simple".
 * --index-prefix: PATH_TO_LOBSTR/lobSTR_, required if command is not "train".
 
