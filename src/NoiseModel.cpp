@@ -82,7 +82,11 @@ NoiseModel::NoiseModel(const string& strinfofile,
   stutter_model_filename = noise_model + ".stuttermodel";
   stepsize_model_filename = noise_model + ".stepmodel";
   // Determine MIN PERIOD
-  MIN_PERIOD = DetermineMinPeriod(stepsize_model_filename);
+  if (command == "classify") {
+    MIN_PERIOD = DetermineMinPeriod(stepsize_model_filename);
+  } else {
+    MIN_PERIOD = 1;
+  }
   // Set haploid chromosomes
   haploid_chroms = haploid_chroms_;
   // initialize pdf
