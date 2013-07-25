@@ -71,9 +71,10 @@ am_liballelotype_a_OBJECTS = common.$(OBJEXT) BamFileReader.$(OBJEXT) \
 	FastqFileReader.$(OBJEXT) FastaPairedFileReader.$(OBJEXT) \
 	FastqPairedFileReader.$(OBJEXT) Genotyper.$(OBJEXT) \
 	gzstream.$(OBJEXT) NoiseModel.$(OBJEXT) \
-	ReadContainer.$(OBJEXT) runtime_parameters.$(OBJEXT) \
-	TextFileReader.$(OBJEXT) TextFileWriter.$(OBJEXT) \
-	VCFWriter.$(OBJEXT) ZippedFastaFileReader.$(OBJEXT) \
+	ReadContainer.$(OBJEXT) ReferenceSTR.$(OBJEXT) \
+	runtime_parameters.$(OBJEXT) TextFileReader.$(OBJEXT) \
+	TextFileWriter.$(OBJEXT) VCFWriter.$(OBJEXT) \
+	ZippedFastaFileReader.$(OBJEXT) \
 	ZippedFastqFileReader.$(OBJEXT) ZippedTextFileReader.$(OBJEXT) \
 	BamReader.$(OBJEXT) BamMultiReader.$(OBJEXT) \
 	BamWriter.$(OBJEXT) BamAlignment.$(OBJEXT) SamHeader.$(OBJEXT) \
@@ -626,6 +627,7 @@ liballelotype_a_SOURCES = \
 	gzstream.cpp \
 	NoiseModel.cpp \
 	ReadContainer.cpp \
+	ReferenceSTR.cpp \
 	runtime_parameters.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
@@ -923,6 +925,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NoiseModel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QSufSort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReadContainer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReferenceSTR.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/STRDetector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamFileWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SamFormatParser_p.Po@am__quote@

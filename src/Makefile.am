@@ -253,6 +253,7 @@ liballelotype_a_SOURCES = \
 	gzstream.cpp \
 	NoiseModel.cpp \
 	ReadContainer.cpp \
+	ReferenceSTR.cpp \
 	runtime_parameters.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \

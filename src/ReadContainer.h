@@ -75,6 +75,9 @@ class ReadContainer {
   /* Add reads from a bam file */
   void AddReadsFromFile(const ReferenceSTR& ref_str);
 
+  /* Clear reads from container */
+  void ClearReads();
+
   /* Get reads at an STR coordinate */
   void GetReadsAtCoord(const std::pair<std::string, int>& coord,
 		       std::list<AlignedRead>* reads);

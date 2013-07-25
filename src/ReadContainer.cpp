@@ -181,6 +181,10 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
   }
 }
 
+void ReadContainer::ClearReads() {
+  aligned_str_map_.clear();
+}
+
 void ReadContainer::GetReadsAtCoord(const pair<string,int>& coord,
 				    list<AlignedRead>* reads) {
   if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {

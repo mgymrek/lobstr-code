@@ -429,6 +429,36 @@ int main(int argc, char* argv[]) {
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
     ReadContainer str_container(bam_files);
     std::string current_chrom;
+    ReferenceSTRContainer ref_str_container(reference_strs);
+    // Read one chunk of refs at a time
+    vector<ReferenceSTR> ref_str_chunk;
+    string chrom; int begin,end;
+    while (ref_str_container.GetNextChunk(&ref_str_chunk, &chrom, &begin, &end)) {
+      stringstream msg;
+      msg <<"Processing region " << chrom << ":" << begin << "-" << end << endl;
+      PrintMessageDieOnError(msg.str(), PROGRESS);
+      ReferenceSTR ref_region;
+      ref_region.chrom = chrom;
+      ref_region.start = begin;
+      ref_region.stop = end;
+      if (use_chrom.empty() || (use_chrom == chrom)) {
+	str_container.AddReadsFromFile(ref_region);
+      }
+      for (size_t i = 0; i < ref_str_chunk.size(); i++) {
+	pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
+	list<AlignedRead> aligned_reads;
+	str_container.GetReadsAtCoord(coord, &aligned_reads);
+	if (aligned_reads.size() > 0) {
+	  if (rmdup) {
+	    str_container.RemovePCRDuplicates();
+	  }
+	  genotyper.Genotype(aligned_reads);
+	}
+      }
+      str_container.ClearReads();
+    }
+
+    /*
     for (size_t i = 0; i < reference_strs.size(); i++) {
       if (use_chrom.empty() || (use_chrom == reference_strs.at(i).chrom)) {
 	if (my_verbose) {
@@ -449,8 +479,9 @@ int main(int argc, char* argv[]) {
 	  }
 	  genotyper.Genotype(aligned_reads);
 	}
+	str_container.ClearReads();
       }
-    }
+      }*/
   }
   run_info.endtime = GetTime();
   OutputRunStatistics();

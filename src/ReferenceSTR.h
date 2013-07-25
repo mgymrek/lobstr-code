@@ -32,4 +32,16 @@ struct ReferenceSTR {
   int stop;
 };
 
+class ReferenceSTRContainer {
+ public:
+  ReferenceSTRContainer(const vector<ReferenceSTR>& _ref_strs);
+  ~ReferenceSTRContainer();
+
+  /* Get a chunk of reference STRs to process and the range they span */
+  bool GetNextChunk(vector<ReferenceSTR>* ref_str_chunk, std::string* chrom, int* begin, int* end);
+
+  vector<ReferenceSTR> ref_strs;
+  size_t counter;
+  size_t num_refs;
+};
 #endif  // SRC_REFERENCESTR_H_
