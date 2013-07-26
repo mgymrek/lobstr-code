@@ -435,7 +435,7 @@ int main(int argc, char* argv[]) {
     string chrom; int begin,end;
     while (ref_str_container.GetNextChunk(&ref_str_chunk, &chrom, &begin, &end)) {
       stringstream msg;
-      msg <<"Processing region " << chrom << ":" << begin << "-" << end << endl;
+      msg <<"Processing region " << chrom << ":" << begin << "-" << end;
       PrintMessageDieOnError(msg.str(), PROGRESS);
       ReferenceSTR ref_region;
       ref_region.chrom = chrom;
@@ -457,31 +457,6 @@ int main(int argc, char* argv[]) {
       }
       str_container.ClearReads();
     }
-
-    /*
-    for (size_t i = 0; i < reference_strs.size(); i++) {
-      if (use_chrom.empty() || (use_chrom == reference_strs.at(i).chrom)) {
-	if (my_verbose) {
-	  if (reference_strs.at(i).chrom != current_chrom) {
-	    stringstream msg;
-	    msg << "Processing locus " << reference_strs.at(i).chrom;
-	      PrintMessageDieOnError(msg.str(), PROGRESS);
-	      current_chrom = reference_strs.at(i).chrom;
-	  }
-	}
-	str_container.AddReadsFromFile(reference_strs.at(i));
-	pair<string, int> coord(reference_strs.at(i).chrom, reference_strs.at(i).start);
-	list<AlignedRead> aligned_reads;
-	str_container.GetReadsAtCoord(coord, &aligned_reads);
-	if (aligned_reads.size() > 0) {
-	  if (rmdup) {
-	    str_container.RemovePCRDuplicates();
-	  }
-	  genotyper.Genotype(aligned_reads);
-	}
-	str_container.ClearReads();
-      }
-      }*/
   }
   run_info.endtime = GetTime();
   OutputRunStatistics();

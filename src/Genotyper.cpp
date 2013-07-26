@@ -134,7 +134,9 @@ void Genotyper::CleanAllelesList(int reflen, vector<int>* alleles) {
     if (total_len > 0) {
       alleles_to_keep.push_back(*it);
     } else {
-      PrintMessageDieOnError("Attempt to load invalid allele size", WARNING);
+      if (debug) {
+	PrintMessageDieOnError("Attempt to load invalid allele size", WARNING);
+      }
     }
   }
   alleles->resize(alleles_to_keep.size());

@@ -89,14 +89,6 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     if (!aln.GetTag("XE", aligned_read.msEnd)) {
       aligned_read.msEnd = 0;
     }
-    // check that these match the ref str
-    if (ref_str.chrom != "NA") {
-      if (aligned_read.chrom != ref_str.chrom ||
-	  aligned_read.msStart != ref_str.start ||
-	  aligned_read.msEnd != ref_str.stop) {
-	continue;
-      }
-    }
     // get read group
     if (!aln.GetTag("RG", aligned_read.read_group)) {
       PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
