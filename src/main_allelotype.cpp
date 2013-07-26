@@ -109,6 +109,7 @@ void show_help() {
     "                               <INT>.\n" \
     "--max-matedist <INT>:          Filter reads with a mate distance larger than <INT> bp.\n\n"
     "Additional options\n" \
+    "--chunksize                    Number of loci to read into memory at a time (default: 1000)\n\n" \
     "--noweb                        Do not report any user information and parameters to Amazon S3.\n";
   cerr << help;
   exit(1);
@@ -122,6 +123,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_ANNOTATION,
     OPT_BAM,
     OPT_CHROM,
+    OPT_CHUNKSIZE,
     OPT_COMMAND,
     OPT_DEBUG,
     OPT_HAPLOID,
@@ -151,6 +153,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"annotation", 1, 0, OPT_ANNOTATION},
     {"bam", 1, 0, OPT_BAM},
     {"chrom", 1, 0, OPT_CHROM},
+    {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
     {"haploid", 1, 0, OPT_HAPLOID},
@@ -189,6 +192,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_CHROM:
       use_chrom = string(optarg);
       AddOption("chrom", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_CHUNKSIZE:
+      CHUNKSIZE = atoi(optarg);
+      AddOption("chunksize", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_COMMAND:
       command = string(optarg);

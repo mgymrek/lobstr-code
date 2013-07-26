@@ -162,6 +162,9 @@ extern size_t MIN_STR_LENGTH;
 extern int QUAL_CUTOFF;
 extern int QUALITY_CONSTANT;
 
+// chunk size for allelotyper
+extern int CHUNKSIZE;
+
 // Amazon s3 parameters
 extern bool using_s3;
 extern std::string s3bucket;

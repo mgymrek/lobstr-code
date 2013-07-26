@@ -28,10 +28,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 #include "src/ReferenceSTR.h"
+#include "src/runtime_parameters.h"
 
 using namespace std;
-
-int CHUNKSIZE = 1000;
 
 ReferenceSTRContainer::ReferenceSTRContainer(const vector<ReferenceSTR>& _ref_strs) {
   ref_strs = _ref_strs;
