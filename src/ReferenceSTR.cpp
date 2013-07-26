@@ -32,6 +32,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+int MAXCHUNKSPAN = 5000000;
+
 ReferenceSTRContainer::ReferenceSTRContainer(const vector<ReferenceSTR>& _ref_strs) {
   ref_strs = _ref_strs;
   counter = 0;
@@ -53,14 +55,14 @@ bool ReferenceSTRContainer::GetNextChunk(vector<ReferenceSTR>* ref_str_chunk,
     if (counter == num_refs) break;
     // don't span more than one chrom for a chunk
     if (ref_strs.at(counter).chrom != *chrom) break;
-    // Else add to the list
+    // make sure this isn't going to make the chunk too big
+    int mincoord = (ref_strs.at(counter).start < *begin)?ref_strs.at(counter).start:*begin;
+    int maxcoord = (ref_strs.at(counter).stop > *end)?ref_strs.at(counter).stop:*end;
+    if (maxcoord - mincoord > MAXCHUNKSPAN) break;
+    // Else add to the list and update coords
     ref_str_chunk->push_back(ref_strs.at(counter));
-    if (ref_strs.at(counter).start < *begin) {
-      *begin = ref_strs.at(counter).start;
-    }
-    if (ref_strs.at(counter).stop > *end) {
-      *end = ref_strs.at(counter).stop;
-    }
+    *begin = mincoord;
+    *end = maxcoord;
     // Update counters
     current_chunk_size++;
     counter++;

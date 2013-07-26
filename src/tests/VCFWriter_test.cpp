@@ -73,4 +73,11 @@ void VCFWriterTest::test_GetSTRVar() {
   allele = 5;
   check = "TTTATTTATTTATTTATTTATTTATTTATTTATTTA";
   CPPUNIT_ASSERT_EQUAL(check, _vcf_writer->GetSTRVar(refseq, ref_repseq, allele));
+
+  // Case 4, ones that messed up
+  allele = 8;
+  refseq = "TGTGTGTGTGTGTGTGTGTGTGTGTGTGTGT";
+  ref_repseq="TG";
+  check = "TGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGT";
+  CPPUNIT_ASSERT_EQUAL(check, _vcf_writer->GetSTRVar(refseq, ref_repseq, allele));
 }

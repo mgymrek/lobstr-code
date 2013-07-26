@@ -371,14 +371,15 @@ int main(int argc, char* argv[]) {
         int start = atoi(items.at(2).c_str())+extend;
 	int str_start = atoi(items.at(2).c_str());
 	int str_end = atoi(items.at(3).c_str());
+	string repseq = items.at(4);
 	if (use_chrom.empty() || use_chrom == chrom) {
 	  ReferenceSTR ref_str;
 	  ref_str.start = str_start+extend;
 	  ref_str.stop = str_end-extend;
 	  ref_str.chrom = chrom;
 	  reference_strs.push_back(ref_str);
-	  string repseq_in_ref = items.at(6);
 	  string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
+	  string repseq_in_ref=  ref_record.nucleotides.substr(extend, repseq.size());
 	  pair<string, int> locus = pair<string,int>(chrom, start);
 	  ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
 	  ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
@@ -441,28 +442,28 @@ int main(int argc, char* argv[]) {
     vector<ReferenceSTR> ref_str_chunk;
     string chrom; int begin,end;
     while (ref_str_container.GetNextChunk(&ref_str_chunk, &chrom, &begin, &end)) {
-      stringstream msg;
-      msg <<"Processing region " << chrom << ":" << begin << "-" << end;
-      PrintMessageDieOnError(msg.str(), PROGRESS);
+      //stringstream msg;
+      //msg <<"Processing region " << chrom << ":" << begin << "-" << end << " with " << ref_str_chunk.size() << " STRs";
+      //PrintMessageDieOnError(msg.str(), PROGRESS);
       ReferenceSTR ref_region;
       ref_region.chrom = chrom;
       ref_region.start = begin;
       ref_region.stop = end;
       if (use_chrom.empty() || (use_chrom == chrom)) {
 	str_container.AddReadsFromFile(ref_region);
-      }
-      for (size_t i = 0; i < ref_str_chunk.size(); i++) {
-	pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
-	list<AlignedRead> aligned_reads;
-	str_container.GetReadsAtCoord(coord, &aligned_reads);
-	if (aligned_reads.size() > 0) {
-	  if (rmdup) {
-	    str_container.RemovePCRDuplicates();
+	for (size_t i = 0; i < ref_str_chunk.size(); i++) {
+	  pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
+	  list<AlignedRead> aligned_reads;
+	  str_container.GetReadsAtCoord(coord, &aligned_reads);
+	  if (aligned_reads.size() > 0) {
+	    if (rmdup) {
+	      str_container.RemovePCRDuplicates();
+	    }
+	    genotyper.Genotype(aligned_reads);
 	  }
-	  genotyper.Genotype(aligned_reads);
 	}
+	str_container.ClearReads();
       }
-      str_container.ClearReads();
     }
   }
   run_info.endtime = GetTime();
