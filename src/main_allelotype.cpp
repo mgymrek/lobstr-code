@@ -442,9 +442,6 @@ int main(int argc, char* argv[]) {
     vector<ReferenceSTR> ref_str_chunk;
     string chrom; int begin,end;
     while (ref_str_container.GetNextChunk(&ref_str_chunk, &chrom, &begin, &end)) {
-      //stringstream msg;
-      //msg <<"Processing region " << chrom << ":" << begin << "-" << end << " with " << ref_str_chunk.size() << " STRs";
-      //PrintMessageDieOnError(msg.str(), PROGRESS);
       ReferenceSTR ref_region;
       ref_region.chrom = chrom;
       ref_region.start = begin;
