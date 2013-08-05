@@ -86,14 +86,26 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     // get msStart
     uint msstart, msend;
     if (!aln.GetTag("XS", msstart)) {
-      PrintMessageDieOnError("Could not get STR start coordinate. Did this bam file come from lobSTR?", ERROR);
+      int i_msstart;
+      if (!aln.GetTag("XS", i_msstart)) {
+	PrintMessageDieOnError("Could not get STR start coordinate. Did this bam file come from lobSTR?", ERROR);
+      } else {
+	aligned_read.msStart = i_msstart;
+      }
+    } else {
+      aligned_read.msStart = static_cast<int>(msstart);
     }
-    aligned_read.msStart = static_cast<int>(msstart);
     // get msEnd
     if (!aln.GetTag("XE", msend)) {
-      PrintMessageDieOnError("Could not get STR end coordinate. Did this bam file come from lobSTR?", ERROR);
+      int i_msend;
+      if (!aln.GetTag("XE", i_msend)) {
+	PrintMessageDieOnError("Could not get STR end coordinate. Did this bam file come from lobSTR?", ERROR);
+      } else {
+	aligned_read.msEnd = i_msend;
+      }
+    } else {
+      aligned_read.msEnd = static_cast<int>(msend);
     }
-    aligned_read.msEnd = static_cast<int>(msend);
     // get read group
     if (!aln.GetTag("RG", aligned_read.read_group)) {
       PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
@@ -101,11 +113,19 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     // get mapq
     uint mapqual;
     if (!aln.GetTag("XQ", mapqual)) {
-      aligned_read.mapq = aln.MapQuality;
-      if (aligned_read.mapq == 255) {
-      	aligned_read.mapq = 0;
+      int i_mapqual;
+      if (!aln.GetTag("XQ", i_mapqual)) {
+	aligned_read.mapq = aln.MapQuality;
+      } else {
+	aligned_read.mapq = i_mapqual;
       }
+    } else {
+      aligned_read.mapq = static_cast<int>(mapqual);
     }
+    if (aligned_read.mapq == 255) {
+      aligned_read.mapq = 0;
+    }
+
     if (aligned_read.mapq == 255) {mapqual = 0;}
     aligned_read.mapq = mapqual;
     
