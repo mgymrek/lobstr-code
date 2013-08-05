@@ -73,6 +73,8 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
   BamTools::BamAlignment aln;
   while (reader.GetNextAlignment(aln)) {
     AlignedRead aligned_read;
+    // get read ID
+    aligned_read.ID = aln.Name;
     // get nucleotides
     aligned_read.nucleotides = aln.QueryBases;
     // get qualities
@@ -82,24 +84,30 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     // get chrom
     aligned_read.chrom = references.at(aln.RefID).RefName;
     // get msStart
-    if (!aln.GetTag("XS", aligned_read.msStart)) {
-      aligned_read.msStart = 0;
+    uint msstart, msend;
+    if (!aln.GetTag("XS", msstart)) {
+      PrintMessageDieOnError("Could not get STR start coordinate. Did this bam file come from lobSTR?", ERROR);
     }
+    aligned_read.msStart = static_cast<int>(msstart);
     // get msEnd
-    if (!aln.GetTag("XE", aligned_read.msEnd)) {
-      aligned_read.msEnd = 0;
+    if (!aln.GetTag("XE", msend)) {
+      PrintMessageDieOnError("Could not get STR end coordinate. Did this bam file come from lobSTR?", ERROR);
     }
+    aligned_read.msEnd = static_cast<int>(msend);
     // get read group
     if (!aln.GetTag("RG", aligned_read.read_group)) {
       PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
     }
     // get mapq
-    if (!aln.GetTag("XQ", aligned_read.mapq)) {
+    uint mapqual;
+    if (!aln.GetTag("XQ", mapqual)) {
       aligned_read.mapq = aln.MapQuality;
       if (aligned_read.mapq == 255) {
-	aligned_read.mapq = 0;
+      	aligned_read.mapq = 0;
       }
     }
+    if (aligned_read.mapq == 255) {mapqual = 0;}
+    aligned_read.mapq = mapqual;
     
     // get mate dist
     if (!aln.GetTag("XM", aligned_read.matedist)) {
@@ -111,7 +119,8 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     aligned_read.cigar_ops = aln.CigarData;
     // get STR seq
     if (!aln.GetTag("XR", aligned_read.repseq)) {
-      aligned_read.repseq="";
+      PrintMessageDieOnError("Could not get repseq. Did this bam file come from lobSTR?", ERROR);
+      //aligned_read.repseq="";
     }
     // get if mate pair
     if (aln.IsSecondMate()) {

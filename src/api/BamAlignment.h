@@ -13,6 +13,7 @@
 #include "api/api_global.h"
 #include "api/BamAux.h"
 #include "api/BamConstants.h"
+#include <iostream>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -408,7 +409,6 @@ inline bool BamAlignment::EditTag(const std::string& tag, const std::vector<T>& 
 */
 template<typename T>
 inline bool BamAlignment::GetTag(const std::string& tag, T& destination) const {
-
     // skip if alignment is core-only
     if ( SupportData.HasCoreOnly ) {
         // TODO: set error string?

@@ -44,6 +44,7 @@ using BamTools::RefVector;
 using BamTools::CigarOp;
 
 struct AlignedRead {
+  std::string ID;
   std::string chrom;
   int msStart;
   int msEnd;

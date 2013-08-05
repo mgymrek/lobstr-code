@@ -198,7 +198,7 @@ void GetSamplesFromBamFiles(const vector<string>& bamfiles,
 	rg_sample = rg.Sample;
       }
       if (my_verbose) {
-	PrintMessageDieOnError("Adding sample " + rg_sample, PROGRESS);
+	PrintMessageDieOnError("Adding sample " + rg_sample + " " + rg.ID, PROGRESS);
       }
       rg_id_to_sample->insert(pair<string,string>(rg.ID,rg_sample));
       if (find(samples_list->begin(), samples_list->end(), rg_sample) ==
