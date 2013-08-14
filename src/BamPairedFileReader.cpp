@@ -93,12 +93,14 @@ bool BamPairedFileReader::GetNextReadMate(MSReadRecord* read,
       read->ID = read->ID.substr(0, pos2);
     }
   }
-
+  string nucs = aln.QueryBases;
+  string qual = aln.Qualities;
+  if (aln.IsReverseStrand()) {
+    nucs = reverseComplement(nucs);
+    qual = reverse(qual);
+  }
   string trim_nucs;
   string trim_qual;
-
-  string nucs =  reverseComplement(aln.QueryBases);
-  string qual = reverse(aln.Qualities);
   TrimRead(nucs, qual, &trim_nucs, &trim_qual, QUAL_CUTOFF);
   read->nucleotides = trim_nucs;
   read->quality_scores = trim_qual;
@@ -125,10 +127,15 @@ bool BamPairedFileReader::GetNextRead(MSReadRecord* read) {
       read->ID = read->ID.substr(0, pos2);
     }
   }
-
+  string nucs = aln.QueryBases;
+  string qual = aln.Qualities;
+  if (aln.IsReverseStrand()) {
+    nucs = reverseComplement(nucs);
+    qual = reverse(qual);
+  }
   string trim_nucs;
   string trim_qual;
-  TrimRead(aln.QueryBases, aln.Qualities, &trim_nucs, &trim_qual, QUAL_CUTOFF);
+  TrimRead(nucs, qual, &trim_nucs, &trim_qual, QUAL_CUTOFF);
   read->nucleotides = trim_nucs;
   read->quality_scores = trim_qual;
   read->orig_nucleotides = trim_nucs;
