@@ -122,6 +122,7 @@ void parse_commandline_options(int argc, char* argv[]) {
   enum LONG_OPTIONS {
     OPT_ANNOTATION,
     OPT_BAM,
+    OPT_CHECK_DUP_READS,
     OPT_CHROM,
     OPT_CHUNKSIZE,
     OPT_COMMAND,
@@ -152,6 +153,7 @@ void parse_commandline_options(int argc, char* argv[]) {
   static struct option long_options[] = {
     {"annotation", 1, 0, OPT_ANNOTATION},
     {"bam", 1, 0, OPT_BAM},
+    {"check-dup-reads", 0, 0, OPT_CHECK_DUP_READS},
     {"chrom", 1, 0, OPT_CHROM},
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
@@ -188,6 +190,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_BAM:
       bam_files_string = string(optarg);
       AddOption("bam", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_CHECK_DUP_READS:
+      check_dup_reads++;
       break;
     case OPT_CHROM:
       use_chrom = string(optarg);

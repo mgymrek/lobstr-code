@@ -155,7 +155,7 @@ bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
     sample_to_index[samples[i]] = i;
     sample_reads->push_back(list<AlignedRead>(0));
   }
-  vector<map<string,int> > read_ids_per_sample(sample_reads->size()); // don't include read with same ID twice
+  vector<map<string,int> > read_ids_per_sample(sample_reads->size()); // don't include read with same ID twice - TODO check
   // Go through each read and add to appropriate list
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
@@ -164,11 +164,16 @@ bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
       string sample = rg_id_to_sample.at(it->read_group);
       string readid = it->ID;
       int i = sample_to_index[sample];
-      if (read_ids_per_sample.at(i).find(readid) == read_ids_per_sample.at(i).end()) {
-	read_ids_per_sample.at(i)[readid] = 0;
-	sample_reads->at(i).push_back(*it);
+      sample_reads->at(i).push_back(*it);
+      if (check_dup_reads) {
+	if (read_ids_per_sample.at(i).find(readid) == read_ids_per_sample.at(i).end()) {
+	  read_ids_per_sample.at(i)[readid] = 0;
+	  sample_reads->at(i).push_back(*it);
+	} else {
+	  PrintMessageDieOnError("Duplicate read " + readid + " discarded", WARNING);
+	}
       } else {
-	PrintMessageDieOnError("Duplicate read " + readid + " discarded", WARNING);
+	sample_reads->at(i).push_back(*it);
       }
     } else {
       PrintMessageDieOnError("Could not find sample for read group " + it->read_group, ERROR);

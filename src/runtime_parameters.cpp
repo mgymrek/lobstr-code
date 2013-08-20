@@ -144,3 +144,6 @@ bool using_s3 = false;
 std::string s3bucket = "";
 std::string s3cmd_configfile = "";
 bool s3debug = false;
+
+// hidden flags
+int check_dup_reads = false;
