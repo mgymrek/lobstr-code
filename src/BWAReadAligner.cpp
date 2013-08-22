@@ -1038,9 +1038,6 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
       rseq = refseq.sequence.
 	substr(start_pos - refseq.start, reglen);
     } catch(std::out_of_range & exception) {
-      PrintMessageDieOnError("[BWAReadAligner]: Could not determine ref sequence for " +
-			     read_pair->reads.at(1-aligned_read_num).ID +
-			     "read extends outside of STR reference range", WARNING);
       return false;      
     }
     const string& aseq = read_pair->reads.at(1-aligned_read_num).reverse ?

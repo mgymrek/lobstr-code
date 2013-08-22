@@ -96,19 +96,26 @@ if (Prototype.Browser.IE) window.onload=initFlyouts; else document.observe('dom:
 <h2  style=" text-align: left; ">Basic usage (v2.0.3)<br /></h2>
 <div  class="paragraph editable-text" style=" text-align: left;
 					     display: block; ">
-To run lobSTR using default parameters:
+<b>To run lobSTR using default parameters</b>:
 <br>Single-end reads:
 <br /><tt><verbatim>&nbsp;lobSTR -f FILE1,FILE2,.. --index-prefix PATH_TO_INDEX/lobSTR_   -o OUTPUT_PREFIX   </tt></verbatim><br>
 <br>Paired-end reads:
 <br /><tt>&nbsp;lobSTR --p1 FILE1,FILE2,.. --p2 FILE1,FILE2,...	  --index-prefix PATH_TO_INDEX/lobSTR_ 	    -o OUTPUT_PREFIX  	    </tt><br>
 <br>
-<tt>allelotype 	    --command [train|classify|both|simple] 	    --bam OUTPUT_PREFIX.aligned.bam 	    [--noise_model NOISEMODELPREFIX] 	    --out OUTPUT_PREFIX 	--strinfo STRINFOFILE --index-prefix PATH_TO_INDEX/lobSTR_ </tt> <br />
+<tt>samtools sort OUTPUT_PREFIX.aligned.bam OUTPUT_PREFIX.sorted</tt><br>
+<tt>samtools index OUTPUT_PREFIX.sorted.bam</tt><br>
+<tt>allelotype 	    --command [train|classify|both|simple] 	    --bam OUTPUT_PREFIX.sorted.bam 	    [--noise_model NOISEMODELPREFIX] 	    --out OUTPUT_PREFIX 	--strinfo STRINFOFILE --index-prefix PATH_TO_INDEX/lobSTR_ </tt> <br />
 <br />
-To run an example using files available in the download:
+<b>To run an example using files available in the download</b>:
 <br />&nbsp;<tt>lobSTR 	    --p1 PATH_TO_LOBSTR/tests/mp_1.fq --p2
-  PATH_TO_LOBSTR/tests/tmp_2.fq -q 	    --index-prefix PATH_TO_INDEX/lobSTR_ 	    -o test  	    </tt>
+  PATH_TO_LOBSTR/tests/tmp_2.fq -q 	    --index-prefix PATH_TO_INDEX/lobSTR_ 	    -o test  --rg-sample mysample	    </tt>
 <br><br>
-<tt>allelotype 	    --command classify 	    --bam test.aligned.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina_v2.0.3 	    --out test --strinfo data/strinfo.hg19.tab	--index-prefix PATH_TO_INDEX/lobSTR_	</tt>    <br /><br />
+<tt>samtools sort test.aligned.bam test.sorted</tt><br>
+<tt>samtools index test.sorted.bam</tt>
+<br><br>
+<tt>allelotype 	    --command classify 	    --bam test.sorted.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina_v2.0.3 	    --out test --strinfo strinfo.hg19.tab	--index-prefix PATH_TO_INDEX/lobSTR_	</tt>    <br /><br />
+
+Note the index and str info files are available in the resource bundle. 
 
 This will create the example output files:
 <ul style="">
@@ -143,7 +150,7 @@ General usage:
 <br><br>
 where $STR_TABLE as described above, $REF.fa is the reference genome in fasta format, and $STRINFOFILE is where you would like to write the strinfo file.<br><br>
 Example:
-<tt>python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py data/trf.ucsc.hg19.filtered.bed hg19.fa > strinfo.hg19.tab</tt>
+<tt>python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py reference.bed hg19.fa > strinfo.reference.tab</tt>
 </div>
 
 <h2  style=" text-align: left; ">Running lobSTR quality controls</h2>
@@ -284,7 +291,7 @@ Note, the commands "simple" and "both" have been removed.
 	     or a comma separated list of multiple lobSTR bam alignments (required). </li>
 <li style="">--noise_model STRING: (REQUIRED) prefix of files to write (--command train) or read (--command classify) noise model parameters to.</li>
 <li style="">--out STRING: (REQUIRED) prefix to name output files with (required)</li>
-<li style="">--strinfo STRING: (REQUIRED) path to the file containing statistics for each STR, available in the data/ directory of the lobSTR download.
+<li style="">--strinfo STRING: (REQUIRED) path to the file containing statistics for each STR, available in the lobSTR resource bundle.
 <li style="">--index-prefix STRING: (REQUIRED for --command classify) prefix for lobSTR's bwa reference (must run lobstr_index.py)
 <li style="">--haploid LIST: comma separated list of chromosomes to treat as haploid (e.g. --haploid chrX,chrY) for a human male sample. If all chromosomes are haploid, you can specifiy --haploid all.</li>
 <li style="">--annotation VCFFILE: annotate a set of STRs. Annotation sets are available in the resource bundle. This is useful for comparing to capillary callsets such as those from the Marshfield panel. More documentation on this option is coming soon.</li>
