@@ -125,10 +125,6 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     if (aligned_read.mapq == 255) {
       aligned_read.mapq = 0;
     }
-
-    if (aligned_read.mapq == 255) {mapqual = 0;}
-    aligned_read.mapq = mapqual;
-    
     // get mate dist
     if (!aln.GetTag("XM", aligned_read.matedist)) {
       aligned_read.matedist = 0;
@@ -179,10 +175,18 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     if (unit) {
       if (aligned_read.diffFromRef % aligned_read.period  != 0) continue;
     }
-    if (abs(aligned_read.diffFromRef) > max_diff_ref) continue;
-    if (aligned_read.mapq > max_mapq) continue;
-    if (aligned_read.matedist > max_matedist) continue;
-    if (aligned_read.mate) continue;
+    if (abs(aligned_read.diffFromRef) > max_diff_ref) {
+      continue;
+    }
+    if (aligned_read.mapq > max_mapq) {
+      continue;
+    }
+    if (aligned_read.matedist > max_matedist) {
+      continue;
+    }
+    if (aligned_read.mate) {
+      continue;
+    }
     
     // get ref copy num
     if (!aln.GetTag("XC", aligned_read.refCopyNum)) {
