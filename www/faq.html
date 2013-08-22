@@ -65,7 +65,8 @@ if (Prototype.Browser.IE) window.onload=initFlyouts; else document.observe('dom:
 Please cite: <emph>Gymrek M, Golan D, Rosset S, & Erlich Y. lobSTR: A short tandem repeat profiler for personal genomes. Genome Research. 2012 April 22.</emph><br /><br />
 
 <strong>Can lobSTR detect STRs of periods below 2 or above 6?</strong><br/>
-The definition of what constitutes an STR is not clear cut. Currently lobSTR is limited to STR motifs of periods 1 through 6. We recently expanded our reference to include mononucleotides and a larger set of STRs. <br/><br.?
+The definition of what constitutes an STR is not clear cut. Currently lobSTR is limited to STR motifs of periods 1 through 6. We recently expanded our reference to include mononucleotides and a larger set of STRs. <br/><br>
+
 
 <strong>How are mismatches calculated?</strong><br />
 The parameters that control alignment mismatches/gaps are:<ul style=""><li style="">-m&nbsp;: edit distance allowed</li><li style="">-r&nbsp;: the fraction of missing alignments given 2% uniform base error rate. Note if m is set, then r is ignored.</li><li style="">-g&nbsp;: the number of gap opens allowed</li><li style="">-e&nbsp;: the number of gap extends allowed</li></ul>Each flanking region is aligned separately, so each paramter above is applied to both the left and right flanking regions. That means, if you allow an edit distance of 2 (-m 2), then edit distance 2 is allowed both in the left and right flanking sequences.<br /><br />

@@ -188,7 +188,7 @@ results.
 	     are reported in the old Phred format (Illumina 1.3+,
 	     Illumina 1.5+) where quality scores are given as Phred
 	     + 64 rather than Phred + 33</li>
-<li style="">--rg-sample STRING: Use this in the read group SM tag. Allelotype will assume all reads with the same sample should be processed as a single individual.</li
+<li style="">--rg-sample STRING: Use this in the read group SM tag. <b>Allelotype will assume all reads with the same sample should be processed as a single individual.</b></li
 <li style="">--rg-lib STRING: Use this in the read group LB tag</li>
 <li style="">-h, --help: display a helpful usage message</li>
 <li style="">-v, --verbose: verbose mode. Display descriptive messages</li>
@@ -287,7 +287,7 @@ Note, the commands "simple" and "both" have been removed.
 <li style="">--strinfo STRING: (REQUIRED) path to the file containing statistics for each STR, available in the data/ directory of the lobSTR download.
 <li style="">--index-prefix STRING: (REQUIRED for --command classify) prefix for lobSTR's bwa reference (must run lobstr_index.py)
 <li style="">--haploid LIST: comma separated list of chromosomes to treat as haploid (e.g. --haploid chrX,chrY) for a human male sample. If all chromosomes are haploid, you can specifiy --haploid all.</li>
-<li style="">--annotation VCFFILE: annotate a set of STRs. Annotation sets are available in the resource bundle. This is useful for comparing to capillary callsets such as those from the Marshfield panel.</li>
+<li style="">--annotation VCFFILE: annotate a set of STRs. Annotation sets are available in the resource bundle. This is useful for comparing to capillary callsets such as those from the Marshfield panel. More documentation on this option is coming soon.</li>
 <li style="">--min-het-freq FLOAT: minimum alternate allele read frequency to make a heterozygous call
 <li style="">--include-flank: include indels in the flanking regions of an STR when determining the length of the STR allele </li>
 <li style="">--no-rmdup: do not remove PCR duplicates</li>
@@ -295,10 +295,6 @@ Note, the commands "simple" and "both" have been removed.
 <li style="">-v, --verbose: verbose mode, print out descriptive messages</li>
 <li style="">--version: print out allelotype program version number</li>
 <li style="">--noweb: do not report any user information and parameters to Amazon S3.</li>
-</ul>
-<h4>Advanced options - reporting VCF format</h4>
-<ul>
-<li style="">--exclude-pos FILE: File of "chrom\tpos" of positions to exclude. For downstream analysis, it is beneficial to exclude any STRs with the same starting point but different motifs, as this will cause errors when using vcftools.
 </ul>
 <h4>Advanced options - filtering reads</h4>
 <ul>
