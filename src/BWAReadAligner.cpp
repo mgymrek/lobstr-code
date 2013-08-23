@@ -1099,9 +1099,6 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   try {
     rseq = refseq.sequence.substr(start_pos - refseq.start-REFEXTEND, reglen+REFEXTEND);
   } catch(std::out_of_range & exception) { 
-    PrintMessageDieOnError("[AdjustAlignment]:  Could not determine ref sequence for " +
-			     aligned_read->ID +
-			     "read extends outside of STR reference range", WARNING);
     return false;
   }
   const string& aligned_seq = !aligned_read->reverse ?
