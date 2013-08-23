@@ -15,10 +15,14 @@ Note, full instructions for the most current version lobSTR are provided on the 
 
 I. INSTALLATION FROM SOURCE
  
-To install from source, download lobSTR (you must have gotten this far if you're reading this README file...). Navigate to the directory where it was installed. Then do:
+To install from source, download lobSTR from the github repository:
 
-tar -xzvf lobstr-xxx.tar.gz
-cd lobstr-xxx/
+git clone https://github.com/whitehead/lobstr-code.git lobstr-code
+
+Then do:
+
+cd lobstr-code/
+./reconf
 ./configure
 make
 make install
@@ -59,7 +63,7 @@ Several examples of setting the file path parameters:
 4. Single end bam file
 -f file1.bam,file2.bam,file3.bam --bam
 5. Paired-end bam file
--f file1.sorted_by_name.bam --bam --bampair
+-f file1.sorted_by_name.bam --bampair
 6. Gzipped fastq paired end files
 --p1 file1_1.fq.gz --p2 file1_2.fq.gz
 
@@ -86,7 +90,7 @@ Required inputs are:
 * --bam: a bam file consisting of aligned reads created during the alignment step.
 * --out: a prefix to name output files
 * --noise_model: an example noisemodel is given in the files $PATH_TO_LOBSTR/models/illumina_v2.0.3.* . Or you can create your own using the "train" command described above. 
-* --strinfo: a file containing metadata about each STR locus. This is included in the download at $PATH_TO_LOBSTR/data/strinfo.hg19.tab and $PATH_TO_LOBSTR/data/strinfo.hg18.tab. To create this file for a custom set of loci or for loci from a different species, see XI: BUILDING THE STRINFO FILE. This is required if command is not "simple".
+* --strinfo: a file containing metadata about each STR locus. This is included in the lobSTR resource bundle. To create this file for a custom set of loci or for loci from a different species, see XI: BUILDING THE STRINFO FILE. This is required if command is not "simple".
 * --index-prefix: PATH_TO_LOBSTR/lobSTR_, required if command is not "train".
 
 IV. GETTING HELP
@@ -183,4 +187,4 @@ The allelotype step uses additional characteristics about each STR (GC content, 
 python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py <str table> <ref.fa> > <strinfo.tab>
 
 e.g.:
-python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py data/trf.ucsc.hg19.filtered.bed hg19.fa > strinfo_hg19.tab
+python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py reference.bed > reference_strinfo.tab
