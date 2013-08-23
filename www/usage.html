@@ -297,7 +297,7 @@ Note, the commands "simple" and "both" have been removed.
 <li style="">--annotation VCFFILE: annotate a set of STRs. Annotation sets are available in the resource bundle. This is useful for comparing to capillary callsets such as those from the Marshfield panel. More documentation on this option is coming soon.</li>
 <li style="">--min-het-freq FLOAT: minimum alternate allele read frequency to make a heterozygous call
 <li style="">--include-flank: include indels in the flanking regions of an STR when determining the length of the STR allele </li>
-<li style="">--no-rmdup: do not remove PCR duplicates</li>
+<li style="">--no-rmdup: do not remove PCR duplicates. <b>Note for multi-sample calling, use this option. lobSTR does not yet implement removing duplicates in a sample-aware way.</b></li>
 <li style="">--help, -h: print a helpful usage message</li>
 <li style="">-v, --verbose: verbose mode, print out descriptive messages</li>
 <li style="">--version: print out allelotype program version number</li>
