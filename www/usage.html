@@ -107,21 +107,22 @@ if (Prototype.Browser.IE) window.onload=initFlyouts; else document.observe('dom:
 <tt>allelotype 	    --command [train|classify|both|simple] 	    --bam OUTPUT_PREFIX.sorted.bam 	    [--noise_model NOISEMODELPREFIX] 	    --out OUTPUT_PREFIX 	--strinfo STRINFOFILE --index-prefix PATH_TO_INDEX/lobSTR_ </tt> <br />
 <br />
 <b>To run an example using files available in the download</b>:
-<br />&nbsp;<tt>lobSTR 	    --p1 PATH_TO_LOBSTR/tests/mp_1.fq --p2
-  PATH_TO_LOBSTR/tests/tmp_2.fq -q 	    --index-prefix PATH_TO_INDEX/lobSTR_ 	    -o test  --rg-sample mysample	    </tt>
+<br />&nbsp;<tt>lobSTR 	    --p1 PATH_TO_LOBSTR/tests/tmp_1.fq --p2
+  PATH_TO_LOBSTR/tests/tmp_2.fq -q 	    --index-prefix hg19/lobstr_v2.0.3_hg19_ref/lobSTR_ 	    -o test  --rg-sample mysample	    </tt>
 <br><br>
 <tt>samtools sort test.aligned.bam test.sorted</tt><br>
 <tt>samtools index test.sorted.bam</tt>
 <br><br>
-<tt>allelotype 	    --command classify 	    --bam test.sorted.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina_v2.0.3 	    --out test --strinfo strinfo.hg19.tab	--index-prefix PATH_TO_INDEX/lobSTR_	</tt>    <br /><br />
+<tt>allelotype 	    --command classify 	    --bam test.sorted.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina_v2.0.3 	    --out test --strinfo hg19/lobstr_v2.0.3_hg19_strinfo.tab	--index-prefix hg19/lobstr_v2.0.3_hg19_ref/lobSTR_	</tt>    <br /><br />
 
 Note the index and str info files are available in the resource bundle. 
 
 This will create the example output files:
 <ul style="">
-<li style="">test.aligned.tab</li>
 <li style="">test.aligned.bam</li>
+<li style="">test.aligned.stats</li>
 <li style="">test.vcf</li>
+<li style="">test.allelotype.stats</li>
 </ul>
 To see a description of the output file formats, see<a href="file-formats.html" title="">&nbsp;file formats</a>. To see all available parameters, run&nbsp;<tt>lobSTR --help</tt>&nbsp;and&nbsp;<tt>allelotype --help</tt>.<br /></div>
 
