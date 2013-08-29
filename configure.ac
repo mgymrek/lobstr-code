@@ -18,7 +18,7 @@ AC_INIT([lobSTR],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE([dist-bzip2])
+AM_INIT_AUTOMAKE([dist-bzip2 -Wall tar-pax foreign])
 AM_PATH_CPPUNIT(1.9.6)
 
 # Set variables using shell commands
@@ -93,8 +93,6 @@ CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_
 CXXFLAGS="$CFLAGS"
 CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS"
 LDFLAGS="$ext_LDFLAGS" 
-
-AM_INIT_AUTOMAKE([-Wall tar-pax foreign])
 
 AC_CONFIG_FILES([
    m4/Makefile
