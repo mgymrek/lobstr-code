@@ -102,6 +102,7 @@ float fpr = 0.01;
 std::string read_group_sample = "";
 std::string read_group_library = "";
 bool include_orig_read_start = false;
+bool allow_multi_mappers = false;
 
 // genotyping params
 std::string annotation_files_string = "";

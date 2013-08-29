@@ -124,6 +124,7 @@ extern float fpr;
 extern std::string read_group_sample;
 extern std::string read_group_library;
 extern bool include_orig_read_start;
+extern bool allow_multi_mappers;
 
 // genotyping params
 extern std::string annotation_files_string;

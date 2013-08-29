@@ -108,7 +108,11 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   bam_alignment.SetIsReverseStrand(read_pair.reads.
                                    at(aligned_read_num).reverse);
   bam_alignment.Position = read_pair.reads.at(aligned_read_num).read_start;
-  bam_alignment.MapQuality = 255;//read_pair.reads.at(aligned_read_num).mapq;
+  if (read_pair.alternate_mappings.empty()) {
+    bam_alignment.MapQuality = 255;
+  } else {
+    bam_alignment.MapQuality = 0;
+  }
   bam_alignment.Qualities = read_pair.reads.
     at(aligned_read_num).quality_scores;
   if (read_pair.reads.at(aligned_read_num).reverse) {
@@ -142,6 +146,10 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   bam_alignment.CigarData = cigar_data;
 
   // write user flags giving repeat information
+  // XA: alternate alignments
+  if (!read_pair.alternate_mappings.empty()) {
+    bam_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
+  }
   // XS: start pos of matching STR
   bam_alignment.AddTag("XS", "i", read_pair.reads.
                        at(aligned_read_num).msStart);
@@ -202,7 +210,11 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
                                         at(1-aligned_read_num).reverse);
       mate_alignment.Position =
         read_pair.reads.at(1-aligned_read_num).read_start;
-      mate_alignment.MapQuality = 255;//read_pair.reads.at(1-aligned_read_num).mapq;
+      if (read_pair.alternate_mappings.empty()) {
+	mate_alignment.MapQuality = 255;
+      } else {
+	mate_alignment.MapQuality = 0;
+      }
       mate_alignment.Qualities =
         read_pair.reads.at(1-aligned_read_num).quality_scores;
       if (read_pair.reads.at(1-aligned_read_num).reverse) {
@@ -249,6 +261,11 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       mate_alignment.AddTag("RG", "Z", GetReadGroup());
       // NM: edit distance to reference
       mate_alignment.AddTag("NM", "i", read_pair.reads.at(1-aligned_read_num).edit_dist);
+      // XA: Alternate alignment info
+      if (!read_pair.alternate_mappings.empty()) {
+	mate_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
+      }
+
 
       writer.SaveAlignment(mate_alignment);
   }
