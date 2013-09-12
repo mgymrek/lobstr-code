@@ -243,14 +243,18 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
                 }
                 return false;
               }
-            }
+            } else {
+	      if (align_debug) {
+		PrintMessageDieOnError("Check mate alignment failed", DEBUG);
+	      }
+	    }
           }
         }
       }
 
       // Step 3: Adjust alignment and output
       if (align_debug) {
-        PrintMessageDieOnError("[BWAReadAligner]: adjust alignment and output", DEBUG);
+        PrintMessageDieOnError("[BWAReadAligner]: adjust paired alignment and output", DEBUG);
       }
       if (read_pair->found_unique_alignment) {
         ALIGNMENT final_left_alignment =
@@ -266,17 +270,26 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
           if (OutputAlignment(read_pair, final_left_alignment,
 			      final_right_alignment,
 			      matealign, false)) {
+	    if (align_debug) {
+	      PrintMessageDieOnError("[BWAReadAligner]: output alignment after stitching", DEBUG);
+	    }
 	    return true;
 	  }
         } else {
           if (OutputAlignment(read_pair, final_left_alignment,
 			      final_right_alignment,
 			      matealign, true)) {
+	    if (align_debug) {
+	      PrintMessageDieOnError("[BWAReadAligner]: output alignment, no stitching", DEBUG);
+	    }
 	    return true;
 	  }
 	}
 	// If we made it this far and didn't align, reset the
 	// read so we don't try again
+	if (align_debug) {
+	  PrintMessageDieOnError("[BWAReadAligner]: Failed to align", DEBUG);
+	}
 	read_pair->reads.at(0).ms_repeat_next_best_period = 0;
 	read_pair->reads.at(1).ms_repeat_next_best_period = 0;
 	return false;
@@ -693,6 +706,14 @@ bool BWAReadAligner::CheckMateAlignment(const vector<ALIGNMENT>&
     const int& str_pos = left_alignment.left ?
       left_alignment.pos : right_alignment.pos;
     // check chrom, pos, and strand
+    if (align_debug) {
+      stringstream msg;
+      msg << "[CheckMateAlignment]: checks "
+	  << it->chrom << ": " << left_alignment.chrom
+	  << " " << abs(it->pos-str_pos) << ": " << MAX_PAIRED_DIFF
+	  << " " << it->strand << ": " << left_alignment.strand;
+      PrintMessageDieOnError(msg.str(), DEBUG);
+    }
     if ((it->chrom == left_alignment.chrom) &&
         (abs(it->pos-str_pos) <= MAX_PAIRED_DIFF) &&
         it->strand != left_alignment.strand) {
