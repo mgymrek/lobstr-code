@@ -341,6 +341,7 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_BAMPAIR:
       paired = true;
+      input_type = INPUT_BAM;
       bam++;
       AddOption("bampair", "", false, &user_defined_arguments);
       break;
