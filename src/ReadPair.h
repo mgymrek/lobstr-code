@@ -52,6 +52,8 @@ class ReadPair {
   int aligned_read_num;
   // Treat the output as paired end
   bool treat_as_paired;
+  // String for alternate mappings
+  std::string alternate_mappings;
 };
 
 #endif  // SRC_READPAIR_H_

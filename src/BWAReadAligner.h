@@ -121,7 +121,8 @@ class BWAReadAligner {
                                const std::vector<ALIGNMENT>& good_left2,
                                const std::vector<ALIGNMENT>& good_right1,
                                const std::vector<ALIGNMENT>& good_right2,
-                               size_t* index_of_hit, size_t* index_of_mate);
+                               size_t* index_of_hit, size_t* index_of_mate,
+			       std::string* alternate_mappings);
 
   // Try stitching a pair of reads.
   // Update info in num_aligned_read and
@@ -135,6 +136,7 @@ class BWAReadAligner {
                        const ALIGNMENT& left_alignment,
                        const ALIGNMENT& right_alignment,
                        const ALIGNMENT& mate_alignment,
+		       const std::string& alternate_mappings,
                        bool treat_as_paired);
 
   // Perform local realignment, adjust exact STR boundaries

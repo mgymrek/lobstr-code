@@ -118,6 +118,8 @@ void show_help() {
     "               scores are given as Phred + 64 rather than Phred + 33\n" \
     "--rg-sample <STRING>  Use this in the read group SM tag\n" \
     "--rg-lib <STRING>     Use this in the read group LB tag\n" \
+    "--multi        Report reads mapping to multiple genomic locations.\n" \
+    "               Alternate alignments given in XA tag\n" \
     "--noweb        Do not report any user information and paramters to Amazon S3.\n" \
     "\n\nAdvanced options - general:\n" \
     "-p,--threads <INT>         number of threads (default: 1)\n" \
@@ -210,6 +212,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
+    OPT_MULTI,
     OPT_FFTW_DEBUG,
     OPT_LOBE_DEBUG,
     OPT_MIN_READ_LENGTH,
@@ -263,6 +266,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"minflank", 1, 0, OPT_MIN_FLANK_LEN},
     {"maxflank", 1, 0, OPT_MAX_FLANK_LEN},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
+    {"multi", 0, 0, OPT_MULTI},
     {"help", 0, 0, OPT_HELP},
     {"verbose", 0, 0, OPT_VERBOSE},
     {"debug", 0, 0, OPT_DEBUG},
@@ -443,6 +447,10 @@ void parse_commandline_options(int argc, char* argv[]) {
         PrintMessageDieOnError("Invalid max diff ref", ERROR);
       }
       AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_MULTI:
+      allow_multi_mappers++;
+      AddOption("multi", "", false, &user_defined_arguments);
       break;
     case OPT_FFTW_DEBUG:
       fftw_debug = true;
