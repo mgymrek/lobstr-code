@@ -95,10 +95,8 @@ bool BamPairedFileReader::GetNextReadMate(MSReadRecord* read,
   }
   string nucs = aln.QueryBases;
   string qual = aln.Qualities;
-  if (aln.IsReverseStrand()) {
-    nucs = reverseComplement(nucs);
-    qual = reverse(qual);
-  }
+  nucs = reverseComplement(nucs);
+  qual = reverse(qual);
   string trim_nucs;
   string trim_qual;
   TrimRead(nucs, qual, &trim_nucs, &trim_qual, QUAL_CUTOFF);
@@ -129,10 +127,6 @@ bool BamPairedFileReader::GetNextRead(MSReadRecord* read) {
   }
   string nucs = aln.QueryBases;
   string qual = aln.Qualities;
-  if (aln.IsReverseStrand()) {
-    nucs = reverseComplement(nucs);
-    qual = reverse(qual);
-  }
   string trim_nucs;
   string trim_qual;
   TrimRead(nucs, qual, &trim_nucs, &trim_qual, QUAL_CUTOFF);
