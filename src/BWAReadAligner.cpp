@@ -82,7 +82,7 @@ BWAReadAligner::BWAReadAligner(map<std::string, BWT>* bwt_references,
   _default_opts->max_diff = MATE_MISMATCH;
   _default_opts->max_gapo = MATE_GAPO;
   _default_opts->max_gape = MATE_GAPE;
-  _default_opts->fnr = -1;  // MATE_FNR;
+  _default_opts->fnr = -1;//MATE_FNR;
 
   cigar_debug = false;
   stitch_debug = false;
@@ -237,20 +237,16 @@ bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* m
             const ALIGNMENT& ralign = good_right.at(i);
             if (CheckMateAlignment(mate_alignments, lalign, ralign,
                                    &matealign)) {
+	      index_of_hit = i;
               if (!read_pair->found_unique_alignment) {
-                index_of_hit = i;
                 read_pair->found_unique_alignment = true;
               } else {
                 // multiple mapper, more than one good hit
 		if (allow_multi_mappers) {
-		  PrintMessageDieOnError("[BWAReadAligner]: Found multiple alignments.", DEBUG);
 		  stringstream xa;
 		  xa << lalign.chrom << ":" << lalign.start << ";";
 		  alternate_mappings = alternate_mappings + xa.str();
 		} else {
-		  if (align_debug) {
-		    PrintMessageDieOnError("[BWAReadAligner]: Discarding: multiple mapper.", DEBUG);
-		  }
 		  return false;
 		}
               }
@@ -750,14 +746,10 @@ bool BWAReadAligner::FindCompatibleAlignment(const vector<ALIGNMENT>&
           (l1.chrom == l2.chrom)) {
         if (found_unique) {
 	  if (allow_multi_mappers) {
-	    PrintMessageDieOnError("[BWAReadAligner]: Found multiple alignments", DEBUG);
 	    stringstream xa;
 	    xa << l1.chrom << ":" << l1.start << ";";
 	    *alternate_mappings = *alternate_mappings + xa.str();
 	  } else {
-	    if (align_debug) {
-	      PrintMessageDieOnError("[BWAReadAligner]: Multiple mapper", DEBUG);
-	    }
 	    return false;
 	  }
         } else {
