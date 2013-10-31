@@ -1084,7 +1084,7 @@ int main(int argc, char* argv[]) {
     vector<string> items;
     string refstring = ref_record.ID;
     split(refstring, '$', items);
-    if (items.size() == 7) {
+    if (items.size() >= 6) { // should be 6 or 7, depending if name column is present
       refseq.sequence = ref_record.orig_nucleotides;
       refseq.start = atoi(items.at(2).c_str());
       int refid = atoi(items.at(0).c_str());

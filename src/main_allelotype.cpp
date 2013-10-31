@@ -371,7 +371,7 @@ int main(int argc, char* argv[]) {
       vector<string> items;
       string refstring = ref_record.ID;
       split(refstring, '$', items);
-      if (items.size() == 7) {
+      if (items.size() >= 6) { // should be 6 or 7, depending if name field is present
 	string chrom = items.at(1); 
         int start = atoi(items.at(2).c_str())+extend;
 	int str_start = atoi(items.at(2).c_str());
