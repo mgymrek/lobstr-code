@@ -172,7 +172,4 @@ extern std::string s3bucket;
 extern std::string s3cmd_configfile;
 extern bool s3debug;
 
-// hidden params
-extern int check_dup_reads;
-
 #endif  // SRC_RUNTIME_PARAMETERS_H_

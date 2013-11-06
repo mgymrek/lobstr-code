@@ -122,7 +122,6 @@ void parse_commandline_options(int argc, char* argv[]) {
   enum LONG_OPTIONS {
     OPT_ANNOTATION,
     OPT_BAM,
-    OPT_CHECK_DUP_READS,
     OPT_CHROM,
     OPT_CHUNKSIZE,
     OPT_COMMAND,
@@ -153,7 +152,6 @@ void parse_commandline_options(int argc, char* argv[]) {
   static struct option long_options[] = {
     {"annotation", 1, 0, OPT_ANNOTATION},
     {"bam", 1, 0, OPT_BAM},
-    {"check-dup-reads", 0, 0, OPT_CHECK_DUP_READS},
     {"chrom", 1, 0, OPT_CHROM},
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
@@ -190,9 +188,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_BAM:
       bam_files_string = string(optarg);
       AddOption("bam", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
-    case OPT_CHECK_DUP_READS:
-      check_dup_reads++;
       break;
     case OPT_CHROM:
       use_chrom = string(optarg);
@@ -445,7 +440,8 @@ int main(int argc, char* argv[]) {
     ReferenceSTRContainer ref_str_container(reference_strs);
     // Read one chunk of refs at a time
     vector<ReferenceSTR> ref_str_chunk;
-    string chrom; int begin,end;
+    string chrom; int begin, end;
+    string prev_chrom; int prev_begin; // Keep track to avoid processing loci with duplicate entries
     while (ref_str_container.GetNextChunk(&ref_str_chunk, &chrom, &begin, &end)) {
       ReferenceSTR ref_region;
       ref_region.chrom = chrom;
@@ -454,20 +450,31 @@ int main(int argc, char* argv[]) {
       if (use_chrom.empty() || (use_chrom == chrom)) {
 	str_container.AddReadsFromFile(ref_region);
 	for (size_t i = 0; i < ref_str_chunk.size(); i++) {
-	  pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
-	  list<AlignedRead> aligned_reads;
-	  str_container.GetReadsAtCoord(coord, &aligned_reads);
-	  if (aligned_reads.size() > 0) {
-	    if (rmdup) {
-	      str_container.RemovePCRDuplicates();
+	  // Check that we don't process the same locus twice
+	  if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {
+	    pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
+	    list<AlignedRead> aligned_reads;
+	    str_container.GetReadsAtCoord(coord, &aligned_reads);
+	    if (aligned_reads.size() > 0) {
+	      if (rmdup) {
+		str_container.RemovePCRDuplicates();
+	      }
+	      genotyper.Genotype(aligned_reads);
 	    }
-	    genotyper.Genotype(aligned_reads);
+	  } else {
+	    stringstream msg;
+	    msg << "Discarding duplicate of locus " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
+	    PrintMessageDieOnError(msg.str(), WARNING);
 	  }
+	  prev_chrom = ref_str_chunk.at(i).chrom;
+	  prev_begin = ref_str_chunk.at(i).start;
 	}
 	str_container.ClearReads();
       }
     }
   }
+
+  /* Return run time info */
   run_info.endtime = GetTime();
   OutputRunStatistics();
   time(&endtime);
