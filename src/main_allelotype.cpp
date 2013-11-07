@@ -97,7 +97,8 @@ void show_help() {
     "--version:                      print out allelotype program version number\n\n" \
     "Options for calculating and reporting allelotypes:\n" \
     "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
-    "                                For more than one annotation, use comma-separated list of files\n\n" \
+    "                                For more than one annotation, use comma-separated list of files\n" \
+    "--include-gl                    Include the GL field in the VCF file (default = false)\n\n" \
     "Options for filtering reads:\n" \
     "If not specified, no filters applied\n" \
     "--chrom <STRING>:              only look at reads from this chromosome\n" \
@@ -129,6 +130,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_FLANK,
+    OPT_INCLUDE_GL,
     OPT_INDEX,
     OPT_MAX_DIFF_REF,
     OPT_MAXMAPQ,
@@ -143,7 +145,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_STRINFO,
     OPT_UNIT,
     OPT_VERBOSE,
-    OPT_VERSION,
+    OPT_VERSION
   };
 
   int ch;
@@ -174,6 +176,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"unit", 0, 0, OPT_UNIT},
     {"verbose", 0, 0, OPT_VERBOSE},
     {"version", 0, 0, OPT_VERSION},
+    {"include-gl", 0, 0, OPT_INCLUDE_GL},
     {NULL, no_argument, NULL, 0},
   };
   program = ALLELOTYPE;
@@ -220,6 +223,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_INCLUDE_FLANK:
       include_flank = false;
       AddOption("include-flank", "", false, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_INCLUDE_GL:
+      include_gl = true;
+      AddOption("include-gl", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_INDEX:
       index_prefix = string(optarg);

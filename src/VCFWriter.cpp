@@ -91,6 +91,10 @@ VCFWriter::VCFWriter(const string& filename, const vector<string>& samples)
   output_stream << "##FORMAT=<ID=Q,Number=1,Type=Float,Description=\"Likelihood ratio score of allelotype call\">" << endl;
   output_stream << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
   output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
+
+  if (include_gl)
+    output_stream << "##FORMAT=<ID=GL,Number=G,Type=Float,Description=\"Genotype likelihoods for genotypes as defined in the VCF specification\">" << endl;
+
   // header columns
   output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT";
   for (vector<string>::const_iterator it = samples.begin();
@@ -178,7 +182,10 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
 		<< "RU=" << str_record.repseq_in_ref << ";"
 		<< "VT=STR" << "\t";
   // FORMAT
-  output_stream << "GT:ALLREADS:AML:DP:GB:PL:Q:STITCH";
+  if (include_gl)
+    output_stream << "GT:ALLREADS:AML:DP:GB:GL:PL:Q:STITCH";
+  else
+    output_stream << "GT:ALLREADS:AML:DP:GB:PL:Q:STITCH";
 
   // Sample info  
   for (size_t i = 0; i < str_record.samples.size(); i++) {
@@ -244,6 +251,21 @@ void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
       }
     }
   }
+
+  stringstream genotype_likelihoods_string;
+  if (include_gl){
+    genotype_likelihoods_string.precision(2);
+    if (str_record.coverage.at(sample_index) == 0)
+      genotype_likelihoods_string << ".";
+    else {
+      for (size_t i = 0; i < genotype_likelihoods.size(); i++) {
+	genotype_likelihoods_string << fixed << genotype_likelihoods.at(i);
+	if (i != genotype_likelihoods.size()-1)
+	  genotype_likelihoods_string << ",";
+      }  
+    }
+  }
+
   stringstream genotype_scaled_likelihoods_string;
   if (str_record.coverage.at(sample_index) == 0) {
     genotype_scaled_likelihoods_string << ".";
@@ -274,8 +296,12 @@ void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
                 << str_record.readstring.at(sample_index) << ":"
                 << marginal_lik_score_string.str() << ":"
                 << str_record.coverage.at(sample_index) << ":"
-                << gbstring.str() << ":"
-                << genotype_scaled_likelihoods_string.str() << ":"
+                << gbstring.str() << ":";
+
+  if (include_gl)
+    output_stream << genotype_likelihoods_string.str() << ":";
+  
+  output_stream << genotype_scaled_likelihoods_string.str() << ":"
                 << str_record.max_lik_score.at(sample_index) << ":"
                 << str_record.num_stitched.at(sample_index);
 }
