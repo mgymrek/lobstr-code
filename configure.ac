@@ -8,15 +8,12 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-m4_include([ax_boost_base.m4])
-m4_include([ax_check_zlib.m4])
-m4_include([ax_blas.m4])
-
 AC_INIT([lobSTR],
         [lobSTR --version or allelotype --version gives current version],
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([dist-bzip2 -Wall tar-pax foreign])
 AM_PATH_CPPUNIT(1.9.6)
