@@ -41,3 +41,12 @@ src/tests/.dirstamp
 src/utils/.deps/
 src/utils/.dirstamp
 
+# Test output files.
+src/lobSTRTests.log
+src/lobSTRTests.trs
+src/test-suite.log
+
+# Tarballs
+lobSTR-*.tar.bz2
+lobSTR-*.tar.gz
+
