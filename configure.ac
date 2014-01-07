@@ -9,7 +9,7 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 AC_INIT([lobSTR],
-        [lobSTR --version or allelotype --version gives current version],
+	m4_esyscmd([config/git-version-gen .tarball-version]),
         [Melissa Gymrek mgymrek@mit.edu],
         [lobSTR])
 AC_CONFIG_AUX_DIR(config)
