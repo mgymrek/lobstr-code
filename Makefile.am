@@ -18,12 +18,6 @@ DATA_FILES = \
 	data/vcf_positions_to_exclude_hg19.tab
 
 
-MODEL_FILES = \
-	models/illumina_v2.0.3.stuttermodel \
-	models/illumina_v2.0.3.stutterproblem \
-	models/illumina_v2.0.3.stepmodel
-
-
 WWW_FILES = \
 	www/contact-us.html \
 	www/documentation.html \
@@ -38,7 +32,6 @@ WWW_FILES = \
 
 EXTRA_DIST = reconf configure \
 	$(WWW_FILES) \
-	$(MODEL_FILES) \
 	$(DATA_FILES)
 
-SUBDIRS = m4 src scripts
+SUBDIRS = m4 src scripts models

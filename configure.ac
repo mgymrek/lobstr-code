@@ -96,6 +96,7 @@ AC_CONFIG_FILES([
    Makefile
    src/Makefile
    scripts/Makefile
+   models/Makefile
 ])
 
 AC_OUTPUT
