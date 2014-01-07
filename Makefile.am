@@ -8,6 +8,22 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+DATA_FILES = \
+	data/lobstr.allelepriors.hg19.min50.tab \
+	data/trf.ucsc.hg19.filtered.bed \
+	data/trf.ucsc.hg18.filtered.bed \
+	data/strinfo.hg18.tab \
+	data/strinfo.hg19.tab \
+	data/vcf_positions_to_exclude_hg18.tab \
+	data/vcf_positions_to_exclude_hg19.tab
+
+
+MODEL_FILES = \
+	models/illumina_v2.0.3.stuttermodel \
+	models/illumina_v2.0.3.stutterproblem \
+	models/illumina_v2.0.3.stepmodel
+
+
 WWW_FILES = \
 	www/contact-us.html \
 	www/documentation.html \
@@ -21,6 +37,8 @@ WWW_FILES = \
 
 
 EXTRA_DIST = reconf configure \
-	$(WWW_FILES)
+	$(WWW_FILES) \
+	$(MODEL_FILES) \
+	$(DATA_FILES)
 
 SUBDIRS = m4 src
