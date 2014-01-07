@@ -40,6 +40,7 @@ CFLAGS="$CFLAGS"
 AC_PROG_CXX
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_FC
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 
@@ -51,6 +52,19 @@ CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 AX_CHECK_ZLIB()
 AX_BLAS()
+if test "$ax_blas_ok" = "no"; then
+   AC_MSG_ERROR([
+------------------------------------------
+Cannot find BLAS libraries.
+
+On Debian/Ubuntu systems, try to install one of the following packages:
+   libatlas-dev   liblapack-dev  libblas-dev
+
+If BLAS is installed in a non-standard location,
+try adding '--with-blas=<DIR>' (see ./configure --help).
+------------------------------------------
+])
+fi
 AX_BOOST_BASE([1.38.0])
 PKG_CHECK_MODULES([CPPUNIT],[cppunit])
 
