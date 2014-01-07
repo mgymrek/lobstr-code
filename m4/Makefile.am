@@ -15,8 +15,7 @@ m4datadir = $(datadir)/aclocal
 m4macros = acx_pthread.m4 \
 	ax_blas.m4 \
 	ax_boost_base.m4 \
-	ax_check_zlib.m4 \
-	cppunit.m4
+	ax_check_zlib.m4
 
 
 # The following is boilerplate

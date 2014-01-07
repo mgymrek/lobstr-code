@@ -16,7 +16,6 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([dist-bzip2 -Wall tar-pax foreign subdir-objects])
-AM_PATH_CPPUNIT(1.9.6)
 
 # Set variables using shell commands
 GIT_VERSION=${PACKAGE_VERSION}
@@ -53,6 +52,7 @@ CC="$PTHREAD_CC"
 AX_CHECK_ZLIB()
 AX_BLAS()
 AX_BOOST_BASE([1.38.0])
+PKG_CHECK_MODULES([CPPUNIT],[cppunit])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
