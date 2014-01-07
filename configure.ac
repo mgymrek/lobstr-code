@@ -95,6 +95,7 @@ AC_CONFIG_FILES([
    m4/Makefile
    Makefile
    src/Makefile
+   scripts/Makefile
 ])
 
 AC_OUTPUT

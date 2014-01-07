@@ -41,4 +41,4 @@ EXTRA_DIST = reconf configure \
 	$(MODEL_FILES) \
 	$(DATA_FILES)
 
-SUBDIRS = m4 src
+SUBDIRS = m4 src scripts
