@@ -8,5 +8,19 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-EXTRA_DIST = reconf configure
+WWW_FILES = \
+	www/contact-us.html \
+	www/documentation.html \
+	www/download.html \
+	www/faq.html \
+	www/file-formats.html \
+	www/index.html \
+	www/install.html \
+	www/news.html \
+	www/usage.html
+
+
+EXTRA_DIST = reconf configure \
+	$(WWW_FILES)
+
 SUBDIRS = m4 src
