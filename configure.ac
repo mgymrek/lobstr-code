@@ -19,7 +19,7 @@ AM_INIT_AUTOMAKE([dist-bzip2 -Wall tar-pax foreign subdir-objects])
 AM_PATH_CPPUNIT(1.9.6)
 
 # Set variables using shell commands
-GIT_VERSION=`git describe --dirty --always`
+GIT_VERSION=${PACKAGE_VERSION}
 AC_SUBST(GIT_VERSION)
 MACHTYPE=`uname -m`
 AC_SUBST(MACHTYPE)
