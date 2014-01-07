@@ -15,7 +15,7 @@ AC_INIT([lobSTR],
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE([dist-bzip2 -Wall tar-pax foreign])
+AM_INIT_AUTOMAKE([dist-bzip2 -Wall tar-pax foreign subdir-objects])
 AM_PATH_CPPUNIT(1.9.6)
 
 # Set variables using shell commands
