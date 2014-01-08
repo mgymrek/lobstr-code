@@ -32,6 +32,7 @@ WWW_FILES = \
 
 EXTRA_DIST = reconf configure \
 	config/git-version-gen \
+	lobSTR.rb \
 	$(top_srcdir)/.version \
 	$(WWW_FILES) \
 	$(DATA_FILES)
