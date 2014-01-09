@@ -15,7 +15,16 @@ AC_INIT([lobSTR],
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE([dist-bzip2 -Wall tar-pax foreign subdir-objects])
+AC_CONFIG_SRCDIR([src/main.cpp])
+AM_INIT_AUTOMAKE([dist-bzip2 foreign subdir-objects])
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_FC
+AC_PROG_RANLIB
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
 
 # Set variables using shell commands
 GIT_VERSION=${PACKAGE_VERSION}
@@ -23,26 +32,8 @@ AC_SUBST(GIT_VERSION)
 MACHTYPE=`uname -m`
 AC_SUBST(MACHTYPE)
 
-OS=`uname`
-AC_SUBST(OS)
-if test "x$OS" = "xDarwin"
-then
-VARSTATIC=""
-AC_SUBST(VARSTATIC)
-else
-VARSTATIC="-static"
-AC_SUBST(VARSTATIC)
-fi
-
 CXXFLAGS="$CXXFLAGS"
 CFLAGS="$CFLAGS"
-
-AC_PROG_CXX
-AC_PROG_CC
-AM_PROG_CC_C_O
-AC_PROG_FC
-AC_PROG_RANLIB
-AC_PROG_INSTALL
 
 PKG_CHECK_MODULES([FFTW], [fftw3])
 ACX_PTHREAD()
@@ -71,6 +62,7 @@ PKG_CHECK_MODULES([CPPUNIT],[cppunit])
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 
+# BamTools needs HAVE_FSEEK64
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 AC_CHECK_FUNCS(fseek64, xpdf_cv_func_fseek64=yes, xpdf_cv_func_fseek64=no)
@@ -78,10 +70,6 @@ AC_CHECK_FUNCS(ftell64, xpdf_cv_func_ftell64=yes, xpdf_cv_func_ftell64=no)
 if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
   AC_DEFINE(HAVE_FSEEK64)
 fi
-
-#LT_INIT([disable-shared])
-m4_pattern_allow([AM_PROG_AR])
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 user_CFLAGS=${CFLAGS}
 generic_CFLAGS="-Wall -Wno-strict-aliasing -gdwarf-2 -Wuninitialized"
