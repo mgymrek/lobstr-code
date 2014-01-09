@@ -83,77 +83,60 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     aligned_read.strand = aln.IsReverseStrand();
     // get chrom
     aligned_read.chrom = references.at(aln.RefID).RefName;
-    // get msStart
-    uint msstart, msend;
-    if (!aln.GetTag("XS", msstart)) {
-      int i_msstart;
-      if (!aln.GetTag("XS", i_msstart)) {
-	PrintMessageDieOnError("Could not get STR start coordinate. Did this bam file come from lobSTR?", ERROR);
-      } else {
-	aligned_read.msStart = i_msstart;
-      }
-    } else {
-      aligned_read.msStart = static_cast<int>(msstart);
-    }
-    // get msEnd
-    if (!aln.GetTag("XE", msend)) {
-      int i_msend;
-      if (!aln.GetTag("XE", i_msend)) {
-	PrintMessageDieOnError("Could not get STR end coordinate. Did this bam file come from lobSTR?", ERROR);
-      } else {
-	aligned_read.msEnd = i_msend;
-      }
-    } else {
-      aligned_read.msEnd = static_cast<int>(msend);
-    }
-    // get read group
-    if (!aln.GetTag("RG", aligned_read.read_group)) {
-      PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
-    }
-    // get mapq. Try unsigned/signed
-    uint mapqual;
-    if (!aln.GetTag("XQ", mapqual)) {
-      int i_mapqual;
-      if (!aln.GetTag("XQ", i_mapqual)) {
-	aligned_read.mapq = aln.MapQuality;
-      } else {
-	aligned_read.mapq = i_mapqual;
-      }
-    } else {
-      aligned_read.mapq = static_cast<int>(mapqual);
-    }
-    if (aligned_read.mapq == 255) {
-      aligned_read.mapq = 0;
-    }
-    // get diff
-    if (!aln.GetTag("XD", aligned_read.diffFromRef)) {
-      if (!aln.IsSecondMate()) {
-	PrintMessageDieOnError("Could not get the genotype. Did this bam file come from lobSTR?", ERROR);
-      }
-      continue;
-    }
-    // get mate dist
-    if (!aln.GetTag("XM", aligned_read.matedist)) {
-      aligned_read.matedist = 0;
-    }
     // get read start
     aligned_read.read_start = aln.Position;
     // get cigar
     aligned_read.cigar_ops = aln.CigarData;
-    // get STR seq
-    if (!aln.GetTag("XR", aligned_read.repseq)) {
-      PrintMessageDieOnError("Could not get repseq. Did this bam file come from lobSTR?", ERROR);
-      //aligned_read.repseq="";
-    }
     // get if mate pair
     if (aln.IsSecondMate()) {
       aligned_read.mate = 1;
     } else {
       aligned_read.mate = 0;
     }
+    // Only process if it is the primary alignment
+    if (aligned_read.mate) {
+      continue;
+    }
+    // Get all the tag data
+    // get msStart
+    if (!GetIntBamTag(aln, "XS", &aligned_read.msStart)) {
+      PrintMessageDieOnError("Could not get STR start coordinate. Did this bam file come from lobSTR?", ERROR);
+    }
+    // get msEnd
+    if (!GetIntBamTag(aln, "XE", &aligned_read.msEnd)) {
+      PrintMessageDieOnError("Could not get STR end coordinate. Did this bam file come from lobSTR?", ERROR);
+    }
+    // get read group
+    if (!GetStringBamTag(aln, "RG", &aligned_read.read_group)) {
+      PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
+    }
+    // get mapq. Try unsigned/signed
+    if (!GetIntBamTag(aln, "XQ", &aligned_read.mapq)) {
+      PrintMessageDieOnError("Could not find map quality. Setting to 0", WARNING);
+      aligned_read.mapq = 0;
+    }
+    // get diff
+    if (!GetIntBamTag(aln, "XD", &aligned_read.diffFromRef)) {
+      if (aligned_read.mate == 0) {
+	PrintMessageDieOnError("Could not get genotype. Did this bam file come from lobSTR?", ERROR);
+      }
+      continue;
+    }
+    // get mate dist
+    if (!GetIntBamTag(aln, "XM", &aligned_read.matedist)) {
+      aligned_read.matedist = 0;
+    }
+    // get STR seq
+    if (!GetStringBamTag(aln, "XR", &aligned_read.repseq)) {
+      PrintMessageDieOnError("Could not get repseq. Did this bam file come from lobSTR?", ERROR);
+    }
     // get if stitched
-    if (!aln.GetTag("XX", aligned_read.stitched)) {
+    if (!GetIntBamTag(aln, "XX", &aligned_read.stitched)) {
       aligned_read.stitched = 0;
+    }
+    // get ref copy num
+    if (!GetFloatBamTag(aln, "XC", &aligned_read.refCopyNum)) {
+      PrintMessageDieOnError("Could not get ref copy number. Did this bam file come from lobSTR?", ERROR);
     }
     // get period
     aligned_read.period = aligned_read.repseq.length();
@@ -187,14 +170,6 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     if (aligned_read.matedist > max_matedist) {
       continue;
     }
-    if (aligned_read.mate) {
-      continue;
-    }
-    
-    // get ref copy num
-    if (!aln.GetTag("XC", aligned_read.refCopyNum)) {
-      aligned_read.refCopyNum = 0;
-    }
     // Add to map
     pair<string, int> coord
       (aligned_read.chrom, aligned_read.msStart);
@@ -207,6 +182,72 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
 			      (coord, aligned_read_list));
     }
   }
+}
+
+bool ReadContainer::GetIntBamTag(const BamTools::BamAlignment& aln,
+		  const std::string& tag_name, int* destination) {
+  char tag_type;
+  if (!aln.GetTagType(tag_name, tag_type)) {return false;}
+  switch (tag_type) {
+  case (BamTools::Constants::BAM_TAG_TYPE_INT32):
+    return aln.GetTag(tag_name, *destination);
+  case (BamTools::Constants::BAM_TAG_TYPE_INT8):
+    int8_t d8;
+    if (!aln.GetTag(tag_name, d8)) {
+      return false;
+    }
+    *destination = static_cast<int>(d8);
+    return true;
+  case (BamTools::Constants::BAM_TAG_TYPE_UINT8):
+    uint8_t ud8;
+    if (!aln.GetTag(tag_name, ud8)) {
+      return false;
+    }
+    *destination = static_cast<int>(ud8);
+    return true;
+  case (BamTools::Constants::BAM_TAG_TYPE_INT16):
+    int8_t d16;
+    if (!aln.GetTag(tag_name, d16)) {
+      return false;
+    }
+    *destination = static_cast<int>(d16);
+    return true;
+  case (BamTools::Constants::BAM_TAG_TYPE_UINT16):
+    uint8_t ud16;
+    if (!aln.GetTag(tag_name, ud16)) {
+      return false;
+    }
+    *destination = static_cast<int>(ud16);
+    return true;
+  case (BamTools::Constants::BAM_TAG_TYPE_UINT32):
+    uint32_t ud32;
+    if (!aln.GetTag(tag_name, ud32)) {
+      return false;
+    }
+    *destination = static_cast<int>(ud32);
+    return true;
+  default:
+    stringstream msg;
+    msg << "Encountered unsupported tag type " << tag_type;
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  return false;
+}
+
+bool ReadContainer::GetStringBamTag(const BamTools::BamAlignment& aln,
+		     const std::string& tag_name, std::string* destination) {
+  if (!aln.GetTag(tag_name, *destination)) {
+    return false;
+  }
+  return true;
+}
+
+bool ReadContainer::GetFloatBamTag(const BamTools::BamAlignment& aln,
+		     const std::string& tag_name, float* destination) {
+  if (!aln.GetTag(tag_name, *destination)) {
+    return false;
+  }
+  return true;
 }
 
 void ReadContainer::ClearReads() {
