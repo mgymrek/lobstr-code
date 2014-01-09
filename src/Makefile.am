@@ -138,32 +138,6 @@ liblobstr_a_SOURCES = \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
-	bamlite.c bamlite.h \
-	bntseq.c bntseq.h \
-	bwaseqio.c bwaseqio.h \
-	bwape.c \
-	bwase.c bwase.h \
-	bwt.c bwt.h \
-	bwtaln.c bwtaln.h \
-	bwtgap.c bwtgap.h \
-	bwtindex.c \
-	bwtio.c \
-	bwtmisc.c \
-	bwtsw2.h \
-	bwtsw2_aux.c \
-	bwtsw2_chain.c \
-	bwtsw2_core.c \
-	khash.h kseq.h ksort.h kvec.h \
-	bwtsw2_main.c \
-	bwt_gen.c bwt_gen.h \
-	bwt_lite.c bwt_lite.h \
-	cs2nt.c \
-	is.c \
-	kstring.c kstring.h \
-	QSufSort.c \
-	simple_dp.c \
-	stdaln.c \
-	utils.c utils.h \
 	api/BamReader.h api/BamMultiReader.h \
 	api/BamAlignment.h api/BamWriter \
 	api/SamHeader.h api/ReadGroup.h \
@@ -238,7 +212,7 @@ lobSTRIndex_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTR_LDADD = liblobstr.a libbamtools.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
+lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
 lobSTR_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
