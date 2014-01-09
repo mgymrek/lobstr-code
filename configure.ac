@@ -57,6 +57,30 @@ if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
   AC_DEFINE(HAVE_FSEEK64)
 fi
 
+# To compile a static executable (before binary packaging?),
+# use:
+#    ./configure --enable-all-static
+#
+# NOTE:
+#  1.  Using "./configure LDFLAGS=-static" will not work, because
+#      libtool will override the LDFLAG files at times.
+#  2.  The flag 'LT_LDFLAGS' is used in ./src/Makefile.am with LDADD.
+#
+# 'all-static' marco copied from subversion's configure.ac
+AC_ARG_ENABLE(all-static,
+              AS_HELP_STRING([--enable-all-static],
+                             [Build completely static (standalone) binaries.]),
+                             [
+                              if test "$enableval" = "yes" ; then
+                                      LT_LDFLAGS="-all-static $LT_LDFLAGS"
+                              elif test "$enableval" != "no" ; then
+                                      AC_MSG_ERROR([--enable-all-static doesn't accept argument])
+                                      fi
+                                      ])
+
+AC_SUBST(LT_LDFLAGS)
+
+
 # Set variables using shell commands
 GIT_VERSION=${PACKAGE_VERSION}
 AC_SUBST(GIT_VERSION)

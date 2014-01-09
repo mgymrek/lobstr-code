@@ -208,17 +208,17 @@ liballelotype_a_SOURCES = \
 lobSTRIndex_SOURCES = main.c main.h
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTRIndex_LDADD = $(AM_LDADD) libindex.a libbamtools.a
-lobSTRIndex_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
+lobSTRIndex_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
-lobSTR_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
+lobSTR_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
 allelotype_LDADD = liballelotype.a libbamtools.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
-allelotype_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
+allelotype_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 TESTS = lobSTRTests
 check_PROGRAMS = $(TESTS)
@@ -288,3 +288,4 @@ lobSTRTests_SOURCES = \
 
 lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
 lobSTRTests_LDADD = libbamtools.a $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
+lobSTRTests_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
