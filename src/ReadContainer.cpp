@@ -98,27 +98,37 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
       continue;
     }
     // Get all the tag data
+    // get read group
+    if (!GetStringBamTag(aln, "RG", &aligned_read.read_group)) {
+      stringstream msg;
+      msg << aln.Name << " Could not get read group.";
+      PrintMessageDieOnError(msg.str(), ERROR);
+    }
     // get msStart
     if (!GetIntBamTag(aln, "XS", &aligned_read.msStart)) {
-      PrintMessageDieOnError("Could not get STR start coordinate. Did this bam file come from lobSTR?", ERROR);
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get STR start coordinate. Did this bam file come from lobSTR?";
+      PrintMessageDieOnError(msg.str(), ERROR);
     }
     // get msEnd
     if (!GetIntBamTag(aln, "XE", &aligned_read.msEnd)) {
-      PrintMessageDieOnError("Could not get STR end coordinate. Did this bam file come from lobSTR?", ERROR);
-    }
-    // get read group
-    if (!GetStringBamTag(aln, "RG", &aligned_read.read_group)) {
-      PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get STR end coordinate. Did this bam file come from lobSTR?";
+      PrintMessageDieOnError(msg.str(), ERROR);
     }
     // get mapq. Try unsigned/signed
     if (!GetIntBamTag(aln, "XQ", &aligned_read.mapq)) {
-      PrintMessageDieOnError("Could not find map quality. Setting to 0", WARNING);
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get map quality. Setting to 0.";
+      PrintMessageDieOnError(msg.str(), WARNING);
       aligned_read.mapq = 0;
     }
     // get diff
     if (!GetIntBamTag(aln, "XD", &aligned_read.diffFromRef)) {
       if (aligned_read.mate == 0) {
-	PrintMessageDieOnError("Could not get genotype. Did this bam file come from lobSTR?", ERROR);
+	stringstream msg;
+	msg << aln.Name << " from group " << aligned_read.read_group << " Could not get genotype.";
+	PrintMessageDieOnError(msg.str(), ERROR);
       }
       continue;
     }
@@ -128,7 +138,9 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     }
     // get STR seq
     if (!GetStringBamTag(aln, "XR", &aligned_read.repseq)) {
-      PrintMessageDieOnError("Could not get repseq. Did this bam file come from lobSTR?", ERROR);
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get repseq.";
+      PrintMessageDieOnError(msg.str(), ERROR);
     }
     // get if stitched
     if (!GetIntBamTag(aln, "XX", &aligned_read.stitched)) {
@@ -136,7 +148,9 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     }
     // get ref copy num
     if (!GetFloatBamTag(aln, "XC", &aligned_read.refCopyNum)) {
-      PrintMessageDieOnError("Could not get ref copy number. Did this bam file come from lobSTR?", ERROR);
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get reference copy number.";
+      PrintMessageDieOnError(msg.str(), ERROR);
     }
     // get period
     aligned_read.period = aligned_read.repseq.length();
@@ -206,14 +220,14 @@ bool ReadContainer::GetIntBamTag(const BamTools::BamAlignment& aln,
     *destination = static_cast<int>(ud8);
     return true;
   case (BamTools::Constants::BAM_TAG_TYPE_INT16):
-    int8_t d16;
+    int16_t d16;
     if (!aln.GetTag(tag_name, d16)) {
       return false;
     }
     *destination = static_cast<int>(d16);
     return true;
   case (BamTools::Constants::BAM_TAG_TYPE_UINT16):
-    uint8_t ud16;
+    uint16_t ud16;
     if (!aln.GetTag(tag_name, ud16)) {
       return false;
     }
