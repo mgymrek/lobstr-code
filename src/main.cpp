@@ -77,7 +77,7 @@ void show_help() {
     "\nlobSTR [OPTIONS] " \
     "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
     "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
-    "    -o <output prefix>\n" \
+    "    -o <output prefix> --rg-sample <STRING> --rg-library <STRING>\n" \
     "Note: parameters are uploaded to Amazon S3 by default. This is for\n" \
     "us see how people are using the tool and to help us continue to improve\n" \
     "lobSTR. To turn this function off, specify --noweb.\n\n" \
@@ -98,6 +98,8 @@ void show_help() {
     "               to create index. If the index is downloaded\n" \
     "               to PATH_TO_INDEX, this argument is\n" \
     "               PATH_TO_INDEX/lobSTR_)\n" \
+    "--rg-sample <STRING>  Use this in the read group SM tag\n" \
+    "--rg-lib <STRING>     Use this in the read group LB tag\n" \
     "\n\nOptions:\n" \
     "-h,--help      display this help screen\n" \
     "-v,--verbose   print out useful progress messages\n" \
@@ -116,8 +118,6 @@ void show_help() {
     "--oldillumina  Specifies that quality score are given in old Phred\n" \
     "               format (Illumina 1.3+, Illumina 1.5+) where quality\n" \
     "               scores are given as Phred + 64 rather than Phred + 33\n" \
-    "--rg-sample <STRING>  Use this in the read group SM tag\n" \
-    "--rg-lib <STRING>     Use this in the read group LB tag\n" \
     "--multi        Report reads mapping to multiple genomic locations.\n" \
     "               Alternate alignments given in XA tag\n" \
     "--noweb        Do not report any user information and paramters to Amazon S3.\n" \
@@ -586,6 +586,9 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
   if (using_s3 && s3cmd_configfile.empty()) {
     PrintMessageDieOnError("Must supply an s3cmd config file", ERROR);
+  }
+  if (read_group_sample.empty() || read_group_library.empty()) {
+    PrintMessageDieOnError("Must specify --rg-library and --rg-sample", ERROR);
   }
 }
 
