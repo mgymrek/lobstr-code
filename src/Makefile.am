@@ -257,35 +257,11 @@ lobSTRTests_SOURCES = \
 	ZippedFastaFileReader.cpp \
 	ZippedFastqFileReader.cpp \
 	ZippedTextFileReader.cpp \
-	bamlite.c \
-	bntseq.c \
-	bwape.c \
-	bwase.c \
-	bwt.c \
-	bwtaln.c \
-	bwtgap.c \
-	bwtindex.c \
-	bwtio.c \
-	bwtmisc.c \
-	bwtsw2_aux.c \
-	bwtsw2_chain.c \
-	bwtsw2_core.c \
-	khash.h kseq.h ksort.h kvec.h \
-	bwtsw2_main.c \
-	bwt_gen.c \
-	bwt_lite.c \
-	cs2nt.c \
-	is.c \
-	kstring.c \
-	QSufSort.c \
-	simple_dp.c \
-	stdaln.c \
-	utils.c \
 	api/BamReader.h api/BamMultiReader.h \
 	api/BamAlignment.h api/BamWriter \
 	api/SamHeader.h api/ReadGroup.h \
 	api/SamReadGroupDictionary.h
 
 lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
-lobSTRTests_LDADD = libbamtools.a $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
+lobSTRTests_LDADD = libbamtools.a libindex.a $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
 lobSTRTests_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
