@@ -25,21 +25,8 @@ AC_PROG_INSTALL
 AC_PROG_FC
 AC_PROG_F77
 
-# Set variables using shell commands
-GIT_VERSION=${PACKAGE_VERSION}
-AC_SUBST(GIT_VERSION)
-MACHTYPE=`uname -m`
-AC_SUBST(MACHTYPE)
-
-CXXFLAGS="$CXXFLAGS"
-CFLAGS="$CFLAGS"
-
 PKG_CHECK_MODULES([FFTW], [fftw3])
-ACX_PTHREAD()
-LIBS="$PTHREAD_LIBS $LIBS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
-CC="$PTHREAD_CC"
+AX_PTHREAD()
 AX_CHECK_ZLIB()
 AX_BLAS()
 if test "$ax_blas_ok" = "no"; then
@@ -70,9 +57,26 @@ if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
   AC_DEFINE(HAVE_FSEEK64)
 fi
 
-CFLAGS="${OPENMP_CFLAGS} -D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\" -O3"
-CXXFLAGS="$CFLAGS"
-CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS"
+# Set variables using shell commands
+GIT_VERSION=${PACKAGE_VERSION}
+AC_SUBST(GIT_VERSION)
+MACHTYPE=`uname -m`
+AC_SUBST(MACHTYPE)
+
+# Add pThread related settings,
+#  see http://www.gnu.org/software/autoconf-archive/ax_pthread.html
+# NOTE: CFLAGS/CXXFLAGS are also updated below.
+LIBS="$PTHREAD_LIBS $LIBS"
+
+# Compiler warnings to add
+COMPILER_WARNINGS="-Wall -Wextra -Wswitch-default -Wno-strict-aliasing"
+
+# Custom Flags to add to CFLAGS/CXXFLAGS
+LOBSTR_CFLAGS="-D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\""
+
+# Set the final value for CFLAGS/CXXFLAGS
+CFLAGS="$CFLAGS $COMPILER_WARNINGS $PTHREAD_CFLAGS $LOBSTR_CFLAGS"
+CXXFLAGS="$CXXFLAGS $COMPILER_WARNINGS $PTHREAD_CFLAGS $LOBSTR_CFLAGS $BOOST_CPPFLAGS"
 
 AC_CONFIG_FILES([
    m4/Makefile
