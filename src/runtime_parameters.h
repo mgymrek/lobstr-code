@@ -137,6 +137,7 @@ extern std::string use_chrom;
 extern bool rmdup;
 extern bool include_flank;
 extern bool include_gl;
+extern bool multi_sample;
 extern bool print_reads;
 extern float min_het_freq;
 extern int max_matedist;

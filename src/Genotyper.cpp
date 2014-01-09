@@ -1,3 +1,4 @@
+
 /*
 Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 
@@ -43,6 +44,9 @@ const float SMALL_CONST = 1e-10;
 const int PADK = 2;
 const float DEFAULT_PRIOR = 0.001;
 const float PRIOR_PSEUDOCOUNT = 0.001;
+const float INTERCEPT2 = -2.935446;
+const float COEFF_PROB = 5.883099;
+const float COEFF_MAPQ2 = -0.008677;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
@@ -112,15 +116,66 @@ void Genotyper::LoadAnnotations(const vector<std::string> annot_files) {
 }
 
 bool Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
-			   vector<int>* alleles) {
+			   vector<int>* alleles, map<int, float>* allele_probs) {
   if (aligned_reads.size() == 0) return false;
   alleles->clear();
-  alleles->push_back(0);
-  for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
-       it != aligned_reads.end(); ++it) {
-    if (it->mate) continue;
-    if (it->diffFromRef != 0 && std::find(alleles->begin(), alleles->end(), it->diffFromRef) == alleles->end()) {
-      alleles->push_back(it->diffFromRef);
+  alleles->push_back(0); // always include ref allele as first allele
+  if (multi_sample) {
+    map<int, Allele> allele_qualities;
+    // Get most common allele
+    map<int,int> observed_alleles;
+    for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
+	 it != aligned_reads.end(); it++) {
+      observed_alleles[it->diffFromRef]++;
+    }
+    int major_allele = 0;
+    int max_count = 0;
+    for (map<int,int>::const_iterator it = observed_alleles.begin();
+	 it != observed_alleles.end(); it++) {
+      if (it->second > max_count) {
+	major_allele = it->first;
+	max_count = it->second;
+      }
+    }
+	   
+    // Get allele qualities
+    for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
+	 it != aligned_reads.end(); ++it) {
+      if (allele_qualities.find(it->diffFromRef) == allele_qualities.end()) {
+	Allele allele;
+	allele.diff_modperiod = ((it->diffFromRef-major_allele))==0;
+	allele.total_diff = it->diffFromRef-major_allele;
+	allele.allele = it->diffFromRef;
+	allele.numreads = 1;
+	allele.total_strand = (int)it->strand;
+	allele.total_mapq = it->mapq;
+	allele_qualities[it->diffFromRef] = allele;
+      } else {
+	allele_qualities[it->diffFromRef].numreads++;
+	allele_qualities[it->diffFromRef].total_mapq += it->mapq;
+	allele_qualities[it->diffFromRef].total_strand += (int)it->strand;
+      }
+    }
+
+    // Add passing alleles to alleles vector
+    (*allele_probs)[0] = 1;
+    for (map<int,Allele>::iterator it = allele_qualities.begin();
+	 it != allele_qualities.end(); it++) {
+      if (it->first != 0) {
+	float prob = it->second.PredictedTrue();
+	(*allele_probs)[it->first] = prob;
+	if (prob > 0.0) { // TODO set
+	  alleles->push_back(it->first);
+	}
+      }
+    }
+  } else {
+    for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
+	 it != aligned_reads.end(); it++) {
+      if (it->mate) continue;
+      if (it->diffFromRef != 0 && std::find(alleles->begin(), alleles->end(), it->diffFromRef) == alleles->end()) {
+	alleles->push_back(it->diffFromRef);
+      }
     }
   }
   return true;
@@ -143,7 +198,6 @@ void Genotyper::CleanAllelesList(int reflen, vector<int>* alleles) {
   *alleles = alleles_to_keep;
 }
 
-// TODO don't read same read twice
 bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
 				  const vector<string>& samples,
 				  const map<string,string>& rg_id_to_sample,
@@ -173,9 +227,20 @@ bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
 
 float Genotyper::CalcLogLik(int a, int b,
                             const list<AlignedRead>& aligned_reads,
-                            int period, int* counta, int* countb ) {
+                            int period, int* counta, int* countb,
+			    const map<int, float>& allele_probs) {
   *counta = 0;
   *countb = 0;
+  if (aligned_reads.size() == 0) {return 0;}
+  // set S, prob to choose a read from allele A (used to have s = 0.5)
+  int length_A = aligned_reads.front().refCopyNum*period + a;
+  int length_B = aligned_reads.front().refCopyNum*period + b;
+  int readlen  = aligned_reads.front().nucleotides.length();
+  int f = 10;
+  float s = static_cast<float>(readlen - 2*f-length_A+1)/
+  static_cast<float>(2*readlen - 4*f - (length_A+length_B)+2);
+  float err = 0.0; // TODO set
+  s = 0.5; // TODO remove
   float loglik = 0;
   for (list<AlignedRead>::const_iterator
          it = aligned_reads.begin(); it != aligned_reads.end(); it++) {
@@ -190,7 +255,7 @@ float Genotyper::CalcLogLik(int a, int b,
       GetTransitionProb(a, diff, period, length, gc, score);
     float y = noise_model->
       GetTransitionProb(b, diff, period, length, gc, score);
-    float toadd = (x+y)/2;
+    float toadd = (1-err)*(x*(s)+y*(1-s)) + err;
     loglik += log10(toadd + SMALL_CONST);
   }
   return loglik;
@@ -198,7 +263,8 @@ float Genotyper::CalcLogLik(int a, int b,
 
 void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 			map<int,int> spanning_reads,
-                        bool haploid, STRRecord* str_record) {
+                        bool haploid, STRRecord* str_record,
+			const map<int, float>& allele_probs) {
   // Get all likelihoods, keep track of max
   float sum_all_likelihoods = SMALL_CONST; // sum P(R|G)
   // Keep track of numerators for marginal likelihood
@@ -229,7 +295,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
       int counta,countb;
       float currScore = CalcLogLik(allelotype.first, allelotype.second,
                                    aligned_reads, str_record->period,
-                                   &counta, &countb);
+                                   &counta, &countb, allele_probs);
       // Insert likelihood to grid
       likelihood_grid.insert
         (pair<pair<int,int>,float>(allelotype, currScore));
@@ -309,7 +375,8 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 }
 
 bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
-                             STRRecord* str_record, bool is_haploid) {
+                             STRRecord* str_record, bool is_haploid,
+			     const map<int,float>& allele_probs) {
   int num_stitched = 0;
   map<int,int> spanning_reads;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
@@ -321,7 +388,7 @@ bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
   str_record->num_stitched.push_back(num_stitched);
 
   // Get allelotype call and scores
-  FindMLE(aligned_reads, spanning_reads, is_haploid, str_record);
+  FindMLE(aligned_reads, spanning_reads, is_haploid, str_record, allele_probs);
   if (debug) {
     stringstream msg;
     msg << "[Genotyper.cpp]: " << str_record->allele1.back() << "," << str_record->allele2.back();
@@ -401,6 +468,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
 
   // Check if in our list of annotations
   bool is_annotated = false;
+  map<int, float> allele_probs;
   if (annotations.find(pair<string,int>(str_record.chrom, str_record.start)) !=
       annotations.end()) {
     is_annotated = true;
@@ -412,7 +480,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     str_record.alleles_to_include = annot.alleles;
   } else {
     // Determine allele range
-    if (!GetAlleles(read_list, &str_record.alleles_to_include)) {return;}
+    if (!GetAlleles(read_list, &str_record.alleles_to_include, &allele_probs)) {return;}
   }
 
   // Clean alleles list to remove things with length < 0
@@ -428,7 +496,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     if (debug) {
       PrintMessageDieOnError("[Genotyper.cpp]: Processing sample " + samples.at(i), DEBUG);
     }
-    ProcessLocus(sample_reads.at(i), &str_record, is_haploid);
+    ProcessLocus(sample_reads.at(i), &str_record, is_haploid, allele_probs);
   }
   // Reset alleles to include based on what we called
   if (!is_annotated) {

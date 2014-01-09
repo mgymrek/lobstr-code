@@ -110,7 +110,7 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     if (!aln.GetTag("RG", aligned_read.read_group)) {
       PrintMessageDieOnError("Each read must be assigned to a read group", ERROR);
     }
-    // get mapq
+    // get mapq. Try unsigned/signed
     uint mapqual;
     if (!aln.GetTag("XQ", mapqual)) {
       int i_mapqual;
@@ -124,6 +124,21 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     }
     if (aligned_read.mapq == 255) {
       aligned_read.mapq = 0;
+    }
+    // get diff. Try unsigned/signed
+    uint ddiff;
+    if (!aln.GetTag("XD", ddiff)) {
+      int i_ddiff;
+      if (!aln.GetTag("XD", i_ddiff)) {
+	if (!aln.IsSecondMate()) {
+	  PrintMessageDieOnError("Could not get the genotype. Did this bam file come from lobSTR?", ERROR);
+	}
+	continue;
+      } else {
+	aligned_read.diffFromRef = i_ddiff;
+      }
+    } else {
+      aligned_read.diffFromRef = static_cast<int>(ddiff);
     }
     // get mate dist
     if (!aln.GetTag("XM", aligned_read.matedist)) {
@@ -150,10 +165,6 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     }
     // get period
     aligned_read.period = aligned_read.repseq.length();
-    // get diff
-    if (!aln.GetTag("XD", aligned_read.diffFromRef)) {
-      aligned_read.diffFromRef = 0;
-    }
     if (!include_flank) {  // diff is just sum of differences in cigar
       CIGAR_LIST cigar_list;
       for (vector<BamTools::CigarOp>::const_iterator
