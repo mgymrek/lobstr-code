@@ -306,43 +306,11 @@ lobSTRTests_SOURCES = \
 	QSufSort.c \
 	simple_dp.c \
 	stdaln.c \
-	utils.c  \
-	api/BamReader.cpp \
-	api/BamMultiReader.cpp \
-	api/BamWriter.cpp \
-	api/BamAlignment.cpp \
-	api/SamHeader.cpp \
-	api/SamProgram.cpp \
-	api/SamProgramChain.cpp \
-	api/SamSequence.cpp \
-	api/SamSequenceDictionary.cpp \
-	api/SamReadGroup.cpp \
-	api/SamReadGroupDictionary.cpp \
-	api/internal/BamWriter_p.cpp \
-	api/internal/SamFormatPrinter_p.cpp \
-	api/internal/BamException_p.cpp \
-	api/internal/BamDeviceFactory_p.cpp \
-	api/internal/BamHeader_p.cpp \
-	api/internal/BamRandomAccessController_p.cpp \
-	api/internal/BamReader_p.cpp \
-	api/internal/ILocalIODevice_p.cpp \
-	api/internal/BgzfStream_p.cpp \
-	api/internal/BamFile_p.cpp \
-	api/internal/SamFormatParser_p.cpp \
-	api/internal/SamHeaderValidator_p.cpp \
-	api/internal/BamFtp_p.cpp \
-	api/internal/BamHttp_p.cpp \
-	api/internal/BamIndexFactory_p.cpp \
-	api/internal/BamPipe_p.cpp \
-	api/internal/BamStandardIndex_p.cpp \
-	api/internal/BamToolsIndex_p.cpp \
-	api/internal/BamMultiReader_p.cpp \
-	utils/bamtools_utilities.cpp  \
-	utils/bamtools_fasta.cpp \
-	utils/bamtools_options.cpp \
-	utils/bamtools_pileup_engine.cpp
-
-
+	utils.c \
+	api/BamReader.h api/BamMultiReader.h \
+	api/BamAlignment.h api/BamWriter \
+	api/SamHeader.h api/ReadGroup.h \
+	api/SamReadGroupDictionary.h
 
 lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
-lobSTRTests_LDADD = $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
+lobSTRTests_LDADD = libbamtools.a $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
