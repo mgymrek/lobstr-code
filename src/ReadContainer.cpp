@@ -125,20 +125,12 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     if (aligned_read.mapq == 255) {
       aligned_read.mapq = 0;
     }
-    // get diff. Try unsigned/signed
-    uint ddiff;
-    if (!aln.GetTag("XD", ddiff)) {
-      int i_ddiff;
-      if (!aln.GetTag("XD", i_ddiff)) {
-	if (!aln.IsSecondMate()) {
-	  PrintMessageDieOnError("Could not get the genotype. Did this bam file come from lobSTR?", ERROR);
-	}
-	continue;
-      } else {
-	aligned_read.diffFromRef = i_ddiff;
+    // get diff
+    if (!aln.GetTag("XD", aligned_read.diffFromRef)) {
+      if (!aln.IsSecondMate()) {
+	PrintMessageDieOnError("Could not get the genotype. Did this bam file come from lobSTR?", ERROR);
       }
-    } else {
-      aligned_read.diffFromRef = static_cast<int>(ddiff);
+      continue;
     }
     // get mate dist
     if (!aln.GetTag("XM", aligned_read.matedist)) {
