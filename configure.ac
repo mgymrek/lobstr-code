@@ -18,13 +18,12 @@ AC_CONFIG_HEADER(config.h)
 AC_CONFIG_SRCDIR([src/main.cpp])
 AM_INIT_AUTOMAKE([dist-bzip2 foreign subdir-objects])
 
+LT_INIT([static])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_FC
-AC_PROG_RANLIB
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-
+AC_PROG_F77
 
 # Set variables using shell commands
 GIT_VERSION=${PACKAGE_VERSION}
@@ -71,27 +70,9 @@ if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
   AC_DEFINE(HAVE_FSEEK64)
 fi
 
-user_CFLAGS=${CFLAGS}
-generic_CFLAGS="-Wall -Wno-strict-aliasing -gdwarf-2 -Wuninitialized"
-ext_CFLAGS=""
-debug_CFLAGS=""
-case "${host_cpu}-${host_os}" in
-  i*86-*linux*)
-	    ext_CFLAGS="-march=i686";;
-  i*86-darwin*)
-	CFLAGS="-m64"
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM], [ext_CFLAGS="-arch x86_64"], []);;
-  *)
-    AC_MSG_CHECKING([if gcc accepts -m64])
-    CFLAGS="-m64"
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM], [ext_CFLAGS="-m64"; AC_MSG_RESULT([yes])],
-					  [ext_CFLAGS="-D_FILE_OFFSET_BITS=64"; AC_MSG_RESULT([no])]);;
-esac
-
-CFLAGS="${generic_CFLAGS} ${ext_CFLAGS} ${user_CFLAGS} ${debug_CFLAGS} ${OPENMP_CFLAGS} -D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\" -O3"
+CFLAGS="${OPENMP_CFLAGS} -D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\" -O3"
 CXXFLAGS="$CFLAGS"
 CXXFLAGS="$CXXFLAGS $BOOST_CPPFLAGS"
-LDFLAGS="$ext_LDFLAGS" 
 
 AC_CONFIG_FILES([
    m4/Makefile
