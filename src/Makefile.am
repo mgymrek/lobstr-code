@@ -17,64 +17,9 @@ AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
 
 AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/
 
-noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a
+noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a libbamtools.a
 
-liblobstr_a_SOURCES = \
-	BamFileReader.cpp BamFileReader.h \
-	BamPairedFileReader.cpp BamPairedFileReader.h \
-	BWAReadAligner.cpp BWAReadAligner.h \
-	CachedWindowGenerator.cpp CachedWindowGenerator.h \
-	common.cpp common.h \
-	EntropyDetection.cpp EntropyDetection.h \
-	FastaFileReader.cpp FastaFileReader.h \
-	FastaPairedFileReader.cpp FastaPairedFileReader.h \
-	FastqFileReader.cpp FastqFileReader.h \
-	FastqPairedFileReader.cpp FastqPairedFileReader.h \
-	FFT_four_nuc_vectors.cpp FFT_four_nuc_vectors.h \
-	FFT_nuc_vectors.cpp FFT_nuc_vectors.h \
-	gzstream.cpp gzstream.h \
-	STRRecord.h \
-	HammingWindowGenerator.cpp HammingWindowGenerator.h \
-	MultithreadData.cpp MultithreadData.h \
-	nw.cpp nw.h \
-	cigar.h \
-	runtime_parameters.cpp runtime_parameters.h \
-	IFileReader.h RunInfo.h \
-	IFileWriter.h ISatellite.h MSReadRecord.h \
-	SamFileWriter.cpp SamFileWriter.h \
-	STRDetector.cpp STRDetector.h \
-	TextFileReader.cpp TextFileReader.h \
-	TextFileWriter.cpp TextFileWriter.h \
-	TukeyWindowGenerator.cpp TukeyWindowGenerator.h \
-	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
-	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
-	ZippedTextFileReader.cpp ZippedTextFileReader.h \
-	bamlite.c bamlite.h \
-	bntseq.c bntseq.h \
-	bwaseqio.c bwaseqio.h \
-	bwape.c \
-	bwase.c bwase.h \
-	bwt.c bwt.h \
-	bwtaln.c bwtaln.h \
-	bwtgap.c bwtgap.h \
-	bwtindex.c \
-	bwtio.c \
-	bwtmisc.c \
-	bwtsw2.h \
-	bwtsw2_aux.c \
-	bwtsw2_chain.c \
-	bwtsw2_core.c \
-	khash.h kseq.h ksort.h kvec.h \
-	bwtsw2_main.c \
-	bwt_gen.c bwt_gen.h \
-	bwt_lite.c bwt_lite.h \
-	cs2nt.c \
-	is.c \
-	kstring.c kstring.h \
-	QSufSort.c \
-	simple_dp.c \
-	stdaln.c \
-	utils.c utils.h \
+libbamtools_a_SOURCES = \
 	api/BamReader.cpp \
 	api/BamMultiReader.cpp \
 	api/BamWriter.cpp \
@@ -163,6 +108,67 @@ liblobstr_a_SOURCES = \
 	utils/bamtools_variant.h \
 	utils/utils_global.h
 
+liblobstr_a_SOURCES = \
+	BamFileReader.cpp BamFileReader.h \
+	BamPairedFileReader.cpp BamPairedFileReader.h \
+	BWAReadAligner.cpp BWAReadAligner.h \
+	CachedWindowGenerator.cpp CachedWindowGenerator.h \
+	common.cpp common.h \
+	EntropyDetection.cpp EntropyDetection.h \
+	FastaFileReader.cpp FastaFileReader.h \
+	FastaPairedFileReader.cpp FastaPairedFileReader.h \
+	FastqFileReader.cpp FastqFileReader.h \
+	FastqPairedFileReader.cpp FastqPairedFileReader.h \
+	FFT_four_nuc_vectors.cpp FFT_four_nuc_vectors.h \
+	FFT_nuc_vectors.cpp FFT_nuc_vectors.h \
+	gzstream.cpp gzstream.h \
+	STRRecord.h \
+	HammingWindowGenerator.cpp HammingWindowGenerator.h \
+	MultithreadData.cpp MultithreadData.h \
+	nw.cpp nw.h \
+	cigar.h \
+	runtime_parameters.cpp runtime_parameters.h \
+	IFileReader.h RunInfo.h \
+	IFileWriter.h ISatellite.h MSReadRecord.h \
+	SamFileWriter.cpp SamFileWriter.h \
+	STRDetector.cpp STRDetector.h \
+	TextFileReader.cpp TextFileReader.h \
+	TextFileWriter.cpp TextFileWriter.h \
+	TukeyWindowGenerator.cpp TukeyWindowGenerator.h \
+	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
+	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
+	ZippedTextFileReader.cpp ZippedTextFileReader.h \
+	bamlite.c bamlite.h \
+	bntseq.c bntseq.h \
+	bwaseqio.c bwaseqio.h \
+	bwape.c \
+	bwase.c bwase.h \
+	bwt.c bwt.h \
+	bwtaln.c bwtaln.h \
+	bwtgap.c bwtgap.h \
+	bwtindex.c \
+	bwtio.c \
+	bwtmisc.c \
+	bwtsw2.h \
+	bwtsw2_aux.c \
+	bwtsw2_chain.c \
+	bwtsw2_core.c \
+	khash.h kseq.h ksort.h kvec.h \
+	bwtsw2_main.c \
+	bwt_gen.c bwt_gen.h \
+	bwt_lite.c bwt_lite.h \
+	cs2nt.c \
+	is.c \
+	kstring.c kstring.h \
+	QSufSort.c \
+	simple_dp.c \
+	stdaln.c \
+	utils.c utils.h \
+	api/BamReader.h api/BamMultiReader.h \
+	api/BamAlignment.h api/BamWriter \
+	api/SamHeader.h api/ReadGroup.h \
+	api/SamReadGroupDictionary.h
+
 libindex_a_SOURCES = \
 	bwtaln.c bwtaln.h \
 	bwt.c bwt.h \
@@ -216,111 +222,28 @@ liballelotype_a_SOURCES = \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
-	api/BamReader.cpp \
-	api/BamMultiReader.cpp \
-	api/BamWriter.cpp \
-	api/BamAlignment.cpp \
-	api/SamHeader.cpp \
-	api/SamProgram.cpp \
-	api/SamProgramChain.cpp \
-	api/SamSequence.cpp \
-	api/SamSequenceDictionary.cpp \
-	api/SamReadGroup.cpp \
-	api/SamReadGroupDictionary.cpp \
-	api/internal/BamWriter_p.cpp \
-	api/internal/SamFormatPrinter_p.cpp \
-	api/internal/BamException_p.cpp \
-	api/internal/BamDeviceFactory_p.cpp \
-	api/internal/BamHeader_p.cpp \
-	api/internal/BamRandomAccessController_p.cpp \
-	api/internal/BamReader_p.cpp \
-	api/internal/ILocalIODevice_p.cpp \
-	api/internal/BgzfStream_p.cpp \
-	api/internal/BamFile_p.cpp \
-	api/internal/SamFormatParser_p.cpp \
-	api/internal/SamHeaderValidator_p.cpp \
-	api/internal/BamFtp_p.cpp \
-	api/internal/BamHttp_p.cpp \
-	api/internal/BamIndexFactory_p.cpp \
-	api/internal/BamPipe_p.cpp \
-	api/internal/BamStandardIndex_p.cpp \
-	api/internal/BamToolsIndex_p.cpp \
-	api/algorithms/Sort.h \
-	api/api_global.h \
-	api/BamIndex.h \
-	api/SamConstants.h \
-	api/BGZF.h \
-	api/BamAlgorithms.h \
-	api/BamReader.h \
-	api/BamMultiReader.h \
-	api/BamConstants.h \
-	api/BamWriter.h \
-	api/BamAlignment.h \
-	api/BamAux.h \
-	api/IBamIODevice.h \
-	api/SamHeader.h \
-	api/SamProgram.h \
-	api/SamSequence.h \
-	api/SamSequenceDictionary.h \
-	api/SamReadGroup.h \
-	api/SamReadGroupDictionary.h \
-	api/internal/BamWriter_p.h \
-	api/SamProgramChain.h \
-	api/internal/IRemoteIODevice_p.h \
-	api/internal/IRemoteIODevice_p.cpp \
-	api/internal/SamFormatPrinter_p.h \
-	api/internal/BamException_p.h \
-	api/internal/BamDeviceFactory_p.h \
-	api/internal/BamHeader_p.h \
-	api/internal/BamRandomAccessController_p.h \
-	api/internal/BamReader_p.h \
-	api/internal/ILocalIODevice_p.h \
-	api/internal/BgzfStream_p.h \
-	api/internal/BamFile_p.h \
-	api/internal/SamFormatParser_p.h \
-	api/internal/SamHeaderValidator_p.h \
-	api/internal/BamFtp_p.h \
-	api/internal/BamHttp_p.h \
-	api/internal/BamIndexFactory_p.h \
-	api/internal/BamMultiMerger_p.h \
-	api/internal/BamPipe_p.h \
-	api/internal/BamStandardIndex_p.h \
-	api/internal/BamToolsIndex_p.h \
-	api/internal/SamHeaderVersion_p.h \
-	api/internal/BamMultiReader_p.h \
-	shared/bamtools_global.h \
-	utils/bamtools_fasta.h \
-	utils/bamtools_filter_engine.h \
-	utils/bamtools_filter_properties.h \
-	utils/bamtools_filter_ruleparser.h \
-	utils/bamtools_options.h \
-	utils/bamtools_utilities.h \
-	utils/bamtools_pileup_engine.h \
-	utils/bamtools_variant.h \
-	utils/utils_global.h \
-	api/internal/BamMultiReader_p.cpp \
-	utils/bamtools_utilities.cpp  \
-	utils/bamtools_fasta.cpp \
-	utils/bamtools_options.cpp \
-	utils/bamtools_pileup_engine.cpp \
 	linear.cpp linear.h \
 	predict.c \
 	train.c	\
 	tron.cpp tron.h
+	api/BamReader.h api/BamMultiReader.h \
+	api/BamAlignment.h api/BamWriter \
+	api/SamHeader.h api/ReadGroup.h \
+	api/SamReadGroupDictionary.h
 
 lobSTRIndex_SOURCES = main.c main.h
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTRIndex_LDADD = $(AM_LDADD) libindex.a
+lobSTRIndex_LDADD = $(AM_LDADD) libindex.a libbamtools.a
 lobSTRIndex_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTR_LDADD = liblobstr.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
+lobSTR_LDADD = liblobstr.a libbamtools.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
 lobSTR_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
-allelotype_SOURCES = 	main_allelotype.cpp
+allelotype_SOURCES = main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
-allelotype_LDADD = liballelotype.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
+allelotype_LDADD = liballelotype.a libbamtools.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
 allelotype_LDFLAGS = $(VARSTATIC) $(AM_LDFLAGS)
 
 TESTS = lobSTRTests
