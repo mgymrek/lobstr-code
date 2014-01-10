@@ -29,6 +29,29 @@ AC_FC_DUMMY_MAIN
 AC_F77_WRAPPERS
 AC_FC_WRAPPERS
 
+dnl Gordon,10-Jan-2014
+dnl Ugly Hack to compile on MacOS-X, with a strange mix of
+dnl   Native+MacPorts+HomeBrew+Manual installed compilers and libraries.
+dnl
+dnl If the above "AC_FC_WRAPPERS" fails to detect the required Fortran
+dnl name-mangling scheme, AND this is there is file named /usr/lib/libblas.dylib
+dnl (which implicitly indictes this is a Mac), then override the detected
+dnl Fortran name-mangling scheme to the barest default, and
+dnl call the Fortran Macros again.
+dnl Without this hack, the macro AC_F{C,77}_FUNC macro will not be defined,
+dnl and then AX_BLAS will fail.
+dnl
+dnl NOTE: If this hack didn't help (e.g. incorrect naming scheme),
+dnl       then AX_BLAS will fail anyhow (see below)
+if test -e "/usr/lib/libblas.dylib" -a "x$ac_cv_fc_mangling" = "xunknown" ; then
+	AC_MSG_WARN([Fortran-on-Mac hack: forcing default name-mangling scheme])
+	ac_cv_fc_mangling="lower case, no underscore, no extra underscore"
+	ac_cv_f77_mangling="lower case, no underscore, no extra underscore"
+	AC_F77_WRAPPERS
+	AC_FC_WRAPPERS
+fi
+
+
 PKG_CHECK_MODULES([FFTW], [fftw3])
 AX_PTHREAD()
 AX_CHECK_ZLIB()
