@@ -71,6 +71,13 @@ If your computer/server has multiple CPUs/cores, use the `-j` option for make. E
 
     $ make -j 4
 
+### Building with Debian-Specific Hardening options
+See [Debian Hardening Walkthought](https://wiki.debian.org/HardeningWalkthrough) for more information. Requires the `dpkg-dev` package (and a recent Debian/Ubuntu system).
+
+    $ ./configure --enable-debian-hardening
+    $ make clean
+    $ make
+
 
 ## Advanced options
 
