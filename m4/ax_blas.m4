@@ -236,3 +236,4 @@ else
         $2
 fi
 ])dnl AX_BLAS
+
