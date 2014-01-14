@@ -40,7 +40,7 @@ class Lobstr < Formula
       if prog_version == "UNKNOWN"
         git_version = `(cd #{git_repo} ; git describe --always )`
         git_version.chomp!
-        prog_version = "#{git_version}-HomeBrew-Git"
+        prog_version = "0.0.0-#{git_version}-HomeBrew-Git"
       end
       ohai "Detected Git version = #{prog_version}"
       system "echo '#{prog_version}' > .tarball-version"
