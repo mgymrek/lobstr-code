@@ -107,6 +107,35 @@ AC_ARG_ENABLE(all-static,
 
 AC_SUBST(LT_LDFLAGS)
 
+# Add Debian-specific Hardening flags
+# See:  https://wiki.debian.org/HardeningWalkthrough
+# Requires 'dpkg-buildflags' from the 'dpkg-dev' package
+#
+# To use:
+#    ./configure --enable-debian-hardening
+#
+AC_ARG_ENABLE(debian-hardening,
+              AS_HELP_STRING([--enable-debian-hardening],
+                             [Build with Debian-specific hardening flags]),
+                             [
+                              if test "$enableval" = "yes" ; then
+				      :
+                              elif test "$enableval" != "no" ; then
+                                      AC_MSG_ERROR([--enable-debian-hardening doesn't accept argument])
+                                      fi
+                                      ])
+
+AC_CHECK_PROG([DPKG_BUILDFLAGS],[dpkg-buildflags],[yes],[no],[])
+
+if test "x$enable_debian_hardening" = "xyes" ; then
+	if test "x$DPKG_BUILDFLAGS" != "xyes" ; then
+		AC_MSG_ERROR([debian-hardening requires the program dpkg-buildflag, which was not found])
+	fi
+	DEBHARD_CFLAGS=`dpkg-buildflags --get CFLAGS`
+	DEBHARD_CXXFLAGS=`dpkg-buildflags --get CXXFLAGS`
+	DEBHARD_CPPFLAGS=`dpkg-buildflags --get CPPFLAGS`
+	DEBHARD_LDFLAGS=`dpkg-buildflags --get LDFLAGS`
+fi
 
 # Set variables using shell commands
 GIT_VERSION=${PACKAGE_VERSION}
@@ -129,6 +158,14 @@ LOBSTR_CFLAGS="-D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MAC
 CFLAGS="$CFLAGS $COMPILER_WARNINGS $PTHREAD_CFLAGS $LOBSTR_CFLAGS"
 CXXFLAGS="$CXXFLAGS $COMPILER_WARNINGS $PTHREAD_CFLAGS $LOBSTR_CFLAGS $BOOST_CPPFLAGS"
 
+# Add Debian-Hardning flags
+if test "x$enable_debian_hardening" = "xyes" ; then
+	CFLAGS="$CFLAGS $DEBHARD_CFLAGS"
+	CXXFLAGS="$CXXFLAGS $DEBHARD_CXXFLAGS"
+	CPPFLAGS="$CPPFLAGS $DEBHARD_CPPFLAGS"
+	LDFLAGS="$LDFLAGS $DEBHARD_LDFLAGS"
+fi
+
 AC_CONFIG_FILES([
    m4/Makefile
    Makefile
@@ -145,6 +182,10 @@ dnl
 AC_MSG_RESULT([])
 AC_MSG_RESULT([ Configuration summary for $PACKAGE])
 AC_MSG_RESULT([    version $VERSION])
+AC_MSG_RESULT([    CFLAGS:   $CFLAGS])
+AC_MSG_RESULT([    CPPFLAGS: $CPPFLAGS])
+AC_MSG_RESULT([    CXXFLAGS: $CXXFLAGS])
+AC_MSG_RESULT([    LDFLAGS:  $LDFLAGS])
 AC_MSG_RESULT([])
 AC_MSG_RESULT([ Default installtion directories:])
 AC_MSG_RESULT([    programs: ${prefix}/bin/ ])
