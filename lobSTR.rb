@@ -6,7 +6,7 @@ require 'formula'
 
 class Lobstr < Formula
   homepage 'http://erlichlab.wi.mit.edu/lobSTR/'
-  head 'https://github.com/mgymrek/lobstr-code'
+  head 'https://github.com/mgymrek/lobstr-code', :using => :git
 
   if build.head?
     depends_on :autoconf => :build
