@@ -85,6 +85,7 @@ void show_help() {
     "--index-prefix <STRING>         (REQUIRED for --command classify) prefix for lobSTR's bwa reference\n" \
     "                                (must be same as for lobSTR alignment)\n" \
     "--no-rmdup:                     don't remove pcr duplicates before allelotyping\n" \
+    "                                Must use this option if calling multiple samples\n" \
     "--min-het-freq <FLOAT>:         minimum frequency to make a heterozygous call\n" \
     "                                (default: NULL)\n" \
     "--haploid <chrX,[chrY,...]>:    comma-separated list of chromosomes\n" \
@@ -415,6 +416,9 @@ int main(int argc, char* argv[]) {
   GetSamplesFromBamFiles(bam_files, &samples_list, &rg_id_to_sample);
   if (samples_list.size() == 0) {
     PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
+  }
+  if (samples_list.size() > 1 && rmdup) {
+    PrintMessageDieOnError("Removing PCR duplicates not supported with multiple samples. Please rerun with --no-rmdup", ERROR);
   }
 
   /* Train/classify */
