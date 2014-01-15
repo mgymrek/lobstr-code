@@ -101,7 +101,6 @@ void show_help() {
     "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
     "                                For more than one annotation, use comma-separated list of files\n" \
     "--include-gl                    Include the GL field in the VCF file (default = false)\n\n" \
-    "--multi-sample                  Use information across samples to refine allelotype likelihoods\n" \
     "Options for filtering reads:\n" \
     "If not specified, no filters applied\n" \
     "--chrom <STRING>:              only look at reads from this chromosome\n" \
@@ -139,7 +138,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAXMAPQ,
     OPT_MAXMATEDIST,
     OPT_MIN_HET_FREQ,
-    OPT_MULTI_SAMPLE,
     OPT_NOISEMODEL,
     OPT_NORMDUP,
     OPT_NOWEB,
@@ -170,7 +168,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"mapq", 1, 0, OPT_MAXMAPQ},
     {"max-matedist", 1, 0, OPT_MAXMATEDIST},
     {"min-het-freq", 1, 0, OPT_MIN_HET_FREQ},
-    {"multi-sample", 0, 0, OPT_MULTI_SAMPLE},
     {"noise_model", 1, 0, OPT_NOISEMODEL},
     {"no-rmdup", 0, 0, OPT_NORMDUP},
     {"no-web", 0, 0, OPT_NOWEB},
@@ -252,10 +249,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MIN_HET_FREQ:
       min_het_freq = atof(optarg);
       AddOption("min-het-freq", string(optarg), true, &user_defined_arguments_allelotyper);
-      break;
-    case OPT_MULTI_SAMPLE:
-      multi_sample++;
-      AddOption("multi-sample", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_NOISEMODEL:
       noise_model = string(optarg);

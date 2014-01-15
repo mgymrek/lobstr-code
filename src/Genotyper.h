@@ -42,30 +42,6 @@ struct STRAnnotation {
   std::vector<int> alleles;
 };
 
-// NOTE: hard cutoffs now. use model eventually
-const float INTERCEPT = -0.11686;
-const float COEFF_MAPQ = 0.0;
-const float COEFF_NREADS = 0.08934;
-const float COEFF_SB = -3.65628;
-const float COEFF_DIFFMOD = 5.23187;
-const float COEFF_DIFF = 0.0;
-struct Allele {
-  int allele;
-  int numreads;
-  int total_mapq;
-  bool diff_modperiod;
-  int total_diff;
-  int total_strand;
-  float PredictedTrue() {
-    float mean_mapq = static_cast<float>(total_mapq)/static_cast<float>(numreads);
-    float sb = static_cast<float>(total_strand)/static_cast<float>(numreads);
-    if (sb < 0.5) {sb = 1-sb;}
-    float x = INTERCEPT + COEFF_MAPQ*mean_mapq + COEFF_NREADS*numreads +
-      COEFF_SB * sb + COEFF_DIFFMOD*(int)diff_modperiod+COEFF_DIFF*total_diff;
-    return (1/(1+exp(-1*x)));
-  }
-};
-
 /*
   Class to determine allelotypes at each locus
  */
@@ -90,12 +66,11 @@ class Genotyper {
  private:
   /* Process all reads at a single locus */
   bool ProcessLocus(const std::list<AlignedRead>& aligned_reads,
-                    STRRecord* str_record, bool is_haploid,
-		    const map<int, float>& allele_probs);
+                    STRRecord* str_record, bool is_haploid);
 
   /* Get list of alleles to use */
-  bool GetAlleles(const std::list<AlignedRead>& aligned_reads,
-		  std::vector<int>* alleles, std::map<int, float>* allele_probs);
+  void GetAlleles(const std::list<AlignedRead>& aligned_reads,
+		  std::vector<int>* alleles);
 
   /* Get rid of alleles with length < 0*/
   void CleanAllelesList(int reflen, std::vector<int>* alleles);
@@ -109,14 +84,12 @@ class Genotyper {
   /* Get log likelihood of an allelotype */
   float CalcLogLik(int a, int b,
 		   const list<AlignedRead>& aligned_reads,
-		   int period, int* counta, int* countb,
-		   const map<int, float>& allele_probs);
+		   int period, int* counta, int* countb);
 
   /* Get most likely allelotype */
   void FindMLE(const list<AlignedRead>& aligned_reads,
 	       map<int,int> spanning_reads,
-               bool haploid, STRRecord* str_record,
-	       const map<int, float>& allele_probs);
+               bool haploid, STRRecord* str_record);
 
   /* chromosomes to treat as haploid */
   std::vector<std::string> haploid_chroms;
