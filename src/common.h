@@ -148,14 +148,17 @@ std::string reverse(const std::string& s);
 // get the complement of a nucleotide
 char complement(const char nucleotide);
 
+// Initalize the repeat tables with all possible patterns
+void InitializeRepeatTables();
+
+// Generate all nucleotide kmers of a certain size
+void GenerateAllKmers(int size, std::vector<std::string>* kmers);
+
 // get the minimum cyclic permutation of the provided sequence 
 std::string getMinPermutation(const std::string& msnucs);
 
 // get the canonical version of the smallest repeating subunit
 std::string getCanonicalRepeat(const std::string& msnucs);
-
-// get the canonical MS sequence
-void getCanonicalMS(const std::string& msnucs, std::string* canonical);
 
 // get the appropriate fiile reader
 IFileReader* create_file_reader(const std::string& filename1,

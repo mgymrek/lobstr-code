@@ -1183,6 +1183,10 @@ int main(int argc, char* argv[]) {
   // Initialize global FFTW plans
   FFT_NUC_VECTOR::initialize_fftw_plans();
 
+  // Initialize repeat maps
+  PrintMessageDieOnError("Initializing repeat tables...", PROGRESS);
+  InitializeRepeatTables();
+
   // run detection/alignment
   PrintMessageDieOnError("Running detection/alignment...", PROGRESS);
   if (threads == 1) {

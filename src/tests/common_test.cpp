@@ -31,7 +31,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(CommonTest);
 
-void CommonTest::setUp() {}
+void CommonTest::setUp() {
+  InitializeRepeatTables();
+}
 
 void CommonTest::tearDown() {}
 
@@ -99,29 +101,11 @@ void CommonTest::test_getCanonicalRepeat() {
   CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AGTCAGTC") == "ACTG");
 }
 
-
-void CommonTest::test_getCanonicalMS() {
-  std::string seq;
-  getCanonicalMS("AAAAA", &seq);
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "AAAAA");
-  
-  getCanonicalMS("C", &seq);
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "C");
-
-  getCanonicalMS("T", &seq);
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "A");
-
-  getCanonicalMS("GGG", &seq);
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "CCC");
-
-  getCanonicalMS("CGACG", &seq);
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "ACGCG");
-
-  getCanonicalMS("GCTGC", &seq);
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical sequence", seq == "AGCGC");
+void CommonTest::test_GenerateAllKmers() {
+  std::vector<std::string> kmers;
+  GenerateAllKmers(1, &kmers);
+  CPPUNIT_ASSERT_MESSAGE("Should be 4 homopolymers", kmers.size() == 4);
 }
-
-
 
 void CommonTest::test_IsPerfectRepeat() {
   // Case 1: perfect repeat
