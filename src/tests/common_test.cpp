@@ -105,6 +105,11 @@ void CommonTest::test_GenerateAllKmers() {
   std::vector<std::string> kmers;
   GenerateAllKmers(1, &kmers);
   CPPUNIT_ASSERT_MESSAGE("Should be 4 homopolymers", kmers.size() == 4);
+  kmers.clear();
+  GenerateAllKmers(2, &kmers);
+  CPPUNIT_ASSERT_MESSAGE("Should be 16 dinucleotides", kmers.size() == 16);
+  GenerateAllKmers(3, &kmers);
+  CPPUNIT_ASSERT_MESSAGE("Should be 64 dinucleotides", kmers.size() == 64);
 }
 
 void CommonTest::test_IsPerfectRepeat() {
