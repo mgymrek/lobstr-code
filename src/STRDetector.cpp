@@ -169,7 +169,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
     std::vector<double> noise;
     noise.resize(lobe_width);
     for (size_t i = 0; i < noise.size(); ++i) {
-      srand(1);
       noise[i] = fft_vec [ rand()%1024 ];  // NOLINT
       noise_y += noise[i] *  pHamming_Noise->at(i);
     }
