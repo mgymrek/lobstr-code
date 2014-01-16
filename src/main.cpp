@@ -18,6 +18,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+//Enable the following to write some thread-related debug messages
+//#define DEBUG_THREADS
+
 #include <err.h>
 #include <getopt.h>
 #include <limits.h>
@@ -29,6 +32,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <utility>
 
@@ -355,9 +359,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       AddOption("threads", string(optarg), true, &user_defined_arguments);
       if (threads <= 0) {
         PrintMessageDieOnError("Invalid number of threads", ERROR);
-      }
-      if (threads > 1) {
-        PrintMessageDieOnError("Multithreading on very small files may fail to produce BAM output", WARNING);
       }
       break;
     case OPT_NOWEB:
@@ -829,10 +830,23 @@ void* satellite_process_consumer_thread(void *arg) {
                                                 &bnt_annotations,
                                                 &ref_sequences, opts);
   int aligned = false;
+#ifdef DEBUG_THREADS
+  std::stringstream msg;
+  msg << "Alignment thread " << pthread_self() << " started" ;
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+#endif
   while (1) {
     aligned = false;
     std::string repseq;
     ReadPair* pReadRecord = pMT_DATA->get_new_input();
+    if (pReadRecord == NULL) {
+#ifdef DEBUG_THREADS
+      std::stringstream msg;
+      msg << "Alignment thread " << pthread_self() << " completed" ;
+      PrintMessageDieOnError(msg.str(), PROGRESS);
+#endif
+      break;
+    }
     if (!(pReadRecord->reads.at(0).nucleotides.length() >= min_read_length)
         && (pReadRecord->reads.at(0).nucleotides.length() <= max_read_length)) {
       delete pReadRecord;
@@ -914,20 +928,33 @@ void* satellite_process_consumer_thread(void *arg) {
       pMT_DATA->increment_output_counter();
     }
   }
-  pthread_exit(reinterpret_cast<void*>(arg));
+  return NULL;
 }
 
 void* output_writer_thread(void *arg) {
   MultithreadData *pMT_DATA = reinterpret_cast<MultithreadData*>(arg);
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
+#ifdef DEBUG_THREADS
+  std::stringstream msg;
+  msg << "Writer thread " << pthread_self() << " started (output file ='"
+      << output_prefix << ".aligned.bam" << ")" ;
+  PrintMessageDieOnError(msg.str(),PROGRESS);
+#endif
   while (1) {
     ReadPair *pReadRecord = pMT_DATA->get_new_output();
+    if (pReadRecord == NULL) {
+#ifdef DEBUG_THREADS
+      std::stringstream msg;
+      msg << "Writer thread " << pthread_self() << " completed";
+      PrintMessageDieOnError(msg.str(),PROGRESS);
+#endif
+      break;
+    }
     samWriter.WriteRecord(*pReadRecord);
     delete pReadRecord;
     pMT_DATA->increment_output_counter();
   }
-  delete pMT_DATA;
-  pthread_exit(reinterpret_cast<void*>(arg));
+  return NULL;
 }
 
 void multi_thread_process_loop(vector<string> files1,
@@ -1036,13 +1063,40 @@ void multi_thread_process_loop(vector<string> files1,
       }
     }
   }
-  while (1) {
-    sleep(1);  // OMG, the horror...
-    if ( mtdata.input_output_counters_equal())
-      break;
-    sleep(10);
-    break;
+
+#ifdef DEBUG_THREADS
+  PrintMessageDieOnError("No more input, waiting for alignment threads completion", PROGRESS);
+#endif
+  //Send a 'poison pill' to the alignment threads
+  for (size_t i = 0; i < threads; ++i)
+    mtdata.post_new_input_read(NULL);
+
+  for (list<pthread_t>::const_iterator it = satellite_threads.begin();
+          it != satellite_threads.end(); ++it) {
+    int i = pthread_join(*it,NULL);
+    if (i != 0) {
+       stringstream msg;
+       msg << "Failed to join alignment thread " << (*it) <<
+              "error code = " << i ;
+       PrintMessageDieOnError(msg.str(), WARNING);
+    }
   }
+  //Send a 'poison pill' to the writer thread
+#ifdef DEBUG_THREADS
+  PrintMessageDieOnError("waiting for writer thread completion", PROGRESS);
+#endif
+  mtdata.post_new_output_read(NULL);
+  int i = pthread_join(writer_thread,NULL);
+  if (i != 0) {
+    stringstream msg;
+    msg << "Failed to join writer thread " << (writer_thread) <<
+           "error code = " << i ;
+    PrintMessageDieOnError(msg.str(), WARNING);
+  }
+#ifdef DEBUG_THREADS
+  PrintMessageDieOnError("All thread terminated.", PROGRESS);
+#endif
+
 }
 
 int main(int argc, char* argv[]) {
