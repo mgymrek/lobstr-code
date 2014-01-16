@@ -142,10 +142,12 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   default:
     errx(1,"Invalid message type. This should never happen");
   }
-  cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
+  stringstream ss;
+  ss  << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
        << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
+  cerr << ss.str();
   if (msgtype == ERROR) {
-    run_info.error = msg;
+    run_info.error = ss.str();
     run_info.endtime = GetTime();
     if (!output_prefix.empty()) {
       OutputRunStatistics();

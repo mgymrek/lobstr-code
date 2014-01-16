@@ -216,3 +216,58 @@ The `tar` step will collect and compress all the files, generating a tarball for
 
 **NOTE::** Pre-compiled binaries must be prepared for multiple systems (e.g. Linux-32bit, Linux-64bit, Mac-OS-X 32bit, Mac-OS-X 64bit, etc.).
 
+
+### Using clang's static analyzer
+
+See [CLANG static analyzer website](http://clang-analyzer.llvm.org/).
+
+Ensure `scan-build` and `scan-view` are in your $PATH (including their associated programs, e.g. `ccc-analyzer`).
+
+Then run:
+
+    $ ./reconf
+    $ scan-build ./configure
+    $ scan-build make
+
+If `clang` is not found, try:
+
+    $ scan-build --use-analyzer=$(which clang) ./configure
+    $ scan-build --use-analyzer=$(which clang) make
+
+### Using test script
+
+The test script `./tests/runtest.sh` enables quick testing of small (and large) datasets.
+
+Without any additional parameters, the script uses the following options:
+
+1. Tiny input file (`./tests/tiny.fq`)
+2. Tiny lobSTR reference index (`./tests/smallref`) - containing a small section of human chromosome 22.
+3. Single-thread run
+
+To see program options:
+
+    $ ./tests/runtest.sh -h
+
+To run a simple test:
+
+    $ ./tests/runtest.sh
+
+Run multi-threaded test:
+
+    $ ./tests/runtest.sh -p 5
+
+Run under debugger (GDB):
+
+    $ ./tests/runtest.sh -d
+
+Run under valgrind:
+
+    $ ./tests/runtest.sh -v
+
+Run with a custom FASTQ input file:
+
+    $ ./tests/runtest.sh -f ./tests/small.fq
+
+Run with a custom lobSTR index (download lobSTR hg19 pre-built index [here](http://erlichlab.wi.mit.edu/lobSTR/download.html)):
+
+    $ ./tests/runtest.sh -i /data/lobSTR/hg19/lobstr_v2.0.3_hg19_ref/lobSTR_
