@@ -108,6 +108,7 @@ void CommonTest::test_GenerateAllKmers() {
   kmers.clear();
   GenerateAllKmers(2, &kmers);
   CPPUNIT_ASSERT_MESSAGE("Should be 16 dinucleotides", kmers.size() == 16);
+  kmers.clear();
   GenerateAllKmers(3, &kmers);
   CPPUNIT_ASSERT_MESSAGE("Should be 64 dinucleotides", kmers.size() == 64);
 }
