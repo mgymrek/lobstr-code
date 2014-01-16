@@ -216,3 +216,20 @@ The `tar` step will collect and compress all the files, generating a tarball for
 
 **NOTE::** Pre-compiled binaries must be prepared for multiple systems (e.g. Linux-32bit, Linux-64bit, Mac-OS-X 32bit, Mac-OS-X 64bit, etc.).
 
+
+### Using clang's static analyzer
+
+See [CLANG static analyzer website](http://clang-analyzer.llvm.org/).
+
+Ensure `scan-build` and `scan-view` are in your $PATH (including their associated programs, e.g. `ccc-analyzer`).
+
+Then run:
+
+    $ ./reconf
+    $ scan-build ./configure
+    $ scan-build make
+
+If `clang` is not found, try:
+
+    $ scan-build --use-analyzer=$(which clang) ./configure
+    $ scan-build --use-analyzer=$(which clang) make
