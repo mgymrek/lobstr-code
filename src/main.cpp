@@ -652,6 +652,7 @@ void single_thread_process_loop(const vector<string>& files1,
                                                 &ref_sequences, opts);
   std::string file1;
   std::string file2;
+  size_t num_reads_processed = 0;
   for (size_t i = 0; i < files1.size(); i++) {
     file1 = files1.at(i);
     if (paired && !bam) {
@@ -704,7 +705,6 @@ void single_thread_process_loop(const vector<string>& files1,
     }
     IFileReader* pReader = create_file_reader(file1, file2);
     int aligned = false;
-    int num_reads_processed = 0;
     std::string repseq = "";
     while (pReader->GetNextRecord(&read_pair)) {
       aligned = false;
@@ -820,6 +820,7 @@ void single_thread_process_loop(const vector<string>& files1,
   }
   delete pDetector;
   delete pAligner;
+  run_info.num_processed_units = num_reads_processed;
 }
 
 
@@ -1063,6 +1064,7 @@ void multi_thread_process_loop(vector<string> files1,
       }
     }
   }
+  run_info.num_processed_units = counter;
 
 #ifdef DEBUG_THREADS
   PrintMessageDieOnError("No more input, waiting for alignment threads completion", PROGRESS);
@@ -1101,7 +1103,7 @@ void multi_thread_process_loop(vector<string> files1,
 
 int main(int argc, char* argv[]) {
   PrintLobSTR();
-  time_t starttime, endtime;
+  time_t starttime, processing_starttime,endtime;
   time(&starttime);
   parse_commandline_options(argc, argv);
   PrintMessageDieOnError("Getting run info", PROGRESS);
@@ -1189,6 +1191,7 @@ int main(int argc, char* argv[]) {
 
   // run detection/alignment
   PrintMessageDieOnError("Running detection/alignment...", PROGRESS);
+  time(&processing_starttime);
   if (threads == 1) {
     if (paired && !bam) {
       single_thread_process_loop(input_files1, input_files2);
@@ -1202,14 +1205,12 @@ int main(int argc, char* argv[]) {
       multi_thread_process_loop(input_files, vector<string>(0));
     }
   }
+  time(&endtime);
+  run_info.endtime = GetTime();
   delete hamgen;
   delete tukgen;
-  run_info.endtime = GetTime();
   OutputRunStatistics();
-  time(&endtime);
-  stringstream msg;
-  int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << GetDurationString(seconds_elapsed) << " elapsed";
-  PrintMessageDieOnError(msg.str(), PROGRESS);
+  OutputRunningTimeInformation(starttime,processing_starttime,endtime,
+                               threads, run_info.num_processed_units);
   return 0;
 }
