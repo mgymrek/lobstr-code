@@ -492,10 +492,7 @@ int main(int argc, char* argv[]) {
   time(&endtime);
   stringstream msg;
   int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << seconds_elapsed/60/60/24 << ":"
-      << (seconds_elapsed/60/60)%24 << ":" 
-      << (seconds_elapsed/60)%60 << ":"
-      << seconds_elapsed%60 << " elapsed";
+  msg << "Done! " << GetDurationString(seconds_elapsed) << " elapsed";
   PrintMessageDieOnError(msg.str(), PROGRESS);
   return 0;
 }

@@ -69,6 +69,9 @@ map<string, int> chrom_sizes;
 // Keep track of reference sequences for alignment readjustment
 map<int, REFSEQ> ref_sequences;
 
+// Either "reads" or "pairs", depending on what's being processed.
+std::string unit_name;
+
 // alignment references, keep global
 void LoadReference(const std::string& repseq);
 void DestroyReferences();
@@ -652,6 +655,7 @@ void single_thread_process_loop(const vector<string>& files1,
                                                 &ref_sequences, opts);
   std::string file1;
   std::string file2;
+  size_t num_reads_processed = 0;
   for (size_t i = 0; i < files1.size(); i++) {
     file1 = files1.at(i);
     if (paired && !bam) {
@@ -704,14 +708,13 @@ void single_thread_process_loop(const vector<string>& files1,
     }
     IFileReader* pReader = create_file_reader(file1, file2);
     int aligned = false;
-    int num_reads_processed = 0;
     std::string repseq = "";
     while (pReader->GetNextRecord(&read_pair)) {
       aligned = false;
       num_reads_processed += 1;
       if (num_reads_processed % READPROGRESS == 0) {
         stringstream msg;
-        msg << "Processed " << num_reads_processed << " reads";
+        msg << "Processed " << num_reads_processed << ' ' << unit_name;
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       read_pair.read_count = num_reads_processed;
@@ -801,7 +804,7 @@ void single_thread_process_loop(const vector<string>& files1,
     }
     delete pReader;
     stringstream msg;
-    msg << "Processed " << num_reads_processed << " reads";
+    msg << "Processed " << num_reads_processed << ' ' << unit_name;
     PrintMessageDieOnError(msg.str(), PROGRESS);
     if (using_s3) {
       string rmcmd = "rm " + file1;
@@ -820,6 +823,7 @@ void single_thread_process_loop(const vector<string>& files1,
   }
   delete pDetector;
   delete pAligner;
+  run_info.num_processed_units = num_reads_processed;
 }
 
 
@@ -1037,7 +1041,7 @@ void multi_thread_process_loop(vector<string> files1,
       pRecord->read_count = counter;
       if (counter % READPROGRESS == 0) {
         stringstream msg;
-        msg << "Processed " << counter << " reads";
+        msg << "Processed " << counter << ' ' << unit_name;
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       if (!pReader->GetNextRecord(pRecord))
@@ -1063,6 +1067,7 @@ void multi_thread_process_loop(vector<string> files1,
       }
     }
   }
+  run_info.num_processed_units = counter;
 
 #ifdef DEBUG_THREADS
   PrintMessageDieOnError("No more input, waiting for alignment threads completion", PROGRESS);
@@ -1101,9 +1106,10 @@ void multi_thread_process_loop(vector<string> files1,
 
 int main(int argc, char* argv[]) {
   PrintLobSTR();
-  time_t starttime, endtime;
+  time_t starttime, processing_starttime,endtime;
   time(&starttime);
   parse_commandline_options(argc, argv);
+  unit_name = paired?"pairs":"reads";
   PrintMessageDieOnError("Getting run info", PROGRESS);
   run_info.Reset();
   run_info.starttime = GetTime();
@@ -1189,6 +1195,7 @@ int main(int argc, char* argv[]) {
 
   // run detection/alignment
   PrintMessageDieOnError("Running detection/alignment...", PROGRESS);
+  time(&processing_starttime);
   if (threads == 1) {
     if (paired && !bam) {
       single_thread_process_loop(input_files1, input_files2);
@@ -1202,17 +1209,12 @@ int main(int argc, char* argv[]) {
       multi_thread_process_loop(input_files, vector<string>(0));
     }
   }
+  time(&endtime);
+  run_info.endtime = GetTime();
   delete hamgen;
   delete tukgen;
-  run_info.endtime = GetTime();
   OutputRunStatistics();
-  time(&endtime);
-  stringstream msg;
-  int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << seconds_elapsed/60/60/24 << ":"
-      << (seconds_elapsed/60/60)%24 << ":"
-      << (seconds_elapsed/60)%60 << ":"
-      << seconds_elapsed%60 << " elapsed";
-  PrintMessageDieOnError(msg.str(), PROGRESS);
+  OutputRunningTimeInformation(starttime,processing_starttime,endtime,
+                               threads, run_info.num_processed_units);
   return 0;
 }

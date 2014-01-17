@@ -29,6 +29,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <map>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -715,4 +716,62 @@ std::string GetTime() {
   string tstring = t.str();
   tstring.erase(tstring.find_last_not_of(" \n\r\t")+1);
   return tstring;
+}
+
+std::string GetDurationString(const size_t duration)
+{
+  const size_t days = duration/60/60/24;
+  const size_t hours = (duration/60/60)%24;
+  const size_t minutes = (duration/60)%60;
+  const size_t seconds = duration%60;
+
+  stringstream ss;
+  if (days>0)
+    ss << days << " days and " ;
+  ss << setw(2) << setfill('0') << hours << ':'
+     << setw(2) << setfill('0') << minutes << ':'
+     << setw(2) << setfill('0') << seconds ;
+
+  return ss.str();
+}
+
+// Prints Running time information
+void OutputRunningTimeInformation(const size_t start_time,
+                                  const size_t processing_start_time,
+                                  const size_t end_time,
+                                  const size_t num_threads,
+                                  const size_t units_processed)
+{
+  stringstream msg;
+  if (num_threads<=0 || (start_time>end_time) || (processing_start_time>end_time)) {
+    //Should never happen, but an error is better than invalid output (or division by zero)
+    msg << "Internal Error: invalid values for OutputRunningTimeInformation ("
+        << "start_time=" << start_time << " processing_start_time="<<processing_start_time
+        << "end_time=" << end_time << " num_threads=" << num_threads << ")";
+    PrintMessageDieOnError(msg.str(), ERROR);
+    return;
+  }
+  size_t total_seconds = difftime(end_time, start_time);
+  size_t processing_seconds = difftime(end_time, processing_start_time);
+
+  msg << "Total Running Time " << GetDurationString(total_seconds);
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing time: " << GetDurationString(processing_seconds)
+      << " (" << processing_seconds << " seconds)";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing speed (avg.): ";
+  if (processing_seconds>0) {
+    double units_seconds = (double)(units_processed) / processing_seconds / num_threads;
+    msg << units_seconds ;
+  } else {
+    msg << "<1";
+  }
+  msg << " units/seconds/thread";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
 }
