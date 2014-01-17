@@ -180,6 +180,12 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
 // Generate the date in YYMMDD
 std::string currentDateTime();
 
+// Given number of seconds, returns a string
+// describing the duration, in format "(DD days and) HH:MM:SS"
+// (e.g. "3 days and 13:56:33" or just "23:00:33")
+// The 'days' portion will appear only if the duration is longer than a day.
+std::string GetDurationString(const size_t duration);
+
 // Replace string method
 std::string string_replace(std::string src,
                            const std::string& target,

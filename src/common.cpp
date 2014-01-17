@@ -29,6 +29,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <map>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -715,4 +716,21 @@ std::string GetTime() {
   string tstring = t.str();
   tstring.erase(tstring.find_last_not_of(" \n\r\t")+1);
   return tstring;
+}
+
+std::string GetDurationString(const size_t duration)
+{
+  const size_t days = duration/60/60/24;
+  const size_t hours = (duration/60/60)%24;
+  const size_t minutes = (duration/60)%60;
+  const size_t seconds = duration%60;
+
+  stringstream ss;
+  if (days>0)
+    ss << days << " days and " ;
+  ss << setw(2) << setfill('0') << hours << ':'
+     << setw(2) << setfill('0') << minutes << ':'
+     << setw(2) << setfill('0') << seconds ;
+
+  return ss.str();
 }
