@@ -117,7 +117,7 @@ void Genotyper::LoadAnnotations(const vector<std::string> annot_files) {
 void Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
 			   vector<int>* alleles) {
   alleles->clear();
-  if (aligned_reads.size() == 0);
+  if (aligned_reads.size() == 0) return;
   alleles->push_back(0); // always include ref allele as first allele
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
