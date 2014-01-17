@@ -69,6 +69,9 @@ map<string, int> chrom_sizes;
 // Keep track of reference sequences for alignment readjustment
 map<int, REFSEQ> ref_sequences;
 
+// Either "reads" or "pairs", depending on what's being processed.
+std::string unit_name;
+
 // alignment references, keep global
 void LoadReference(const std::string& repseq);
 void DestroyReferences();
@@ -711,7 +714,7 @@ void single_thread_process_loop(const vector<string>& files1,
       num_reads_processed += 1;
       if (num_reads_processed % READPROGRESS == 0) {
         stringstream msg;
-        msg << "Processed " << num_reads_processed << " reads";
+        msg << "Processed " << num_reads_processed << ' ' << unit_name;
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       read_pair.read_count = num_reads_processed;
@@ -801,7 +804,7 @@ void single_thread_process_loop(const vector<string>& files1,
     }
     delete pReader;
     stringstream msg;
-    msg << "Processed " << num_reads_processed << " reads";
+    msg << "Processed " << num_reads_processed << ' ' << unit_name;
     PrintMessageDieOnError(msg.str(), PROGRESS);
     if (using_s3) {
       string rmcmd = "rm " + file1;
@@ -1038,7 +1041,7 @@ void multi_thread_process_loop(vector<string> files1,
       pRecord->read_count = counter;
       if (counter % READPROGRESS == 0) {
         stringstream msg;
-        msg << "Processed " << counter << " reads";
+        msg << "Processed " << counter << ' ' << unit_name;
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       if (!pReader->GetNextRecord(pRecord))
@@ -1106,6 +1109,7 @@ int main(int argc, char* argv[]) {
   time_t starttime, processing_starttime,endtime;
   time(&starttime);
   parse_commandline_options(argc, argv);
+  unit_name = paired?"pairs":"reads";
   PrintMessageDieOnError("Getting run info", PROGRESS);
   run_info.Reset();
   run_info.starttime = GetTime();
