@@ -186,6 +186,13 @@ std::string currentDateTime();
 // The 'days' portion will appear only if the duration is longer than a day.
 std::string GetDurationString(const size_t duration);
 
+// Prints Running time information
+void OutputRunningTimeInformation(const size_t start_time,
+                                  const size_t processing_start_time,
+                                  const size_t end_time,
+                                  const size_t num_threads,
+                                  const size_t units_processed);
+
 // Replace string method
 std::string string_replace(std::string src,
                            const std::string& target,

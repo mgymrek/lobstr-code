@@ -734,3 +734,44 @@ std::string GetDurationString(const size_t duration)
 
   return ss.str();
 }
+
+// Prints Running time information
+void OutputRunningTimeInformation(const size_t start_time,
+                                  const size_t processing_start_time,
+                                  const size_t end_time,
+                                  const size_t num_threads,
+                                  const size_t units_processed)
+{
+  stringstream msg;
+  if (num_threads<=0 || (start_time>end_time) || (processing_start_time>end_time)) {
+    //Should never happen, but an error is better than invalid output (or division by zero)
+    msg << "Internal Error: invalid values for OutputRunningTimeInformation ("
+        << "start_time=" << start_time << " processing_start_time="<<processing_start_time
+        << "end_time=" << end_time << " num_threads=" << num_threads << ")";
+    PrintMessageDieOnError(msg.str(), ERROR);
+    return;
+  }
+  size_t total_seconds = difftime(end_time, start_time);
+  size_t processing_seconds = difftime(end_time, processing_start_time);
+
+  msg << "Total Running Time " << GetDurationString(total_seconds);
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing time: " << GetDurationString(processing_seconds)
+      << " (" << processing_seconds << " seconds)";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing speed (avg.): ";
+  if (processing_seconds>0) {
+    double units_seconds = (double)(units_processed) / processing_seconds / num_threads;
+    msg << units_seconds ;
+  } else {
+    msg << "<1";
+  }
+  msg << " units/seconds/thread";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+}
