@@ -154,7 +154,7 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     }
     // get period
     aligned_read.period = aligned_read.repseq.length();
-    if (!include_flank) {  // diff is just sum of differences in cigar
+    if (include_flank) {  // diff is just sum of differences in cigar
       CIGAR_LIST cigar_list;
       for (vector<BamTools::CigarOp>::const_iterator
 	     it = aligned_read.cigar_ops.begin();
@@ -169,7 +169,7 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
       cigar_list.ResetString();
       GenerateCorrectCigar(&cigar_list, aln.QueryBases,
 			   &added_s, &cigar_had_s);
-      aligned_read.diffFromRef = GetSTRAllele(aligned_read, cigar_list);
+      aligned_read.diffFromRef = GetSTRAllele(cigar_list);
     }
     // apply filters
     if (unit) {
@@ -370,8 +370,7 @@ float ReadContainer::GetScore(const string& quality_string) {
 
 
 
-int ReadContainer::GetSTRAllele(const AlignedRead& aligned_read,
-                                const CIGAR_LIST& cigar_list) {
+int ReadContainer::GetSTRAllele(const CIGAR_LIST& cigar_list) {
   int diff_from_ref = 0;
   for (size_t i = 0; i < cigar_list.cigars.size(); i++) {
     if (cigar_list.cigars.at(i).cigar_type == 'I') {

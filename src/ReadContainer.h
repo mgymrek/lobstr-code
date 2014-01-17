@@ -111,8 +111,7 @@ class ReadContainer {
   float GetScore(const std::string& quality_string);
 
   /* Adjust diff from ref based on cigar */
-  int GetSTRAllele(const AlignedRead& aligned_read,
-                   const CIGAR_LIST& cigar_list);
+  int GetSTRAllele(const CIGAR_LIST& cigar_list);
 
   /* Bam file reader */
   BamTools::BamMultiReader reader;

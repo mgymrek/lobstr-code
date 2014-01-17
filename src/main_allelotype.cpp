@@ -92,7 +92,7 @@ void show_help() {
     "                                that should be forced to have homozygous\n" \
     "                                calls. Specify --haploid all if the organism\n" \
     "                                is haploid. Will be applied to all samples.\n" \
-    "--include-flank:                Include indels in flanking regions when\n" \
+    "--dont-include-flank:           Dont include indels in flanking regions when\n" \
     "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
     "-v,--verbose:                   print out helpful progress messages\n" \
@@ -129,9 +129,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHUNKSIZE,
     OPT_COMMAND,
     OPT_DEBUG,
+    OPT_DONT_INCLUDE_FLANK,
     OPT_HAPLOID,
     OPT_HELP,
-    OPT_INCLUDE_FLANK,
     OPT_INCLUDE_GL,
     OPT_INDEX,
     OPT_MAX_DIFF_REF,
@@ -162,7 +162,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"debug", 0, 0, OPT_DEBUG},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
-    {"include-flank", 0, 0, OPT_INCLUDE_FLANK},
+    {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
     {"index-prefix", 1, 0, OPT_INDEX},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
@@ -222,9 +222,9 @@ void parse_commandline_options(int argc, char* argv[]) {
       show_help();
       exit(1);
       break;
-    case OPT_INCLUDE_FLANK:
+    case OPT_DONT_INCLUDE_FLANK:
       include_flank = false;
-      AddOption("include-flank", "", false, &user_defined_arguments_allelotyper);
+      AddOption("dont-include-flank", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_INCLUDE_GL:
       include_gl = true;
