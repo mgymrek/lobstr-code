@@ -234,6 +234,39 @@ If `clang` is not found, try:
     $ scan-build --use-analyzer=$(which clang) ./configure
     $ scan-build --use-analyzer=$(which clang) make
 
+### Profiling
+
+#### Using GNU prof
+
+[GNU Prof](http://www.cs.utah.edu/dept/old/texinfo/as/gprof.html) is a commonly used profiler.
+It requires re-compliation with profling support (avialable in GCC).
+
+First, compile with profiling instrumentation:
+
+    $ ./configure CFLAGS="-pg" CXXFLAGS="-pg"
+    $ make clean
+    $ make
+
+Then, run the program, which will generate a `gmon.out` file in the current directory.
+
+Lastly, use `gprof` to generate the call graph:
+
+    $ gprof ./src/lobSTR gmon.out > profile.txt
+
+#### Using Valgrind's callgrind
+
+[Callgrind](http://valgrind.org/docs/manual/cl-manual.html) is a Valgrind tool for profiling.
+No special compilation is needed.
+
+To run lobSTR with callgrind:
+
+    $ valgrind --tool=callgrind ./src/lobSTR [STANDARD lobSTR parameters]
+
+A file named `callgrind.out.NNNN` will be generated (NNNN being the process ID).
+
+Use [KCacheGrind](http://kcachegrind.sourceforge.net/html/Home.html) to view and
+analize the profiling information in the generated file.
+
 ### Using test script
 
 The test script `./tests/runtest.sh` enables quick testing of small (and large) datasets.
