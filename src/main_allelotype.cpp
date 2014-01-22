@@ -411,7 +411,8 @@ int main(int argc, char* argv[]) {
     PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
   }
   if (samples_list.size() > 1 && rmdup) {
-    PrintMessageDieOnError("Removing PCR duplicates not supported with multiple samples. Please rerun with --no-rmdup", ERROR);
+    PrintMessageDieOnError("Removing PCR duplicates not supported with multiple samples. Setting --no-rmdup", WARNING);
+    rmdup = false;
   }
 
   /* Train/classify */
