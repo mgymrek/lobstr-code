@@ -92,17 +92,18 @@ void Genotyper::LoadAnnotations(const vector<std::string> annot_files) {
 	  vector<string> items;
 	  split(line, '\t', items);
 	  annot.chrom = items[0];
-	  annot.msStart = atoi(items[1].c_str());
+	  annot.msStart = atoi(items[1].c_str()) + 1;
 	  annot.name = items[2];
 	  int ref_len = static_cast<int>(items[3].size());
 	  // Get alt alleles
 	  string alt_alleles_string = items[4];
 	  vector<string> alt_alleles;
 	  split(alt_alleles_string, ',', alt_alleles);
-	  annot.alleles.resize(alt_alleles.size());
+	  annot.alleles.resize(alt_alleles.size()+1);
+	  annot.alleles.at(0) = 0; // Always include 0 as the first allele
 	  for (size_t j = 0; j < alt_alleles.size(); j++) {
 	    int diff = static_cast<int>(alt_alleles.at(j).size())-ref_len;
-	    annot.alleles.at(j) = diff;
+	    annot.alleles.at(j+1) = diff;
 	  }
 	  if (my_verbose) {
 	    PrintMessageDieOnError("Loading annotation: " + annot.name, PROGRESS);
@@ -268,11 +269,12 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
       if (debug) {
 	stringstream msg;
 	msg << "[Genotyper.cpp]: " << currScore << " " << max_log_lik << " "
-	    << allelotype.first << "," << allelotype.second;
+	    << allelotype.first << "," << allelotype.second << " include:" << include_score
+	    << " hetfreq:" << hetfreq << " minhetfreq: " << min_het_freq << endl;
 	PrintMessageDieOnError(msg.str(), DEBUG);
       }
-      if (include_score && currScore > max_log_lik &&
-          hetfreq >= min_het_freq) {
+      if (include_score && (currScore > max_log_lik) &&
+          (hetfreq >= min_het_freq)) {
         max_log_lik = currScore;
         allele1 = allelotype.first;
         allele2 = allelotype.second;

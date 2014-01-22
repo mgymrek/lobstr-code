@@ -143,23 +143,20 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   allele_to_index[0] = 0;
   int ind = 1;
   if (str_record.alleles_to_include.size() == 0) return;
-  if (str_record.alleles_to_include.size() == 1 && 
-      str_record.alleles_to_include.at(0) == 0) { // only has "0" in it. evaluation order will keep from throwing exception 
+  if (str_record.alleles_to_include.size() == 1) { // if only 1 allele, will always be reference
     output_stream << ".\t";
     repeats_per_allele << ".";
   } else {
-    for (vector<int>::const_iterator it = str_record.alleles_to_include.begin();
-         it != str_record.alleles_to_include.end(); it++) {
-      if (*it != 0) {
-	allele_to_index[*it] = ind;
-	ind++;
-        output_stream << GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, *it);
-        repeats_per_allele << (static_cast<float>(*it)/static_cast<float>(str_record.repseq.size()) + str_record.refcopy);
-        if (*it != str_record.alleles_to_include.at(str_record.alleles_to_include.size()-1)) {
-          output_stream << ",";
-          repeats_per_allele << ",";
-        } 
-      }
+    for (size_t i = 1; i < str_record.alleles_to_include.size(); i++) {
+      const int allele = str_record.alleles_to_include.at(i);
+      allele_to_index[allele] = ind;
+      ind++;
+      output_stream << GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, allele);
+      repeats_per_allele << (static_cast<float>(allele)/static_cast<float>(str_record.repseq.size()) + str_record.refcopy);
+      if (i != str_record.alleles_to_include.size() - 1) {
+	output_stream << ",";
+	repeats_per_allele << ",";
+      } 
     }
     output_stream << "\t";
   }
