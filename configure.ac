@@ -53,7 +53,9 @@ fi
 
 
 PKG_CHECK_MODULES([FFTW], [fftw3])
-AX_PTHREAD()
+AX_PTHREAD([],[
+   AC_MSG_ERROR([Pthread support is required for LobSTR])
+])
 AX_CHECK_ZLIB()
 AX_BLAS()
 if test "$ax_blas_ok" = "no"; then
