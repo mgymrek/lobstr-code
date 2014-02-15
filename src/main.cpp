@@ -262,7 +262,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"genome", 1, 0, OPT_GENOME},
     {"out", 1, 0, OPT_OUTPUT},
     {"threads", 1, 0, OPT_THREADS},
-    {"noweb", 1, 0, OPT_NOWEB},
+    {"noweb", 0, 0, OPT_NOWEB},
     {"mismatch", 1, 0, OPT_MISMATCH},
     {"fft-window-size", 1, 0, OPT_FFT_WINDOW_SIZE},
     {"fft-window-step", 1, 0, OPT_FFT_WINDOW_STEP},

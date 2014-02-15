@@ -98,6 +98,11 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
       continue;
     }
     // Get all the tag data
+    // don't process if partially spanning (from old lobSTR)
+    int partial = 0;
+    if (GetIntBamTag(aln, "XP", &partial)) {
+      if (partial == 1) continue;
+    }
     // get read group
     if (!GetStringBamTag(aln, "RG", &aligned_read.read_group)) {
       stringstream msg;
@@ -119,8 +124,6 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
     // get mapq. Try unsigned/signed
     if (!GetIntBamTag(aln, "XQ", &aligned_read.mapq)) {
       stringstream msg;
-      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get map quality. Setting to 0.";
-      PrintMessageDieOnError(msg.str(), WARNING);
       aligned_read.mapq = 0;
     }
     // get diff
