@@ -35,3 +35,10 @@ lobSTR_v2.0.3 (February 1, 2012):
 	- Updated VCF format to be compatible with 1000 Genomes
 	- Allelotype now writes both .genotypes.tab and .vcf files, no need for lobstr_to_vcf.py.
 	- Allow for reading paired end bam files even when not all mates are present
+
+lobSTR_v2.0.4 (February 27, 2013):
+	- Bug fixes:
+	    - Problem reporting coverage values in the VCF that are twice as much as they should be
+	    - Problem parsing tags from BAM files that have been modified after running lobSTR.
+	    - Multithreading now does not create truncated bam files
+        - lobSTR can now compile on many more systems and the configuration setup has been cleaned up.
