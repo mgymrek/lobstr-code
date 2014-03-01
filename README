@@ -98,18 +98,18 @@ For more information on the current version see the website at http://jura.wi.mi
 
 V. REQUIREMENTS
 
-Assuming you're using a UNIX environment, the following packages are required, and can be obtained by doing "sudo apt-get install $package_name".
+Assuming you're using a Debian/Ubuntu unix environment, the following packages are required, and can be obtained by doing "sudo apt-get install $package_name".
 
-gcc
-g++
-automake
-libtool
-pkg-config
-fftw3-dev
-libboost-dev
+gcc          g++           gfortran
+make         automake      autoconf
+libtool      pkg-config    git
+libfft3-dev  libboost-dev  libcppunit-dev
+libz-dev     libblas-dev
 
-Python libraries:
-Biopython
+For the supporting python scripts, the 'Biopython' library is required.
+Install it using:
+    sudo apt-get install python-pip python-dev
+    sudo pip install biopython
 
 For sorting paired-end files, samtools must be installed.
 

@@ -72,6 +72,7 @@ void show_help() {
     "--bam <f1.bam,[f2.bam, ...]>:   (REQUIRED) comma-separated list\n" \
     "                                of bam files to analyze. Each sample should have\n \
     "                                "a unique read group.\n" \
+    "--out <STRING>:                 Prefix to name output files.\n" \
     "--strinfo <strinfo.tab>:        (REQUIRED)\n" \
     "                                File containing statistics for each STR,\n" \
     "                                available in the data/ directory of the\n" \
@@ -84,13 +85,14 @@ void show_help() {
     "--index-prefix <STRING>         (REQUIRED for --command classify) prefix for lobSTR's bwa reference\n" \
     "                                (must be same as for lobSTR alignment)\n" \
     "--no-rmdup:                     don't remove pcr duplicates before allelotyping\n" \
+    "                                Must use this option if calling multiple samples\n" \
     "--min-het-freq <FLOAT>:         minimum frequency to make a heterozygous call\n" \
     "                                (default: NULL)\n" \
     "--haploid <chrX,[chrY,...]>:    comma-separated list of chromosomes\n" \
     "                                that should be forced to have homozygous\n" \
     "                                calls. Specify --haploid all if the organism\n" \
     "                                is haploid. Will be applied to all samples.\n" \
-    "--include-flank:                Include indels in flanking regions when\n" \
+    "--dont-include-flank:           Dont include indels in flanking regions when\n" \
     "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
     "-v,--verbose:                   print out helpful progress messages\n" \
@@ -127,9 +129,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHUNKSIZE,
     OPT_COMMAND,
     OPT_DEBUG,
+    OPT_DONT_INCLUDE_FLANK,
     OPT_HAPLOID,
     OPT_HELP,
-    OPT_INCLUDE_FLANK,
     OPT_INCLUDE_GL,
     OPT_INDEX,
     OPT_MAX_DIFF_REF,
@@ -160,7 +162,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"debug", 0, 0, OPT_DEBUG},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
-    {"include-flank", 0, 0, OPT_INCLUDE_FLANK},
+    {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
     {"index-prefix", 1, 0, OPT_INDEX},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
@@ -220,9 +222,9 @@ void parse_commandline_options(int argc, char* argv[]) {
       show_help();
       exit(1);
       break;
-    case OPT_INCLUDE_FLANK:
+    case OPT_DONT_INCLUDE_FLANK:
       include_flank = false;
-      AddOption("include-flank", "", false, &user_defined_arguments_allelotyper);
+      AddOption("dont-include-flank", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_INCLUDE_GL:
       include_gl = true;
@@ -408,6 +410,10 @@ int main(int argc, char* argv[]) {
   if (samples_list.size() == 0) {
     PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
   }
+  if (samples_list.size() > 1 && rmdup) {
+    PrintMessageDieOnError("Removing PCR duplicates not supported with multiple samples. Setting --no-rmdup", WARNING);
+    rmdup = false;
+  }
 
   /* Train/classify */
   if (command == "train") {
@@ -487,10 +493,7 @@ int main(int argc, char* argv[]) {
   time(&endtime);
   stringstream msg;
   int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << seconds_elapsed/60/60/24 << ":"
-      << (seconds_elapsed/60/60)%24 << ":" 
-      << (seconds_elapsed/60)%60 << ":"
-      << seconds_elapsed%60 << " elapsed";
+  msg << "Done! " << GetDurationString(seconds_elapsed) << " elapsed";
   PrintMessageDieOnError(msg.str(), PROGRESS);
   return 0;
 }

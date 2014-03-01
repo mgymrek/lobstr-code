@@ -91,6 +91,14 @@ class ReadContainer {
     aligned_str_map_;
 
  private:
+  /* Parse bam tags into the appropriate types */
+  bool GetIntBamTag(const BamTools::BamAlignment& aln,
+		    const std::string& tag_name, int* destination);
+  bool GetStringBamTag(const BamTools::BamAlignment& aln,
+		       const std::string& tag_name, std::string* destination);
+  bool GetFloatBamTag(const BamTools::BamAlignment& aln,
+		      const std::string& tag_name, float* destination);
+
   /* Get values from representative read in set of dups */
   void GetRepRead(const list<AlignedRead>& aligned_read_list,
                   AlignedRead* rep_alignment);
@@ -103,8 +111,7 @@ class ReadContainer {
   float GetScore(const std::string& quality_string);
 
   /* Adjust diff from ref based on cigar */
-  int GetSTRAllele(const AlignedRead& aligned_read,
-                   const CIGAR_LIST& cigar_list);
+  int GetSTRAllele(const CIGAR_LIST& cigar_list);
 
   /* Bam file reader */
   BamTools::BamMultiReader reader;

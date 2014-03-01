@@ -32,14 +32,11 @@ std::string user_defined_arguments = "# version=lobSTR_"+std::string(_GIT_VERSIO
 std::string user_defined_arguments_allelotyper = "# version=allelotype_"+std::string(_GIT_VERSION) + ";";
 PROGRAM program = LOBSTR;
 
-// keep track of common ones
+// mapping betwenen a kmer and its canonicalized form
 std::map<std::string, std::string> canonicalMSTable;
 
 // mapping between a kmer and its smallest cyclic permutation
 std::map<std::string, std::string> permutationTable;
-
-// mapping between a kmer and the canonical version of its smallest repeating subunit
-std::map<std::string, std::string> canonicalRepeatTable;
 
 // flags
 bool my_verbose = false;

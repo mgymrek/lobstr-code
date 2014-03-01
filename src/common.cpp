@@ -29,6 +29,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <map>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -48,6 +49,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/runtime_parameters.h"
 
 using namespace std;
+
+const char* NUCLEOTIDES[4] = {"A","C","G","T"};
 
 void PrintLobSTR() {
   stringstream msg;
@@ -142,10 +145,12 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   default:
     errx(1,"Invalid message type. This should never happen");
   }
-  cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
+  stringstream ss;
+  ss  << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
        << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
+  cerr << ss.str();
   if (msgtype == ERROR) {
-    run_info.error = msg;
+    run_info.error = ss.str();
     run_info.endtime = GetTime();
     if (!output_prefix.empty()) {
       OutputRunStatistics();
@@ -281,7 +286,11 @@ bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_rep
   int second_best_maxkmer = 0;
   subseq.resize(k);
   for (i = 0; i < nucs.size() - k; i++) {
-    subseq = getMinPermutation(nucs.substr(i, k));
+    std::string substring = nucs.substr(i, k);
+    if (permutationTable.find(substring) == permutationTable.end()) {
+      continue;
+    }
+    std::string subseq = permutationTable[substring];
     countKMers[subseq]++;
     if (countKMers[subseq] > maxkmer) {
       if (subseq != kmer) {
@@ -316,7 +325,10 @@ bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_rep
       kmer = OneAbundantNucleotide(kmer, 1);
     }
   }
-  *repeat = getCanonicalRepeat(kmer);
+  if (canonicalMSTable.find(kmer) == canonicalMSTable.end()) {
+    PrintMessageDieOnError("ERROR: could not find canonical repeat. This should not happen", ERROR);
+  }
+  *repeat = canonicalMSTable[kmer];
   return true;
 }
 
@@ -480,6 +492,8 @@ char complement(const char nucleotide) {
   case 'C':
   case 'c':
     return 'G';
+  default:
+    return 'N';
   }
   return 'N';
 }
@@ -504,60 +518,64 @@ std::string reverse(const std::string& s) {
   return rev;
 }
 
-std::string getMinPermutation(const std::string& msnucs){
-  if (permutationTable.find(msnucs) != permutationTable.end())
-    return permutationTable[msnucs];
+void GenerateAllKmers(int size, std::vector<std::string>* kmers) {
+  std::vector<std::string> current_kmers;
+  std::vector<std::string> next_kmers;
+  current_kmers.push_back("");  
+  for (int i = 0; i < size; i++) {
+    for (size_t j = 0; j < current_kmers.size(); j++) {
+      for (int k = 0; k < 4; k++) {
+	std::string newkmer = current_kmers[j] + std::string(NUCLEOTIDES[k]);
+	next_kmers.push_back(newkmer);
+      }
+    }
+    current_kmers = next_kmers;
+    next_kmers.clear();
+  }
+  *kmers = current_kmers;
+}
 
+void InitializeRepeatTables() {
+  for (size_t i = 1; i <= max_period; i++) {
+    std::vector<std::string> kmers;
+    GenerateAllKmers(i, &kmers);
+    for (size_t j = 0; j < kmers.size(); j++) {
+      permutationTable[kmers[j]] = getMinPermutation(kmers[j]);
+      canonicalMSTable[kmers[j]] = getCanonicalRepeat(kmers[j]);
+    }
+  }
+}
+
+std::string getMinPermutation(const std::string& msnucs){
   std::string minPerm = msnucs;
   for(size_t i = 1; i < msnucs.size(); i++){
     std::string otherPerm = msnucs.substr(i)+msnucs.substr(0,i);
     minPerm = getFirstString(minPerm, otherPerm);
   }
-
-  permutationTable.insert(pair<string,string>(msnucs, minPerm));
   return minPerm;
 }
 
 
 std::string getCanonicalRepeat(const std::string& msnucs) {
-  if (canonicalRepeatTable.find(msnucs) != canonicalRepeatTable.end())
-    return canonicalRepeatTable[msnucs];
-
+  // Find the smallest subunit
   std::string subunit = msnucs;
   for (size_t segLen = 1; segLen < msnucs.size(); segLen++) {
     if(msnucs.size() % segLen == 0){
       std::string seq = msnucs.substr(0, segLen);
       bool match = true;
-
       for (size_t seg = 0; seg < msnucs.size()/segLen; seg++) {
 	if (msnucs.substr(seg*segLen, segLen) != seq) {
 	  match = false;
 	  break;
 	}
       }
-
       if (match) {
 	subunit = seq;
 	break;
       }
     }
   }
-
-  std::string canonical;
-  getCanonicalMS(subunit, &canonical);
-  canonicalRepeatTable.insert(pair<string,string>(msnucs, canonical));
-  return canonical;
-}
-
-
-void getCanonicalMS(const string& msnucs, string* canonical) {
-  if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
-    *canonical = canonicalMSTable[msnucs];
-    return;
-  }
-
-  *canonical = getFirstString(getMinPermutation(msnucs), getMinPermutation(reverseComplement(msnucs)));
-  canonicalMSTable.insert(pair<string, string>(msnucs, *canonical));
+  return getFirstString(getMinPermutation(subunit), getMinPermutation(reverseComplement(subunit)));
 }
 
 IFileReader* create_file_reader(const string& filename1,
@@ -698,4 +716,62 @@ std::string GetTime() {
   string tstring = t.str();
   tstring.erase(tstring.find_last_not_of(" \n\r\t")+1);
   return tstring;
+}
+
+std::string GetDurationString(const size_t duration)
+{
+  const size_t days = duration/60/60/24;
+  const size_t hours = (duration/60/60)%24;
+  const size_t minutes = (duration/60)%60;
+  const size_t seconds = duration%60;
+
+  stringstream ss;
+  if (days>0)
+    ss << days << " days and " ;
+  ss << setw(2) << setfill('0') << hours << ':'
+     << setw(2) << setfill('0') << minutes << ':'
+     << setw(2) << setfill('0') << seconds ;
+
+  return ss.str();
+}
+
+// Prints Running time information
+void OutputRunningTimeInformation(const size_t start_time,
+                                  const size_t processing_start_time,
+                                  const size_t end_time,
+                                  const size_t num_threads,
+                                  const size_t units_processed)
+{
+  stringstream msg;
+  if (num_threads<=0 || (start_time>end_time) || (processing_start_time>end_time)) {
+    //Should never happen, but an error is better than invalid output (or division by zero)
+    msg << "Internal Error: invalid values for OutputRunningTimeInformation ("
+        << "start_time=" << start_time << " processing_start_time="<<processing_start_time
+        << "end_time=" << end_time << " num_threads=" << num_threads << ")";
+    PrintMessageDieOnError(msg.str(), ERROR);
+    return;
+  }
+  size_t total_seconds = difftime(end_time, start_time);
+  size_t processing_seconds = difftime(end_time, processing_start_time);
+
+  msg << "Total Running Time " << GetDurationString(total_seconds);
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing time: " << GetDurationString(processing_seconds)
+      << " (" << processing_seconds << " seconds)";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing speed (avg.): ";
+  if (processing_seconds>0) {
+    double units_seconds = (double)(units_processed) / processing_seconds / num_threads;
+    msg << units_seconds ;
+  } else {
+    msg << "<1";
+  }
+  msg << " units/seconds/thread";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
 }

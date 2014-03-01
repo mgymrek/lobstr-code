@@ -423,8 +423,6 @@ int nw_align_ag(std::vector<int> * M,
   return 0;
 }
 
-
-
 int maxM(int f1, int f2, char* ptr) {
   int  max = 0;
   if (f1 >= f2) {

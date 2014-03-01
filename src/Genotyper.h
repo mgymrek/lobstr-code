@@ -26,6 +26,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <string>
 #include <vector>
+#include <math.h>
 
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
@@ -68,7 +69,7 @@ class Genotyper {
                     STRRecord* str_record, bool is_haploid);
 
   /* Get list of alleles to use */
-  bool GetAlleles(const std::list<AlignedRead>& aligned_reads,
+  void GetAlleles(const std::list<AlignedRead>& aligned_reads,
 		  std::vector<int>* alleles);
 
   /* Get rid of alleles with length < 0*/
@@ -82,8 +83,8 @@ class Genotyper {
 
   /* Get log likelihood of an allelotype */
   float CalcLogLik(int a, int b,
-                const list<AlignedRead>& aligned_reads,
-                int period, int* counta, int* countb);
+		   const list<AlignedRead>& aligned_reads,
+		   int period, int* counta, int* countb);
 
   /* Get most likely allelotype */
   void FindMLE(const list<AlignedRead>& aligned_reads,

@@ -20,99 +20,6 @@ You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically `autoreconf'.])])
 
-dnl
-dnl AM_PATH_CPPUNIT(MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
-dnl
-AC_DEFUN([AM_PATH_CPPUNIT],
-[
-
-AC_ARG_WITH(cppunit-prefix,[  --with-cppunit-prefix=PFX   Prefix where CppUnit is installed (optional)],
-            cppunit_config_prefix="$withval", cppunit_config_prefix="")
-AC_ARG_WITH(cppunit-exec-prefix,[  --with-cppunit-exec-prefix=PFX  Exec prefix where CppUnit is installed (optional)],
-            cppunit_config_exec_prefix="$withval", cppunit_config_exec_prefix="")
-
-  if test x$cppunit_config_exec_prefix != x ; then
-     cppunit_config_args="$cppunit_config_args --exec-prefix=$cppunit_config_exec_prefix"
-     if test x${CPPUNIT_CONFIG+set} != xset ; then
-        CPPUNIT_CONFIG=$cppunit_config_exec_prefix/bin/cppunit-config
-     fi
-  fi
-  if test x$cppunit_config_prefix != x ; then
-     cppunit_config_args="$cppunit_config_args --prefix=$cppunit_config_prefix"
-     if test x${CPPUNIT_CONFIG+set} != xset ; then
-        CPPUNIT_CONFIG=$cppunit_config_prefix/bin/cppunit-config
-     fi
-  fi
-
-  AC_PATH_PROG(CPPUNIT_CONFIG, cppunit-config, no)
-  cppunit_version_min=$1
-
-  AC_MSG_CHECKING(for Cppunit - version >= $cppunit_version_min)
-  no_cppunit=""
-  if test "$CPPUNIT_CONFIG" = "no" ; then
-    AC_MSG_RESULT(no)
-    no_cppunit=yes
-  else
-    CPPUNIT_CFLAGS=`$CPPUNIT_CONFIG --cflags`
-    CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs`
-    cppunit_version=`$CPPUNIT_CONFIG --version`
-
-    cppunit_major_version=`echo $cppunit_version | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
-    cppunit_minor_version=`echo $cppunit_version | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
-    cppunit_micro_version=`echo $cppunit_version | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
-
-    cppunit_major_min=`echo $cppunit_version_min | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
-    if test "x${cppunit_major_min}" = "x" ; then
-       cppunit_major_min=0
-    fi
-    
-    cppunit_minor_min=`echo $cppunit_version_min | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
-    if test "x${cppunit_minor_min}" = "x" ; then
-       cppunit_minor_min=0
-    fi
-    
-    cppunit_micro_min=`echo $cppunit_version_min | \
-           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
-    if test "x${cppunit_micro_min}" = "x" ; then
-       cppunit_micro_min=0
-    fi
-
-    cppunit_version_proper=`expr \
-        $cppunit_major_version \> $cppunit_major_min \| \
-        $cppunit_major_version \= $cppunit_major_min \& \
-        $cppunit_minor_version \> $cppunit_minor_min \| \
-        $cppunit_major_version \= $cppunit_major_min \& \
-        $cppunit_minor_version \= $cppunit_minor_min \& \
-        $cppunit_micro_version \>= $cppunit_micro_min `
-
-    if test "$cppunit_version_proper" = "1" ; then
-      AC_MSG_RESULT([$cppunit_major_version.$cppunit_minor_version.$cppunit_micro_version])
-    else
-      AC_MSG_RESULT(no)
-      no_cppunit=yes
-    fi
-  fi
-
-  if test "x$no_cppunit" = x ; then
-     ifelse([$2], , :, [$2])     
-  else
-     CPPUNIT_CFLAGS=""
-     CPPUNIT_LIBS=""
-     ifelse([$3], , :, [$3])
-  fi
-
-  AC_SUBST(CPPUNIT_CFLAGS)
-  AC_SUBST(CPPUNIT_LIBS)
-])
-
-
-
-
 # pkg.m4 - Macros to locate and utilise pkg-config.            -*- Autoconf -*-
 # serial 1 (pkg-config-0.24)
 # 
@@ -311,67 +218,6 @@ AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
 _AM_AUTOCONF_VERSION(m4_defn([AC_AUTOCONF_VERSION]))])
-
-# Copyright (C) 2011 Free Software Foundation, Inc.
-#
-# This file is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
-
-# serial 1
-
-# AM_PROG_AR([ACT-IF-FAIL])
-# -------------------------
-# Try to determine the archiver interface, and trigger the ar-lib wrapper
-# if it is needed.  If the detection of archiver interface fails, run
-# ACT-IF-FAIL (default is to abort configure with a proper error message).
-AC_DEFUN([AM_PROG_AR],
-[AC_BEFORE([$0], [LT_INIT])dnl
-AC_BEFORE([$0], [AC_PROG_LIBTOOL])dnl
-AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
-AC_REQUIRE_AUX_FILE([ar-lib])dnl
-AC_CHECK_TOOLS([AR], [ar lib "link -lib"], [false])
-: ${AR=ar}
-
-AC_CACHE_CHECK([the archiver ($AR) interface], [am_cv_ar_interface],
-  [am_cv_ar_interface=ar
-   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int some_variable = 0;]])],
-     [am_ar_try='$AR cru libconftest.a conftest.$ac_objext >&AS_MESSAGE_LOG_FD'
-      AC_TRY_EVAL([am_ar_try])
-      if test "$ac_status" -eq 0; then
-        am_cv_ar_interface=ar
-      else
-        am_ar_try='$AR -NOLOGO -OUT:conftest.lib conftest.$ac_objext >&AS_MESSAGE_LOG_FD'
-        AC_TRY_EVAL([am_ar_try])
-        if test "$ac_status" -eq 0; then
-          am_cv_ar_interface=lib
-        else
-          am_cv_ar_interface=unknown
-        fi
-      fi
-      rm -f conftest.lib libconftest.a
-     ])
-   ])
-
-case $am_cv_ar_interface in
-ar)
-  ;;
-lib)
-  # Microsoft lib, so override with the ar-lib wrapper script.
-  # FIXME: It is wrong to rewrite AR.
-  # But if we don't then we get into trouble of one sort or another.
-  # A longer-term fix would be to have automake use am__AR in this case,
-  # and then we could set am__AR="$am_aux_dir/ar-lib \$(AR)" or something
-  # similar.
-  AR="$am_aux_dir/ar-lib $AR"
-  ;;
-unknown)
-  m4_default([$1],
-             [AC_MSG_ERROR([could not determine $AR interface])])
-  ;;
-esac
-AC_SUBST([AR])dnl
-])
 
 # AM_AUX_DIR_EXPAND                                         -*- Autoconf -*-
 
@@ -966,41 +812,6 @@ AC_MSG_RESULT([$_am_result])
 rm -f confinc confmf
 ])
 
-# Copyright (C) 1999, 2000, 2001, 2003, 2004, 2005, 2008
-# Free Software Foundation, Inc.
-#
-# This file is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
-
-# serial 6
-
-# AM_PROG_CC_C_O
-# --------------
-# Like AC_PROG_CC_C_O, but changed for automake.
-AC_DEFUN([AM_PROG_CC_C_O],
-[AC_REQUIRE([AC_PROG_CC_C_O])dnl
-AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
-AC_REQUIRE_AUX_FILE([compile])dnl
-# FIXME: we rely on the cache variable name because
-# there is no other way.
-set dummy $CC
-am_cc=`echo $[2] | sed ['s/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/']`
-eval am_t=\$ac_cv_prog_cc_${am_cc}_c_o
-if test "$am_t" != yes; then
-   # Losing compiler, so override with the script.
-   # FIXME: It is wrong to rewrite CC.
-   # But if we don't then we get into trouble of one sort or another.
-   # A longer-term fix would be to have automake use am__CC in this case,
-   # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
-   CC="$am_aux_dir/compile $CC"
-fi
-dnl Make sure AC_PROG_CC is never called again, or it will override our
-dnl setting of CC.
-m4_define([AC_PROG_CC],
-          [m4_fatal([AC_PROG_CC cannot be called after AM_PROG_CC_C_O])])
-])
-
 # Fake the existence of programs that GNU maintainers use.  -*- Autoconf -*-
 
 # Copyright (C) 1997, 1999, 2000, 2001, 2003, 2004, 2005, 2008
@@ -1106,25 +917,6 @@ AC_DEFUN([_AM_SET_OPTIONS],
 # Execute IF-SET if OPTION is set, IF-NOT-SET otherwise.
 AC_DEFUN([_AM_IF_OPTION],
 [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
-
-# Copyright (C) 2001, 2003, 2005, 2011 Free Software Foundation, Inc.
-#
-# This file is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
-
-# serial 1
-
-# AM_RUN_LOG(COMMAND)
-# -------------------
-# Run COMMAND, save the exit status in ac_status, and log it.
-# (This has been adapted from Autoconf's _AC_RUN_LOG macro.)
-AC_DEFUN([AM_RUN_LOG],
-[{ echo "$as_me:$LINENO: $1" >&AS_MESSAGE_LOG_FD
-   ($1) >&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&AS_MESSAGE_LOG_FD
-   (exit $ac_status); }])
 
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 
@@ -1337,4 +1129,12 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
-m4_include([m4/acx_pthread.m4])
+m4_include([m4/ax_blas.m4])
+m4_include([m4/ax_boost_base.m4])
+m4_include([m4/ax_check_zlib.m4])
+m4_include([m4/ax_pthread.m4])
+m4_include([m4/libtool.m4])
+m4_include([m4/ltoptions.m4])
+m4_include([m4/ltsugar.m4])
+m4_include([m4/ltversion.m4])
+m4_include([m4/lt~obsolete.m4])

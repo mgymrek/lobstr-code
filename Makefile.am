@@ -8,5 +8,42 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-EXTRA_DIST = reconf configure
-SUBDIRS = m4 src
+DATA_FILES = \
+	data/lobstr.allelepriors.hg19.min50.tab \
+	data/trf.ucsc.hg19.filtered.bed \
+	data/trf.ucsc.hg18.filtered.bed \
+	data/strinfo.hg18.tab \
+	data/strinfo.hg19.tab \
+	data/vcf_positions_to_exclude_hg18.tab \
+	data/vcf_positions_to_exclude_hg19.tab
+
+
+WWW_FILES = \
+	www/contact-us.html \
+	www/documentation.html \
+	www/download.html \
+	www/faq.html \
+	www/file-formats.html \
+	www/index.html \
+	www/install.html \
+	www/news.html \
+	www/usage.html
+
+
+EXTRA_DIST = reconf configure \
+	config/git-version-gen \
+	lobSTR.rb \
+	$(top_srcdir)/.version \
+	$(WWW_FILES) \
+	$(DATA_FILES)
+
+SUBDIRS = m4 src scripts models
+ACLOCAL_AMFLAGS = -I m4
+
+BUILT_SOURCES = $(top_srcdir)/.version
+
+$(top_srcdir)/.version:
+	echo $(VERSION) > $@-t && mv $@-t $@
+
+dist-hook:
+	echo $(VERSION) > $(distdir)/.tarball-version

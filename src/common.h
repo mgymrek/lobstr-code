@@ -148,14 +148,17 @@ std::string reverse(const std::string& s);
 // get the complement of a nucleotide
 char complement(const char nucleotide);
 
+// Initalize the repeat tables with all possible patterns
+void InitializeRepeatTables();
+
+// Generate all nucleotide kmers of a certain size
+void GenerateAllKmers(int size, std::vector<std::string>* kmers);
+
 // get the minimum cyclic permutation of the provided sequence 
 std::string getMinPermutation(const std::string& msnucs);
 
 // get the canonical version of the smallest repeating subunit
 std::string getCanonicalRepeat(const std::string& msnucs);
-
-// get the canonical MS sequence
-void getCanonicalMS(const std::string& msnucs, std::string* canonical);
 
 // get the appropriate fiile reader
 IFileReader* create_file_reader(const std::string& filename1,
@@ -176,6 +179,19 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
 
 // Generate the date in YYMMDD
 std::string currentDateTime();
+
+// Given number of seconds, returns a string
+// describing the duration, in format "(DD days and) HH:MM:SS"
+// (e.g. "3 days and 13:56:33" or just "23:00:33")
+// The 'days' portion will appear only if the duration is longer than a day.
+std::string GetDurationString(const size_t duration);
+
+// Prints Running time information
+void OutputRunningTimeInformation(const size_t start_time,
+                                  const size_t processing_start_time,
+                                  const size_t end_time,
+                                  const size_t num_threads,
+                                  const size_t units_processed);
 
 // Replace string method
 std::string string_replace(std::string src,
