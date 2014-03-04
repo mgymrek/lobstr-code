@@ -139,8 +139,8 @@ liblobstr_a_SOURCES = \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
 	api/BamReader.h api/BamMultiReader.h \
-	api/BamAlignment.h api/BamWriter \
-	api/SamHeader.h api/ReadGroup.h \
+	api/BamAlignment.h api/BamWriter.h \
+	api/SamHeader.h api/SamReadGroup.h \
 	api/SamReadGroupDictionary.h
 
 libindex_a_SOURCES = \
@@ -199,10 +199,10 @@ liballelotype_a_SOURCES = \
 	linear.cpp linear.h \
 	predict.c \
 	train.c	\
-	tron.cpp tron.h
+	tron.cpp tron.h \
 	api/BamReader.h api/BamMultiReader.h \
-	api/BamAlignment.h api/BamWriter \
-	api/SamHeader.h api/ReadGroup.h \
+	api/BamAlignment.h api/BamWriter.h \
+	api/SamHeader.h api/SamReadGroup.h \
 	api/SamReadGroupDictionary.h
 
 lobSTRIndex_SOURCES = main.c main.h
@@ -258,8 +258,8 @@ lobSTRTests_SOURCES = \
 	ZippedFastqFileReader.cpp \
 	ZippedTextFileReader.cpp \
 	api/BamReader.h api/BamMultiReader.h \
-	api/BamAlignment.h api/BamWriter \
-	api/SamHeader.h api/ReadGroup.h \
+	api/BamAlignment.h api/BamWriter.h \
+	api/SamHeader.h api/SamReadGroup.h \
 	api/SamReadGroupDictionary.h
 
 lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
