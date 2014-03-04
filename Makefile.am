@@ -18,23 +18,10 @@ DATA_FILES = \
 	data/vcf_positions_to_exclude_hg19.tab
 
 
-WWW_FILES = \
-	www/contact-us.html \
-	www/documentation.html \
-	www/download.html \
-	www/faq.html \
-	www/file-formats.html \
-	www/index.html \
-	www/install.html \
-	www/news.html \
-	www/usage.html
-
-
 EXTRA_DIST = reconf configure \
 	config/git-version-gen \
 	lobSTR.rb \
 	$(top_srcdir)/.version \
-	$(WWW_FILES) \
 	$(DATA_FILES)
 
 SUBDIRS = m4 src scripts models
