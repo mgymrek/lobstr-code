@@ -147,12 +147,15 @@ libindex_a_SOURCES = \
 	bwtaln.c bwtaln.h \
 	bwt.c bwt.h \
 	bamlite.c \
+	bamlite.h \
 	stdaln.c stdaln.h \
 	bwtgap.c bwtgap.h \
 	bwaseqio.c \
+	bwaseqio.h \
 	bwtindex.c \
 	bwtio.c \
 	utils.c \
+	utils.h \
 	simple_dp.c \
 	kstring.c kstring.h \
 	bwtsw2_core.c \
@@ -163,6 +166,7 @@ libindex_a_SOURCES = \
 	bwt_lite.c bwt_lite.h \
 	bwape.c \
 	bwase.c \
+	bwase.h \
 	bwt_gen.c bwt_gen.h \
 	bwtsw2.h \
 	QSufSort.c QSufSort.h \
