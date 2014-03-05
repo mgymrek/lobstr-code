@@ -75,7 +75,7 @@ read PUSHTAG
 echo
 echo
 echo "Pushing tags"
-#git push --tags || exit
+git push --tags || exit
 echo
 echo
 echo
