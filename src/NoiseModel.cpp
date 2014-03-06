@@ -82,7 +82,11 @@ NoiseModel::NoiseModel(const string& strinfofile,
   stutter_model_filename = noise_model + ".stuttermodel";
   stepsize_model_filename = noise_model + ".stepmodel";
   // Determine MIN PERIOD
-  MIN_PERIOD = DetermineMinPeriod(stepsize_model_filename);
+  if (command == "classify") {
+    MIN_PERIOD = DetermineMinPeriod(stepsize_model_filename);
+  } else {
+    MIN_PERIOD = 1;
+  }
   // Set haploid chromosomes
   haploid_chroms = haploid_chroms_;
   // initialize pdf
@@ -157,7 +161,6 @@ void NoiseModel::Train(ReadContainer* read_container) {
     if (HasUniqueMode(aligned_reads, &unique_mode)) {
       for (list<AlignedRead>::const_iterator it2 =
              aligned_reads.begin(); it2 != aligned_reads.end(); it2++) {
-        if (it2->partial) continue;
         if (it2->mapq != 0) continue;
         AlignedRead aread;
         aread.chrom = it2->chrom; aread.msStart = it2->msStart;

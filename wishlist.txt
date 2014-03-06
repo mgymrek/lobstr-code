@@ -1,6 +1,6 @@
 lobSTR wish list... some day these features will be added
 
-- fix alignment CIGAR Scores around ends of reads with mismatches
-- deal with paired end reads (might incorporate stitching, need to get rid of duplicate read pairs in genotyping step)
+- ability to call more than 2 alleles at loci (such as DYS464) with multiple copies
+- improved remove duplicates algorithm
+- ability to easily compare lobSTR results to capillary electrophoresis callsets
 - consensus sequence at genotyping stage
-- quality control metrics

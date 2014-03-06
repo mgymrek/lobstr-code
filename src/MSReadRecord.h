@@ -94,11 +94,6 @@ class MSReadRecord {
   int rEnd;
   // difference in length from reference
   int diffFromRef;
-  // partially covered
-  bool partial;
-  // was initially marked as partially covered
-  // (this field used for debugging)
-  bool was_partial;
   // name of this STR locus
   std::string name;
   // alignment score

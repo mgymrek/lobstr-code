@@ -36,8 +36,6 @@ using BamTools::SamHeader;
 using BamTools::SamReadGroup;
 using BamTools::SamReadGroupDictionary;
 
-const std::string NASTRING = "NA";
-
 SamFileWriter::SamFileWriter(const string& _filename,
                              const map<string, int>& _chrom_sizes) {
   chrom_sizes = _chrom_sizes;
@@ -52,9 +50,6 @@ SamFileWriter::SamFileWriter(const string& _filename,
   }
   header.ReadGroups.Add(rg);
 
-  //  string header="@CO\t";
-  //header += user_defined_arguments;
-  //header +="\n";
   RefVector ref_vector;
   for (map<string, int>::const_iterator it = chrom_sizes.begin();
        it != chrom_sizes.end(); ++it) {
@@ -74,27 +69,66 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   const int& paired_dist = read_pair.treat_as_paired ?
     abs(read_pair.reads.at(aligned_read_num).read_start-
         read_pair.reads.at(1-aligned_read_num).read_start) : -1;
+  // Update run info for this read
+  run_info.num_aligned_reads++;
+  run_info.total_insert += paired_dist;
+  if (read_pair.treat_as_paired) {
+    run_info.num_aligned_reads++;
+    run_info.num_mates++;
+  } 
+  if (!read_pair.treat_as_paired && paired) {
+    run_info.num_stitched++;
+  } else {
+    run_info.num_single++;
+  }
+  if (read_pair.reads.at(aligned_read_num).reverse) {
+    run_info.num_reverse++;
+  }
+  if (read_pair.reads.at(aligned_read_num).diffFromRef %
+      static_cast<int>(read_pair.reads.at(aligned_read_num).repseq.length()) != 0) {
+    run_info.num_nonunit++;
+  }
   // Write aligned read
   BamAlignment bam_alignment;
+  BamAlignment mate_alignment;
+  bool str_alignment_is_first = false; // Does the STR alignment have a smaller start coord than mate
   bam_alignment.Name = read_pair.reads.at(aligned_read_num).ID;
-  bam_alignment.SetIsPaired(read_pair.treat_as_paired);
+
+  // Flags
   bam_alignment.SetIsDuplicate(false);
   bam_alignment.SetIsFailedQC(false);
-  bam_alignment.SetIsFirstMate(read_pair.treat_as_paired);
-  bam_alignment.SetIsMateMapped(read_pair.treat_as_paired);
-  bam_alignment.SetIsMateReverseStrand(!read_pair.reads.
-                                       at(aligned_read_num).reverse);
-  bam_alignment.SetIsProperPair(read_pair.treat_as_paired);
-  bam_alignment.SetIsSecondMate(false);
   bam_alignment.SetIsMapped(true);
-  bam_alignment.SetIsMateMapped(read_pair.treat_as_paired);
   bam_alignment.SetIsPrimaryAlignment(true);
   bam_alignment.SetIsReverseStrand(read_pair.reads.
                                    at(aligned_read_num).reverse);
+  if (read_pair.treat_as_paired) {
+    bam_alignment.SetIsPaired(true);
+    bam_alignment.SetIsMateMapped(true);
+    bam_alignment.SetIsProperPair(true);
+    bam_alignment.SetIsMateReverseStrand(read_pair.reads.
+					 at(1-aligned_read_num).reverse);
+    bam_alignment.SetIsFirstMate(true);
+    bam_alignment.SetIsSecondMate(false);
+    if (read_pair.reads.at(aligned_read_num).read_start <
+	read_pair.reads.at(1-aligned_read_num).read_start) {
+      str_alignment_is_first = true;
+    }
+  } else {
+    bam_alignment.SetIsPaired(false);
+    bam_alignment.SetIsProperPair(false);    
+    bam_alignment.SetIsFirstMate(false);
+    bam_alignment.SetIsSecondMate(false);
+    bam_alignment.SetIsMateMapped(true);
+    bam_alignment.SetIsMateReverseStrand(false);
+  }
   bam_alignment.Position = read_pair.reads.at(aligned_read_num).read_start;
-  bam_alignment.MapQuality = 255;//read_pair.reads.at(aligned_read_num).mapq;
   bam_alignment.Qualities = read_pair.reads.
     at(aligned_read_num).quality_scores;
+  if (read_pair.alternate_mappings.empty()) {
+    bam_alignment.MapQuality = 255;
+  } else {
+    bam_alignment.MapQuality = 0;
+  }
   if (read_pair.reads.at(aligned_read_num).reverse) {
     bam_alignment.QueryBases =
       reverseComplement(read_pair.reads.at(aligned_read_num).nucleotides);
@@ -114,6 +148,10 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
     ++i;
   }
   bam_alignment.RefID = ref_id;
+  if (read_pair.treat_as_paired) {
+    bam_alignment.MateRefID = ref_id; // always will map to same chromosome
+    bam_alignment.MatePosition = read_pair.reads.at(1-aligned_read_num).read_start;
+  }
   // cigar
   vector<BamTools::CigarOp> cigar_data;
   for (i = 0; i < read_pair.reads.at(aligned_read_num).cigar.size(); i++) {
@@ -126,6 +164,10 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   bam_alignment.CigarData = cigar_data;
 
   // write user flags giving repeat information
+  // XA: alternate alignments
+  if (!read_pair.alternate_mappings.empty()) {
+    bam_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
+  }
   // XS: start pos of matching STR
   bam_alignment.AddTag("XS", "i", read_pair.reads.
                        at(aligned_read_num).msStart);
@@ -142,21 +184,12 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   bam_alignment.AddTag("XC", "f", read_pair.reads.
                        at(aligned_read_num).refCopyNum);
   // XG: repeat region
-  if (read_pair.reads.at(aligned_read_num).partial) {
-    bam_alignment.AddTag("XG", "Z", NASTRING);
-  } else {
-    bam_alignment.AddTag("XG", "Z", read_pair.reads.
-                         at(aligned_read_num).detected_ms_nuc);
-  }
-  // XW: mapq
-  bam_alignment.AddTag("XW", "i", read_pair.reads.
-                       at(aligned_read_num).mapq);
-  // XP: partial alignment
-  bam_alignment.AddTag("XP", "i", static_cast<int>
-                       (read_pair.reads.at(aligned_read_num).partial));
+  bam_alignment.AddTag("XG", "Z", read_pair.reads.
+		       at(aligned_read_num).detected_ms_nuc);
   // XX: stitched
   bam_alignment.AddTag("XX", "i", static_cast<int>
                        (!read_pair.treat_as_paired && paired));
+
   // XM: distance between read and mate start pos
   bam_alignment.AddTag("XM", "i", paired_dist);
   // XN: name of STR repeat
@@ -170,21 +203,17 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   // NM: edit distance to reference
   bam_alignment.AddTag("NM", "i", read_pair.reads.at(aligned_read_num).edit_dist);
 
-  writer.SaveAlignment(bam_alignment);
-
   // Write mate pair
   if (read_pair.treat_as_paired) {
-      BamAlignment mate_alignment;
       mate_alignment.Name = read_pair.reads.at(1-aligned_read_num).ID;
       mate_alignment.SetIsPaired(true);
       mate_alignment.SetIsDuplicate(false);
       mate_alignment.SetIsFailedQC(false);
       mate_alignment.SetIsFirstMate(false);
-      mate_alignment.SetIsMateMapped(true);
+      mate_alignment.SetIsSecondMate(true);
       mate_alignment.SetIsMateReverseStrand(read_pair.reads.
                                             at(aligned_read_num).reverse);
       mate_alignment.SetIsProperPair(true);
-      mate_alignment.SetIsSecondMate(true);
       mate_alignment.SetIsMapped(true);
       mate_alignment.SetIsMateMapped(true);
       mate_alignment.SetIsPrimaryAlignment(true);
@@ -192,7 +221,11 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
                                         at(1-aligned_read_num).reverse);
       mate_alignment.Position =
         read_pair.reads.at(1-aligned_read_num).read_start;
-      mate_alignment.MapQuality = 255;//read_pair.reads.at(1-aligned_read_num).mapq;
+      if (read_pair.alternate_mappings.empty()) {
+	mate_alignment.MapQuality = 255;
+      } else {
+	mate_alignment.MapQuality = 0;
+      }
       mate_alignment.Qualities =
         read_pair.reads.at(1-aligned_read_num).quality_scores;
       if (read_pair.reads.at(1-aligned_read_num).reverse) {
@@ -203,6 +236,8 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
           read_pair.reads.at(1-aligned_read_num).nucleotides;
       }
       mate_alignment.RefID = ref_id;
+      mate_alignment.MateRefID = ref_id;
+      mate_alignment.MatePosition = read_pair.reads.at(aligned_read_num).read_start;
       // cigar
       vector<BamTools::CigarOp> cigar_data;
       for (i = 0; i < read_pair.reads.at(1-aligned_read_num).cigar.size();
@@ -239,8 +274,21 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       mate_alignment.AddTag("RG", "Z", GetReadGroup());
       // NM: edit distance to reference
       mate_alignment.AddTag("NM", "i", read_pair.reads.at(1-aligned_read_num).edit_dist);
-
+      // XA: Alternate alignment info
+      if (!read_pair.alternate_mappings.empty()) {
+	mate_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
+      }
+  }
+  if (read_pair.treat_as_paired) {
+    if (str_alignment_is_first) {
+      writer.SaveAlignment(bam_alignment);
       writer.SaveAlignment(mate_alignment);
+    } else {
+      writer.SaveAlignment(mate_alignment);
+      writer.SaveAlignment(bam_alignment);
+    }
+  } else {
+    writer.SaveAlignment(bam_alignment);
   }
 }
 

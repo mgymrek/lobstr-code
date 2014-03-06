@@ -29,10 +29,14 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 #include "src/cigar.h"
+#include "src/ReferenceSTR.h"
 #include "src/api/BamReader.h"
+#include "src/api/BamMultiReader.h"
 
 using namespace std;
 using BamTools::BamReader;
+using BamTools::BamMultiReader;
+using BamTools::BamRegion;
 using BamTools::BamAlignment;
 using BamTools::SamHeader;
 using BamTools::RefData;
@@ -40,9 +44,11 @@ using BamTools::RefVector;
 using BamTools::CigarOp;
 
 struct AlignedRead {
+  std::string ID;
   std::string chrom;
   int msStart;
   int msEnd;
+  std::string read_group; // identifies a unique sample
   int read_start;
   std::string nucleotides;
   std::string qualities;
@@ -51,7 +57,6 @@ struct AlignedRead {
   int period;
   int diffFromRef;
   float refCopyNum;
-  int partial;
   int mate;
   bool strand;
   int stitched;
@@ -65,11 +70,18 @@ struct AlignedRead {
  */
 class ReadContainer {
  public:
-  ReadContainer();
+  ReadContainer(vector<std::string> filenames);
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(vector<std::string> bamfiles, bool exclude_partial);
+  void AddReadsFromFile(const ReferenceSTR& ref_str);
+
+  /* Clear reads from container */
+  void ClearReads();
+
+  /* Get reads at an STR coordinate */
+  void GetReadsAtCoord(const std::pair<std::string, int>& coord,
+		       std::list<AlignedRead>* reads);
 
   /* Remove pcr duplicates */
   void RemovePCRDuplicates();
@@ -79,6 +91,14 @@ class ReadContainer {
     aligned_str_map_;
 
  private:
+  /* Parse bam tags into the appropriate types */
+  bool GetIntBamTag(const BamTools::BamAlignment& aln,
+		    const std::string& tag_name, int* destination);
+  bool GetStringBamTag(const BamTools::BamAlignment& aln,
+		       const std::string& tag_name, std::string* destination);
+  bool GetFloatBamTag(const BamTools::BamAlignment& aln,
+		      const std::string& tag_name, float* destination);
+
   /* Get values from representative read in set of dups */
   void GetRepRead(const list<AlignedRead>& aligned_read_list,
                   AlignedRead* rep_alignment);
@@ -91,10 +111,12 @@ class ReadContainer {
   float GetScore(const std::string& quality_string);
 
   /* Adjust diff from ref based on cigar */
-  int GetSTRAllele(const AlignedRead& aligned_read,
-                   const CIGAR_LIST& cigar_list);
+  int GetSTRAllele(const CIGAR_LIST& cigar_list);
 
-  BamTools::BamReader reader;
+  /* Bam file reader */
+  BamTools::BamMultiReader reader;
+  BamTools::RefVector references;
+  map<std::string, int> chrom_to_refid;
 };
 
 #endif  // SRC_READCONTAINER_H_

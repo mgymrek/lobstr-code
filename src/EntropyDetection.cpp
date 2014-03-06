@@ -86,6 +86,11 @@ bool EntropyDetection::EntropyIsAboveThreshold() {
     entropy_threshold;
 }
 
+float EntropyDetection::GetMaxEntropy() {
+  CalculateEntropyWindow();
+  return *max_element(_entropy_window.begin(), _entropy_window.end());
+}
+
 void EntropyDetection::FindStartEnd(size_t* start, size_t* end,
                                     bool* repetitive_end) {
   const vector<double> entropy_window = _entropy_window;

@@ -40,12 +40,12 @@ extern std::string user_defined_arguments;
 // store allelotyper user parameters
 extern std::string user_defined_arguments_allelotyper;
 
+// mapping between a kmer and its smallest cyclic permutation
+extern std::map<std::string, std::string> permutationTable;
+
 // keep track of mappings between a kmer and its
 // canonical MS so we don't have to recompute it all the time
 extern std::map<std::string, std::string> canonicalMSTable;
-
-// mapping between a kmer and the canonical version of its smallest repeating subunit
-extern std::map<std::string, std::string> canonicalRepeatTable;
 
 // enums
 enum INPUT_TYPE {
@@ -118,32 +118,26 @@ extern std::string index_prefix;
 extern int gap_open;
 extern int gap_extend;
 extern float fpr;
-extern bool partial_debug;
 extern std::string read_group_sample;
 extern std::string read_group_library;
 extern bool include_orig_read_start;
+extern bool allow_multi_mappers;
 
 // genotyping params
+extern std::string annotation_files_string;
 extern std::string bam_files_string;
 extern std::string command;
 extern std::string noise_model;
 extern std::string haploid_chroms_string;
 extern std::string strinfofile;
-extern std::string known_alleles_file;
 extern std::string use_chrom;
-extern bool generate_tab;
 extern bool rmdup;
 extern bool include_flank;
+extern bool include_gl;
 extern bool print_reads;
-extern bool exclude_partial;
-extern bool generate_posteriors;
 extern float min_het_freq;
 extern int min_border;
 extern int max_matedist;
-
-// vcf params
-extern std::string exclude_positions_file;
-extern std::string sample;
 
 // debug
 extern bool profile;
@@ -167,6 +161,9 @@ extern size_t MIN_STR_LENGTH;
 // trimming
 extern int QUAL_CUTOFF;
 extern int QUALITY_CONSTANT;
+
+// chunk size for allelotyper
+extern int CHUNKSIZE;
 
 // Amazon s3 parameters
 extern bool using_s3;

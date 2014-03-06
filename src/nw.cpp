@@ -29,25 +29,26 @@ Rolf Muertter,  rolf@dslextreme.com
 #include "src/nw.h"
 
 using namespace std;
-const int  a =  2;   // Match
-const int  b = -2;   // Mismatch
-const int  s[4][4] = {{ a, b, b, b },
+const int a =  2;   // Match
+const int b = -2;   // Mismatch
+const int s[4][4] = {{ a, b, b, b },
                       { b, a, b, b },
                       { b, b, a, b },
                       { b, b, b, a }};
-const int  d = 6;  // gap penalty
+const int d = 6;  // gap penalty
 const int GAPOPEN = 6;
 const int GAPEXTEND = 0.1;
 
-int nw(const string&       seq_1,          /*  Needleman-Wunsch   */
-       const string&       seq_2,          /*  algorithm for      */
-       string&      seq_1_al,       /*  global alignment   */
-       string&      seq_2_al,       /*  of nt sequence.    */
-       bool         prm,
-       int* score,  /* SW alignment score */
+int nw(const string& seq_1,
+       const string& seq_2,
+       string& seq_1_al,
+       string& seq_2_al,
+       bool prm,
+       int* score,
        CIGAR_LIST* cigar_list) {
-  int  L1 = seq_1.length();
-  int  L2 = seq_2.length();
+  int L1 = seq_1.length();
+  int L2 = seq_2.length();
+
   // Dynamic programming matrix
   vector<int > M((L1+1)*(L2+1));
   vector<int > I((L1+1)*(L2+1));
@@ -70,16 +71,16 @@ int nw(const string&       seq_1,          /*  Needleman-Wunsch   */
 void  dpm_init(std::vector<int >* F,
                std::vector<char>* traceback,
                int L1, int L2, int d) {
-  F->at(0) = 0;
-  traceback->at(0) = 'n';
+  (*F)[0] = 0;
+  (*traceback)[0] = 'n';
   int i = 0, j = 0;
   for (j = 1; j <= L1; j++) {
-    F->at(0*(L1+1)+j) = -j * d;
-    traceback->at(0*(L1+1)+j) = '-';
+    (*F)[0*(L1+1)+j] = -j * d;
+    (*traceback)[0*(L1+1)+j] = '-';
   }
   for (i = 1; i <= L2; i++) {
-    F->at(i*(L1+1)+0) = -i * d;
-    traceback->at(i*(L1+1)+0) = '|';
+    (*F)[i*(L1+1)+0] = -i * d;
+    (*traceback)[i*(L1+1)+0] = '|';
   }
 }
 
@@ -130,19 +131,19 @@ int nw_align(std::vector<int > *    F,
         y = 3;
         break;
       }
-      fU = F->at((i-1)*(L1)+j)-d;  // gap
-      fD = F->at((i-1)*(L1)+(j-1))+ s[x][y];  // mismatch
-      fL = F->at((i)*(L1)+(j-1))-d;  // gap
-      F->at(i*(L1)+j) = max(fU, fD, fL, &ptr);
-      traceback->at(i*L1+j) = ptr;
+      fU = (*F)[(i-1)*(L1)+j]-d;  // gap
+      fD = (*F)[(i-1)*(L1)+(j-1)]+ s[x][y];  // mismatch
+      fL = (*F)[(i)*(L1)+(j-1)]-d;  // gap
+      (*F)[i*(L1)+j] = max(fU, fD, fL, &ptr);
+      (*traceback)[(i*L1+j)] = ptr;
     }
   }
   // get score
   i--;
   j--;
-  *score = F->at(i*(L1)+j);
+  *score = (*F)[i*(L1)+j];
   while (i > 0 || j > 0) {
-    switch (traceback->at(i*L1+j)) {
+    switch ((*traceback)[i*L1+j]) {
     case '|' :
       seq_1_al += '-';
       seq_2_al += seq_2[i-1];
@@ -184,22 +185,22 @@ int max(int f1, int f2, int f3, char* ptr) {
 
 
 
-int nw_align_ag(std::vector<int > *    M,
-                std::vector<int > *    I,
+int nw_align_ag(std::vector<int> * M,
+                std::vector<int> * I,
                 std::vector<char>* tracebackM,
                 std::vector<char>* tracebackI,
-                const string&     seq_1,
-                const string&     seq_2,
-                string&    seq_1_al,
-                string&    seq_2_al,
-                int        d,         //  Gap penalty
+                const string& seq_1,
+                const string& seq_2,
+                string& seq_1_al,
+                string& seq_2_al,
+                int d,         //  Gap penalty
                 int* score,  //  SW score
                 CIGAR_LIST* cigar_list) {
-  int        k = 0, x = 0, y = 0;
-  int        mD1, mD2, iU1, iU2, iL1, iL2;
-  char       ptrM, ptrI, nuc;
-  int        i = 0, j = 0;
-  int  L1 = seq_1.length();
+  int k = 0, x = 0, y = 0;
+  int mD1, mD2, iU1, iU2, iL1, iL2;
+  char ptrM, ptrI, nuc;
+  int i = 0, j = 0;
+  int L1 = seq_1.length();
   int L2 = seq_2.length();
   string raw_cigar;
   for (i = 1; i <= L2; i++) {
@@ -234,18 +235,18 @@ int nw_align_ag(std::vector<int > *    M,
         y = 3;
         break;
       }
-      mD1 = M->at((i-1)*(L1+1)+(j-1))+s[x][y];  // match from match matrix
-      mD2 = I->at((i-1)*(L1+1)+(j-1))+s[x][y];  // match from gap matrix
-      M->at(i*(L1+1)+j) = maxM(mD1, mD2, &ptrM);  // match score
+      mD1 = (*M)[(i-1)*(L1+1)+(j-1)]+s[x][y];  // match from match matrix
+      mD2 = (*I)[(i-1)*(L1+1)+(j-1)]+s[x][y];  // match from gap matrix
+      (*M)[i*(L1+1)+j] = maxM(mD1, mD2, &ptrM);  // match score
 
-      iU1 = M->at(i*(L1+1)+(j-1))-GAPOPEN;
-      iU2 = I->at(i*(L1+1)+(j-1))-GAPEXTEND;
-      iL1 = M->at((i-1)*(L1+1)+j) - GAPOPEN;
-      iL2 = I->at((i-1)*(L1+1)+j) - GAPEXTEND;
-      I->at(i*(L1+1)+j) = maxI(iU1, iU2, iL1, iL2, &ptrI);
+      iU1 = (*M)[i*(L1+1)+(j-1)] - GAPOPEN;
+      iU2 = (*I)[i*(L1+1)+(j-1)] - GAPEXTEND;
+      iL1 = (*M)[(i-1)*(L1+1)+j] - GAPOPEN;
+      iL2 = (*I)[(i-1)*(L1+1)+j] - GAPEXTEND;
+      (*I)[i*(L1+1)+j] = maxI(iU1, iU2, iL1, iL2, &ptrI);
       // set traceback matrix
-      tracebackM->at(i*(L1+1)+j) = ptrM;
-      tracebackI->at(i*(L1+1)+j) = ptrI;
+      (*tracebackM)[i*(L1+1)+j] = ptrM;
+      (*tracebackI)[i*(L1+1)+j] = ptrI;
     }
   }
   // get score
@@ -262,14 +263,14 @@ int nw_align_ag(std::vector<int > *    M,
   int bestJ = 0;
   // get max M and max I right col
   while ( i > 0 ) {
-    if (M->at(i*(L1+1)+L1) >= maxRowScore) {
-      maxRowScore = M->at(i*(L1+1)+L1);
+    if ((*M)[i*(L1+1)+L1] >= maxRowScore) {
+      maxRowScore = (*M)[i*(L1+1)+L1];
       MatchBestRow = true;
       GapBestRow = false;
       bestI = i;
     }
-    if (I->at(i*(L1+1)+L1) >= maxRowScore) {
-      maxRowScore = I->at(i*(L1+1)+L1);
+    if ((*I)[i*(L1+1)+L1] >= maxRowScore) {
+      maxRowScore = (*I)[i*(L1+1)+L1];
       GapBestRow = true;
       MatchBestRow = false;
       bestI = i;
@@ -278,14 +279,14 @@ int nw_align_ag(std::vector<int > *    M,
   }
   // get maxM and max I right col
   while (j > 0) {
-    if (M->at(L2*(L1+1)+j) >= maxColScore) {
-      maxColScore = M->at(L2*(L1+1)+j);
+    if ((*M)[L2*(L1+1)+j] >= maxColScore) {
+      maxColScore = (*M)[L2*(L1+1)+j];
       MatchBestCol = true;
       GapBestCol = false;
       bestJ = j;
     }
-    if (I->at(L2*(L1+1)+j) >= maxColScore) {
-      maxColScore = I->at(L2*(L1+1)+j);
+    if ((*I)[L2*(L1+1)+j] >= maxColScore) {
+      maxColScore = (*I)[L2*(L1+1)+j];
       GapBestCol = true;
       MatchBestCol = false;
       bestJ = j;
@@ -306,17 +307,17 @@ int nw_align_ag(std::vector<int > *    M,
       inMatchMatrix = true;
     }
   }
-  if (M->at(i*(L1+1)+j) >= I->at(i*(L1+1)+j)) {
-    *score = M->at(i*(L1+1)+j);
+  if ((*M)[i*(L1+1)+j] >= (*I)[i*(L1+1)+j]) {
+    *score = (*M)[i*(L1+1)+j];
     inMatchMatrix = true;
   } else {
-    *score = I->at(i*(L1+1)+j);
+    *score = (*I)[i*(L1+1)+j];
     inMatchMatrix = false;
   }
   while (i > 0 || j > 0) {
     char switchchar = inMatchMatrix ?
-      tracebackM->at(i*(L1+1)+j) :
-      tracebackI->at(i*(L1+1)+j);
+      (*tracebackM)[i*(L1+1)+j] :
+      (*tracebackI)[i*(L1+1)+j];
     switch (switchchar) {
     case 'a':
       seq_1_al += seq_1[j-1];
@@ -386,11 +387,11 @@ int nw_align_ag(std::vector<int > *    M,
   }
   // simplify cigars core
   reverse(raw_cigar.begin(), raw_cigar.end() );
-  char cigar_char = raw_cigar.at(0);
+  char cigar_char = raw_cigar[0];
   char new_cigar_char;
   int num = 0;
   for (int i = 1; i < raw_cigar.length() ; i++) {
-    new_cigar_char = raw_cigar.at(i);
+    new_cigar_char = raw_cigar[i];
     if (new_cigar_char != cigar_char) {
       CIGAR new_cigar;
       new_cigar.num = num+1;
@@ -414,15 +415,13 @@ int nw_align_ag(std::vector<int > *    M,
     new_cigar.cigar_type = cigar_char;
     cigar_list->cigars.push_back(new_cigar);
   }
-  if (cigar_list->cigars.at(cigar_list->cigars.size() -1).cigar_type == 'I') {
-    cigar_list->cigars.at(cigar_list->cigars.size() -1).cigar_type = 'S';
+  if (cigar_list->cigars[cigar_list->cigars.size() - 1].cigar_type == 'I') {
+    cigar_list->cigars[cigar_list->cigars.size() - 1].cigar_type = 'S';
   }
   reverse(seq_1_al.begin(), seq_1_al.end());
   reverse(seq_2_al.begin(), seq_2_al.end());
   return 0;
 }
-
-
 
 int maxM(int f1, int f2, char* ptr) {
   int  max = 0;

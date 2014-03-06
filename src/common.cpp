@@ -26,8 +26,10 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <netinet/in.h>
 #include <netdb.h> 
 
+#include <algorithm>
 #include <map>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -48,11 +50,13 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+const char* NUCLEOTIDES[4] = {"A","C","G","T"};
+
 void PrintLobSTR() {
   stringstream msg;
   msg << endl << endl;
-  msg << "                     _______" << endl;
-  msg << "             \\\\ //  /   -^--\\ |" << endl;
+  msg << "                       _______" << endl;
+  msg << "             \\\\ //  /     -^--\\ |" << endl;
   msg << "             ||||  / /\\_____/ /" << endl;
   msg << " {\\         ______{ }        /         lobSTR: profiling short tandem repeats" << endl;
   msg << " {_}{\\{\\{\\{|         \\=@____/          from high-throughput sequencing data" << endl;
@@ -80,7 +84,7 @@ void OutputRunStatistics() {
   PrintMessageDieOnError("Outputting run statistics", PROGRESS);
   TextFileWriter sWriter(output_prefix + (program == LOBSTR? ".aligned.stats":".allelotype.stats"));
   // Output run statistics to stats file
-  string stats_string = run_info.PrintToString();
+  string stats_string = run_info.PrintToString((program == LOBSTR ? 0: 1));
   sWriter.Write(stats_string);
   // Upload to AWS S3
   if (!noweb) {
@@ -141,15 +145,72 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   default:
     errx(1,"Invalid message type. This should never happen");
   }
-  cerr << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
+  stringstream ss;
+  ss  << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
        << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
+  cerr << ss.str();
   if (msgtype == ERROR) {
-    run_info.error = msg;
+    run_info.error = ss.str();
     run_info.endtime = GetTime();
     if (!output_prefix.empty()) {
       OutputRunStatistics();
     }
     exit(1);
+  }
+}
+
+std::string GetReadDebug(const ReadPair& read_pair,
+                         const std::string& detector_err,
+                         const std::string& detector_msg,
+                         const std::string& aln_err,
+                         const std::string& aln_msg) {
+  stringstream msg;
+  msg << "[STRDetector]: processing "
+      << read_pair.reads[0].ID
+      << " motif 1 ";
+  if (read_pair.reads[0].repseq.empty()) {
+    msg << "NA";
+  } else {
+    msg << read_pair.reads[0].repseq;
+  }
+  msg << " " << detector_err << " " << detector_msg << " " << aln_err << " " << aln_msg;
+  return msg.str();
+}
+
+void GetSamplesFromBamFiles(const vector<string>& bamfiles,
+			    vector<string>* samples_list,
+			    map<string,string>* rg_id_to_sample) {
+  BamTools::BamReader reader;
+  string bamfile = "";
+  for (size_t i = 0; i < bamfiles.size(); i++) {
+    bamfile = bamfiles.at(i);
+    if (!reader.Open(bamfile)) {
+      PrintMessageDieOnError("Could not open bam file " + bamfile, ERROR);
+    }
+    BamTools::SamHeader header = reader.GetHeader();
+    if (!header.HasReadGroups()) {
+      PrintMessageDieOnError("No read groups in " + bamfile, ERROR);
+    }
+    BamTools::SamReadGroupDictionary read_groups = header.ReadGroups;
+    for (BamTools::SamReadGroupIterator it = read_groups.Begin();
+	 it != read_groups.End(); it++) {
+      const BamTools::SamReadGroup& rg = *it;
+      string rg_sample;
+      if (!rg.HasSample()) {
+	PrintMessageDieOnError("No sample in read group for " + bamfile, WARNING);
+	rg_sample = rg.ID;
+      } else {
+	rg_sample = rg.Sample;
+      }
+      if (my_verbose) {
+	PrintMessageDieOnError("Adding sample " + rg_sample + " " + rg.ID, PROGRESS);
+      }
+      rg_id_to_sample->insert(pair<string,string>(rg.ID,rg_sample));
+      if (find(samples_list->begin(), samples_list->end(), rg_sample) ==
+	  samples_list->end()) {
+	samples_list->push_back(rg_sample);
+      }
+    }
   }
 }
 
@@ -172,7 +233,7 @@ void TrimRead(const string& input_nucs,
               int cutoff) {
   // if last bp is fine, return as is
   size_t l = input_nucs.length();
-  if (static_cast<int>(input_quals.at(l - 1) - QUALITY_CONSTANT)
+  if (static_cast<int>(input_quals[l - 1] - QUALITY_CONSTANT)
       >= cutoff) {
     *trimmed_nucs = input_nucs;
     *trimmed_quals = input_quals;
@@ -187,7 +248,7 @@ void TrimRead(const string& input_nucs,
   for (size_t x = min_read_length; x <= l; x++) {
     int score = 0;
     for (size_t i = x+1; i < l; i++) {
-      score += (cutoff-(input_quals.at(i)-QUALITY_CONSTANT));
+      score += (cutoff-(input_quals[i]-QUALITY_CONSTANT));
     }
     if (score >= max_score) {
       max_score = score;
@@ -201,38 +262,73 @@ void TrimRead(const string& input_nucs,
 size_t count(const string& s, const char& c) {
   size_t num = 0;
   for (size_t i = 0; i < s.length(); i++) {
-    if (s.at(i) == c) num++;
+    if (s[i] == c) num++;
   }
   return num;
 }
 
 
-bool getMSSeq(const string& nucs, int k, string* repeat) {
-  if (k < 1 || k > 6) return false;
-  if (static_cast<int>(nucs.size()) < k) return false;
+bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_repeat, string* err) {
+  if (k < 1 || k > 6) {
+    *err = "k-is-invalid;";
+    return false;
+  }
+  if (static_cast<int>(nucs.size()) < k) {
+    *err = "k-is-greater-than-nucleotides-length;";
+    return false;
+  }
   map<string, int> countKMers;
   size_t i;
   string subseq;
-  string kmer;
+  string kmer = "";
+  string second_best_kmer = "";
   int maxkmer = 0;
+  int second_best_maxkmer = 0;
   subseq.resize(k);
   for (i = 0; i < nucs.size() - k; i++) {
-    subseq = nucs.substr(i, k);
+    std::string substring = nucs.substr(i, k);
+    if (permutationTable.find(substring) == permutationTable.end()) {
+      continue;
+    }
+    std::string subseq = permutationTable[substring];
     countKMers[subseq]++;
-    if (countKMers.at(subseq) > maxkmer) {
+    if (countKMers[subseq] > maxkmer) {
+      if (subseq != kmer) {
+        second_best_kmer = kmer;
+        second_best_maxkmer = maxkmer;
+      }
       kmer = subseq;
-      maxkmer = countKMers.at(subseq);
+      maxkmer = countKMers[subseq];
+    } else if (countKMers[subseq] > second_best_maxkmer) {
+      second_best_kmer = subseq;
+      second_best_maxkmer = countKMers[subseq];
     }
   }
   
   // Check that we have enough of the kmer
-  if (maxkmer < 3) return false;
+  if (maxkmer < 3) {
+    *err = "Not-enough-occurrences-of-kmer-" + kmer + ";";
+    return false;
+  }
   // If the detected kmer is invalid length, give up
-  if (kmer.size() < 1 || kmer.size() > 6 ) return false;
-  // If a homopolymer, this is probably a messy locus and we give up
-  if (OneAbundantNucleotide(kmer, 1) != "") return false;
-
-  *repeat = getCanonicalRepeat(kmer);
+  if (kmer.size() < 1 || kmer.size() > 6 ) {
+    *err = "Detected-kmer-is-invalid-size;";
+    return false;
+  }
+  // If a homopolymer, we probably misdetected this and it is really a homopolymer, set that as second best
+  if (k != 1 && OneAbundantNucleotide(kmer, 1) != "") {
+    *err = "Setting-next-best-to-mononucleotide;";
+    if (second_best_maxkmer >= 3) {
+      *second_best_repeat = getFirstString(OneAbundantNucleotide(kmer, 1), reverseComplement(OneAbundantNucleotide(kmer, 1)));
+      kmer = second_best_kmer;
+    } else {
+      kmer = OneAbundantNucleotide(kmer, 1);
+    }
+  }
+  if (canonicalMSTable.find(kmer) == canonicalMSTable.end()) {
+    PrintMessageDieOnError("ERROR: could not find canonical repeat. This should not happen", ERROR);
+  }
+  *repeat = canonicalMSTable[kmer];
   return true;
 }
 
@@ -277,7 +373,7 @@ float GetQualityScore(const std::string& quality_score) {
   if (quality_score.length() == 0) return 0;
   float total_quality = 0;
   for (size_t i = 0; i < quality_score.length(); ++i) {
-    int qs = quality_score.at(i);
+    int qs = quality_score[i];
     total_quality += qs - 33;
   }
   return total_quality/quality_score.size();
@@ -302,23 +398,16 @@ bool fexists(const char *filename) {
 }
 
 bool valid_nucleotides_string(const string &str) {
-  if (str.empty())
+  if (str.empty()) {
     return false;
-  for (size_t i = 0 ; i < str.length(); ++i) {
-    const char ch = str[i];
-    if ( (ch != 'A') && (ch != 'C') && (ch != 'G') && (ch != 'T') &&
-         (ch != 'N') &&
-         (ch != 'a') && (ch != 'c') && (ch != 'g') && (ch != 't') &&
-         (ch != 'n') )
-      return false;
   }
-  return true;
+  return str.find_first_not_of("ACGTNacgtn");
 }
 
 std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
   size_t countA = 0, countC = 0, countG = 0, countT = 0;
   for (size_t i = 0; i < nuc.length(); i++) {
-    switch (nuc.at(i)) {
+    switch (nuc[i]) {
       case 'A':
       case 'a':
         countA++;
@@ -339,10 +428,8 @@ std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) 
       case 'n':
         break;
       default:
-        errx(1, "Internal error: OneAbundantNucleotide " \
-             "called with invalid nucleotide string '%s'" \
-             ", character '%c'", nuc.c_str(), nuc.at(i));
-      }
+	PrintMessageDieOnError("ERROR: invalid nucleotide string " + nuc, ERROR);
+    }
   }
   size_t threshold = nuc.length()*perc_threshold;
   if (countA >= threshold)
@@ -360,7 +447,7 @@ int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
   int runsize = 0;
   int maxrunsize = 0;
   for (size_t i = 0; i < nuc.size(); i++) {
-    if (nuc.at(i) == abundant_nuc) {
+    if (nuc[i] == abundant_nuc) {
       runsize++;
     } else {
       if (runsize > maxrunsize) {
@@ -375,7 +462,7 @@ int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
 double calculate_N_percentage(const std::string& nuc) {
   size_t n_count = 0;
   for (size_t i = 0; i < nuc.length(); i++)
-    if (nuc.at(i) == 'N' || nuc.at(i) == 'n')
+    if (nuc[i] == 'N' || nuc[i] == 'n')
       n_count++;
   return (static_cast<double>(n_count))/
     (static_cast<double>(nuc.length()));
@@ -405,6 +492,8 @@ char complement(const char nucleotide) {
   case 'C':
   case 'c':
     return 'G';
+  default:
+    return 'N';
   }
   return 'N';
 }
@@ -429,61 +518,64 @@ std::string reverse(const std::string& s) {
   return rev;
 }
 
+void GenerateAllKmers(int size, std::vector<std::string>* kmers) {
+  std::vector<std::string> current_kmers;
+  std::vector<std::string> next_kmers;
+  current_kmers.push_back("");  
+  for (int i = 0; i < size; i++) {
+    for (size_t j = 0; j < current_kmers.size(); j++) {
+      for (int k = 0; k < 4; k++) {
+	std::string newkmer = current_kmers[j] + std::string(NUCLEOTIDES[k]);
+	next_kmers.push_back(newkmer);
+      }
+    }
+    current_kmers = next_kmers;
+    next_kmers.clear();
+  }
+  *kmers = current_kmers;
+}
+
+void InitializeRepeatTables() {
+  for (size_t i = 1; i <= max_period; i++) {
+    std::vector<std::string> kmers;
+    GenerateAllKmers(i, &kmers);
+    for (size_t j = 0; j < kmers.size(); j++) {
+      permutationTable[kmers[j]] = getMinPermutation(kmers[j]);
+      canonicalMSTable[kmers[j]] = getCanonicalRepeat(kmers[j]);
+    }
+  }
+}
+
+std::string getMinPermutation(const std::string& msnucs){
+  std::string minPerm = msnucs;
+  for(size_t i = 1; i < msnucs.size(); i++){
+    std::string otherPerm = msnucs.substr(i)+msnucs.substr(0,i);
+    minPerm = getFirstString(minPerm, otherPerm);
+  }
+  return minPerm;
+}
+
+
 std::string getCanonicalRepeat(const std::string& msnucs) {
-  if (canonicalRepeatTable.find(msnucs) != canonicalRepeatTable.end())
-    return canonicalRepeatTable.at(msnucs);
-
-  string subunit = msnucs;
-  for (int segLen = 1; segLen < msnucs.size(); segLen++) {
+  // Find the smallest subunit
+  std::string subunit = msnucs;
+  for (size_t segLen = 1; segLen < msnucs.size(); segLen++) {
     if(msnucs.size() % segLen == 0){
-      string seq = msnucs.substr(0, segLen);
+      std::string seq = msnucs.substr(0, segLen);
       bool match = true;
-
-      for (int seg = 0; seg < msnucs.size()/segLen; seg++) {
+      for (size_t seg = 0; seg < msnucs.size()/segLen; seg++) {
 	if (msnucs.substr(seg*segLen, segLen) != seq) {
 	  match = false;
 	  break;
 	}
       }
-
       if (match) {
 	subunit = seq;
 	break;
       }
     }
   }
-
-  string canonical;
-  getCanonicalMS(subunit, &canonical);
-  canonicalRepeatTable.insert(pair<string,string>(msnucs, canonical));
-  return canonical;
-}
-
-
-void getCanonicalMS(const string& msnucs, string* canonical) {
-  // first check to see if it is hashed already
-  if (canonicalMSTable.find(msnucs) != canonicalMSTable.end()) {
-    *canonical = canonicalMSTable.at(msnucs);
-    return;
-  }
-  string newseq;
-  size_t size = msnucs.size();
-  size_t i;
-  *canonical = msnucs;
-  newseq.resize(size);
-  for (i = 1; i < size; i++) {
-    newseq     = msnucs.substr(size-i, size) + msnucs.substr(0, size-i);
-    *canonical = getFirstString(*canonical, newseq);
-  }
-  
-  string revcomp = reverseComplement(msnucs);
-  *canonical     = getFirstString(*canonical, revcomp);
-  for (i = 1; i < size; i++) {
-    newseq     = revcomp.substr(size-i, size) + revcomp.substr(0, size-i);
-    *canonical = getFirstString(*canonical, newseq);
-  }
-  
-  canonicalMSTable.insert(pair<string, string>(msnucs, *canonical));
+  return getFirstString(getMinPermutation(subunit), getMinPermutation(reverseComplement(subunit)));
 }
 
 IFileReader* create_file_reader(const string& filename1,
@@ -540,7 +632,7 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   size_t cigar_length = 0;
   *cigar_had_s = false;
   for (size_t i = 0; i < cigar_list->cigars.size(); i++) {
-    CIGAR cig = cigar_list->cigars.at(i);
+    CIGAR cig = cigar_list->cigars[i];
     if (cig.cigar_type == 'M' || cig.cigar_type == 'I' || cig.cigar_type == 'S') {
       cigar_length += cig.num;
     }
@@ -550,8 +642,8 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   int diff = nucs.length() - cigar_length;
   if (diff > 0) {
     *added_s = true;
-    if (cigar_list->cigars.at(cigar_list->cigars.size()-1).cigar_type == 'M') {
-      cigar_list->cigars.at(cigar_list->cigars.size()-1).num += diff;
+    if (cigar_list->cigars[cigar_list->cigars.size()-1].cigar_type == 'M') {
+      cigar_list->cigars[cigar_list->cigars.size()-1].num += diff;
     } else {
       CIGAR cig;
       cig.num = diff;
@@ -624,4 +716,62 @@ std::string GetTime() {
   string tstring = t.str();
   tstring.erase(tstring.find_last_not_of(" \n\r\t")+1);
   return tstring;
+}
+
+std::string GetDurationString(const size_t duration)
+{
+  const size_t days = duration/60/60/24;
+  const size_t hours = (duration/60/60)%24;
+  const size_t minutes = (duration/60)%60;
+  const size_t seconds = duration%60;
+
+  stringstream ss;
+  if (days>0)
+    ss << days << " days and " ;
+  ss << setw(2) << setfill('0') << hours << ':'
+     << setw(2) << setfill('0') << minutes << ':'
+     << setw(2) << setfill('0') << seconds ;
+
+  return ss.str();
+}
+
+// Prints Running time information
+void OutputRunningTimeInformation(const size_t start_time,
+                                  const size_t processing_start_time,
+                                  const size_t end_time,
+                                  const size_t num_threads,
+                                  const size_t units_processed)
+{
+  stringstream msg;
+  if (num_threads<=0 || (start_time>end_time) || (processing_start_time>end_time)) {
+    //Should never happen, but an error is better than invalid output (or division by zero)
+    msg << "Internal Error: invalid values for OutputRunningTimeInformation ("
+        << "start_time=" << start_time << " processing_start_time="<<processing_start_time
+        << "end_time=" << end_time << " num_threads=" << num_threads << ")";
+    PrintMessageDieOnError(msg.str(), ERROR);
+    return;
+  }
+  size_t total_seconds = difftime(end_time, start_time);
+  size_t processing_seconds = difftime(end_time, processing_start_time);
+
+  msg << "Total Running Time " << GetDurationString(total_seconds);
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing time: " << GetDurationString(processing_seconds)
+      << " (" << processing_seconds << " seconds)";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+
+  msg.str("");
+  msg.clear();
+  msg << "Processing speed (avg.): ";
+  if (processing_seconds>0) {
+    double units_seconds = (double)(units_processed) / processing_seconds / num_threads;
+    msg << units_seconds ;
+  } else {
+    msg << "<1";
+  }
+  msg << " units/seconds/thread";
+  PrintMessageDieOnError(msg.str(), PROGRESS);
 }

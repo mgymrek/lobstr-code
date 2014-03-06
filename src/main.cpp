@@ -18,6 +18,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+//Enable the following to write some thread-related debug messages
+//#define DEBUG_THREADS
+
 #include <err.h>
 #include <getopt.h>
 #include <limits.h>
@@ -29,6 +32,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <utility>
 
@@ -47,7 +51,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/SamFileWriter.h"
 #include "src/STRDetector.h"
 #include "src/runtime_parameters.h"
-#include "src/TabFileWriter.h"
 #include "src/TukeyWindowGenerator.h"
 
 using namespace std;
@@ -66,6 +69,9 @@ map<string, int> chrom_sizes;
 // Keep track of reference sequences for alignment readjustment
 map<int, REFSEQ> ref_sequences;
 
+// Either "reads" or "pairs", depending on what's being processed.
+std::string unit_name;
+
 // alignment references, keep global
 void LoadReference(const std::string& repseq);
 void DestroyReferences();
@@ -78,8 +84,8 @@ void show_help() {
     "\nlobSTR [OPTIONS] " \
     "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
     "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
-    "    -o <output prefix>\n" \
-    "Note: parameters are uploaded to Amazon S3 by default. This for\n" \
+    "    -o <output prefix> --rg-sample <STRING> --rg-library <STRING>\n" \
+    "Note: parameters are uploaded to Amazon S3 by default. This is for\n" \
     "us see how people are using the tool and to help us continue to improve\n" \
     "lobSTR. To turn this function off, specify --noweb.\n\n" \
     "Parameter descriptions:\n " \
@@ -99,6 +105,8 @@ void show_help() {
     "               to create index. If the index is downloaded\n" \
     "               to PATH_TO_INDEX, this argument is\n" \
     "               PATH_TO_INDEX/lobSTR_)\n" \
+    "--rg-sample <STRING>  Use this in the read group SM tag\n" \
+    "--rg-lib <STRING>     Use this in the read group LB tag\n" \
     "\n\nOptions:\n" \
     "-h,--help      display this help screen\n" \
     "-v,--verbose   print out useful progress messages\n" \
@@ -117,8 +125,8 @@ void show_help() {
     "--oldillumina  Specifies that quality score are given in old Phred\n" \
     "               format (Illumina 1.3+, Illumina 1.5+) where quality\n" \
     "               scores are given as Phred + 64 rather than Phred + 33\n" \
-    "--rg-sample <STRING>  Use this in the read group SM tag\n" \
-    "--rg-lib <STRING>     Use this in the read group LB tag\n" \
+    "--multi        Report reads mapping to multiple genomic locations.\n" \
+    "               Alternate alignments given in XA tag\n" \
     "--noweb        Do not report any user information and paramters to Amazon S3.\n" \
     "\n\nAdvanced options - general:\n" \
     "-p,--threads <INT>         number of threads (default: 1)\n" \
@@ -146,9 +154,6 @@ void show_help() {
     "--max-diff-ref <INT>       maximum difference in length from\n" \
     "                           the reference sequence to report\n" \
     "                           (default: 50bp)\n" \
-    "--exclude-partial          Do not report reads only partially spanning\n" \
-    "                           an STR. It is recommended to set this option unless \n" \
-    "                           you wish to specifically analyze partially spanning reads.\n" \
     "--extend <INT>             Number of bp the reference was extended\n" \
     "                           when building the index.\n" \
     "                           Must be same as --extend parameter used \n" \
@@ -214,6 +219,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
+    OPT_MULTI,
     OPT_FFTW_DEBUG,
     OPT_LOBE_DEBUG,
     OPT_MIN_READ_LENGTH,
@@ -231,7 +237,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_EXTEND_FLANK,
     OPT_SW,
     OPT_DEBUGADJUST,
-    OPT_PARTIALDEBUG,
     OPT_ORIG_READ,
     OPT_MAPQ,
     OPT_BWAQ,
@@ -242,7 +247,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_S3DEBUG,
     OPT_RG_SAMPLE,
     OPT_RG_LIB,
-    OPT_EXCLUDE_PARTIAL,
     OPT_VERSION,
   };
 
@@ -258,7 +262,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"genome", 1, 0, OPT_GENOME},
     {"out", 1, 0, OPT_OUTPUT},
     {"threads", 1, 0, OPT_THREADS},
-    {"noweb", 1, 0, OPT_NOWEB},
+    {"noweb", 0, 0, OPT_NOWEB},
     {"mismatch", 1, 0, OPT_MISMATCH},
     {"fft-window-size", 1, 0, OPT_FFT_WINDOW_SIZE},
     {"fft-window-step", 1, 0, OPT_FFT_WINDOW_STEP},
@@ -269,6 +273,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"minflank", 1, 0, OPT_MIN_FLANK_LEN},
     {"maxflank", 1, 0, OPT_MAX_FLANK_LEN},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
+    {"multi", 0, 0, OPT_MULTI},
     {"help", 0, 0, OPT_HELP},
     {"verbose", 0, 0, OPT_VERBOSE},
     {"debug", 0, 0, OPT_DEBUG},
@@ -292,7 +297,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"oldillumina", 0, 0, OPT_OLDILLUMINA},
     {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
     {"why-not", 0, 0, OPT_WHY_NOT},
-    {"partial-debug", 0, 0, OPT_PARTIALDEBUG},
     {"orig", 0, 0, OPT_ORIG_READ},
     {"nextbest", 0, 0, OPT_CHECKNEXTBEST},
     {"use-s3", 1, 0, OPT_USES3},
@@ -300,7 +304,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"s3debug", 0, 0, OPT_S3DEBUG},
     {"rg-sample", 1, 0, OPT_RG_SAMPLE},
     {"rg-lib", 1, 0, OPT_RG_LIB},
-    {"exclude-partial", 0, 0, OPT_EXCLUDE_PARTIAL},
     {"version", 0, 0, OPT_VERSION},
     {NULL, no_argument, NULL, 0},
   };
@@ -315,9 +318,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_PROFILE:
       profile++;
-      break;
-    case OPT_PARTIALDEBUG:
-      partial_debug++;
       break;
     case OPT_WHY_NOT:
       why_not_debug++;
@@ -352,6 +352,8 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_BAMPAIR:
       paired = true;
+      input_type = INPUT_BAM;
+      bam++;
       AddOption("bampair", "", false, &user_defined_arguments);
       break;
     case 'p':
@@ -360,9 +362,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       AddOption("threads", string(optarg), true, &user_defined_arguments);
       if (threads <= 0) {
         PrintMessageDieOnError("Invalid number of threads", ERROR);
-      }
-      if (threads > 1) {
-        PrintMessageDieOnError("Multithreading on very small files may fail to produce BAM output", WARNING);
       }
       break;
     case OPT_NOWEB:
@@ -452,6 +451,10 @@ void parse_commandline_options(int argc, char* argv[]) {
         PrintMessageDieOnError("Invalid max diff ref", ERROR);
       }
       AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_MULTI:
+      allow_multi_mappers++;
+      AddOption("multi", "", false, &user_defined_arguments);
       break;
     case OPT_FFTW_DEBUG:
       fftw_debug = true;
@@ -543,10 +546,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       read_group_library = string(optarg);
       AddOption("rg-lib", string(optarg), true, &user_defined_arguments);
       break;
-    case OPT_EXCLUDE_PARTIAL:
-      exclude_partial++;
-      AddOption("exlude-partial", "", false, &user_defined_arguments);
-      break;
     case OPT_VERSION:
       cerr << _GIT_VERSION << endl;
       exit(0);
@@ -591,6 +590,9 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
   if (using_s3 && s3cmd_configfile.empty()) {
     PrintMessageDieOnError("Must supply an s3cmd config file", ERROR);
+  }
+  if (read_group_sample.empty() || read_group_library.empty()) {
+    PrintMessageDieOnError("Must specify --rg-library and --rg-sample", ERROR);
   }
 }
 
@@ -646,7 +648,6 @@ void DestroyReferences() {
 void single_thread_process_loop(const vector<string>& files1,
                                 const vector<string>& files2) {
   ReadPair read_pair;
-  TabFileWriter pWriter(output_prefix + ".aligned.tab");
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   STRDetector *pDetector = new STRDetector();
   BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references,
@@ -654,6 +655,7 @@ void single_thread_process_loop(const vector<string>& files1,
                                                 &ref_sequences, opts);
   std::string file1;
   std::string file2;
+  size_t num_reads_processed = 0;
   for (size_t i = 0; i < files1.size(); i++) {
     file1 = files1.at(i);
     if (paired && !bam) {
@@ -706,14 +708,13 @@ void single_thread_process_loop(const vector<string>& files1,
     }
     IFileReader* pReader = create_file_reader(file1, file2);
     int aligned = false;
-    int num_reads_processed = 0;
     std::string repseq = "";
     while (pReader->GetNextRecord(&read_pair)) {
       aligned = false;
       num_reads_processed += 1;
       if (num_reads_processed % READPROGRESS == 0) {
         stringstream msg;
-        msg << "Processed " << num_reads_processed << " reads";
+        msg << "Processed " << num_reads_processed << ' ' << unit_name;
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       read_pair.read_count = num_reads_processed;
@@ -742,13 +743,20 @@ void single_thread_process_loop(const vector<string>& files1,
       if (read_pair.reads.at(0).paired) bases += read_pair.reads.at(1).nucleotides.length();
 
       // STEP 1: Sensing
-      if (!pDetector->ProcessReadPair(&read_pair)) {
+      string det_err, det_messages;
+      if (!pDetector->ProcessReadPair(&read_pair, &det_err, &det_messages)) {
+        if (debug) {
+          PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, "NA", "NA") + " (detection-fail)", DEBUG);
+        }
         continue;
       }
-
       // STEP 2: Alignment
-      if (pAligner->ProcessReadPair(&read_pair)) {
+      string aln_err, aln_messages;
+      if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {
         aligned = true;
+        if (debug) { // if aligned, what was the repseq we aligned to
+          PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-1)", DEBUG);
+        }
       } else {
         read_pair.read1_passed_detection = false;
         read_pair.read2_passed_detection = false;
@@ -756,8 +764,9 @@ void single_thread_process_loop(const vector<string>& files1,
         if (read_pair.reads.at(0).ms_repeat_next_best_period != 0) {
           read_pair.reads.at(0).ms_repeat_best_period =
             read_pair.reads.at(0).ms_repeat_next_best_period;
+          string err, second_best_repseq;
           if (getMSSeq(read_pair.reads.at(0).detected_ms_region_nuc,
-                       read_pair.reads.at(0).ms_repeat_best_period, &repseq)) {
+                       read_pair.reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
             read_pair.reads.at(0).repseq = repseq;
             read_pair.read1_passed_detection = true;
           }
@@ -766,9 +775,10 @@ void single_thread_process_loop(const vector<string>& files1,
           if (read_pair.reads.at(1).ms_repeat_next_best_period != 0) {
             read_pair.reads.at(1).ms_repeat_best_period =
               read_pair.reads.at(1).ms_repeat_next_best_period;
+            string err, second_best_repseq;
             if (getMSSeq(read_pair.reads.at(1).detected_ms_region_nuc,
                          read_pair.reads.at(1).ms_repeat_best_period,
-                         &repseq)) {
+                         &repseq, &second_best_repseq, &err)) {
               read_pair.reads.at(1).repseq = repseq;
               read_pair.read2_passed_detection = true;
             }
@@ -776,19 +786,25 @@ void single_thread_process_loop(const vector<string>& files1,
         }
         if (read_pair.read1_passed_detection ||
             read_pair.read2_passed_detection) {
-          if (pAligner->ProcessReadPair(&read_pair)) {
+          if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {
             aligned = true;
+            if (debug) { // if aligned, what was the repseq we aligned to
+              PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-2)", DEBUG);
+            }
           }
         }
       }
       if (aligned) {
-        pWriter.WriteRecord(read_pair);
         samWriter.WriteRecord(read_pair);
+      } else {
+        if (debug) { // if didn't align, print this
+          PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (not-aligned)", DEBUG);
+        }
       }
     }
     delete pReader;
     stringstream msg;
-    msg << "Processed " << num_reads_processed << " reads";
+    msg << "Processed " << num_reads_processed << ' ' << unit_name;
     PrintMessageDieOnError(msg.str(), PROGRESS);
     if (using_s3) {
       string rmcmd = "rm " + file1;
@@ -807,6 +823,7 @@ void single_thread_process_loop(const vector<string>& files1,
   }
   delete pDetector;
   delete pAligner;
+  run_info.num_processed_units = num_reads_processed;
 }
 
 
@@ -817,10 +834,23 @@ void* satellite_process_consumer_thread(void *arg) {
                                                 &bnt_annotations,
                                                 &ref_sequences, opts);
   int aligned = false;
+#ifdef DEBUG_THREADS
+  std::stringstream msg;
+  msg << "Alignment thread " << pthread_self() << " started" ;
+  PrintMessageDieOnError(msg.str(), PROGRESS);
+#endif
   while (1) {
     aligned = false;
     std::string repseq;
     ReadPair* pReadRecord = pMT_DATA->get_new_input();
+    if (pReadRecord == NULL) {
+#ifdef DEBUG_THREADS
+      std::stringstream msg;
+      msg << "Alignment thread " << pthread_self() << " completed" ;
+      PrintMessageDieOnError(msg.str(), PROGRESS);
+#endif
+      break;
+    }
     if (!(pReadRecord->reads.at(0).nucleotides.length() >= min_read_length)
         && (pReadRecord->reads.at(0).nucleotides.length() <= max_read_length)) {
       delete pReadRecord;
@@ -849,14 +879,15 @@ void* satellite_process_consumer_thread(void *arg) {
     }
 
     // STEP 1: Sensing
-    if (!pDetector->ProcessReadPair(pReadRecord)) {
+    string err, messages;
+    if (!pDetector->ProcessReadPair(pReadRecord, &err, &messages)) {
       pMT_DATA->increment_output_counter();
       delete pReadRecord;
       continue;
     }
 
     // STEP 2: Alignment
-    if (pAligner->ProcessReadPair(pReadRecord)) {
+    if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
       aligned = true;
     } else {
       pReadRecord->read1_passed_detection = false;
@@ -865,8 +896,9 @@ void* satellite_process_consumer_thread(void *arg) {
       if (pReadRecord->reads.at(0).ms_repeat_next_best_period != 0) {
         pReadRecord->reads.at(0).ms_repeat_best_period =
           pReadRecord->reads.at(0).ms_repeat_next_best_period;
+        string err, second_best_repseq;
         if (getMSSeq(pReadRecord->reads.at(0).detected_ms_region_nuc,
-                     pReadRecord->reads.at(0).ms_repeat_best_period, &repseq)) {
+                     pReadRecord->reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
           pReadRecord->reads.at(0).repseq = repseq;
           pReadRecord->read1_passed_detection = true;
         }
@@ -875,9 +907,10 @@ void* satellite_process_consumer_thread(void *arg) {
         if (pReadRecord->reads.at(1).ms_repeat_next_best_period != 0) {
           pReadRecord->reads.at(1).ms_repeat_best_period =
             pReadRecord->reads.at(1).ms_repeat_next_best_period;
+          string err, second_best_repseq;
           if (getMSSeq(pReadRecord->reads.at(1).detected_ms_region_nuc,
                        pReadRecord->reads.at(1).ms_repeat_best_period,
-                       &repseq)) {
+                       &repseq, &second_best_repseq, &err)) {
             pReadRecord->reads.at(1).repseq = repseq;
             pReadRecord->read2_passed_detection = true;
           }
@@ -885,7 +918,7 @@ void* satellite_process_consumer_thread(void *arg) {
       }
       if (pReadRecord->read1_passed_detection ||
           pReadRecord->read2_passed_detection) {
-        if (pAligner->ProcessReadPair(pReadRecord)) {
+        if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
           aligned = true;
         }
       }
@@ -899,23 +932,33 @@ void* satellite_process_consumer_thread(void *arg) {
       pMT_DATA->increment_output_counter();
     }
   }
-  pthread_exit(reinterpret_cast<void*>(arg));
+  return NULL;
 }
 
 void* output_writer_thread(void *arg) {
   MultithreadData *pMT_DATA = reinterpret_cast<MultithreadData*>(arg);
-  TabFileWriter *pWriter = new TabFileWriter(output_prefix + ".aligned.tab");
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
+#ifdef DEBUG_THREADS
+  std::stringstream msg;
+  msg << "Writer thread " << pthread_self() << " started (output file ='"
+      << output_prefix << ".aligned.bam" << ")" ;
+  PrintMessageDieOnError(msg.str(),PROGRESS);
+#endif
   while (1) {
     ReadPair *pReadRecord = pMT_DATA->get_new_output();
-    pWriter->WriteRecord(*pReadRecord);
+    if (pReadRecord == NULL) {
+#ifdef DEBUG_THREADS
+      std::stringstream msg;
+      msg << "Writer thread " << pthread_self() << " completed";
+      PrintMessageDieOnError(msg.str(),PROGRESS);
+#endif
+      break;
+    }
     samWriter.WriteRecord(*pReadRecord);
     delete pReadRecord;
     pMT_DATA->increment_output_counter();
   }
-  delete pWriter;
-  delete pMT_DATA;
-  pthread_exit(reinterpret_cast<void*>(arg));
+  return NULL;
 }
 
 void multi_thread_process_loop(vector<string> files1,
@@ -998,7 +1041,7 @@ void multi_thread_process_loop(vector<string> files1,
       pRecord->read_count = counter;
       if (counter % READPROGRESS == 0) {
         stringstream msg;
-        msg << "Processed " << counter << " reads";
+        msg << "Processed " << counter << ' ' << unit_name;
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       if (!pReader->GetNextRecord(pRecord))
@@ -1024,21 +1067,51 @@ void multi_thread_process_loop(vector<string> files1,
       }
     }
   }
-  while (1) {
-    sleep(1);  // OMG, the horror...
-    if ( mtdata.input_output_counters_equal())
-      break;
-    sleep(10);
-    break;
+  run_info.num_processed_units = counter;
+
+#ifdef DEBUG_THREADS
+  PrintMessageDieOnError("No more input, waiting for alignment threads completion", PROGRESS);
+#endif
+  //Send a 'poison pill' to the alignment threads
+  for (size_t i = 0; i < threads; ++i)
+    mtdata.post_new_input_read(NULL);
+
+  for (list<pthread_t>::const_iterator it = satellite_threads.begin();
+          it != satellite_threads.end(); ++it) {
+    int i = pthread_join(*it,NULL);
+    if (i != 0) {
+       stringstream msg;
+       msg << "Failed to join alignment thread " << (*it) <<
+              "error code = " << i ;
+       PrintMessageDieOnError(msg.str(), WARNING);
+    }
   }
+  //Send a 'poison pill' to the writer thread
+#ifdef DEBUG_THREADS
+  PrintMessageDieOnError("waiting for writer thread completion", PROGRESS);
+#endif
+  mtdata.post_new_output_read(NULL);
+  int i = pthread_join(writer_thread,NULL);
+  if (i != 0) {
+    stringstream msg;
+    msg << "Failed to join writer thread " << (writer_thread) <<
+           "error code = " << i ;
+    PrintMessageDieOnError(msg.str(), WARNING);
+  }
+#ifdef DEBUG_THREADS
+  PrintMessageDieOnError("All thread terminated.", PROGRESS);
+#endif
+
 }
 
 int main(int argc, char* argv[]) {
   PrintLobSTR();
-  time_t starttime, endtime;
+  time_t starttime, processing_starttime,endtime;
   time(&starttime);
   parse_commandline_options(argc, argv);
+  unit_name = paired?"pairs":"reads";
   PrintMessageDieOnError("Getting run info", PROGRESS);
+  run_info.Reset();
   run_info.starttime = GetTime();
   if (_GIT_VERSION != NULL) {
     run_info.gitversion = _GIT_VERSION;
@@ -1074,7 +1147,7 @@ int main(int argc, char* argv[]) {
     vector<string> items;
     string refstring = ref_record.ID;
     split(refstring, '$', items);
-    if (items.size() == 7) {
+    if (items.size() >= 6) { // should be 6 or 7, depending if name column is present
       refseq.sequence = ref_record.orig_nucleotides;
       refseq.start = atoi(items.at(2).c_str());
       int refid = atoi(items.at(0).c_str());
@@ -1116,8 +1189,13 @@ int main(int argc, char* argv[]) {
   // Initialize global FFTW plans
   FFT_NUC_VECTOR::initialize_fftw_plans();
 
+  // Initialize repeat maps
+  PrintMessageDieOnError("Initializing repeat tables...", PROGRESS);
+  InitializeRepeatTables();
+
   // run detection/alignment
   PrintMessageDieOnError("Running detection/alignment...", PROGRESS);
+  time(&processing_starttime);
   if (threads == 1) {
     if (paired && !bam) {
       single_thread_process_loop(input_files1, input_files2);
@@ -1131,17 +1209,12 @@ int main(int argc, char* argv[]) {
       multi_thread_process_loop(input_files, vector<string>(0));
     }
   }
+  time(&endtime);
+  run_info.endtime = GetTime();
   delete hamgen;
   delete tukgen;
-  run_info.endtime = GetTime();
   OutputRunStatistics();
-  time(&endtime);
-  stringstream msg;
-  int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << seconds_elapsed/60/60/24 << ":"
-      << (seconds_elapsed/60/60)%24 << ":"
-      << (seconds_elapsed/60)%60 << ":"
-      << seconds_elapsed%60 << " elapsed";
-  PrintMessageDieOnError(msg.str(), PROGRESS);
+  OutputRunningTimeInformation(starttime,processing_starttime,endtime,
+                               threads, run_info.num_processed_units);
   return 0;
 }

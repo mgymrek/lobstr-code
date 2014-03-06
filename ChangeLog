@@ -35,3 +35,15 @@ lobSTR_v2.0.3 (February 1, 2012):
 	- Updated VCF format to be compatible with 1000 Genomes
 	- Allelotype now writes both .genotypes.tab and .vcf files, no need for lobstr_to_vcf.py.
 	- Allow for reading paired end bam files even when not all mates are present
+
+lobSTR_v2.0.4 (February 27, 2013):
+	- Bug fixes:
+	    - Problem reporting coverage values in the VCF that are twice as much as they should be
+	    - Problem parsing tags from BAM files that have been modified after running lobSTR.
+	    - Multithreading now does not create truncated bam files
+        - lobSTR can now compile on many more systems and the configuration setup has been cleaned up.
+	- Determining the STR allele supported by a read: in v2.0.3 and earlier, by default lobSTR attempted to
+	   only include indels it determined to be inside of the STR region. This could be turned off by the --include-flank
+	   option. In comparison to external datasets. In v2.0.4 this was changed so that by default, all indels
+	   in the read are included, but it can be turned off using the --dont-include-flank option. This is described 
+	   on the FAQ page of the website.

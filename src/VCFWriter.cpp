@@ -49,9 +49,19 @@ static const std::string GetReference() {
   return "";
 }
 
-
-VCFWriter::VCFWriter(const string& filename)
+VCFWriter::VCFWriter(const string& filename, const vector<string>& samples)
   : TextFileWriter(filename) {
+  // update run info
+  run_info.samples = samples;
+  run_info.num_calls.resize(samples.size());
+  run_info.num_calls5x.resize(samples.size());
+  run_info.total_coverage.resize(samples.size());
+  run_info.total_agree.resize(samples.size());
+  run_info.calltype_by_period.resize(6);
+  for (size_t i = 0; i < 6; i++) {
+    run_info.calltype_by_period.at(i).resize(4);
+  }
+  // VCF header
   string lobstr_header = user_defined_arguments;
   lobstr_header = string_replace(lobstr_header, "@CO\t# version=", "");
   lobstr_header = string_replace(lobstr_header, "\n", "");
@@ -65,8 +75,6 @@ VCFWriter::VCFWriter(const string& filename)
     output_stream << "##reference=file://" << GetReference() << endl;
   }
   // INFO fields
-  output_stream << "##INFO=<ID=AC,Number=A,Type=Integer,Description=\"allele count in genotypes, for each ALT allele, in the same order as listed\">" << endl;
-  output_stream << "##INFO=<ID=AN,Number=1,Type=Integer,Description=\"Total number of alleles in called genotypes\">" << endl;
   output_stream << "##INFO=<ID=RPA,Number=A,Type=Float,Description=\"Repeats per allele\">" << endl;
   output_stream << "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of variant\">" << endl;
   output_stream << "##INFO=<ID=MOTIF,Number=1,Type=String,Description=\"Canonical repeat motif\">" << endl;
@@ -74,34 +82,26 @@ VCFWriter::VCFWriter(const string& filename)
   output_stream << "##INFO=<ID=RL,Number=1,Type=Integer,Description=\"Reference STR track length in bp\">" << endl;
   output_stream << "##INFO=<ID=RU,Number=1,Type=String,Description=\"Repeat motif\">" << endl;
   output_stream << "##INFO=<ID=VT,Number=1,Type=String,Description=\"Variant type\">" << endl;
-  // ALT fields
-  output_stream << "##ALT=<ID=STRVAR,Description=\"Short tandem variation\">" << endl;
   // FORMAT fields
   output_stream << "##FORMAT=<ID=ALLREADS,Number=1,Type=String,Description=\"All reads aligned to locus\">" << endl;
-  output_stream << "##FORMAT=<ID=ALLPARTIALREADS,Number=1,Type=String,Description=\"All partially spanning reads aligned to locus\">" << endl;
-  if (generate_posteriors) {
-    output_stream << "##FORMAT=<ID=AMP,Number=1,Type=String,Description=\"Allele marginal posterior probabilities\">" << endl;
-  }
   output_stream << "##FORMAT=<ID=AML,Number=1,Type=String,Description=\"Allele marginal likelihood ratio scores\">" << endl;
   output_stream << "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">" << endl;
   output_stream << "##FORMAT=<ID=GB,Number=1,Type=String,Description=\"Genotype given in bp difference from reference\">" << endl;
   output_stream << "##FORMAT=<ID=PL,Number=G,Type=Integer,Description=\"Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification\">" << endl;
   output_stream << "##FORMAT=<ID=Q,Number=1,Type=Float,Description=\"Likelihood ratio score of allelotype call\">" << endl;
   output_stream << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
-  output_stream << "##FORMAT=<ID=MP,Number=1,Type=Float,Description=\"Upper bound on maximum partially spanning allele\">" << endl;
-  output_stream << "##FORMAT=<ID=PC,Number=1,Type=Integer,Description=\"Coverage by partially spanning reads\">" << endl;
-  if (generate_posteriors) {
-    output_stream << "##FORMAT=<ID=PP,Number=1,Type=Float,Description=\"Posterior probability of call\">" << endl;
-  }
   output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
+
+  if (include_gl)
+    output_stream << "##FORMAT=<ID=GL,Number=G,Type=Float,Description=\"Genotype likelihoods for genotypes as defined in the VCF specification\">" << endl;
+
   // header columns
-  output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" << sample << endl;
-  if (!exclude_positions_file.empty()) {
-    if (my_verbose) {
-      PrintMessageDieOnError("Loading positions to exclude", PROGRESS);
-    }
-    LoadPositionsToExclude();
+  output_stream << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT";
+  for (vector<string>::const_iterator it = samples.begin();
+       it != samples.end(); it++) {
+    output_stream << "\t" << (*it);
   }
+  output_stream << endl;
 }
 
 std::string VCFWriter::GetSTRVar(const string& refseq, const string& ref_repseq, int allele) {
@@ -122,124 +122,110 @@ std::string VCFWriter::GetSTRVar(const string& refseq, const string& ref_repseq,
   }
 }
 
-void VCFWriter::LoadPositionsToExclude() {
-  TextFileReader expos(exclude_positions_file);
-  string line;
-  while (expos.GetNextLine(&line)) {
-    vector<string> items;
-    split(line, '\t', items);
-    if (items.size() == 0) break;
-    if (items.size() != 2) {
-      PrintMessageDieOnError("Exclude-pos file has invalid format.", ERROR);
-    }
-    string chrom;
-    int pos;
-    chrom = items[0];
-    pos = atoi(items[1].c_str());
-    if (pos_to_exclude.find(chrom) == pos_to_exclude.end()) {
-      set<int> pos_list;
-      pos_to_exclude[chrom] = pos_list;
-    }
-    pos_to_exclude[chrom].insert(pos);
-  }
-}
-
 VCFWriter::~VCFWriter() {}
 
 void VCFWriter::WriteRecord(const STRRecord& str_record) {
-  if (pos_to_exclude.find(str_record.chrom) !=
-      pos_to_exclude.end()) {
-    if (pos_to_exclude[str_record.chrom].count(str_record.start) != 0) {
-      return;
-    }  
-  }
-  if ((str_record.allele1 == -10000 || str_record.allele2 == -10000) &&
-      str_record.partial_coverage == 0) {
-    return;
-  }
-  if (!(str_record.stop > 0 && str_record.start > 8 &&
-        str_record.stop > str_record.start)) {
-    return;
-  }
   // CHROM
   output_stream << str_record.chrom << "\t";
   // POS
   output_stream << str_record.start << "\t";
   // ID
-  output_stream << ".\t";
+  if (str_record.name.empty()) {
+    output_stream << ".\t";
+  } else {
+    output_stream << str_record.name << "\t";
+  }
   // REF
   output_stream << str_record.ref_allele << "\t";
   // ALT
-  stringstream ac;
-  stringstream genotype_string;
   stringstream repeats_per_allele;
-  int alt_allele_count = 1;
-  int allele1_num = 0;
-  int allele2_num = 0;
-  if ((str_record.alleles_to_include.size() == 0) ||
-      (str_record.alleles_to_include.size() == 1 && 
-       str_record.alleles_to_include.at(0) == 0)) { // only has "0" in it. evaluation order will keep from throwing exception 
+  map<int,int> allele_to_index;
+  allele_to_index[0] = 0;
+  int ind = 1;
+  if (str_record.alleles_to_include.size() == 0) return;
+  if (str_record.alleles_to_include.size() == 1) { // if only 1 allele, will always be reference
     output_stream << ".\t";
-    ac << ".";
     repeats_per_allele << ".";
   } else {
-    for (vector<int>::const_iterator it = str_record.alleles_to_include.begin();
-         it != str_record.alleles_to_include.end(); it++) {
-      if (*it != 0) {
-        output_stream << GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, *it);
-        repeats_per_allele << (static_cast<float>(*it)/static_cast<float>(str_record.repseq.size()) + str_record.refcopy);
-        int count = 0;
-        if (str_record.allele1 == *it) {
-          count++;
-          allele1_num = alt_allele_count;
-        }
-        if (str_record.allele2 == *it) {
-          count++;
-          allele2_num = alt_allele_count;
-        }
-        ac << count;
-        if (*it != str_record.alleles_to_include.at(str_record.alleles_to_include.size()-1)) {
-          ac << ",";
-          output_stream << ",";
-          repeats_per_allele << ",";
-        } 
-        alt_allele_count++;
-      }
+    for (size_t i = 1; i < str_record.alleles_to_include.size(); i++) {
+      const int allele = str_record.alleles_to_include.at(i);
+      allele_to_index[allele] = ind;
+      ind++;
+      output_stream << GetSTRVar(str_record.ref_allele, str_record.repseq_in_ref, allele);
+      repeats_per_allele << (static_cast<float>(allele)/static_cast<float>(str_record.repseq.size()) + str_record.refcopy);
+      if (i != str_record.alleles_to_include.size() - 1) {
+	output_stream << ",";
+	repeats_per_allele << ",";
+      } 
     }
     output_stream << "\t";
   }
-  if (str_record.coverage == 0) {
-    genotype_string << "./.";
-  } else {
-    genotype_string << allele1_num << "/" << allele2_num;
-  }
+
   // QUAL
-  float qual = NOQUAL;
-  if (str_record.coverage > 0) {
-    qual = -10*log10(1-str_record.max_lik_score); // score is likelihood score
+  float qual = 0;
+  for (size_t i = 0; i < str_record.prob_ref.size(); i++) {
+    qual += -10*(str_record.prob_ref.at(i));
   }
-  if (qual > POSITIVE_INFINITY) {qual = POSITIVE_INFINITY;}
+  if (qual < 0) qual = 0;
   output_stream << qual << "\t";
   // FILTER
   output_stream << ".\t";
   // INFO
-  if (ac.str() != ".") output_stream << "AC=" << ac.str() << ";";
-  output_stream  << "AN=" << (str_record.coverage==0?0:2) << ";"
-                 << "END=" << str_record.stop << ";"
-                 << "MOTIF=" << str_record.repseq << ";"
-                 << "REF=" << str_record.refcopy << ";"
-                 << "RL=" << str_record.stop - str_record.start<< ";"
-                 << "RPA=" << repeats_per_allele.str() << ";"
-                 << "RU=" << str_record.repseq_in_ref << ";"
-                 << "VT=STR" << "\t";
+  output_stream << "END=" << str_record.stop << ";"
+		<< "MOTIF=" << str_record.repseq << ";"
+		<< "REF=" << str_record.refcopy << ";"
+		<< "RL=" << str_record.stop - str_record.start<< ";"
+		<< "RPA=" << repeats_per_allele.str() << ";"
+		<< "RU=" << str_record.repseq_in_ref << ";"
+		<< "VT=STR" << "\t";
   // FORMAT
-  if (generate_posteriors) {
-    output_stream << "GT:ALLREADS:ALLPARTIALREADS:AML:DP:GB:PL:Q:MP:PC:STITCH:AMP:PP" << "\t";
+  if (include_gl)
+    output_stream << "GT:ALLREADS:AML:DP:GB:GL:PL:Q:STITCH";
+  else
+    output_stream << "GT:ALLREADS:AML:DP:GB:PL:Q:STITCH";
+
+  // Sample info  
+  for (size_t i = 0; i < str_record.samples.size(); i++) {
+    output_stream << "\t";
+    WriteSample(str_record, i, allele_to_index);
+  }
+  output_stream << endl;
+}
+
+void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
+			    map<int,int> allele_to_index) {
+  stringstream genotype_string;
+  if (str_record.coverage.at(sample_index) == 0) {
+    output_stream << "./.";
+    return;
   } else {
-    output_stream << "GT:ALLREADS:ALLPARTIALREADS:AML:DP:GB:PL:Q:MP:PC:STITCH" << "\t";
+    run_info.num_calls.at(sample_index)++;
+    if (str_record.coverage.at(sample_index) >= 5) {
+      run_info.num_calls5x.at(sample_index)++;
+    }
+    run_info.total_coverage.at(sample_index) += str_record.coverage.at(sample_index);
+    run_info.total_agree.at(sample_index) += static_cast<float>(str_record.agreeing.at(sample_index))/
+      static_cast<float>(str_record.coverage.at(sample_index));
+    size_t calltype_index = -1;
+    const int& allele1 = allele_to_index[str_record.allele1.at(sample_index)];
+    const int& allele2 = allele_to_index[str_record.allele2.at(sample_index)];
+    if (allele1 == allele2) {
+      if (allele1 == 0) {
+	calltype_index = 0;
+      } else {
+	calltype_index = 2;
+      }
+    } else {
+      if (allele1 == 0 || allele2 == 0) {
+	calltype_index = 1;
+      } else {
+	calltype_index = 3;
+      }
+    }
+    run_info.calltype_by_period.at(str_record.period-1).at(calltype_index)++;
+    genotype_string << allele1 << "/" << allele2;
   }
 
-  // Sample info
   size_t num_alleles = str_record.alleles_to_include.size();
   size_t num_allele_pairs = (num_alleles*(num_alleles+1))/2;
   vector<float> genotype_likelihoods; // log10(lik)
@@ -254,62 +240,65 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
       pair<int, int> atype;
       if (a1 < a2) atype = pair<int,int>(a1,a2);
       else atype = pair<int,int>(a2,a1);
-      if (str_record.likelihood_grid.find(atype) != str_record.likelihood_grid.end()) {
-        float lik = (str_record.likelihood_grid.at(atype));
+      if (str_record.likelihood_grid.at(sample_index).find(atype)
+	  != str_record.likelihood_grid.at(sample_index).end()) {
+        float lik = (str_record.likelihood_grid.at(sample_index).at(atype));
         if (lik < NEGATIVE_INFINITY) {lik = NEGATIVE_INFINITY;}
         genotype_likelihoods[index] = lik;
       }
     }
   }
+
+  stringstream genotype_likelihoods_string;
+  if (include_gl){
+    genotype_likelihoods_string.precision(2);
+    if (str_record.coverage.at(sample_index) == 0)
+      genotype_likelihoods_string << ".";
+    else {
+      for (size_t i = 0; i < genotype_likelihoods.size(); i++) {
+	genotype_likelihoods_string << fixed << genotype_likelihoods.at(i);
+	if (i != genotype_likelihoods.size()-1)
+	  genotype_likelihoods_string << ",";
+      }  
+    }
+  }
+
   stringstream genotype_scaled_likelihoods_string;
-  if (str_record.coverage == 0) {
+  if (str_record.coverage.at(sample_index) == 0) {
     genotype_scaled_likelihoods_string << ".";
   } else {
     for (size_t i = 0; i < genotype_likelihoods.size(); i++) {
       genotype_scaled_likelihoods_string << static_cast<int>
-        (-10*(genotype_likelihoods.at(i)-str_record.max_log_lik));
+        (-10*(genotype_likelihoods.at(i)-str_record.max_log_lik.at(sample_index)));
       if (i != genotype_likelihoods.size()-1) {
         genotype_scaled_likelihoods_string << ",";
       }
     }  
   }
+
   stringstream gbstring;
-  stringstream marginal_posterior_string;
   stringstream marginal_lik_score_string;
-  if (str_record.coverage == 0) {
+  if (str_record.coverage.at(sample_index) == 0) {
     gbstring << "./.";
-    marginal_posterior_string << "./.";
     marginal_lik_score_string << "./.";
   } else {
-    gbstring << str_record.allele1 << "/"
-             << str_record.allele2;
-    marginal_posterior_string << str_record.allele1_marginal_posterior_prob << "/"
-                              << str_record.allele2_marginal_posterior_prob;
-    marginal_lik_score_string << str_record.allele1_marginal_lik_score << "/"
-                              << str_record.allele2_marginal_lik_score;
-  }
-  stringstream max_partial_string;
-  if (str_record.partial_coverage == 0) {
-    max_partial_string << "."; 
-  } else {
-    max_partial_string << str_record.max_partial_string;
+    gbstring << str_record.allele1.at(sample_index) << "/"
+             << str_record.allele2.at(sample_index);
+    marginal_lik_score_string << str_record.allele1_marginal_lik_score.at(sample_index) << "/"
+                              << str_record.allele2_marginal_lik_score.at(sample_index);
   }
 
   // Output format fields
   output_stream << genotype_string.str() << ":"
-                << str_record.readstring << ":"
-                << str_record.partialreadstring << ":"
+                << str_record.readstring.at(sample_index) << ":"
                 << marginal_lik_score_string.str() << ":"
-                << str_record.coverage << ":"
-                << gbstring.str() << ":"
-                << genotype_scaled_likelihoods_string.str() << ":"
-                << str_record.max_lik_score << ":"
-                << max_partial_string.str() << ":"
-                << str_record.partial_coverage << ":"
-                << str_record.num_stitched;
-  if (generate_posteriors) {
-    output_stream << ":" << marginal_posterior_string.str() << ":";
-    output_stream << str_record.posterior_prob;
-  }
-  output_stream << endl;
+                << str_record.coverage.at(sample_index) << ":"
+                << gbstring.str() << ":";
+
+  if (include_gl)
+    output_stream << genotype_likelihoods_string.str() << ":";
+  
+  output_stream << genotype_scaled_likelihoods_string.str() << ":"
+                << str_record.max_lik_score.at(sample_index) << ":"
+                << str_record.num_stitched.at(sample_index);
 }

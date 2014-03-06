@@ -32,11 +32,11 @@ std::string user_defined_arguments = "# version=lobSTR_"+std::string(_GIT_VERSIO
 std::string user_defined_arguments_allelotyper = "# version=allelotype_"+std::string(_GIT_VERSION) + ";";
 PROGRAM program = LOBSTR;
 
-// keep track of common ones
+// mapping betwenen a kmer and its canonicalized form
 std::map<std::string, std::string> canonicalMSTable;
 
-// mapping between a kmer and the canonical version of its smallest repeating subunit
-std::map<std::string, std::string> canonicalRepeatTable;
+// mapping between a kmer and its smallest cyclic permutation
+std::map<std::string, std::string> permutationTable;
 
 // flags
 bool my_verbose = false;
@@ -64,15 +64,15 @@ std::string sam_file = "";
 bool check_next_best = true;
 size_t min_read_length = 45;
 size_t max_read_length = 1024;
-size_t fft_window_size = 24;
-size_t fft_window_step = 12;
+size_t fft_window_size = 16;
+size_t fft_window_step = 4;
 float fft_lobe_threshold = 3;
-float period_energy_threshold = 500;
+float period_energy_threshold = 300; // 500
 size_t max_period = 6;
 size_t min_period = 2;
 size_t max_period_to_try = 6;
 size_t min_flank_len = 8;
-size_t max_flank_len = 100;
+size_t max_flank_len = 50;
 float closeness = 0.3;
 float percent_N_discard = 0.05;
 float tukey_alpha = 0.5;
@@ -96,32 +96,26 @@ std::string index_prefix = "";
 int gap_open = 1;
 int gap_extend = 1;
 float fpr = 0.01;
-bool partial_debug = false;
 std::string read_group_sample = "";
 std::string read_group_library = "";
 bool include_orig_read_start = false;
+bool allow_multi_mappers = false;
 
 // genotyping params
+std::string annotation_files_string = "";
 std::string bam_files_string = "";
 std::string command = "";
 std::string noise_model = "";
 std::string haploid_chroms_string = "";
 std::string strinfofile = "";
-std::string known_alleles_file = "";
 std::string use_chrom = "";
-bool generate_tab = true;
 bool rmdup = true;
 bool include_flank = true;
+bool include_gl = false;
 bool print_reads = false;
-bool exclude_partial = false;
-bool generate_posteriors = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
 int min_border   = 0;
-
-// vcf params
-std::string exclude_positions_file = "";
-std::string sample = "";
 
 // debugging
 bool profile = false;
@@ -143,6 +137,7 @@ size_t MIN_STR_LENGTH = 6;
 
 int QUAL_CUTOFF = 10;
 int QUALITY_CONSTANT = 33;
+int CHUNKSIZE = 1000;
 
 // Amazon s3 paramters
 bool using_s3 = false;

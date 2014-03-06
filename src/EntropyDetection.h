@@ -45,6 +45,9 @@ class EntropyDetection {
 
   // determine start and end region
   void FindStartEnd(size_t* start, size_t* end, bool* repetitive_end);
+  
+  // return the max entropy
+  float GetMaxEntropy();
 };
 
 #endif  // SRC_ENTROPYDETECTION_H__

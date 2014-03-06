@@ -28,7 +28,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 CPPUNIT_TEST_SUITE_REGISTRATION(VCFWriterTest);
 
 void VCFWriterTest::setUp() {
-  _vcf_writer = new VCFWriter("/dev/null");
+  vector<string> samples;
+  _vcf_writer = new VCFWriter("/dev/null", samples);
 }
 
 void VCFWriterTest::tearDown() {
@@ -71,5 +72,12 @@ void VCFWriterTest::test_GetSTRVar() {
   CPPUNIT_ASSERT_EQUAL(check, _vcf_writer->GetSTRVar(refseq, ref_repseq, allele));
   allele = 5;
   check = "TTTATTTATTTATTTATTTATTTATTTATTTATTTA";
+  CPPUNIT_ASSERT_EQUAL(check, _vcf_writer->GetSTRVar(refseq, ref_repseq, allele));
+
+  // Case 4, ones that messed up
+  allele = 8;
+  refseq = "TGTGTGTGTGTGTGTGTGTGTGTGTGTGTGT";
+  ref_repseq="TG";
+  check = "TGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGTGT";
   CPPUNIT_ASSERT_EQUAL(check, _vcf_writer->GetSTRVar(refseq, ref_repseq, allele));
 }

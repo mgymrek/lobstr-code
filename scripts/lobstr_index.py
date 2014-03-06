@@ -115,10 +115,10 @@ def processTRF(strfile, outdir, genome):
     while line !="":
         items = line.strip().split("\t")
         chrom, start, end, copynum, repseq = items[0], int(items[1]), int(items[2]), items[4], items[14]
-        try: 
-            name = items[-1]
-            if len(name) > 15: name = ""
-        except: name = ""
+        try:
+            name = items[15]
+            if len(name) > 15: name = name[0:15] # truncate if too long
+        except: name="."
         # extract flanking regions
         if "$" not in chrom:
             try:

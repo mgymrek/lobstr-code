@@ -27,6 +27,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -72,6 +73,18 @@ void OutputRunStatistics();
 void PrintMessageDieOnError(const std::string& msg,
                             MSGTYPE msgtype);
 
+// Debug statements
+std::string GetReadDebug(const ReadPair& read_pair,
+                         const std::string& detector_err,
+                         const std::string& detector_msg,
+                         const std::string& aln_err,
+                         const std::string& aln_msg);
+                         
+// Get samples from bam files using read groups
+void GetSamplesFromBamFiles(const std::vector<std::string>& bamfiles,
+			    std::vector<std::string>* samples_list,
+			    std::map<std::string, std::string>* rg_id_to_sample);
+
 // Get read group ID string
 std::string GetReadGroup();
 
@@ -86,7 +99,7 @@ void TrimRead(const std::string& input_nucs,
 size_t count(const std::string& s, const char& c);
 
 // get the canonicalized form of the repeat
-bool getMSSeq(const std::string& nucs, int k, std::string* repeat);
+bool getMSSeq(const std::string& nucs, int k, std::string* repeat, std::string* second_best_repeat, std::string* repseq_error);
 
 // compare seqs lexicographically
 std::string getFirstString(const std::string& seq1, const std::string& seq2);
@@ -135,11 +148,17 @@ std::string reverse(const std::string& s);
 // get the complement of a nucleotide
 char complement(const char nucleotide);
 
+// Initalize the repeat tables with all possible patterns
+void InitializeRepeatTables();
+
+// Generate all nucleotide kmers of a certain size
+void GenerateAllKmers(int size, std::vector<std::string>* kmers);
+
+// get the minimum cyclic permutation of the provided sequence 
+std::string getMinPermutation(const std::string& msnucs);
+
 // get the canonical version of the smallest repeating subunit
 std::string getCanonicalRepeat(const std::string& msnucs);
-
-// get the canonical MS sequence
-void getCanonicalMS(const std::string& msnucs, std::string* canonical);
 
 // get the appropriate fiile reader
 IFileReader* create_file_reader(const std::string& filename1,
@@ -160,6 +179,19 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
 
 // Generate the date in YYMMDD
 std::string currentDateTime();
+
+// Given number of seconds, returns a string
+// describing the duration, in format "(DD days and) HH:MM:SS"
+// (e.g. "3 days and 13:56:33" or just "23:00:33")
+// The 'days' portion will appear only if the duration is longer than a day.
+std::string GetDurationString(const size_t duration);
+
+// Prints Running time information
+void OutputRunningTimeInformation(const size_t start_time,
+                                  const size_t processing_start_time,
+                                  const size_t end_time,
+                                  const size_t num_threads,
+                                  const size_t units_processed);
 
 // Replace string method
 std::string string_replace(std::string src,

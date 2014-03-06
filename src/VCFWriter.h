@@ -33,16 +33,15 @@ const int MISSING = -10000;
 
 class VCFWriter : public TextFileWriter {
  public:
-  explicit VCFWriter(const std::string& filename);
+  explicit VCFWriter(const std::string& filename,
+		     const std::vector<std::string>& samples);
   virtual ~VCFWriter();
   void WriteRecord(const STRRecord& str_record);
-  void LoadPositionsToExclude();
+  void WriteSample(const STRRecord& str_record, size_t sample_index,
+		   std::map<int,int> allele_to_index);
   std::string GetSTRVar(const std::string& refseq,
                         const std::string& ref_repseq,
                         int alleles);
-
-  // list of positions to exclude for each chromosome
-  map<string, set<int> > pos_to_exclude;
 };
 
 #endif  // SRC_VCFWRITER_H__

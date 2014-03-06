@@ -34,7 +34,7 @@ class ISatellite {
   virtual ~ISatellite() { }
 	/* returns TRUE if the read should be written to output.
 	   FALSE if the read can be discarded */
-  virtual bool ProcessRead(MSReadRecord* read) = 0;
+  virtual bool ProcessRead(MSReadRecord* read, std::string* err, std::string* messages) = 0;
 };
 
 #endif  // SRC_ISATELLITE_H__
