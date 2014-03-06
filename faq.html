@@ -11,6 +11,23 @@
 	<strong>How do I cite lobSTR?</strong><br/>
 	Please cite: <emph>Gymrek M, Golan D, Rosset S, & Erlich Y. lobSTR: A short tandem repeat profiler for personal genomes. Genome Research. 2012 April 22.</emph><br /><br />
 
+	<strong>How does lobSTR determine the STR allele supported by a read?</strong><br/>
+	lobSTR has two different options for methods to determine the allele supported by a read:
+	<ol>
+	  <li>Use all indels from the read, even if they are not in the STR region.</li>
+	  <li>Make an attempt to only count indels that are actually in the STR region.</li>
+	</ol>
+	For example:
+	<center><font style="font-family:monospace">ACTAGCTACGTACGACACACACACACACACACACTACTAC</font></center>
+	<center><font style="font-family:monospace">ACTAGCTAC--ACGACACACACACACACACACACTACTAC</font></center>
+	would be called as -2 by method 1 and as 0 by method 2, since there is a length difference but it is not in the STR.
+	<p>
+	In v2.0.3 and below, #2 is the default, and you can switch to #1 by the option --include-flank.
+	<br>
+	In v2.0.4 and above, #1 is the default, and you can switch to #2 by the option --dont-include-flank.
+	<p>
+	We made this switch because we found the method 1, while less precise, was giving more robust results when comparing to data from other sources such as from capillary electrophoresis. However, some users have reported that they get more accurate results with the --dont-include-flank option, and the best option may depend on your application.
+
 	<strong>Can lobSTR detect STRs of periods below 2 or above 6?</strong><br/>
 	The definition of what constitutes an STR is not clear cut. Currently lobSTR is limited to STR motifs of periods 1 through 6. We recently expanded our reference to include mononucleotides and a larger set of STRs. <br/><br>
 
