@@ -138,6 +138,7 @@ extern bool print_reads;
 extern bool exclude_partial;
 extern bool generate_posteriors;
 extern float min_het_freq;
+extern int min_border;
 extern int max_matedist;
 
 // vcf params

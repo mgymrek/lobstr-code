@@ -117,6 +117,7 @@ bool exclude_partial = false;
 bool generate_posteriors = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
+int min_border   = 0;
 
 // vcf params
 std::string exclude_positions_file = "";

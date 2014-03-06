@@ -131,7 +131,10 @@ void show_help() {
     "                               number of repeat copies from reference\n" \
     "--mapq <INT>:                  filter reads with mapq scores of more than\n" \
     "                               <INT>.\n" \
-    "--max-matedist <INT>:          Filter reads with a mate distance larger than <INT> bp.\n\n"
+    "--max-matedist <INT>:          Filter reads with a mate distance larger than <INT> bp.\n"
+    "--min-border   <INT>:          Filter reads that do not extend past both ends of the STR region\n"\
+    "                               by at least <INT> bp. By default, reads must merely reach the STR borders.\n"
+    "                               To include partially spanning reads, specify a large negative number.\n"
     "--exclude-partial:             Do not report any information about partially\n" \
     "                               spanning reads.\n\n"
     "Additional options\n" \
@@ -159,6 +162,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAX_DIFF_REF,
     OPT_MAXMAPQ,
     OPT_MAXMATEDIST,
+    OPT_MIN_BORDER,
     OPT_MIN_HET_FREQ,
     OPT_NOISEMODEL,
     OPT_NORMDUP,
@@ -193,6 +197,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
     {"max-matedist", 1, 0, OPT_MAXMATEDIST},
+    {"min-border", 1, 0, OPT_MIN_BORDER},
     {"min-het-freq", 1, 0, OPT_MIN_HET_FREQ},
     {"noise_model", 1, 0, OPT_NOISEMODEL},
     {"no-rmdup", 0, 0, OPT_NORMDUP},
@@ -273,6 +278,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MAXMATEDIST:
       max_matedist = atoi(optarg);
       AddOption("max-matedist", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MIN_BORDER:
+      min_border = atoi(optarg);
+      AddOption("min-border", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_MIN_HET_FREQ:
       min_het_freq = atof(optarg);
