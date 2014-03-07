@@ -12,7 +12,7 @@ See: [lobSTR Website](http://erlichlab.wi.mit.edu/lobSTR/),  [lobSTR Code on Git
     $ sudo apt-get install gcc g++ gfortran \
                 make automake autoconf \
                 libtool pkg-config git \
-                libfft3-dev libboost-dev libcppunit-dev \
+                libfftw3-dev libboost-dev libcppunit-dev \
                 libz-dev libblas-dev
 
 
