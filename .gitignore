@@ -21,7 +21,6 @@ test.vcf
 test.aligned.stats
 test.allelotype.stats
 test.post
-test.*
 data/strinfo.hg19_1to6.tab
 
 Makefile.in

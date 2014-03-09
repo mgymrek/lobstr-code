@@ -72,9 +72,6 @@ class Genotyper {
   void GetAlleles(const std::list<AlignedRead>& aligned_reads,
 		  std::vector<int>* alleles);
 
-  /* Get rid of alleles with length < 0*/
-  void CleanAllelesList(int reflen, std::vector<int>* alleles);
-
   /* Divide reads to one list per sample */
   bool GetReadsPerSample(const std::list<AlignedRead>& aligned_reads,
 			 const std::vector<string>& samples,
