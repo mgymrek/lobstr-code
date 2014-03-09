@@ -123,23 +123,6 @@ void Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
   }
 }
 
-void Genotyper::CleanAllelesList(int reflen, vector<int>* alleles) {
-  vector<int> alleles_to_keep(0);
-  for (vector<int>::const_iterator it = alleles->begin();
-       it != alleles->end(); it++) {
-    int total_len = reflen + (*it);
-    if (total_len > 0) {
-      alleles_to_keep.push_back(*it);
-    } else {
-      if (debug) {
-	PrintMessageDieOnError("Attempt to load invalid allele size", WARNING);
-      }
-    }
-  }
-  alleles->resize(alleles_to_keep.size());
-  *alleles = alleles_to_keep;
-}
-
 bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
 				  const vector<string>& samples,
 				  const map<string,string>& rg_id_to_sample,
@@ -422,10 +405,6 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     GetAlleles(read_list, &str_record.alleles_to_include);
     if (str_record.alleles_to_include.size() == 0) {return;}
   }
-
-  // Clean alleles list to remove things with length < 0
-  CleanAllelesList(str_record.stop - str_record.start,
-		   &str_record.alleles_to_include);
 
   // Divide reads for each sample
   vector<list<AlignedRead> > sample_reads;

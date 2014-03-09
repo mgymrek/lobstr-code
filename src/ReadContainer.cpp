@@ -33,6 +33,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+const int MIN_ALLELE_SIZE = 0;
+
 ReadContainer::ReadContainer(vector<std::string> filenames) {
   string bamfile;
   vector<string> index_files;
@@ -73,132 +75,147 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
   BamTools::BamAlignment aln;
   while (reader.GetNextAlignment(aln)) {
     AlignedRead aligned_read;
-    // get read ID
-    aligned_read.ID = aln.Name;
-    // get nucleotides
-    aligned_read.nucleotides = aln.QueryBases;
-    // get qualities
-    aligned_read.qualities = aln.Qualities;
-    // get strand
-    aligned_read.strand = aln.IsReverseStrand();
-    // get chrom
-    aligned_read.chrom = references.at(aln.RefID).RefName;
-    // get read start
-    aligned_read.read_start = aln.Position;
-    // get cigar
-    aligned_read.cigar_ops = aln.CigarData;
-    // get if mate pair
-    if (aln.IsSecondMate()) {
-      aligned_read.mate = 1;
-    } else {
-      aligned_read.mate = 0;
-    }
-    // Only process if it is the primary alignment
-    if (aligned_read.mate) {
-      continue;
-    }
-    // Get all the tag data
-    // don't process if partially spanning (from old lobSTR)
-    int partial = 0;
-    if (GetIntBamTag(aln, "XP", &partial)) {
-      if (partial == 1) continue;
-    }
-    // get read group
-    if (!GetStringBamTag(aln, "RG", &aligned_read.read_group)) {
-      stringstream msg;
-      msg << aln.Name << " Could not get read group.";
-      PrintMessageDieOnError(msg.str(), ERROR);
-    }
-    // get msStart
-    if (!GetIntBamTag(aln, "XS", &aligned_read.msStart)) {
-      stringstream msg;
-      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get STR start coordinate. Did this bam file come from lobSTR?";
-      PrintMessageDieOnError(msg.str(), ERROR);
-    }
-    // get msEnd
-    if (!GetIntBamTag(aln, "XE", &aligned_read.msEnd)) {
-      stringstream msg;
-      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get STR end coordinate. Did this bam file come from lobSTR?";
-      PrintMessageDieOnError(msg.str(), ERROR);
-    }
-    // get mapq. Try unsigned/signed
-    if (!GetIntBamTag(aln, "XQ", &aligned_read.mapq)) {
-      stringstream msg;
-      aligned_read.mapq = 0;
-    }
-    // get diff
-    if (!GetIntBamTag(aln, "XD", &aligned_read.diffFromRef)) {
-      if (aligned_read.mate == 0) {
-	stringstream msg;
-	msg << aln.Name << " from group " << aligned_read.read_group << " Could not get genotype.";
-	PrintMessageDieOnError(msg.str(), ERROR);
-      }
-      continue;
-    }
-    // get mate dist
-    if (!GetIntBamTag(aln, "XM", &aligned_read.matedist)) {
-      aligned_read.matedist = 0;
-    }
-    // get STR seq
-    if (!GetStringBamTag(aln, "XR", &aligned_read.repseq)) {
-      stringstream msg;
-      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get repseq.";
-      PrintMessageDieOnError(msg.str(), ERROR);
-    }
-    // get if stitched
-    if (!GetIntBamTag(aln, "XX", &aligned_read.stitched)) {
-      aligned_read.stitched = 0;
-    }
-    // get ref copy num
-    if (!GetFloatBamTag(aln, "XC", &aligned_read.refCopyNum)) {
-      stringstream msg;
-      msg << aln.Name << " from group " << aligned_read.read_group << " Could not get reference copy number.";
-      PrintMessageDieOnError(msg.str(), ERROR);
-    }
-    // get period
-    aligned_read.period = aligned_read.repseq.length();
-    if (include_flank) {  // diff is just sum of differences in cigar
-      CIGAR_LIST cigar_list;
-      for (vector<BamTools::CigarOp>::const_iterator
-	     it = aligned_read.cigar_ops.begin();
-	   it != aligned_read.cigar_ops.end(); it++) {
-	CIGAR cig;
-	cig.num = (*it).Length;
-	cig.cigar_type = (*it).Type;
-	cigar_list.cigars.push_back(cig);
-      }
-      bool added_s;
-      bool cigar_had_s;
-      cigar_list.ResetString();
-      GenerateCorrectCigar(&cigar_list, aln.QueryBases,
-			   &added_s, &cigar_had_s);
-      aligned_read.diffFromRef = GetSTRAllele(cigar_list);
-    }
-    // apply filters
-    if (unit) {
-      if (aligned_read.diffFromRef % aligned_read.period  != 0) continue;
-    }
-    if (abs(aligned_read.diffFromRef) > max_diff_ref) {
-      continue;
-    }
-    if (aligned_read.mapq > max_mapq) {
-      continue;
-    }
-    if (aligned_read.matedist > max_matedist) {
-      continue;
-    }
-    // Add to map
-    pair<string, int> coord
-      (aligned_read.chrom, aligned_read.msStart);
-    if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
-      aligned_str_map_.at(coord).push_back(aligned_read);
-    } else {
-      list<AlignedRead> aligned_read_list;
-      aligned_read_list.push_back(aligned_read);
-      aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
-			      (coord, aligned_read_list));
+    if (ParseRead(aln, &aligned_read)) {
+      // Add to map
+      pair<string, int> coord
+	(aligned_read.chrom, aligned_read.msStart);
+      if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
+	aligned_str_map_.at(coord).push_back(aligned_read);
+      } else {
+	list<AlignedRead> aligned_read_list;
+	aligned_read_list.push_back(aligned_read);
+	aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
+				(coord, aligned_read_list));
+      } 
     }
   }
+}
+
+bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
+			      AlignedRead* aligned_read) {
+  // get read ID
+  aligned_read->ID = aln.Name;
+  // get nucleotides
+  aligned_read->nucleotides = aln.QueryBases;
+  // get qualities
+  aligned_read->qualities = aln.Qualities;
+  // get strand
+  aligned_read->strand = aln.IsReverseStrand();
+  // get chrom
+  aligned_read->chrom = references.at(aln.RefID).RefName;
+  // get read start
+  aligned_read->read_start = aln.Position;
+  // get cigar
+  aligned_read->cigar_ops = aln.CigarData;
+  // get if mate pair
+  if (aln.IsSecondMate()) {
+    aligned_read->mate = 1;
+  } else {
+    aligned_read->mate = 0;
+  }
+  // Only process if it is the primary alignment
+  if (aligned_read->mate) {
+    return false;
+  }
+  // Get all the tag data
+  // don't process if partially spanning (from old lobSTR)
+  int partial = 0;
+  if (GetIntBamTag(aln, "XP", &partial)) {
+    if (partial == 1) return false;
+  }
+  // get read group
+  if (!GetStringBamTag(aln, "RG", &aligned_read->read_group)) {
+    stringstream msg;
+    msg << aln.Name << " Could not get read group.";
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  // get msStart
+  if (!GetIntBamTag(aln, "XS", &aligned_read->msStart)) {
+    stringstream msg;
+    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get STR start coordinate. Did this bam file come from lobSTR?";
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  // get msEnd
+  if (!GetIntBamTag(aln, "XE", &aligned_read->msEnd)) {
+    stringstream msg;
+    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get STR end coordinate. Did this bam file come from lobSTR?";
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  // get mapq. Try unsigned/signed
+  if (!GetIntBamTag(aln, "XQ", &aligned_read->mapq)) {
+    stringstream msg;
+    aligned_read->mapq = 0;
+  }
+  // get diff
+  if (!GetIntBamTag(aln, "XD", &aligned_read->diffFromRef)) {
+    if (aligned_read->mate == 0) {
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read->read_group << " Could not get genotype.";
+      PrintMessageDieOnError(msg.str(), ERROR);
+    }
+    return false;
+  }
+  // get mate dist
+  if (!GetIntBamTag(aln, "XM", &aligned_read->matedist)) {
+    aligned_read->matedist = 0;
+  }
+  // get STR seq
+  if (!GetStringBamTag(aln, "XR", &aligned_read->repseq)) {
+    stringstream msg;
+    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get repseq.";
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  // get if stitched
+  if (!GetIntBamTag(aln, "XX", &aligned_read->stitched)) {
+    aligned_read->stitched = 0;
+  }
+  // get ref copy num
+  if (!GetFloatBamTag(aln, "XC", &aligned_read->refCopyNum)) {
+    stringstream msg;
+    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get reference copy number.";
+    PrintMessageDieOnError(msg.str(), ERROR);
+  }
+  // get period
+  aligned_read->period = aligned_read->repseq.length();
+  if (include_flank) {  // diff is just sum of differences in cigar
+    CIGAR_LIST cigar_list;
+    for (vector<BamTools::CigarOp>::const_iterator
+	   it = aligned_read->cigar_ops.begin();
+	 it != aligned_read->cigar_ops.end(); it++) {
+      CIGAR cig;
+      cig.num = (*it).Length;
+      cig.cigar_type = (*it).Type;
+      cigar_list.cigars.push_back(cig);
+    }
+    bool added_s;
+    bool cigar_had_s;
+    cigar_list.ResetString();
+    GenerateCorrectCigar(&cigar_list, aln.QueryBases,
+			 &added_s, &cigar_had_s);
+    aligned_read->diffFromRef = GetSTRAllele(cigar_list);
+  }
+  // apply filters
+  if (unit) {
+    if (aligned_read->diffFromRef % aligned_read->period != 0) return false;
+  }
+  if (abs(aligned_read->diffFromRef) > max_diff_ref) {
+    return false;
+  }
+  if (aligned_read->mapq > max_mapq) {
+    return false;
+  }
+  if (aligned_read->matedist > max_matedist) {
+    return false;
+  }
+  // Check if the allele length is valid
+  cerr << aligned_read->diffFromRef << endl;
+  if (aligned_read->diffFromRef + (aligned_read->refCopyNum*aligned_read->period) < MIN_ALLELE_SIZE) {
+    stringstream msg;
+    msg << "Discarding read " << aligned_read->ID << ". Invalid allele length";
+    PrintMessageDieOnError(msg.str(), WARNING);
+    return false;
+  }
+  return true;
 }
 
 bool ReadContainer::GetIntBamTag(const BamTools::BamAlignment& aln,
@@ -369,9 +386,6 @@ float ReadContainer::GetScore(const string& quality_string) {
   }
   return total_quality/static_cast<float>(quality_string.length());
 }
-
-
-
 
 int ReadContainer::GetSTRAllele(const CIGAR_LIST& cigar_list) {
   int diff_from_ref = 0;

@@ -232,6 +232,8 @@ lobSTRTests_SOURCES = \
 	tests/BWAReadAligner_test.cpp \
 	tests/common_test.h \
 	tests/common_test.cpp \
+	tests/ReadContainer_test.h \
+	tests/ReadContainer_test.cpp \
 	tests/VCFWriter_test.h \
 	tests/VCFWriter_test.cpp \
 	BamFileReader.cpp \
@@ -257,6 +259,7 @@ lobSTRTests_SOURCES = \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
+	ReadContainer.cpp \
 	VCFWriter.cpp \
 	ZippedFastaFileReader.cpp \
 	ZippedFastqFileReader.cpp \

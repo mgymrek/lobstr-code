@@ -18,25 +18,25 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include <cppunit/ui/text/TestRunner.h>
+#ifndef SRC_TESTS_READCONTAINER_H__
+#define SRC_TESTS_READCONTAINER_H__
 
-#include "src/tests/BWAReadAligner_test.h"
-#include "src/tests/common_test.h"
-#include "src/tests/ReadContainer_test.h"
-#include "src/tests/VCFWriter_test.h"
+#include <cppunit/extensions/HelperMacros.h>
 
-int main( int argc, char **argv) {
-  // Adds the test to the list of tests to run
-  CppUnit::TextUi::TestRunner runner;
-  runner.addTest(BWAReadAlignerTest::suite());
-  runner.addTest(CommonTest::suite());
-  runner.addTest(VCFWriterTest::suite());
-  runner.addTest(ReadContainerTest::suite());
+#include "src/ReadContainer.h"
 
-  // Run the tests
-  bool wasSucessful = runner.run();
+class ReadContainerTest :
+public CppUnit::TestFixture {
+  CPPUNIT_TEST_SUITE(ReadContainerTest);
+  CPPUNIT_TEST(test_ParseRead);
+  CPPUNIT_TEST_SUITE_END();
 
-  // Return error code 1 if the one of test failed.
-  return wasSucessful ? 0 : 1;
-}
+ public:
+  void setUp();
+  void tearDown();
+  void test_ParseRead();
+ private:
+  ReadContainer* _read_container;
+};
 
+#endif //  SRC_TESTS_READCONTAINER_H_

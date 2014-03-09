@@ -69,6 +69,7 @@ struct AlignedRead {
   Class to store aligned reads from each STR locus
  */
 class ReadContainer {
+  friend class ReadContainerTest;
  public:
   ReadContainer(vector<std::string> filenames);
   ~ReadContainer();
@@ -90,7 +91,12 @@ class ReadContainer {
   std::map<std::pair<std::string, int>, std::list<AlignedRead> >
     aligned_str_map_;
 
+ protected:
+  /* Parse BamAlignment into AlignedRead */
+  bool ParseRead(const BamTools::BamAlignment& aln,
+		 AlignedRead* aligned_read);
  private:
+
   /* Parse bam tags into the appropriate types */
   bool GetIntBamTag(const BamTools::BamAlignment& aln,
 		    const std::string& tag_name, int* destination);
