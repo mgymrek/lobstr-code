@@ -33,12 +33,15 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/common.h"
 #include "src/Genotyper.h"
+#include "src/RemoveDuplicates.h"
 #include "src/runtime_parameters.h"
 #include "src/TextFileReader.h"
 #include "src/TextFileWriter.h"
 #include "src/ZippedTextFileReader.h"
 
 using namespace std;
+using RemoveDuplicates::RemovePCRDuplicates;
+
 const float SMALL_CONST = 1e-10;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
@@ -300,6 +303,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 
 bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
                              STRRecord* str_record, bool is_haploid) {
+  // Get spanning reads
   int num_stitched = 0;
   map<int,int> spanning_reads;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
@@ -414,6 +418,9 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   for (size_t i = 0; i < samples.size(); i++) {
     if (debug) {
       PrintMessageDieOnError("[Genotyper.cpp]: Processing sample " + samples.at(i), DEBUG);
+    }
+    if (rmdup) {
+      RemoveDuplicates::RemovePCRDuplicates(&sample_reads.at(i));
     }
     ProcessLocus(sample_reads.at(i), &str_record, is_haploid);
   }
