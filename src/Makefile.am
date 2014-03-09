@@ -224,6 +224,13 @@ allelotype_CPPFLAGS = $(AM_CPPFLAGS)
 allelotype_LDADD = liballelotype.a libbamtools.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
 allelotype_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
+# (Copied from coreutils' tests/local.mk)
+# Use automake's TESTS_ENVIRONMENT to point to the "tests" directory
+TESTS_ENVIRONMENT =  \
+  export \
+  LOBSTR_TEST_DIR='$(abs_top_srcdir)/tests' \
+  ;
+
 TESTS = lobSTRTests
 check_PROGRAMS = $(TESTS)
 lobSTRTests_SOURCES = \

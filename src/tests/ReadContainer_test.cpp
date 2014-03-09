@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+#include <cstdlib>
 
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
@@ -33,7 +34,18 @@ using BamTools::BamAlignment;
 
 void ReadContainerTest::setUp() {
   vector<string> filenames;
-  filenames.push_back("../tests/test.aligned.sorted.bam"); // TODO how to get path
+
+  // This environment variable is defined in './src/Makefile.am',
+  // Will be set during autotools' "make check" process.
+  string test_dir;
+  char* test_dir_env = getenv("LOBSTR_TEST_DIR");
+  if (test_dir_env!=NULL)
+    test_dir = test_dir_env;
+  else
+    test_dir = "../tests" ; // use as fall back
+  string file = test_dir + "/test.aligned.sorted.bam" ;
+
+  filenames.push_back(file);
   _read_container = new ReadContainer(filenames);
 }
 
