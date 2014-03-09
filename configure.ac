@@ -174,6 +174,7 @@ AC_CONFIG_FILES([
    src/Makefile
    scripts/Makefile
    models/Makefile
+   tests/Makefile
 ])
 
 AC_OUTPUT

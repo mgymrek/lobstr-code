@@ -24,7 +24,7 @@ EXTRA_DIST = reconf configure \
 	$(top_srcdir)/.version \
 	$(DATA_FILES)
 
-SUBDIRS = m4 src scripts models
+SUBDIRS = m4 src scripts models tests
 ACLOCAL_AMFLAGS = -I m4
 
 BUILT_SOURCES = $(top_srcdir)/.version
