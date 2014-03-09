@@ -40,12 +40,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 const float SMALL_CONST = 1e-10;
-const int PADK = 2;
-const float DEFAULT_PRIOR = 0.001;
-const float PRIOR_PSEUDOCOUNT = 0.001;
-const float INTERCEPT2 = -2.935446;
-const float COEFF_PROB = 5.883099;
-const float COEFF_MAPQ2 = -0.008677;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
