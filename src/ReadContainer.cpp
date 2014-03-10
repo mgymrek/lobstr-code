@@ -209,9 +209,11 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   }
   // Check if the allele length is valid
   if (aligned_read->diffFromRef + (aligned_read->refCopyNum*aligned_read->period) < MIN_ALLELE_SIZE) {
-    stringstream msg;
-    msg << "Discarding read " << aligned_read->ID << ". Invalid allele length";
-    PrintMessageDieOnError(msg.str(), WARNING);
+    if (debug) {
+      stringstream msg;
+      msg << "Discarding read " << aligned_read->ID << ". Invalid allele length";
+      PrintMessageDieOnError(msg.str(), WARNING);
+    }
     return false;
   }
   return true;
