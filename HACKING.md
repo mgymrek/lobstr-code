@@ -234,6 +234,35 @@ If `clang` is not found, try:
     $ scan-build --use-analyzer=$(which clang) ./configure
     $ scan-build --use-analyzer=$(which clang) make
 
+### Code Coverage
+
+Use the script `./config/rebuild-coverage.sh` to rebuild and project with
+coverage instrumentation. The script will recomile lobSTR, then will run
+`make check` once to generate basic coverage information (and coverage report).
+
+More coverage information can be accumulated by running **lobSTR** again, or
+one of the provided tests (see **Test Script** section below).
+
+After accumulating more coverage information, re-generate the coverage report
+by running `./config/gen-coverage-report.sh` .
+
+If the coverage report was generated successfully, the output will be:
+
+```sh
+...
+...
+Writing directory view page.
+Overall coverage rate:
+  lines......: 25.1% (3355 of 13353 lines)
+  functions..: 37.4% (1818 of 4865 functions)
+
+
+Initial coverage report: ./lobstr-cov/index.html
+
+To accumulate more coverage information, run 'lobstr' again,
+then, re-generate the coverage report by re-running ./config/gen-coverage-report.sh
+```
+
 ### Profiling
 
 #### Using GNU prof

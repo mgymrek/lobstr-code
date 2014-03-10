@@ -20,6 +20,8 @@ DATA_FILES = \
 
 EXTRA_DIST = reconf configure \
 	config/git-version-gen \
+	config/gen-coverage-report.sh \
+	config/rebuild-coverage.sh \
 	lobSTR.rb \
 	$(top_srcdir)/.version \
 	$(DATA_FILES)

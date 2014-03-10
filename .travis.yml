@@ -3,7 +3,7 @@ compiler:
   - clang
   - gcc
 before_install:
-  - sudo apt-get install g++ gfortran libtool pkg-config libfftw3-dev libboost-dev libcppunit-dev libz-dev libblas-dev
+  - sudo apt-get install g++ gfortran libtool pkg-config libfftw3-dev libboost-dev libcppunit-dev libz-dev libblas-dev lcov
 script:
   - ./reconf
   - ./configure
@@ -12,3 +12,5 @@ script:
   - make dist
   - ./make_src_dist.sh
   - ./make_bin_dist.sh
+after_success:
+  - ./config/rebuild-coverage.sh
