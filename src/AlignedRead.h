@@ -15,33 +15,38 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
-#ifndef SRC_TESTS_BWAREADALIGNER_H__
-#define SRC_TESTS_BWAREADALIGNER_H__
+#ifndef SRC_ALIGNEDREAD_H_
+#define SRC_ALIGNEDREAD_H_
 
-#include <cppunit/extensions/HelperMacros.h>
+#include "src/api/BamAlignment.h"
 
-#include "src/BWAReadAligner.h"
+using namespace std;
+using BamTools::CigarOp;
 
-class BWAReadAlignerTest :
-public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(BWAReadAlignerTest);
-  CPPUNIT_TEST(test_StitchReads);
-  CPPUNIT_TEST(test_GetMapq);
-  CPPUNIT_TEST(test_GetSTRAllele);
-  CPPUNIT_TEST_SUITE_END();
-
- public:
-  void setUp();
-  void tearDown();
-
-  void test_StitchReads();
-  void test_GetMapq();
-  void test_GetSTRAllele();
- private:
-  BWAReadAligner* _aligner;
+/*
+  Struct to keep track of aligned read used in allelotyping
+ */
+struct AlignedRead {
+  std::string ID;
+  std::string chrom;
+  int msStart;
+  int msEnd;
+  std::string read_group; // identifies a unique sample
+  int read_start;
+  std::string nucleotides;
+  std::string qualities;
+  vector<BamTools::CigarOp> cigar_ops;
+  std::string repseq;
+  int period;
+  int diffFromRef;
+  float refCopyNum;
+  int mate;
+  bool strand;
+  int stitched;
+  int matedist;
+  int mapq;
+  bool stutter;
 };
-
-#endif //  SRC_TESTS_BWAREADALIGNER_H__
+#endif  // SRC_ALIGNEDREAD_H_

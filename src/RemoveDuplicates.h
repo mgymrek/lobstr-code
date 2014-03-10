@@ -18,19 +18,26 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include <cppunit/ui/text/TestRunner.h>
+#ifndef SRC_REMOVEDUPLICATES_H_
+#define SRC_REMOVEDUPLICATES_H_
 
-#include "src/tests/BWAReadAligner_test.h"
+#include <list>
 
-int main( int argc, char **argv) {
-  // Adds the test to the list of tests to run
-  CppUnit::TextUi::TestRunner runner;
-  runner.addTest(BWAReadAlignerTest::suite());
+#include "src/AlignedRead.h"
 
-  // Run the tests
-  bool wasSucessful = runner.run();
+namespace RemoveDuplicates {
+  /*
+    Remove PCR duplicates
+    Reads are duplicates if they have the same start coordinate and same length.
+    Choose as representative read the read with the highest quality score
+  */
+  void RemovePCRDuplicates(std::list<AlignedRead>* aligned_reads);
 
-  // Return error code 1 if the one of test failed.
-  return wasSucessful ? 0 : 1;
+  /* Get representative read from group of duplicates, read with highest qual score */
+  void GetRepRead(const list<AlignedRead>& aligned_reads, AlignedRead* rep_alignment);
+
+  /* Get quality score of a read */
+  float GetScore(const string& quality_string);
 }
 
+#endif  // SRC_REMOVEDUPLICATES_H_

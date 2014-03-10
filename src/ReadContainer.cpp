@@ -208,11 +208,12 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     return false;
   }
   // Check if the allele length is valid
-  cerr << aligned_read->diffFromRef << endl;
   if (aligned_read->diffFromRef + (aligned_read->refCopyNum*aligned_read->period) < MIN_ALLELE_SIZE) {
-    stringstream msg;
-    msg << "Discarding read " << aligned_read->ID << ". Invalid allele length";
-    PrintMessageDieOnError(msg.str(), WARNING);
+    if (debug) {
+      stringstream msg;
+      msg << "Discarding read " << aligned_read->ID << ". Invalid allele length";
+      PrintMessageDieOnError(msg.str(), WARNING);
+    }
     return false;
   }
   return true;
@@ -293,98 +294,6 @@ void ReadContainer::GetReadsAtCoord(const pair<string,int>& coord,
   if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
     *reads = aligned_str_map_.at(coord);
   }
-}
-
-void ReadContainer::RemovePCRDuplicates() {
-  for (map<pair<string, int>, list<AlignedRead> >::iterator
-         it = aligned_str_map_.begin();
-       it != aligned_str_map_.end(); it++) {
-    // map of <start pos, length> -> aligned reads list
-    map<pair<int, bool>, list<AlignedRead> > pcr_duplicates;
-    // Group into duplicates
-    for (list<AlignedRead>::const_iterator
-           it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-      //pair<int, int> key(it2->read_start, it2->nucleotides.length());
-      pair<int, bool> key(it2->read_start, it2->strand);
-      if (pcr_duplicates.find(key) != pcr_duplicates.end()) {
-        pcr_duplicates.at(key).push_back(*it2);
-      } else {
-        list<AlignedRead> pcr_dup_reads;
-        pcr_dup_reads.push_back(*it2);
-        pcr_duplicates.insert(pair< pair<int, bool>, list<AlignedRead> >
-                              (key, pcr_dup_reads));
-      }
-    }
-    // Choose one rep from each group
-    list<AlignedRead> reads_after_rmdup;
-    for (map<pair<int, bool>, list<AlignedRead> >::const_iterator
-           it3 = pcr_duplicates.begin();
-         it3 != pcr_duplicates.end(); it3++) {
-      AlignedRead rep_read;
-      GetRepRead(it3->second, &rep_read);
-      reads_after_rmdup.push_back(rep_read);
-    }
-    // Reset entry in dictionary
-    aligned_str_map_.at(it->first) = reads_after_rmdup;
-  }
-}
-
-void ReadContainer::GetRepRead(const list<AlignedRead>&
-                               aligned_read_list,
-                               AlignedRead* rep_alignment) {
-  map<float, list<AlignedRead> > copy_number_to_reads;
-  for (list<AlignedRead>::const_iterator
-         it = aligned_read_list.begin();
-       it != aligned_read_list.end(); it++) {
-    float diff = it->diffFromRef;
-    if (copy_number_to_reads.find(diff) !=
-        copy_number_to_reads.end()) {
-      copy_number_to_reads.at(diff).push_back(*it);
-    } else {
-      list<AlignedRead> aligned_read_list;
-      aligned_read_list.push_back(*it);
-      copy_number_to_reads.insert(pair<float, list<AlignedRead> >
-                                  (diff, aligned_read_list));
-    }
-  }
-  // check for majority vote, use qual as tiebreaker
-  float majority_vote_copy_number = -1;
-  size_t majority_vote_num_supporting_reads = 0;
-  float majority_vote_average_quality = 0;
-  for (map<float, list<AlignedRead> >::const_iterator
-         it = copy_number_to_reads.begin();
-       it != copy_number_to_reads.end(); it++) {
-    float avg_qual = GetAverageQualityScore(it->second);
-    if (it->second.size() > majority_vote_num_supporting_reads ||
-        (it->second.size() == majority_vote_num_supporting_reads &&
-         avg_qual > majority_vote_average_quality)) {
-      // we are majority so far
-      majority_vote_copy_number = it->first;
-      majority_vote_num_supporting_reads = it->second.size();
-      majority_vote_average_quality = avg_qual;
-      *rep_alignment = it->second.front();
-    }
-  }
-}
-
-float ReadContainer::GetAverageQualityScore(const list<AlignedRead>&
-                                            aligned_read_list) {
-  if (aligned_read_list.size() == 0) return 0.0;
-  float total_quality = 0;
-  for (list<AlignedRead>::const_iterator it = aligned_read_list.begin();
-       it != aligned_read_list.end(); it++) {
-    total_quality += GetScore(it->qualities);
-  }
-  return total_quality/static_cast<float>(aligned_read_list.size());
-}
-
-float ReadContainer::GetScore(const string& quality_string) {
-  if (quality_string.empty()) return 0.0;
-  float total_quality = 0;
-  for (size_t i = 0; i < quality_string.length(); i++) {
-    total_quality +=  quality_string.at(i) - 33;
-  }
-  return total_quality/static_cast<float>(quality_string.length());
 }
 
 int ReadContainer::GetSTRAllele(const CIGAR_LIST& cigar_list) {

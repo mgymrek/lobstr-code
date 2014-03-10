@@ -410,10 +410,6 @@ int main(int argc, char* argv[]) {
   if (samples_list.size() == 0) {
     PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
   }
-  if (samples_list.size() > 1 && rmdup) {
-    PrintMessageDieOnError("Removing PCR duplicates not supported with multiple samples. Setting --no-rmdup", WARNING);
-    rmdup = false;
-  }
 
   /* Train/classify */
   if (command == "train") {
@@ -421,11 +417,6 @@ int main(int argc, char* argv[]) {
     ReferenceSTR dummy_ref_str;
     dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
     read_container.AddReadsFromFile(dummy_ref_str);
-    /* Perform pcr dup removal if specified */
-    if (rmdup) {
-      if (my_verbose) PrintMessageDieOnError("Performing PCR duplicate removal", PROGRESS);
-      read_container.RemovePCRDuplicates();
-    }
     if (my_verbose) PrintMessageDieOnError("Training noise model", PROGRESS);
     nm.Train(&read_container);
   } else if (command == "classify") {
@@ -469,9 +460,6 @@ int main(int argc, char* argv[]) {
 	    list<AlignedRead> aligned_reads;
 	    str_container.GetReadsAtCoord(coord, &aligned_reads);
 	    if (aligned_reads.size() > 0) {
-	      if (rmdup) {
-		str_container.RemovePCRDuplicates();
-	      }
 	      genotyper.Genotype(aligned_reads);
 	    }
 	  } else {

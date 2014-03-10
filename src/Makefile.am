@@ -176,6 +176,7 @@ libindex_a_SOURCES = \
 	cs2nt.c
 
 liballelotype_a_SOURCES = \
+	AlignedRead.h \
 	common.cpp common.h \
 	BamFileReader.cpp BamFileReader.h \
 	BamPairedFileReader.cpp BamPairedFileReader.h \
@@ -190,6 +191,7 @@ liballelotype_a_SOURCES = \
 	ReadContainer.cpp ReadContainer.h \
 	ReadPair.h \
 	ReferenceSTR.cpp ReferenceSTR.h \
+	RemoveDuplicates.cpp RemoveDuplicates.h \
 	STRRecord.h \
 	runtime_parameters.cpp runtime_parameters.h \
 	IFileReader.h RunInfo.h \
@@ -241,6 +243,8 @@ lobSTRTests_SOURCES = \
 	tests/common_test.cpp \
 	tests/ReadContainer_test.h \
 	tests/ReadContainer_test.cpp \
+	tests/RemoveDuplicates_test.h \
+	tests/RemoveDuplicates_test.cpp \
 	tests/VCFWriter_test.h \
 	tests/VCFWriter_test.cpp \
 	BamFileReader.cpp \
@@ -267,6 +271,7 @@ lobSTRTests_SOURCES = \
 	TextFileWriter.cpp \
 	TukeyWindowGenerator.cpp \
 	ReadContainer.cpp \
+	RemoveDuplicates.cpp \
 	VCFWriter.cpp \
 	ZippedFastaFileReader.cpp \
 	ZippedFastqFileReader.cpp \
