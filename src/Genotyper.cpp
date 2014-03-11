@@ -33,19 +33,16 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/common.h"
 #include "src/Genotyper.h"
+#include "src/RemoveDuplicates.h"
 #include "src/runtime_parameters.h"
 #include "src/TextFileReader.h"
 #include "src/TextFileWriter.h"
 #include "src/ZippedTextFileReader.h"
 
 using namespace std;
+using RemoveDuplicates::RemovePCRDuplicates;
+
 const float SMALL_CONST = 1e-10;
-const int PADK = 2;
-const float DEFAULT_PRIOR = 0.001;
-const float PRIOR_PSEUDOCOUNT = 0.001;
-const float INTERCEPT2 = -2.935446;
-const float COEFF_PROB = 5.883099;
-const float COEFF_MAPQ2 = -0.008677;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
@@ -127,23 +124,6 @@ void Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
       alleles->push_back(it->diffFromRef);
     }
   }
-}
-
-void Genotyper::CleanAllelesList(int reflen, vector<int>* alleles) {
-  vector<int> alleles_to_keep(0);
-  for (vector<int>::const_iterator it = alleles->begin();
-       it != alleles->end(); it++) {
-    int total_len = reflen + (*it);
-    if (total_len > 0) {
-      alleles_to_keep.push_back(*it);
-    } else {
-      if (debug) {
-	PrintMessageDieOnError("Attempt to load invalid allele size", WARNING);
-      }
-    }
-  }
-  alleles->resize(alleles_to_keep.size());
-  *alleles = alleles_to_keep;
 }
 
 bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
@@ -323,6 +303,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 
 bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
                              STRRecord* str_record, bool is_haploid) {
+  // Get spanning reads
   int num_stitched = 0;
   map<int,int> spanning_reads;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
@@ -429,10 +410,6 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     if (str_record.alleles_to_include.size() == 0) {return;}
   }
 
-  // Clean alleles list to remove things with length < 0
-  CleanAllelesList(str_record.stop - str_record.start,
-		   &str_record.alleles_to_include);
-
   // Divide reads for each sample
   vector<list<AlignedRead> > sample_reads;
   if (!GetReadsPerSample(read_list, samples, rg_id_to_sample, &sample_reads)) {return;}
@@ -441,6 +418,9 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   for (size_t i = 0; i < samples.size(); i++) {
     if (debug) {
       PrintMessageDieOnError("[Genotyper.cpp]: Processing sample " + samples.at(i), DEBUG);
+    }
+    if (rmdup) {
+      RemoveDuplicates::RemovePCRDuplicates(&sample_reads.at(i));
     }
     ProcessLocus(sample_reads.at(i), &str_record, is_haploid);
   }

@@ -21,7 +21,6 @@ test.vcf
 test.aligned.stats
 test.allelotype.stats
 test.post
-test.*
 data/strinfo.hg19_1to6.tab
 
 Makefile.in
@@ -67,3 +66,19 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 
+#Coverage files
+src/*.gcda
+src/*.gcno
+src/api/*.gcda
+src/api/*.gcno
+src/api/internal/*.gcda
+src/api/internal/*.gcno
+src/tests/*.gcda
+src/tests/*.gcno
+src/utils/*.gcda
+src/utils/*.gcno
+
+
+# Jekyll files
+Gemfile.lock
+_site/*

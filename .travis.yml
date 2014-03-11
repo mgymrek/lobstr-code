@@ -1,0 +1,16 @@
+language: cpp
+compiler:
+  - clang
+  - gcc
+before_install:
+  - sudo apt-get install g++ gfortran libtool pkg-config libfftw3-dev libboost-dev libcppunit-dev libz-dev libblas-dev lcov
+script:
+  - ./reconf
+  - ./configure
+  - make
+  - make check
+  - make dist
+  - ./make_src_dist.sh
+  - ./make_bin_dist.sh
+after_success:
+  - ./config/rebuild-coverage.sh

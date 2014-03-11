@@ -18,32 +18,27 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef SRC_TESTS_BWAREADALIGNER_H__
-#define SRC_TESTS_BWAREADALIGNER_H__
+#ifndef SRC_TESTS_REMOVEDUPLICATES_H__
+#define SRC_TESTS_REMOVEDUPLICATES_H__
 
 #include <cppunit/extensions/HelperMacros.h>
 
-#include "src/BWAReadAligner.h"
+#include "src/RemoveDuplicates.h"
 
-class BWAReadAlignerTest :
+class RemoveDuplicatesTest :
 public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(BWAReadAlignerTest);
-  CPPUNIT_TEST(test_StitchReads);
-  CPPUNIT_TEST(test_GetMapq);
-  CPPUNIT_TEST(test_GetSTRAllele);
-  CPPUNIT_TEST(test_AdjustPartialAlignment);
+  CPPUNIT_TEST_SUITE(RemoveDuplicatesTest);
+  CPPUNIT_TEST(test_GetScore);
+  CPPUNIT_TEST(test_GetRepRead);
+  CPPUNIT_TEST(test_RemovePCRDuplicates);
   CPPUNIT_TEST_SUITE_END();
 
  public:
   void setUp();
   void tearDown();
-
-  void test_StitchReads();
-  void test_GetMapq();
-  void test_GetSTRAllele();
-  void test_AdjustPartialAlignment();
- private:
-  BWAReadAligner* _aligner;
+  void test_GetScore();
+  void test_GetRepRead();
+  void test_RemovePCRDuplicates();
 };
 
-#endif //  SRC_TESTS_BWAREADALIGNER_H__
+#endif //  SRC_TESTS_REMOVEDUPLICATES_H_

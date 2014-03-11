@@ -20,11 +20,13 @@ DATA_FILES = \
 
 EXTRA_DIST = reconf configure \
 	config/git-version-gen \
+	config/gen-coverage-report.sh \
+	config/rebuild-coverage.sh \
 	lobSTR.rb \
 	$(top_srcdir)/.version \
 	$(DATA_FILES)
 
-SUBDIRS = m4 src scripts models
+SUBDIRS = m4 src scripts models tests
 ACLOCAL_AMFLAGS = -I m4
 
 BUILT_SOURCES = $(top_srcdir)/.version

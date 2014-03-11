@@ -18,30 +18,25 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef SRC_TESTS_BWAREADALIGNER_H__
-#define SRC_TESTS_BWAREADALIGNER_H__
+#ifndef SRC_TESTS_READCONTAINER_H__
+#define SRC_TESTS_READCONTAINER_H__
 
 #include <cppunit/extensions/HelperMacros.h>
 
-#include "src/BWAReadAligner.h"
+#include "src/ReadContainer.h"
 
-class BWAReadAlignerTest :
+class ReadContainerTest :
 public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(BWAReadAlignerTest);
-  CPPUNIT_TEST(test_StitchReads);
-  CPPUNIT_TEST(test_GetMapq);
-  CPPUNIT_TEST(test_GetSTRAllele);
+  CPPUNIT_TEST_SUITE(ReadContainerTest);
+  CPPUNIT_TEST(test_ParseRead);
   CPPUNIT_TEST_SUITE_END();
 
  public:
   void setUp();
   void tearDown();
-
-  void test_StitchReads();
-  void test_GetMapq();
-  void test_GetSTRAllele();
+  void test_ParseRead();
  private:
-  BWAReadAligner* _aligner;
+  ReadContainer* _read_container;
 };
 
-#endif //  SRC_TESTS_BWAREADALIGNER_H__
+#endif //  SRC_TESTS_READCONTAINER_H_
