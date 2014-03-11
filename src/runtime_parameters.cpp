@@ -116,6 +116,7 @@ bool print_reads = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
 int min_border   = 0;
+int min_read_end_match = 0;
 
 // debugging
 bool profile = false;

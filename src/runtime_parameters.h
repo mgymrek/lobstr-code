@@ -137,6 +137,7 @@ extern bool include_gl;
 extern bool print_reads;
 extern float min_het_freq;
 extern int min_border;
+extern int min_read_end_match;
 extern int max_matedist;
 
 // debug

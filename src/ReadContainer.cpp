@@ -33,6 +33,146 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+std::string GetCigarString(std::vector<BamTools::CigarOp>& cigar_ops){
+  std::stringstream cigar_string;
+  for(std::vector<BamTools::CigarOp>::iterator cigar_iter = cigar_ops.begin(); cigar_iter != cigar_ops.end(); cigar_iter++)
+    cigar_string << cigar_iter->Type << cigar_iter->Length;
+  return cigar_string.str();
+}
+
+template<typename CigarIterator> int GetDistToIndel(CigarIterator iter, CigarIterator end){
+  if (iter != end && iter->Type == 'H')
+    iter++;
+  if (iter != end && iter->Type == 'S')
+    iter++;
+  if (iter != end){
+    char type = iter->Type;
+    if (type == 'M')
+      return iter->Length;
+    else if (type == 'I' || type == 'D')
+      return 0;
+    else if (type == 'S' || type == 'H')
+      return 0;
+    else 
+      PrintMessageDieOnError("Invalid CIGAR char " + type, ERROR);
+  }
+  return 0;
+}
+
+pair<int,int> GetEndDistToIndel(AlignedRead& aln){
+  vector<BamTools::CigarOp>::iterator cigar_iter;
+  vector<BamTools::CigarOp>::iterator cigar_end;
+  vector<int> vals;
+  int head_dist = GetDistToIndel(aln.cigar_ops.begin(), aln.cigar_ops.end());
+  int tail_dist = GetDistToIndel(aln.cigar_ops.rbegin(), aln.cigar_ops.rend());
+  return pair<int,int>(head_dist, tail_dist);
+}
+
+
+std::pair<int,int> GetNumEndMatches(AlignedRead& aln, const std::string& ref_seq, int ref_seq_start, std::string& align_1, std::string& align_2){
+  if (aln.read_start < ref_seq_start)
+    return std::pair<int,int>(-1,0);
+
+  unsigned int read_index = 0;
+  unsigned int ref_index  = aln.read_start-ref_seq_start;
+  std::vector<BamTools::CigarOp>::iterator cigar_iter = aln.cigar_ops.begin();
+  bool beginning = true;
+  int match_run  = 0;
+  int head_match = 0;
+
+  stringstream ref_alignment;
+  stringstream read_alignment;
+
+  // Process leading clip CIGAR types
+  if (cigar_iter != aln.cigar_ops.end() && cigar_iter->Type == 'H')
+    cigar_iter++;
+  if (cigar_iter != aln.cigar_ops.end() && cigar_iter->Type == 'S'){
+    read_index += cigar_iter->Length;
+    cigar_iter++;
+  }
+
+  // Process CIGAR items as long as read region lies within reference sequence bounds
+  while (cigar_iter != aln.cigar_ops.end() && ref_index < ref_seq.size() && read_index < aln.nucleotides.size()){
+    if (cigar_iter->Type == 'M'){
+      if (ref_index + cigar_iter->Length > ref_seq.size()) 
+	return std::pair<int,int>(0, -1);
+      if (read_index + cigar_iter->Length > aln.nucleotides.size())
+	break;
+      for (unsigned int len = cigar_iter->Length; len > 0; len--){
+	if (ref_seq[ref_index] == aln.nucleotides[read_index])
+	  match_run++;
+	else {
+	  if (beginning) head_match = match_run;
+	  beginning = false;
+	  match_run = 0;
+	}
+	ref_alignment  << ref_seq[ref_index];
+	read_alignment << aln.nucleotides[read_index];
+	read_index++;
+	ref_index++;
+      }
+    }
+    else if (cigar_iter->Type == 'I'){
+      if (beginning) head_match = match_run;
+      beginning   = false;
+      match_run   = 0;
+      for (unsigned int i = 0; i < cigar_iter->Length; i++){
+	ref_alignment  << '-';
+	read_alignment << aln.nucleotides[read_index+i]; 
+      }	
+      read_index += cigar_iter->Length;
+    }
+    else if (cigar_iter->Type == 'D'){
+      if (beginning) head_match = match_run;
+      beginning  = false;
+      match_run  = 0;
+      for (unsigned int i = 0; i < cigar_iter->Length; i++){
+	ref_alignment  << ref_seq[ref_index+i];
+	read_alignment << '-'; 
+      }	
+      ref_index += cigar_iter->Length;
+    }
+    else if (cigar_iter->Type == 'S' || cigar_iter->Type == 'H')
+      break;
+    else 
+      PrintMessageDieOnError("Invalid CIGAR char "+cigar_iter->Type, ERROR);
+    cigar_iter++;
+  }
+
+  align_1 = ref_alignment.str();
+  align_2 = read_alignment.str();
+
+  // Process trailing clip CIGAR types
+  if (cigar_iter != aln.cigar_ops.end() && cigar_iter->Type == 'S'){
+    read_index += cigar_iter->Length;
+    cigar_iter++;
+  }
+  if (cigar_iter != aln.cigar_ops.end() && cigar_iter->Type == 'H')
+    cigar_iter++;
+
+  // Ensure that we processed all CIGAR options
+  if (cigar_iter != aln.cigar_ops.end()){
+    if (ref_index >= ref_seq.size())
+      return std::pair<int,int>(0,-1);
+    else
+      PrintMessageDieOnError("Improperly formatted CIGAR string", ERROR);
+  }
+  
+  // Ensure that CIGAR string corresponded to aligned bases
+  if (read_index != aln.nucleotides.size()){
+    if (ref_index >= ref_seq.size())
+      return std::pair<int,int>(0,-1);
+    else
+      PrintMessageDieOnError("CIGAR string does not correspond to alignment bases", ERROR);
+  }
+
+  if (beginning)
+    return std::pair<int,int>(match_run, match_run);
+  else
+    return std::pair<int,int>(head_match, match_run);
+}
+
+
 ReadContainer::ReadContainer(vector<std::string> filenames) {
   string bamfile;
   vector<string> index_files;
@@ -55,7 +195,7 @@ ReadContainer::ReadContainer(vector<std::string> filenames) {
   }
 }
 
-void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
+void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides) {
   if (ref_str.chrom != "NA") {
     int refid = -1;
     if (chrom_to_refid.find(ref_str.chrom) !=
@@ -121,6 +261,32 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
       msg << aln.Name << " from group " << aligned_read.read_group << " Could not get STR end coordinate. Did this bam file come from lobSTR?";
       PrintMessageDieOnError(msg.str(), ERROR);
     }
+
+
+
+
+    // check that read sufficiently spans STR
+    int max_read_start = aligned_read.msStart - min_border;
+    int min_read_stop  = aligned_read.msEnd   + min_border;
+    if (aln.Position > max_read_start || aln.GetEndPosition() < min_read_stop)
+      continue;
+    // check that both ends of the read contain sufficient perfect matches
+    if (min_read_end_match > 0){
+      map<pair<string,int>, string>::iterator loc_iter = ref_ext_nucleotides.find(pair<string,int>(aligned_read.chrom, aligned_read.msStart));
+      if (loc_iter == ref_ext_nucleotides.end())
+	PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
+
+      string ref_ext_seq = loc_iter->second;
+      string debug_1, debug_2;
+      pair<int,int> num_end_matches = GetNumEndMatches(aligned_read, ref_ext_seq, aligned_read.msStart-extend, debug_1, debug_2);
+      if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match)
+	continue;
+    }
+
+
+
+
+
     // get mapq. Try unsigned/signed
     if (!GetIntBamTag(aln, "XQ", &aligned_read.mapq)) {
       stringstream msg;
