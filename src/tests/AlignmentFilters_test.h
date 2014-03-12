@@ -28,12 +28,15 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 class AlignmentFiltersTest :
 public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(AlignmentFiltersTest);
-  //CPPUNIT_TEST(test_ParseRead);
+  CPPUNIT_TEST(test_GetDistToIndel);
+  CPPUNIT_TEST(test_GetNumEndMatches);
   CPPUNIT_TEST_SUITE_END();
 
  public:
   void setUp();
   void tearDown();
+  void test_GetDistToIndel();
+  void test_GetNumEndMatches();
  private:
 };
 

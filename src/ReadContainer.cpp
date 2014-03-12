@@ -151,11 +151,6 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   }
   // get diff
   if (!GetIntBamTag(aln, "XD", &aligned_read->diffFromRef)) {
-    if (aligned_read->mate == 0) {
-      stringstream msg;
-      msg << aln.Name << " from group " << aligned_read->read_group << " Could not get genotype.";
-      PrintMessageDieOnError(msg.str(), ERROR);
-    }
     return false;
   }
   // get mate dist
@@ -212,11 +207,6 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   }
   // Check if the allele length is valid
   if (aligned_read->diffFromRef + (aligned_read->refCopyNum*aligned_read->period) < MIN_ALLELE_SIZE) {
-    if (debug) {
-      stringstream msg;
-      msg << "Discarding read " << aligned_read->ID << ". Invalid allele length";
-      PrintMessageDieOnError(msg.str(), WARNING);
-    }
     return false;
   }
 
@@ -312,6 +302,7 @@ void ReadContainer::ClearReads() {
 
 void ReadContainer::GetReadsAtCoord(const pair<string,int>& coord,
 				    list<AlignedRead>* reads) {
+  reads->clear();
   if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
     *reads = aligned_str_map_.at(coord);
   }

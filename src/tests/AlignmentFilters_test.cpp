@@ -40,39 +40,70 @@ void AlignmentFiltersTest::tearDown() {
   
 }
 
-/*
-void ReadContainerTest::test_ParseRead() {
-  BamAlignment aln;
-  std::string rg = "test";
-  std::string repseq = "AC";
-  AlignedRead aligned_read;
-  float copynum = 25;
-  include_flank = false;
-  // Test valid allele length
-  aln.Name = "test";
-  aln.QueryBases = "NNNNN";
-  aln.Qualities = "NNNNN";
-  aln.SetIsReverseStrand(true);
-  aln.Position = 0;
-  aln.SetIsSecondMate(false);
-  aln.AddTag("RG","Z",rg);
-  aln.AddTag("XS","i",0);
-  aln.AddTag("XE","i",50);
-  aln.AddTag("XD","i",0);
-  aln.AddTag("XR", "Z", repseq);
-  aln.AddTag("XC", "f", copynum);
-  aln.RefID = 0;
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
-  // Test more valid allele lengths
-  aln.RemoveTag("XD");
-  aln.AddTag("XD","i",40);
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
-  aln.RemoveTag("XD");
-  aln.AddTag("XD","i",-49);
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
-  // Test invalid allele length
-  aln.RemoveTag("XD");
-  aln.AddTag("XD","i",-51);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+void AlignmentFiltersTest::test_GetDistToIndel(){
+  AlignedRead aln;
+  vector<BamTools::CigarOp> cigar_ops; 
+  pair<int,int> dists;
+  
+  aln.cigar_ops = GetCigarOps("1M");
+  dists         = GetEndDistToIndel(aln);
+  CPPUNIT_ASSERT(dists.first == -1 && dists.second == -1);
+
+  aln.cigar_ops = GetCigarOps("1D");
+  dists         = GetEndDistToIndel(aln);
+  CPPUNIT_ASSERT(dists.first == 0 && dists.second == 0);
+
+  aln.cigar_ops = GetCigarOps("5H3S1M2I");
+  dists         = GetEndDistToIndel(aln);
+  CPPUNIT_ASSERT(dists.first == 1 && dists.second == 0);
+
+  aln.cigar_ops = GetCigarOps("5H3S1M5D33M7S");
+  dists         = GetEndDistToIndel(aln);
+  CPPUNIT_ASSERT(dists.first == 1 && dists.second == 33);
 }
-*/
+
+void AlignmentFiltersTest::test_GetNumEndMatches(){
+  AlignedRead aln;
+  string ref_seq;
+  int    ref_start;
+  pair<int,int> num_matches;
+
+  aln.cigar_ops   = GetCigarOps("5M1I3M");
+  aln.read_start  = 100;
+  aln.nucleotides = "ACACATCAC";
+  ref_seq         = "ACACACACACACACACAC";
+  ref_start       = 100;
+  num_matches     = GetNumEndMatches(&aln, ref_seq, ref_start);
+  CPPUNIT_ASSERT(num_matches.first == 5 && num_matches.second == 3);
+
+  aln.nucleotides = "ACACTTCTC";
+  num_matches     = GetNumEndMatches(&aln, ref_seq, ref_start);
+  CPPUNIT_ASSERT(num_matches.first == 4 && num_matches.second == 1);
+    
+  aln.nucleotides = "ACACATCAC";
+  ref_start       = 86;
+  num_matches     = GetNumEndMatches(&aln, ref_seq, ref_start);
+  CPPUNIT_ASSERT(num_matches.first == -1 && num_matches.second == -1);
+
+  ref_start   = 102;
+  num_matches = GetNumEndMatches(&aln, ref_seq, ref_start);
+  CPPUNIT_ASSERT(num_matches.first == -1 && num_matches.second == -1);
+
+  aln.cigar_ops   = GetCigarOps("5H5M1I3M3H");
+  aln.read_start  = 100;
+  aln.nucleotides = "ACACATCAC";
+  ref_seq         = "ACACACACACACACACAC";
+  ref_start       = 100;
+  num_matches     = GetNumEndMatches(&aln, ref_seq, ref_start);
+  CPPUNIT_ASSERT(num_matches.first == 5 && num_matches.second == 3);
+
+  aln.cigar_ops   = GetCigarOps("5H3S5M1I3M");
+  aln.read_start  = 100;
+  aln.nucleotides = "NNNACACATCAC";
+  ref_seq         = "ACACACACACACACACAC";
+  ref_start       = 100;
+  num_matches     = GetNumEndMatches(&aln, ref_seq, ref_start);
+  CPPUNIT_ASSERT(num_matches.first == 5 && num_matches.second == 3);
+}
+
+

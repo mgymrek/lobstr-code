@@ -69,15 +69,21 @@ m4/lt~obsolete.m4
 #Coverage files
 src/*.gcda
 src/*.gcno
+src/*.gcov
 src/api/*.gcda
 src/api/*.gcno
+src/api/*.gcov
 src/api/internal/*.gcda
 src/api/internal/*.gcno
+src/api/internal/*.gcov
 src/tests/*.gcda
 src/tests/*.gcno
+src/tests/*.gcov
 src/utils/*.gcda
 src/utils/*.gcno
-
+src/utils/*.gcov
+lobstr.lcov
+lobstr-cov/*
 
 # Jekyll files
 Gemfile.lock

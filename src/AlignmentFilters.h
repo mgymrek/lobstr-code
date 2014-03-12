@@ -23,15 +23,23 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #define SRC_ALIGNMENTFILTERS_H
 
 #include <string>
+#include <vector>
 
 #include "src/AlignedRead.h"
 
 using namespace std;
 
+/* Returns the vector of CigarOps corresponding to the CIGAR string. */
+vector<BamTools::CigarOp> GetCigarOps(string cigar_string);
+
+/* Returns the CIGAR string corresponding to the vector of CigarOps. */
+string GetCigarString(vector<BamTools::CigarOp>& cigar_ops);
+
+
 /* Length of perfect base matches at 5' and 3' end of read. */
 pair<int,int> GetNumEndMatches(AlignedRead* aln, const string& ref_seq, int ref_seq_start);
 
-/* Minimum distance from 5' and 3' end of reads to first indel or other end of read. */
+/* Minimum distances from 5' and 3' end of reads to first indel. If no such indel exists, returns (-1,-1). */
 pair<int,int> GetEndDistToIndel(AlignedRead& aln);
 
 #endif

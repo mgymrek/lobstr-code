@@ -11,7 +11,7 @@
 ##
 ## Add tests scripts here
 ##
-TESTS = dummy_test.sh
+TESTS = command_line_tests.sh
 
 # (Copied from coreutils' tests/local.mk)
 # Use automake's TESTS_ENVIRONMENT to add ./src/ to the search path.
