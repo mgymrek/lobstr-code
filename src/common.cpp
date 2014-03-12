@@ -177,43 +177,6 @@ std::string GetReadDebug(const ReadPair& read_pair,
   return msg.str();
 }
 
-void GetSamplesFromBamFiles(const vector<string>& bamfiles,
-			    vector<string>* samples_list,
-			    map<string,string>* rg_id_to_sample) {
-  BamTools::BamReader reader;
-  string bamfile = "";
-  for (size_t i = 0; i < bamfiles.size(); i++) {
-    bamfile = bamfiles.at(i);
-    if (!reader.Open(bamfile)) {
-      PrintMessageDieOnError("Could not open bam file " + bamfile, ERROR);
-    }
-    BamTools::SamHeader header = reader.GetHeader();
-    if (!header.HasReadGroups()) {
-      PrintMessageDieOnError("No read groups in " + bamfile, ERROR);
-    }
-    BamTools::SamReadGroupDictionary read_groups = header.ReadGroups;
-    for (BamTools::SamReadGroupIterator it = read_groups.Begin();
-	 it != read_groups.End(); it++) {
-      const BamTools::SamReadGroup& rg = *it;
-      string rg_sample;
-      if (!rg.HasSample()) {
-	PrintMessageDieOnError("No sample in read group for " + bamfile, WARNING);
-	rg_sample = rg.ID;
-      } else {
-	rg_sample = rg.Sample;
-      }
-      if (my_verbose) {
-	PrintMessageDieOnError("Adding sample " + rg_sample + " " + rg.ID, PROGRESS);
-      }
-      rg_id_to_sample->insert(pair<string,string>(rg.ID,rg_sample));
-      if (find(samples_list->begin(), samples_list->end(), rg_sample) ==
-	  samples_list->end()) {
-	samples_list->push_back(rg_sample);
-      }
-    }
-  }
-}
-
 string GetReadGroup() {
   stringstream read_group;
   read_group << "lobSTR";

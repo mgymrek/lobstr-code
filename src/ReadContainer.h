@@ -63,9 +63,16 @@ class ReadContainer {
   void GetReadsAtCoord(const std::pair<std::string, int>& coord,
 		       std::list<AlignedRead>* reads);
 
+  /* Get samples */
+  void GetSampleInfo();
+
   // genotyper needs access to this to iterate over it
   std::map<std::pair<std::string, int>, std::list<AlignedRead> >
     aligned_str_map_;
+
+  // list of samples
+  std::vector<std::string> samples_list;
+  std::map<std::string, std::string> rg_id_to_sample;
 
  protected:
   /* Parse BamAlignment into AlignedRead */
