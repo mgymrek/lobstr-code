@@ -1,4 +1,4 @@
-B1;2c#!/bin/sh
+#!/bin/sh
 
 ##
 ## This is a template to run tests through 'make check'.
@@ -10,8 +10,90 @@ testcode() {
 }
 ## Show Environment
 
+echo "### lobSTR tests ###"
+echo "Testing bam input..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f test.aligned.sorted.bam \
+  --rg-lib test --rg-sample test \
+  --bam >/dev/null 2>&1
+testcode 0 
+echo "Testing fastq input single end..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f tmp_1.fq \
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+echo "Testing fastq input paired end..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  --p1 tmp_1.fq --p2 tmp_2.fq \
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+echo "Testing bam paired end input..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f test.nosample.bam \
+  --bampair \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+echo "Testing zipped fastq input..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f test.fq.gz \
+  -q \
+  --gzip \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+echo "Testing fasta single end input..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f tmp_1.fa \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+echo "Testing fasta paired end input..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  --p1 tmp_1.fa --p2 tmp_2.fa \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+echo "Testing gzipped fasta input..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f test.fa.gz \
+  --gzip \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+echo "Testing fastq input single end with multithread..."
+lobSTR \
+  --index-prefix smallref/small_lobstr_ref/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f tmp_1.fq \
+  -p 2 \
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
 echo "### Allelotype tests ###"
-# Good bam file input, multiple bams
+echo
 echo "Testing good bam input..."
 allelotype \
   --command classify \
@@ -22,7 +104,6 @@ allelotype \
   --verbose \
   --noise_model ../models/illumina_v2.0.3 >/dev/null 2>&1
 testcode 0
-# Bad bam file input
 echo "Testing invalid path to bam input..."
 allelotype \
   --command classify \
@@ -33,7 +114,6 @@ allelotype \
   --verbose \
   --noise_model ../models/illumina_v2.0.3 >/dev/null 2>&1
 testcode 1
-# Bam file no index
 echo "Testing bam file with no index..."
 allelotype \
   --command classify \
@@ -44,7 +124,6 @@ allelotype \
   --verbose \
   --noise_model ../models/illumina_v2.0.3 >/dev/null 2>&1
 testcode 1
-# Bam file with no sample in read group
 echo "Testing bam file with no sample in read group..."
 allelotype \
   --command classify \
@@ -55,7 +134,6 @@ allelotype \
   --verbose \
   --noise_model ../models/illumina_v2.0.3 >/dev/null 2>&1
 testcode 0
-# Bam file with no  read group
 echo "Testing bam file with no read group..."
 allelotype \
   --command classify \
