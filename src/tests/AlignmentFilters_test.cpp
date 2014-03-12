@@ -23,41 +23,25 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
 
-#include "src/tests/ReadContainer_test.h"
+#include "src/tests/AlignmentFilters_test.h"
 #include "src/runtime_parameters.h"
 
 // Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_REGISTRATION(ReadContainerTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(AlignmentFiltersTest);
 
 using namespace std;
 using BamTools::BamAlignment;
 
-void ReadContainerTest::setUp() {
-  vector<string> filenames;
-
-  // This environment variable is defined in './src/Makefile.am',
-  // Will be set during autotools' "make check" process.
-  string test_dir;
-  char* test_dir_env = getenv("LOBSTR_TEST_DIR");
-  if (test_dir_env!=NULL)
-    test_dir = test_dir_env;
-  else
-    test_dir = "../tests" ; // use as fall back
-  string file = test_dir + "/test.aligned.sorted.bam" ;
-
-  filenames.push_back(file);
-  _read_container = new ReadContainer(filenames);
+void AlignmentFiltersTest::setUp() {
+  
 }
 
-void ReadContainerTest::tearDown() {
-  delete _read_container;
+void AlignmentFiltersTest::tearDown() {
+  
 }
 
+/*
 void ReadContainerTest::test_ParseRead() {
-  // Don't check whether reads span STR
-  min_border = -100000;
-
-  map<pair<string,int>, string> ref_ext_nucleotides;
   BamAlignment aln;
   std::string rg = "test";
   std::string repseq = "AC";
@@ -78,16 +62,17 @@ void ReadContainerTest::test_ParseRead() {
   aln.AddTag("XR", "Z", repseq);
   aln.AddTag("XC", "f", copynum);
   aln.RefID = 0;
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides));
+  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
   // Test more valid allele lengths
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",40);
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides));
+  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",-49);
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides));
+  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
   // Test invalid allele length
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",-51);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
 }
+*/

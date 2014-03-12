@@ -177,6 +177,7 @@ libindex_a_SOURCES = \
 
 liballelotype_a_SOURCES = \
 	AlignedRead.h \
+	AlignmentFilters.h AlignmentFilters.cpp \
 	common.cpp common.h \
 	BamFileReader.cpp BamFileReader.h \
 	BamPairedFileReader.cpp BamPairedFileReader.h \
@@ -237,6 +238,8 @@ TESTS = lobSTRTests
 check_PROGRAMS = $(TESTS)
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
+	tests/AlignmentFilters_test.h \
+	tests/AlignmentFilters_test.cpp \
 	tests/BWAReadAligner_test.h \
 	tests/BWAReadAligner_test.cpp \
 	tests/common_test.h \
@@ -247,6 +250,7 @@ lobSTRTests_SOURCES = \
 	tests/RemoveDuplicates_test.cpp \
 	tests/VCFWriter_test.h \
 	tests/VCFWriter_test.cpp \
+	AlignmentFilters.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
 	BWAReadAligner.cpp \

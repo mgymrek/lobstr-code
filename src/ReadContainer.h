@@ -44,12 +44,6 @@ using BamTools::RefData;
 using BamTools::RefVector;
 using BamTools::CigarOp;
 
-/* Length of perfect base matches at 5' and 3' end of read. */
-pair<int,int> GetNumEndMatches(AlignedRead* aln, const string& ref_seq, int ref_seq_start);
-
-/* Minimum distance from 5' and 3' end of reads to first indel or other end of read. */
-pair<int,int> GetEndDistToIndel(AlignedRead& aln);
-
 /*
   Class to store aligned reads from each STR locus
  */

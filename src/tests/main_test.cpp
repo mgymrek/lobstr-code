@@ -20,6 +20,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cppunit/ui/text/TestRunner.h>
 
+#include "src/tests/AlignmentFilters_test.h"
 #include "src/tests/BWAReadAligner_test.h"
 #include "src/tests/common_test.h"
 #include "src/tests/ReadContainer_test.h"
@@ -29,6 +30,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 int main( int argc, char **argv) {
   // Adds the test to the list of tests to run
   CppUnit::TextUi::TestRunner runner;
+  runner.addTest(AlignmentFiltersTest::suite());
   runner.addTest(BWAReadAlignerTest::suite());
   runner.addTest(CommonTest::suite());
   runner.addTest(VCFWriterTest::suite());
