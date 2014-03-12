@@ -40,6 +40,6 @@ string GetCigarString(vector<BamTools::CigarOp>& cigar_ops);
 pair<int,int> GetNumEndMatches(AlignedRead* aln, const string& ref_seq, int ref_seq_start);
 
 /* Minimum distances from 5' and 3' end of reads to first indel. If no such indel exists, returns (-1,-1). */
-pair<int,int> GetEndDistToIndel(AlignedRead& aln);
+pair<int,int> GetEndDistToIndel(AlignedRead* aln);
 
 #endif

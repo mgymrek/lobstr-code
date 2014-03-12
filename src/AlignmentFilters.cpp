@@ -55,12 +55,12 @@ template<typename CigarIterator> int GetDistToIndel(CigarIterator iter, CigarIte
   return -1;
 }
 
-pair<int,int> GetEndDistToIndel(AlignedRead& aln){
+pair<int,int> GetEndDistToIndel(AlignedRead* aln){
   vector<BamTools::CigarOp>::iterator cigar_iter;
   vector<BamTools::CigarOp>::iterator cigar_end;
   vector<int> vals;
-  int head_dist = GetDistToIndel(aln.cigar_ops.begin(), aln.cigar_ops.end());
-  int tail_dist = GetDistToIndel(aln.cigar_ops.rbegin(), aln.cigar_ops.rend());
+  int head_dist = GetDistToIndel(aln->cigar_ops.begin(),  aln->cigar_ops.end());
+  int tail_dist = GetDistToIndel(aln->cigar_ops.rbegin(), aln->cigar_ops.rend());
   return pair<int,int>(head_dist, tail_dist);
 }
 

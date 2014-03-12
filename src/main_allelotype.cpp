@@ -119,6 +119,8 @@ void show_help() {
     "--mapq <INT>:                   filter reads with mapq scores of more than\n" \
     "                                <INT>.\n" \
     "--max-matedist <INT>:           Filter reads with a mate distance larger than <INT> bp.\n"
+    "--min-bp-before-indel <INT>:    Filter reads with an indel occurring less than <INT> bases \n"\
+    "                                from either end of the read.\n"
     "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"\
     "                                <INT> bp at both ends. \n"
     "--exclude-partial:              Do not report any information about partially\n" \
@@ -150,6 +152,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAXMAPQ,
     OPT_MAXMATEDIST,
     OPT_MIN_BORDER,
+    OPT_MIN_BP_BEFORE_INDEL,
     OPT_MIN_HET_FREQ,
     OPT_MIN_READ_END_MATCH,
     OPT_NOISEMODEL,
@@ -182,6 +185,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"mapq", 1, 0, OPT_MAXMAPQ},
     {"max-matedist", 1, 0, OPT_MAXMATEDIST},
     {"min-border", 1, 0, OPT_MIN_BORDER},
+    {"min-bp-before-indel", 1, 0, OPT_MIN_BP_BEFORE_INDEL},
     {"min-het-freq", 1, 0, OPT_MIN_HET_FREQ},
     {"min-read-end-match", 1, 0, OPT_MIN_READ_END_MATCH},
     {"noise_model", 1, 0, OPT_NOISEMODEL},
@@ -265,6 +269,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MIN_BORDER:
       min_border = atoi(optarg);
       AddOption("min-border", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MIN_BP_BEFORE_INDEL:
+      min_bp_before_indel = atoi(optarg);
+      AddOption("min-bp-before-indel", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_MIN_HET_FREQ:
       min_het_freq = atof(optarg);
