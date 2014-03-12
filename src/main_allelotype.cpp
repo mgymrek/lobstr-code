@@ -425,17 +425,6 @@ int main(int argc, char* argv[]) {
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
 
-  /* Determine samples */
-  if (my_verbose) {
-    PrintMessageDieOnError("Determining samples to process", PROGRESS);
-  }
-  vector<string> samples_list;
-  map<string,string> rg_id_to_sample;
-  GetSamplesFromBamFiles(bam_files, &samples_list, &rg_id_to_sample);
-  if (samples_list.size() == 0) {
-    PrintMessageDieOnError("Didn't find any read groups for samples in bam files", ERROR);
-  }
-
   /* Train/classify */
   if (command == "train") {
     ReadContainer read_container(bam_files);
@@ -450,9 +439,11 @@ int main(int argc, char* argv[]) {
       PrintMessageDieOnError("Problem reading noise file", ERROR);
   }
   if (command == "classify") {
+    // Initialize read container
+    ReadContainer str_container(bam_files);
     // Initialize genotyper
     Genotyper genotyper(&nm, haploid_chroms, &ref_nucleotides, &ref_repseq,
-			output_prefix + ".vcf", samples_list, rg_id_to_sample);
+			output_prefix + ".vcf", str_container.samples_list, str_container.rg_id_to_sample);
     // Load annotations
     if (!annotation_files_string.empty()) {
       vector<string>annotation_files;
@@ -464,7 +455,6 @@ int main(int argc, char* argv[]) {
     }
     // Classify allelotypes
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
-    ReadContainer str_container(bam_files);
     std::string current_chrom;
     ReferenceSTRContainer ref_str_container(reference_strs);
     // Read one chunk of refs at a time

@@ -20,6 +20,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <err.h>
 
+#include <algorithm>
 #include <iostream>
 #include <list>
 #include <map>
@@ -55,6 +56,35 @@ ReadContainer::ReadContainer(vector<std::string> filenames) {
   references = reader.GetReferenceData();
   for (size_t i = 0; i < references.size(); i++) {
     chrom_to_refid[references.at(i).RefName] = static_cast<int>(i);
+  }
+  // Get sample info
+  GetSampleInfo();
+}
+
+void ReadContainer::GetSampleInfo() {
+  BamTools::SamHeader header = reader.GetHeader();
+  if (!header.HasReadGroups()) {
+    PrintMessageDieOnError("No read groups found", ERROR);
+  }
+  BamTools::SamReadGroupDictionary read_groups = header.ReadGroups;
+  for (BamTools::SamReadGroupIterator it = read_groups.Begin();
+       it != read_groups.End(); it++) {
+    const BamTools::SamReadGroup& rg = *it;
+    string rg_sample;
+    if (!rg.HasSample()) {
+      PrintMessageDieOnError("No sample in read group for " + rg.ID, WARNING);
+      rg_sample = rg.ID;
+    } else {
+      rg_sample = rg.Sample;
+    }
+    if (my_verbose) {
+      PrintMessageDieOnError("Adding sample " + rg_sample + " " + rg.ID, PROGRESS);
+    }
+    rg_id_to_sample.insert(pair<string,string>(rg.ID,rg_sample));
+    if (find(samples_list.begin(), samples_list.end(), rg_sample) ==
+    	samples_list.end()) {
+      samples_list.push_back(rg_sample);
+    }
   }
 }
 
