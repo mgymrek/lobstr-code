@@ -40,7 +40,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/ZippedTextFileReader.h"
 
 using namespace std;
-using RemoveDuplicates::RemovePCRDuplicates;
 
 const float SMALL_CONST = 1e-10;
 
