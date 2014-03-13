@@ -238,14 +238,14 @@ namespace NWNoRefEndPenalty {
     for(unsigned int i = 1; i < raw_cigar.length(); i++){
       new_cigar_char = raw_cigar[i];
       if (new_cigar_char != cigar_char){
-	cigar_list.push_back(BamTools::CigarOp::CigarOp(cigar_char, num));
+	cigar_list.push_back(BamTools::CigarOp(cigar_char, num));
 	num = 1;
 	cigar_char = new_cigar_char;
       }
       else
 	num += 1;
     }
-    cigar_list.push_back(BamTools::CigarOp::CigarOp(cigar_char, num));
+    cigar_list.push_back(BamTools::CigarOp(cigar_char, num));
     if (cigar_list.back().Type == 'I')
       cigar_list.back().Type = 'S';
   }
