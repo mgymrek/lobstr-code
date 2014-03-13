@@ -54,7 +54,7 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(const ReferenceSTR& ref_str);
+  void AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides);
 
   /* Clear reads from container */
   void ClearReads();
@@ -77,7 +77,8 @@ class ReadContainer {
  protected:
   /* Parse BamAlignment into AlignedRead */
   bool ParseRead(const BamTools::BamAlignment& aln,
-		 AlignedRead* aligned_read);
+		 AlignedRead* aligned_read, 
+		 map<pair<string,int>, string>& ref_ext_nucleotides);
  private:
 
   /* Parse bam tags into the appropriate types */

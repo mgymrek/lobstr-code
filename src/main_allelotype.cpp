@@ -45,6 +45,10 @@ using namespace std;
 map<pair<string,int>, string> ref_nucleotides;
 // Keep track of reference repseq for each STR
 map<pair<string,int>, string> ref_repseq;
+// Keep track of extended region around each STR
+map<pair<string,int>, string> ref_ext_nucleotides;
+
+
 
 void show_help() {
   const char* help = "\nTo train the genotyping noise model " \
@@ -101,19 +105,29 @@ void show_help() {
     "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
     "                                For more than one annotation, use comma-separated list of files\n" \
     "--include-gl                    Include the GL field in the VCF file (default = false)\n\n" \
-    "Options for filtering reads:\n" \
+    "Default options for filtering reads:\n"
+    "--min-border   <INT>:           Filter reads that do not extend past both ends of the STR region\n"\
+    "                                by at least <INT> bp. By default, reads must merely reach the STR borders.\n"
+    "                                To include partially spanning reads, specify a large negative number.\n\n"
+    "Optional arguments for filtering reads:\n" \
     "If not specified, no filters applied\n" \
-    "--chrom <STRING>:              only look at reads from this chromosome\n" \
-    "--max-diff-ref <INT>:          filter reads differing from the\n" \
-    "                               reference allele by more than <INT> bp.\n" \
-    "--unit:                        filter reads differing by a non-integer\n" \
-    "                               number of repeat copies from reference\n" \
-    "--mapq <INT>:                  filter reads with mapq scores of more than\n" \
-    "                               <INT>.\n" \
-    "--max-matedist <INT>:          Filter reads with a mate distance larger than <INT> bp.\n\n"
+    "--chrom <STRING>:               only look at reads from this chromosome\n" \
+    "--max-diff-ref <INT>:           filter reads differing from the\n" \
+    "                                reference allele by more than <INT> bp.\n" \
+    "--unit:                         filter reads differing by a non-integer\n" \
+    "                                number of repeat copies from reference\n" \
+    "--mapq <INT>:                   filter reads with mapq scores of more than\n" \
+    "                                <INT>.\n" \
+    "--max-matedist <INT>:           Filter reads with a mate distance larger than <INT> bp.\n"
+    "--min-bp-before-indel <INT>:    Filter reads with an indel occurring less than <INT> bases \n"\
+    "                                from either end of the read.\n"
+    "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"\
+    "                                <INT> bp at both ends. \n"
+    "--exclude-partial:              Do not report any information about partially\n" \
+    "                                spanning reads.\n\n"
     "Additional options\n" \
-    "--chunksize                    Number of loci to read into memory at a time (default: 1000)\n\n" \
-    "--noweb                        Do not report any user information and parameters to Amazon S3.\n";
+    "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n\n" \
+    "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
   cerr << help;
   exit(1);
 }
@@ -137,7 +151,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAX_DIFF_REF,
     OPT_MAXMAPQ,
     OPT_MAXMATEDIST,
+    OPT_MIN_BORDER,
+    OPT_MIN_BP_BEFORE_INDEL,
     OPT_MIN_HET_FREQ,
+    OPT_MIN_READ_END_MATCH,
     OPT_NOISEMODEL,
     OPT_NORMDUP,
     OPT_NOWEB,
@@ -167,7 +184,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
     {"max-matedist", 1, 0, OPT_MAXMATEDIST},
+    {"min-border", 1, 0, OPT_MIN_BORDER},
+    {"min-bp-before-indel", 1, 0, OPT_MIN_BP_BEFORE_INDEL},
     {"min-het-freq", 1, 0, OPT_MIN_HET_FREQ},
+    {"min-read-end-match", 1, 0, OPT_MIN_READ_END_MATCH},
     {"noise_model", 1, 0, OPT_NOISEMODEL},
     {"no-rmdup", 0, 0, OPT_NORMDUP},
     {"no-web", 0, 0, OPT_NOWEB},
@@ -246,9 +266,21 @@ void parse_commandline_options(int argc, char* argv[]) {
       max_matedist = atoi(optarg);
       AddOption("max-matedist", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
+    case OPT_MIN_BORDER:
+      min_border = atoi(optarg);
+      AddOption("min-border", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MIN_BP_BEFORE_INDEL:
+      min_bp_before_indel = atoi(optarg);
+      AddOption("min-bp-before-indel", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
     case OPT_MIN_HET_FREQ:
       min_het_freq = atof(optarg);
       AddOption("min-het-freq", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MIN_READ_END_MATCH:
+      min_read_end_match = atoi(optarg);
+      AddOption("min-read-end-match", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_NOISEMODEL:
       noise_model = string(optarg);
@@ -383,15 +415,16 @@ int main(int argc, char* argv[]) {
 	string repseq = items.at(4);
 	if (use_chrom.empty() || use_chrom == chrom) {
 	  ReferenceSTR ref_str;
-	  ref_str.start = str_start+extend;
-	  ref_str.stop = str_end-extend;
-	  ref_str.chrom = chrom;
+	  ref_str.start        = str_start+extend;
+	  ref_str.stop         = str_end-extend;
+	  ref_str.chrom        = chrom;
 	  reference_strs.push_back(ref_str);
 	  string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
-	  string repseq_in_ref=  ref_record.nucleotides.substr(extend, repseq.size());
+	  string repseq_in_ref = ref_record.nucleotides.substr(extend, repseq.size());
 	  pair<string, int> locus = pair<string,int>(chrom, start);
 	  ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
 	  ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
+	  ref_ext_nucleotides.insert(pair< pair<string, int>, string>(locus, ref_record.nucleotides));
 	}
       }
     }
@@ -405,13 +438,13 @@ int main(int argc, char* argv[]) {
     ReadContainer read_container(bam_files);
     ReferenceSTR dummy_ref_str;
     dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
-    read_container.AddReadsFromFile(dummy_ref_str);
+    read_container.AddReadsFromFile(dummy_ref_str, ref_ext_nucleotides);
     if (my_verbose) PrintMessageDieOnError("Training noise model", PROGRESS);
     nm.Train(&read_container);
-  } else if (command == "classify") {
-    if (!nm.ReadNoiseModelFromFile(noise_model)) {
+  } 
+  else if (command == "classify") {
+    if (!nm.ReadNoiseModelFromFile(noise_model))
       PrintMessageDieOnError("Problem reading noise file", ERROR);
-    }
   }
   if (command == "classify") {
     // Initialize read container
@@ -442,7 +475,7 @@ int main(int argc, char* argv[]) {
       ref_region.start = begin;
       ref_region.stop = end;
       if (use_chrom.empty() || (use_chrom == chrom)) {
-	str_container.AddReadsFromFile(ref_region);
+	str_container.AddReadsFromFile(ref_region, ref_ext_nucleotides);
 	for (size_t i = 0; i < ref_str_chunk.size(); i++) {
 	  // Check that we don't process the same locus twice
 	  if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {

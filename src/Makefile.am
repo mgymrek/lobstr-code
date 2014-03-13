@@ -126,6 +126,7 @@ liblobstr_a_SOURCES = \
 	HammingWindowGenerator.cpp HammingWindowGenerator.h \
 	MultithreadData.cpp MultithreadData.h \
 	nw.cpp nw.h \
+	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \
 	runtime_parameters.cpp runtime_parameters.h \
 	IFileReader.h RunInfo.h \
@@ -177,6 +178,7 @@ libindex_a_SOURCES = \
 
 liballelotype_a_SOURCES = \
 	AlignedRead.h \
+	AlignmentFilters.h AlignmentFilters.cpp \
 	common.cpp common.h \
 	BamFileReader.cpp BamFileReader.h \
 	BamPairedFileReader.cpp BamPairedFileReader.h \
@@ -237,16 +239,21 @@ TESTS = lobSTRTests
 check_PROGRAMS = $(TESTS)
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
+	tests/AlignmentFilters_test.h \
+	tests/AlignmentFilters_test.cpp \
 	tests/BWAReadAligner_test.h \
 	tests/BWAReadAligner_test.cpp \
 	tests/common_test.h \
 	tests/common_test.cpp \
+	tests/NWNoRefEndPenalty_test.h \
+	tests/NWNoRefEndPenalty_test.cpp \
 	tests/ReadContainer_test.h \
 	tests/ReadContainer_test.cpp \
 	tests/RemoveDuplicates_test.h \
 	tests/RemoveDuplicates_test.cpp \
 	tests/VCFWriter_test.h \
 	tests/VCFWriter_test.cpp \
+	AlignmentFilters.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
 	BWAReadAligner.cpp \
@@ -263,6 +270,7 @@ lobSTRTests_SOURCES = \
 	HammingWindowGenerator.cpp \
 	MultithreadData.cpp \
 	nw.cpp nw.h \
+	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \

@@ -46,6 +46,9 @@ void ReadContainerTest::setUp() {
 
   filenames.push_back(file);
   _read_container = new ReadContainer(filenames);
+
+  // Don't check whether reads span STR
+  min_border = -100000;
 }
 
 void ReadContainerTest::tearDown() {
@@ -53,23 +56,27 @@ void ReadContainerTest::tearDown() {
 }
 
 void ReadContainerTest::test_AddReadsFromFile() {
+
+
+  map<pair<string,int>, string> ref_ext_nucleotides;
   ReferenceSTR ref_str;
   // When region is in the file
   ref_str.chrom = "chr22";
   ref_str.start = 38110651;
-  ref_str.stop = 38110651;
+  ref_str.stop  = 38110651;
   _read_container->ClearReads();
-  _read_container->AddReadsFromFile(ref_str);
+  _read_container->AddReadsFromFile(ref_str, ref_ext_nucleotides);
   CPPUNIT_ASSERT_EQUAL(static_cast<int>(_read_container->aligned_str_map_.size()), 1);
   // When region not in file
   _read_container->ClearReads();
   ref_str.start = 0;
   ref_str.stop = 0;
-  _read_container->AddReadsFromFile(ref_str);
+  _read_container->AddReadsFromFile(ref_str, ref_ext_nucleotides);
   CPPUNIT_ASSERT(_read_container->aligned_str_map_.empty());
 }
 
 void ReadContainerTest::test_ParseRead() {
+  map<pair<string,int>, string> ref_ext_nucleotides;
   BamAlignment aln;
   std::string rg = "test";
   std::string repseq = "AC";
@@ -91,44 +98,44 @@ void ReadContainerTest::test_ParseRead() {
   aln.RefID = 0;
   // No XD
   aln.RemoveTag("XD");
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read))); 
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides))); 
   // Test more valid allele lengths
   aln.AddTag("XD","i",20);
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
+  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides));
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",-19);
-  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read));
+  CPPUNIT_ASSERT(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides));
   // Test invalid allele length
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",-31);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
   // Exceed max_diff_ref
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",100);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",0);
   // Exceed max mate dist
   aln.AddTag("XM","i",1000000);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
   aln.RemoveTag("XM");
   // Exceed max mapq
   aln.AddTag("XQ","i",10000);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
   aln.RemoveTag("XQ");
   // Read is mate
   aln.SetIsSecondMate(true);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
   aln.SetIsSecondMate(false);
   // Read is partial
   aln.AddTag("XP","i",1);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
   aln.RemoveTag("XP");
   // Non-unit
   unit = true;
   aln.RemoveTag("XD");
   aln.AddTag("XD","i",5);
-  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read)));
+  CPPUNIT_ASSERT(!(_read_container->ParseRead(aln, &aligned_read, ref_ext_nucleotides)));
   unit = false;
 }
 

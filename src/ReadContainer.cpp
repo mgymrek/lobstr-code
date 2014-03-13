@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Revisions     2014 Thomas Willems <twillems@mit.edu> 
 
 This file is part of lobSTR.
 
@@ -30,6 +31,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/common.h"
 #include "src/ReadContainer.h"
+#include "src/AlignmentFilters.h"
 #include "src/runtime_parameters.h"
 
 using namespace std;
@@ -87,7 +89,7 @@ void ReadContainer::GetSampleInfo() {
   }
 }
 
-void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
+void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides) {
   if (ref_str.chrom != "NA") {
     int refid = -1;
     if (chrom_to_refid.find(ref_str.chrom) !=
@@ -105,13 +107,14 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
   BamTools::BamAlignment aln;
   while (reader.GetNextAlignment(aln)) {
     AlignedRead aligned_read;
-    if (ParseRead(aln, &aligned_read)) {
+    if (ParseRead(aln, &aligned_read, ref_ext_nucleotides)) {
       // Add to map
       pair<string, int> coord
 	(aligned_read.chrom, aligned_read.msStart);
       if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
 	aligned_str_map_.at(coord).push_back(aligned_read);
-      } else {
+      } 
+      else {
 	list<AlignedRead> aligned_read_list;
 	aligned_read_list.push_back(aligned_read);
 	aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
@@ -122,7 +125,8 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str) {
 }
 
 bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
-			      AlignedRead* aligned_read) {
+			      AlignedRead* aligned_read, 
+			      map<pair<string,int>, string>& ref_ext_nucleotides) {
   // get read ID
   aligned_read->ID = aln.Name;
   // get nucleotides
@@ -236,6 +240,33 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   if (aligned_read->diffFromRef + (aligned_read->refCopyNum*aligned_read->period) < MIN_ALLELE_SIZE) {
     return false;
   }
+
+  // check that read sufficiently spans STR
+  int max_read_start = aligned_read->msStart - min_border;
+  int min_read_stop  = aligned_read->msEnd   + min_border;
+  if (aln.Position > max_read_start || aln.GetEndPosition() < min_read_stop)
+    return false;
+  
+  // check that both ends of the read contain sufficient perfect matches
+  if (min_read_end_match > 0){
+    map<pair<string,int>, string>::iterator loc_iter = ref_ext_nucleotides.find(pair<string,int>(aligned_read->chrom, aligned_read->msStart));
+    if (loc_iter == ref_ext_nucleotides.end())
+      PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
+    string ref_ext_seq = loc_iter->second;
+    pair<int,int> num_end_matches = AlignmentFilters::GetNumEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend);
+    if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match)
+      return false;
+  }
+
+  // check that both ends of the aligned read have sufficient bases before the first indel
+  if (min_bp_before_indel > 0){
+    pair<int, int> num_bps = AlignmentFilters::GetEndDistToIndel(aligned_read);
+    if (num_bps.first != -1 && num_bps.first < min_bp_before_indel)
+      return false;
+    if (num_bps.second != -1 && num_bps.second < min_bp_before_indel)
+      return false;
+  }
+  
   return true;
 }
 
