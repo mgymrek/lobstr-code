@@ -39,7 +39,6 @@ def RunCommand(cmd):
         return
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, \
                   stderr=STDOUT, close_fds=True)
-    print p.stdout.read()
     ex = p.wait()
     if ex != 0:
         PROGRESS("ERROR: command '%s' failed"%cmd)
@@ -127,7 +126,7 @@ def GetRefFasta(merged_str_file, str_ref_fasta, str_map_file):
         start = int(start)
         end = int(end)
         if end >= len(genome[chrom]): end = len(genome[chrom])-1
-        refseq = PadFlank(genome[chrom][start:end], PAD)
+        refseq = PadFlank(genome[chrom][start:end], PAD).upper()
         annotations = annot.split(";")[:-1]
         motifs = [GetRepseq(item.split("_")[2]) for item in annotations]
         annotations = [annotations[i] + "_" + motifs[i] for i in range(len(annotations))]
