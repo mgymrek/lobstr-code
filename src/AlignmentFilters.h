@@ -41,6 +41,9 @@ namespace AlignmentFilters {
   
   /* Minimum distances from 5' and 3' end of reads to first indel. If no such indel exists, returns (-1,-1). */
   pair<int,int> GetEndDistToIndel(AlignedRead* aln);
+
+  /* Returns true iff the alignment ends match maximally compared to other positions within the specified window. */
+  bool HasLargestEndMatches(AlignedRead* aln, const string& ref_seq, int ref_seq_start, int max_upstream, int max_downstream);
 }
 
 #endif

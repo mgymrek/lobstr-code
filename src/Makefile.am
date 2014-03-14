@@ -201,6 +201,7 @@ liballelotype_a_SOURCES = \
 	TextFileReader.cpp TextFileReader.h \
 	TextFileWriter.cpp TextFileWriter.h \
 	VCFWriter.cpp VCFWriter.h \
+	ZAlgorithm.cpp ZAlgorithm.h \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
@@ -245,6 +246,8 @@ lobSTRTests_SOURCES = \
 	tests/BWAReadAligner_test.cpp \
 	tests/common_test.h \
 	tests/common_test.cpp \
+	tests/DNATools.h \
+	tests/DNATools.cpp \
 	tests/NWNoRefEndPenalty_test.h \
 	tests/NWNoRefEndPenalty_test.cpp \
 	tests/ReadContainer_test.h \
@@ -253,6 +256,8 @@ lobSTRTests_SOURCES = \
 	tests/RemoveDuplicates_test.cpp \
 	tests/VCFWriter_test.h \
 	tests/VCFWriter_test.cpp \
+	tests/ZAlgorithm_test.h \
+	tests/ZAlgorithm_test.cpp \
 	AlignmentFilters.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
@@ -281,6 +286,8 @@ lobSTRTests_SOURCES = \
 	ReadContainer.cpp \
 	RemoveDuplicates.cpp \
 	VCFWriter.cpp \
+	ZAlgorithm.h \
+	ZAlgorithm.cpp \
 	ZippedFastaFileReader.cpp \
 	ZippedFastqFileReader.cpp \
 	ZippedTextFileReader.cpp \

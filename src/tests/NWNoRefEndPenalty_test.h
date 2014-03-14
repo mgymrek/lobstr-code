@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Copyright (C) 2014 Thomas Willems <twillems@mit.edu>
 
 This file is part of lobSTR.
 

@@ -24,6 +24,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/AlignmentFilters.h"
 #include "src/common.h"
+#include "src/ZAlgorithm.h"
 
 using namespace std;
 
@@ -147,4 +148,22 @@ namespace AlignmentFilters {
     else
       return pair<int,int>(head_match, match_run);
   } 
+
+
+
+  bool HasLargestEndMatches(AlignedRead* aln, const string& ref_seq, int ref_seq_start, int max_upstream, int max_downstream){
+    /*
+      TO DO: Fill in this function
+
+      Extract read nucleotides
+      Remove  any soft-clipped bases from nucleotide string
+      
+    vector<int> match_counts;
+    ZAlgorithm::GetPrefixMatchCounts(string& s1, string& s2, match_counts);
+    
+    ZAlgorithm::GetSuffixMatchCounts(string& s1, string& s2, match_counts);
+
+    */
+    return true;
+  }
 }
