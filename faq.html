@@ -10,7 +10,15 @@
 	<h2>FAQ</h2>
 	<strong>How do I cite lobSTR?</strong><br/>
 	Please cite: <emph>Gymrek M, Golan D, Rosset S, & Erlich Y. lobSTR: A short tandem repeat profiler for personal genomes. Genome Research. 2012 April 22.</emph><br /><br />
-
+	<strong>Why do I need to specify <tt>--rg-lib</tt> and <tt>--rg-sample</tt> when
+	I run lobSTR?</strong>
+	lobSTR generates alignment outputs in the BAM format. lobSTR
+	uses these parameters to set the sample and library in the read group for each output
+	alignment. This allows downstream tools (including the lobSTR
+	allelotype step) to know which sample each read came
+	from. Details about the meaning of the read group tag can be
+	found in the <a href="http://samtools.github.io/hts-specs/SAMv1.pdf">SAM format specification</a> and are
+	also described on the <a href="http://gatkforums.broadinstitute.org/discussion/1317/collected-faqs-about-bam-files">GATK forum.</a>
 	<strong>How does lobSTR determine the STR allele supported by a read?</strong><br/>
 	lobSTR has two different options for methods to determine the allele supported by a read:
 	<ol>
