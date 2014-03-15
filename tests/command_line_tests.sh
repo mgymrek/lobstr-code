@@ -14,7 +14,7 @@ testcode() {
 echo "### lobSTR tests ###"
 echo "Testing bam input..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
@@ -23,7 +23,7 @@ lobSTR \
 testcode 0 
 echo "Testing fastq input single end..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
@@ -32,7 +32,7 @@ lobSTR \
 testcode 0
 echo "Testing fastq input paired end..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   --p1 ${LOBSTR_TEST_DIR=.}/tmp_1.fq --p2 ${LOBSTR_TEST_DIR=.}/tmp_2.fq \
@@ -41,7 +41,7 @@ lobSTR \
 testcode 0
 echo "Testing bam paired end input..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/test.nosample.bam \
@@ -50,7 +50,7 @@ lobSTR \
 testcode 0
 echo "Testing zipped fastq input..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/test.fq.gz \
@@ -60,7 +60,7 @@ lobSTR \
 testcode 0
 echo "Testing fasta single end input..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fa \
@@ -68,7 +68,7 @@ lobSTR \
 testcode 0
 echo "Testing fasta paired end input..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   --p1 ${LOBSTR_TEST_DIR=.}/tmp_1.fa --p2 ${LOBSTR_TEST_DIR=.}/tmp_2.fa \
@@ -76,7 +76,7 @@ lobSTR \
 testcode 0
 echo "Testing gzipped fasta input..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/test.fa.gz \
@@ -85,7 +85,7 @@ lobSTR \
 testcode 0
 echo "Testing fastq input single end with multithread..."
 lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \

@@ -396,6 +396,7 @@ int main(int argc, char* argv[]) {
   NoiseModel nm(strinfofile, haploid_chroms);
 
   /* Load ref character and ref object for each STR */
+  // TODO make this use old reference and move to a function
   if (my_verbose) {
     PrintMessageDieOnError("Loading reference STRs", PROGRESS);
   }

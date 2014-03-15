@@ -45,7 +45,19 @@ EXTRA_DIST = \
     ./smallref/lobstr_test_ref.bed \
     ./smallref/readme.txt \
     ./smallref/smallref_strinfo.tab \
-    ./smallref/small_lobstr_ref/lobSTR_A.fa \
+    ./smallref/small_lobstr_ref_v2/lobSTR_chromsizes.tab \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.ann \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.pac \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rpac \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.sa \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.amb \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.bwt \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rbwt \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rsa \
+    ./smallref/small_lobstr_ref_v2/lobSTR_mergedref.bed \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref_map.tab \
+   ./smallref/small_lobstr_ref/lobSTR_A.fa \
     ./smallref/small_lobstr_ref/lobSTR_A.fa.amb \
     ./smallref/small_lobstr_ref/lobSTR_A.fa.ann \
     ./smallref/small_lobstr_ref/lobSTR_A.fa.bwt \

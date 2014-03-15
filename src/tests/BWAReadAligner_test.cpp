@@ -24,17 +24,17 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <string>
 #include <vector>
-
 #include "src/tests/BWAReadAligner_test.h"
 #include "src/cigar.h"
 #include "src/MSReadRecord.h"
+#include "src/ReadPair.h"
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(BWAReadAlignerTest);
 
 void BWAReadAlignerTest::setUp() {
-  std::map<std::string, BWT> bwt_refs;
-  std::map<std::string, BNT> bnt_anns;
+  BWT bwt_refs;
+  BNT bnt_anns;
   std::map<int, REFSEQ> refs;
   gap_opt_t* opts;
   _aligner = new BWAReadAligner(&bwt_refs, &bnt_anns, &refs, opts);
@@ -331,8 +331,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r3);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M2I48M2I47M3I23M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
-  CPPUNIT_ASSERT_EQUAL(2, testRead.diffFromRef);
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail, CIGAR too long", !_aligner->GetSTRAllele(&testRead, testCigar));
 
   // Case 9: Del in all three
   testCigar.cigars.clear();
@@ -359,7 +358,6 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r3);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M2D50M2D50M3D25M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
-  CPPUNIT_ASSERT_EQUAL(-2, testRead.diffFromRef);
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail. Cigar string too long.", !_aligner->GetSTRAllele(&testRead, testCigar));
 }
 

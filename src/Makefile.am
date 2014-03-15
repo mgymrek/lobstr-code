@@ -275,6 +275,7 @@ lobSTRTests_SOURCES = \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \
+	ReadPair.cpp \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
 	STRDetector.cpp \
