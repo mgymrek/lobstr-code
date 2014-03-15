@@ -61,7 +61,6 @@ std::string output_prefix = "";
 std::string sam_file = "";
 
 // detection params
-bool check_next_best = true;
 size_t min_read_length = 45;
 size_t max_read_length = 1024;
 size_t fft_window_size = 16;

@@ -240,7 +240,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAPQ,
     OPT_BWAQ,
     OPT_OLDILLUMINA,
-    OPT_CHECKNEXTBEST,
     OPT_USES3,
     OPT_S3CONFIG,
     OPT_S3DEBUG,
@@ -296,7 +295,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
     {"why-not", 0, 0, OPT_WHY_NOT},
     {"orig", 0, 0, OPT_ORIG_READ},
-    {"nextbest", 0, 0, OPT_CHECKNEXTBEST},
     {"use-s3", 1, 0, OPT_USES3},
     {"s3config", 1, 0, OPT_S3CONFIG},
     {"s3debug", 0, 0, OPT_S3DEBUG},
@@ -517,10 +515,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_ORIG_READ:
       include_orig_read_start++;
       user_defined_arguments += "orig-read-start=True;";
-      break;
-    case OPT_CHECKNEXTBEST:
-      check_next_best++;
-      AddOption("check-next-best", "", false, &user_defined_arguments);
       break;
     case OPT_USES3:
       using_s3++;
@@ -773,11 +767,9 @@ void single_thread_process_loop(const vector<string>& files1,
       // reset fields
       read_pair.reads.at(0).repseq = "";
       read_pair.reads.at(0).ms_repeat_best_period = 0;
-      read_pair.reads.at(0).ms_repeat_next_best_period = 0;
       if (read_pair.reads.at(0).paired) {
         read_pair.reads.at(1).repseq = "";
         read_pair.reads.at(1).ms_repeat_best_period = 0;
-        read_pair.reads.at(1).ms_repeat_next_best_period = 0;
       }
 
       // Check read length
@@ -808,42 +800,6 @@ void single_thread_process_loop(const vector<string>& files1,
         aligned = true;
         if (debug) { // if aligned, what was the repseq we aligned to
           PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-1)", DEBUG);
-        }
-      } else {
-        read_pair.read1_passed_detection = false;
-        read_pair.read2_passed_detection = false;
-        // Try second best period for each read
-        if (read_pair.reads.at(0).ms_repeat_next_best_period != 0) {
-          read_pair.reads.at(0).ms_repeat_best_period =
-            read_pair.reads.at(0).ms_repeat_next_best_period;
-          string err, second_best_repseq;
-          if (getMSSeq(read_pair.reads.at(0).detected_ms_region_nuc,
-                       read_pair.reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
-            read_pair.reads.at(0).repseq = repseq;
-            read_pair.read1_passed_detection = true;
-          }
-        }
-        if (read_pair.reads.at(0).paired) {
-          if (read_pair.reads.at(1).ms_repeat_next_best_period != 0) {
-            read_pair.reads.at(1).ms_repeat_best_period =
-              read_pair.reads.at(1).ms_repeat_next_best_period;
-            string err, second_best_repseq;
-            if (getMSSeq(read_pair.reads.at(1).detected_ms_region_nuc,
-                         read_pair.reads.at(1).ms_repeat_best_period,
-                         &repseq, &second_best_repseq, &err)) {
-              read_pair.reads.at(1).repseq = repseq;
-              read_pair.read2_passed_detection = true;
-            }
-          }
-        }
-        if (read_pair.read1_passed_detection ||
-            read_pair.read2_passed_detection) {
-          if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {
-            aligned = true;
-            if (debug) { // if aligned, what was the repseq we aligned to
-              PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-2)", DEBUG);
-            }
-          }
         }
       }
       if (aligned) {
@@ -923,11 +879,9 @@ void* satellite_process_consumer_thread(void *arg) {
     // Reset fields
     pReadRecord->reads.at(0).repseq = "";
     pReadRecord->reads.at(0).ms_repeat_best_period = 0;
-    pReadRecord->reads.at(0).ms_repeat_next_best_period = 0;
     if (pReadRecord->reads.at(0).paired) {
       pReadRecord->reads.at(1).repseq = "";
       pReadRecord->reads.at(1).ms_repeat_best_period = 0;
-      pReadRecord->reads.at(1).ms_repeat_next_best_period = 0;
     }
 
     // STEP 1: Sensing
@@ -941,39 +895,6 @@ void* satellite_process_consumer_thread(void *arg) {
     // STEP 2: Alignment
     if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
       aligned = true;
-    } else {
-      pReadRecord->read1_passed_detection = false;
-      pReadRecord->read2_passed_detection = false;
-      // Try second best period for each read
-      if (pReadRecord->reads.at(0).ms_repeat_next_best_period != 0) {
-        pReadRecord->reads.at(0).ms_repeat_best_period =
-          pReadRecord->reads.at(0).ms_repeat_next_best_period;
-        string err, second_best_repseq;
-        if (getMSSeq(pReadRecord->reads.at(0).detected_ms_region_nuc,
-                     pReadRecord->reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
-          pReadRecord->reads.at(0).repseq = repseq;
-          pReadRecord->read1_passed_detection = true;
-        }
-      }
-      if (pReadRecord->reads.at(0).paired) {
-        if (pReadRecord->reads.at(1).ms_repeat_next_best_period != 0) {
-          pReadRecord->reads.at(1).ms_repeat_best_period =
-            pReadRecord->reads.at(1).ms_repeat_next_best_period;
-          string err, second_best_repseq;
-          if (getMSSeq(pReadRecord->reads.at(1).detected_ms_region_nuc,
-                       pReadRecord->reads.at(1).ms_repeat_best_period,
-                       &repseq, &second_best_repseq, &err)) {
-            pReadRecord->reads.at(1).repseq = repseq;
-            pReadRecord->read2_passed_detection = true;
-          }
-        }
-      }
-      if (pReadRecord->read1_passed_detection ||
-          pReadRecord->read2_passed_detection) {
-        if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
-          aligned = true;
-        }
-      }
     }
     if (aligned) {
       pMT_DATA->post_new_output_read(pReadRecord);

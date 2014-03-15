@@ -199,9 +199,6 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
 		      matealign, alternate_mappings, treat_as_paired)) {
     return true;
   }
-  // read so we don't try again
-  read_pair->reads.at(0).ms_repeat_next_best_period = 0;
-  read_pair->reads.at(1).ms_repeat_next_best_period = 0;
   return false;
 }
 
@@ -247,8 +244,6 @@ bool BWAReadAligner::ProcessSingleEndRead(ReadPair* read_pair, string* err, stri
 		      dummy_matealign, alternate_mappings, false)) {
     return true;
   } else {
-    // reset read so we don't try again
-    read_pair->reads.at(0).ms_repeat_next_best_period = 0;
     return false;
   }
   return false;

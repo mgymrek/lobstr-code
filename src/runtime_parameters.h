@@ -83,7 +83,6 @@ extern std::string output_prefix;
 extern std::string sam_file;
 
 // detection params
-extern bool check_next_best;
 extern size_t min_read_length;
 extern size_t max_read_length;
 extern size_t fft_window_size;

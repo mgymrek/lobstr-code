@@ -233,15 +233,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
   read->ms_start = nuc_start;
   read->ms_end   = nuc_end;
   read->ms_repeat_best_period = best_period;
-  if (check_next_best) {
-    read->ms_repeat_next_best_period = next_best_period;
-    if (debug) {
-      stringstream msg;
-      msg << "best-period=" << best_period << ";" << "next-best-period=" << next_best_period << ";";
-      *messages += msg.str();
-    }
-  }
-  
 
   // set indices of left, STR, and right regions
   if ((read->ms_start >=
@@ -310,16 +301,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
         *err += "failed-STR-when-detecting-motif:" + repseq_error;
       }
       return false;
-    } else {
-      if (debug) {
-        *err += repseq_error;
-      }
-      if (second_best_repseq.size() == 1) {
-        if (debug) {
-          *messages += "Setting-next-best-period-1;";
-        }
-        read->ms_repeat_next_best_period = 1;
-      }
     }
     read->repseq = repseq;
     return true;

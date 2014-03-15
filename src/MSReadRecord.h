@@ -56,8 +56,6 @@ class MSReadRecord {
   int ms_end;
   // best period determined for the STR
   int ms_repeat_best_period;
-  // next best period determined for the STR
-  int ms_repeat_next_best_period;
   // left flanking nucleotides
   std::string left_flank_nuc;
   int left_flank_index_from_start;
