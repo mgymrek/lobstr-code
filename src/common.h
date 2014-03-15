@@ -35,6 +35,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/bwtaln.h"
 #include "src/bwase.h"
 #include "src/IFileReader.h"
+#include "src/ReferenceSTR.h"
 
 struct  BWT {
   bwt_t *bwt[2];
@@ -46,7 +47,10 @@ struct BNT {
 
 struct REFSEQ {
   std::string sequence;
+  std::string chrom;
   int start;
+  vector<std::string> motifs;
+  std::map<std::string, vector<ReferenceSTR> > ref_strs;
 };
 
 // super cool lobSTR ascii art

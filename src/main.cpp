@@ -73,10 +73,10 @@ map<int, REFSEQ> ref_sequences;
 std::string unit_name;
 
 // alignment references, keep global
-void LoadReference(const std::string& repseq);
-void DestroyReferences();
-map<std::string, BWT> bwt_references;
-map<std::string, BNT> bnt_annotations;
+BNT bnt_annotation;
+BWT bwt_reference;
+void LoadReference();
+void DestroyReference();
 gap_opt_t *opts;
 
 void show_help() {
@@ -196,7 +196,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_PAIR1,
     OPT_PAIR2,
     OPT_GZIP,
-    OPT_TABLE,
     OPT_GENOME,
     OPT_OUTPUT,
     OPT_HELP,
@@ -258,7 +257,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"p1", 1, 0, OPT_PAIR1},
     {"p2", 1, 0, OPT_PAIR2},
     {"gzip", 0, 0, OPT_GZIP},
-    {"table", 1, 0, OPT_TABLE},
     {"genome", 1, 0, OPT_GENOME},
     {"out", 1, 0, OPT_OUTPUT},
     {"threads", 1, 0, OPT_THREADS},
@@ -596,11 +594,22 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
 }
 
-void LoadReference(const std::string& repseq) {
+void LoadChromSizes() {
+  TextFileReader tReader(index_prefix+"chromsizes.tab");
+  string line;
+  while (tReader.GetNextLine(&line)) {
+    vector<string> items(0);
+    split(line, '\t', items);
+    if (items.size() != 2) {
+      PrintMessageDieOnError("Chromosome sizes file malformed", ERROR);
+    }
+    chrom_sizes[items[0]] = atoi(items[1].c_str());
+  }
+}
+
+void LoadReference() {
   // Load BWT index
-  string prefix = index_prefix;
-  prefix += repseq;
-  prefix += ".fa";
+  string prefix = index_prefix + "ref.fasta";
 
   string bwt_str = prefix+".bwt";
   bwt_t *bwt_forward, *bwt_reverse;
@@ -615,32 +624,75 @@ void LoadReference(const std::string& repseq) {
   string rsa_str = prefix+".rsa";
   bwt_restore_sa(rsa_str.c_str(), bwt_reverse);
 
-  BWT bwt_ref;
-  bwt_ref.bwt[0] = bwt_forward;
-  bwt_ref.bwt[1] = bwt_reverse;
-  bwt_references.insert(pair<string, BWT>(repseq, bwt_ref));
+  bwt_reference.bwt[0] = bwt_forward;
+  bwt_reference.bwt[1] = bwt_reverse;
 
   // Load BNT annotations
-  BNT bnt;
   bntseq_t *bns;
   bns = bns_restore(prefix.c_str());
-  bnt.bns = bns;
-  bnt_annotations.insert(pair<string, BNT>(repseq, bnt));
+  bnt_annotation.bns = bns;
+
+  // Load fasta reference with all STR sequences
+  FastaFileReader faReader(index_prefix+"ref.fasta");
+  MSReadRecord ref_record;
+  while (faReader.GetNextRead(&ref_record)) {
+    REFSEQ refseq;
+    vector<string> items;
+    string refstring = ref_record.ID;
+    split(refstring, '$', items);
+    if (items.size() == 4) {
+      refseq.sequence = ref_record.orig_nucleotides;
+      refseq.start = atoi(items.at(2).c_str());
+      refseq.chrom = items.at(1);
+      int refid = atoi(items.at(0).c_str());
+      ref_sequences.insert(pair<int, REFSEQ>(refid, refseq));
+    }
+  }
+
+  // Load map
+  TextFileReader tReader(index_prefix+"ref_map.tab");
+  string line;
+  while (tReader.GetNextLine(&line)) {
+    vector<string>items(0);
+    split(line, '\t', items);
+    if (items.size() != 3) {
+      PrintMessageDieOnError("Malformed map file", ERROR);
+    }
+    // Get refid
+    int refid = atoi(items.at(0).c_str());
+    // Get motifs
+    string motif_string = items.at(1);
+    vector<string>motifs(0);
+    split(motif_string, ';', motifs);
+    ref_sequences[refid].motifs = motifs;
+    for (size_t i = 0; i < motifs.size(); i++) {
+      vector<ReferenceSTR> vec;
+      ref_sequences[refid].ref_strs.insert(pair<string, vector<ReferenceSTR> >(motifs.at(i), vec));
+    }
+    // Get reference STRs
+    string regions_string = items.at(2);
+    vector<string>regions(0);
+    split(regions_string, ';', regions);
+    for (size_t i = 0; i < regions.size(); i++) {
+      vector<string>region_items(0);
+      split(regions.at(i), '_', region_items);
+      string motif = region_items.at(3);
+      int start = atoi(region_items.at(0).c_str());
+      int stop = atoi(region_items.at(1).c_str());
+      ReferenceSTR ref_str;
+      ref_str.chrom = ref_sequences[refid].chrom;
+      ref_str.start = start;
+      ref_str.stop = stop;
+      ref_sequences[refid].ref_strs[motif].push_back(ref_str);
+    }
+  }
 }
 
-void DestroyReferences() {
-  for (map<string, BWT>::iterator it = bwt_references.begin();
-       it != bwt_references.end(); ++it) {
-    bwt_destroy(it->second.bwt[0]);
-    bwt_destroy(it->second.bwt[1]);
-  }
-  for (map<string, BNT>::iterator it = bnt_annotations.begin();
-       it != bnt_annotations.end(); ++it) {
-    bns_destroy(it->second.bns);
-  }
+void DestroyReference() {
+  bwt_destroy(bwt_reference.bwt[0]);
+  bwt_destroy(bwt_reference.bwt[1]);
+  bns_destroy(bnt_annotation.bns);
 }
-
-
 
 /*
  * process read in single thread
@@ -650,8 +702,8 @@ void single_thread_process_loop(const vector<string>& files1,
   ReadPair read_pair;
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   STRDetector *pDetector = new STRDetector();
-  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references,
-                                                &bnt_annotations,
+  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_reference,
+                                                &bnt_annotation,
                                                 &ref_sequences, opts);
   std::string file1;
   std::string file2;
@@ -830,8 +882,8 @@ void single_thread_process_loop(const vector<string>& files1,
 void* satellite_process_consumer_thread(void *arg) {
   MultithreadData *pMT_DATA = reinterpret_cast<MultithreadData*>(arg);
   STRDetector *pDetector = new STRDetector();
-  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references,
-                                                &bnt_annotations,
+  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_reference,
+                                                &bnt_annotation,
                                                 &ref_sequences, opts);
   int aligned = false;
 #ifdef DEBUG_THREADS
@@ -1122,38 +1174,10 @@ int main(int argc, char* argv[]) {
   run_info.params = user_defined_arguments;
 
   PrintMessageDieOnError("Initializing...", PROGRESS);
-  // open file with all names
-  TextFileReader tReader(index_prefix+"strdict.txt");
-  string line = "";
-  while (tReader.GetNextLine(&line)) {
-    // set chrom sizes
-    if (line.substr(0, 3) == "REF") {
-      vector<string> items(0);
-      split(line, '\t', items);
-      chrom_sizes[items[1]] = atoi(items[2].c_str());
-    } else {
-      // make sure repeat is valid
-      if (count(line, line.at(0)) != line.length() || line.length() == 1) {
-        LoadReference(line);
-      }
-    }
-  }
-
-  // Load fasta reference with all STR sequences
-  FastaFileReader faReader(index_prefix+"ref.fa");
-  MSReadRecord ref_record;
-  while (faReader.GetNextRead(&ref_record)) {
-    REFSEQ refseq;
-    vector<string> items;
-    string refstring = ref_record.ID;
-    split(refstring, '$', items);
-    if (items.size() >= 6) { // should be 6 or 7, depending if name column is present
-      refseq.sequence = ref_record.orig_nucleotides;
-      refseq.start = atoi(items.at(2).c_str());
-      int refid = atoi(items.at(0).c_str());
-      ref_sequences.insert(pair<int, REFSEQ>(refid, refseq));
-    }
-  }
+  // Set chrom sizes
+  LoadChromSizes();
+  // Load referencpe
+  LoadReference();
 
   // set up options
   opts = gap_init_opt();
@@ -1213,6 +1237,7 @@ int main(int argc, char* argv[]) {
   run_info.endtime = GetTime();
   delete hamgen;
   delete tukgen;
+  DestroyReference();
   OutputRunStatistics();
   OutputRunningTimeInformation(starttime,processing_starttime,endtime,
                                threads, run_info.num_processed_units);

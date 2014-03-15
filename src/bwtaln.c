@@ -84,14 +84,12 @@ void bwa_cal_sa_reg_gap(int tid, bwt_t *const bwt[2], int n_seqs, bwa_seq_t *seq
 	bwt_width_t *w[2], *seed_w[2];
 	const ubyte_t *seq[2];
 	gap_opt_t local_opt = *opt;
-
 	// initiate priority stack
 	for (i = max_len = 0; i != n_seqs; ++i)
 		if (seqs[i].len > max_len) max_len = seqs[i].len;
 	if (opt->fnr > 0.0) local_opt.max_diff = bwa_cal_maxdiff(max_len, BWA_AVG_ERR, opt->fnr);
 	if (local_opt.max_diff < local_opt.max_gapo) local_opt.max_gapo = local_opt.max_diff;
 	stack = gap_init_stack(local_opt.max_diff, local_opt.max_gapo, local_opt.max_gape, &local_opt);
-
 	seed_w[0] = (bwt_width_t*)calloc(opt->seed_len+1, sizeof(bwt_width_t));
 	seed_w[1] = (bwt_width_t*)calloc(opt->seed_len+1, sizeof(bwt_width_t));
 	w[0] = w[1] = 0;

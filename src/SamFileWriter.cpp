@@ -89,6 +89,10 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
     run_info.num_nonunit++;
   }
   // Write aligned read
+  if (align_debug) {
+    PrintMessageDieOnError("[SamFileWriter.cpp]: Writing alignment output", DEBUG);
+  }
+		  
   BamAlignment bam_alignment;
   BamAlignment mate_alignment;
   bool str_alignment_is_first = false; // Does the STR alignment have a smaller start coord than mate
@@ -114,6 +118,9 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       str_alignment_is_first = true;
     }
   } else {
+    if (align_debug) {
+      PrintMessageDieOnError("[SamFileWriter.cpp]: Alignment is single end", DEBUG);
+    }
     bam_alignment.SetIsPaired(false);
     bam_alignment.SetIsProperPair(false);    
     bam_alignment.SetIsFirstMate(false);
@@ -288,6 +295,9 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       writer.SaveAlignment(bam_alignment);
     }
   } else {
+    if (align_debug) {
+      PrintMessageDieOnError("[SamFileWriter.cpp]: Done writing single end alignment", DEBUG);
+    }
     writer.SaveAlignment(bam_alignment);
   }
 }

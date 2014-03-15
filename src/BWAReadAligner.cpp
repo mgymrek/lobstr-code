@@ -18,6 +18,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -43,18 +44,10 @@ extern unsigned char nst_nt4_table[256];
 const int PAD = 50;
 // max size of cigar score to allow
 // more than this is likely bad alignment
-const size_t MAX_CIGAR_SIZE = 8;
+const size_t MAX_CIGAR_SIZE = 5;
 // Maximum difference between mate alignment
 // and STR read alignment
 const int MAX_PAIRED_DIFF = 1000;
-// BWA % mismatching for mate alignment
-const float MATE_FNR = 0.1;
-// BWA # mismatches allowed in mate alignment
-const int MATE_MISMATCH = 10;
-// BWA # gap opens allowed in mate alignment
-const int MATE_GAPO = 1;
-// BWA # gap extends allowed in mate alignment
-const int MATE_GAPE = 10;
 // bwaq to use for mate trimming
 const int MATE_TRIM_QUAL = 30;
 // trim mate to this length
@@ -68,478 +61,6 @@ const float STITCH_REQUIRED_SCORE = 0.8;
 const float STITCH_DIFF = 0.1;
 // min allowed distance from STR boundary to read ends
 size_t MIN_DIST_FROM_END = 8;
-
-BWAReadAligner::BWAReadAligner(map<std::string, BWT>* bwt_references,
-                               map<std::string, BNT>* bnt_annotations,
-                               map<int, REFSEQ>* ref_sequences,
-                               gap_opt_t *opts) {
-  bwase_initialize();
-  _bwt_references = bwt_references;
-  _bnt_annotations = bnt_annotations;
-  _ref_sequences = ref_sequences;
-  _opts = opts;
-  _default_opts = gap_init_opt();
-  _default_opts->max_diff = MATE_MISMATCH;
-  _default_opts->max_gapo = MATE_GAPO;
-  _default_opts->max_gape = MATE_GAPE;
-  _default_opts->fnr = -1;//MATE_FNR;
-
-  cigar_debug = false;
-  stitch_debug = false;
-}
-
-bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* messages) {
-  // Initialize status variables
-  read_pair->read1_passed_alignment = false;
-  read_pair->read2_passed_alignment = false;
-  read_pair->found_unique_alignment = false;
-  read_pair->aligned_read_num = -1;
-
-  // Keep XA string for multi-mappers
-  string alternate_mappings = "";
-
-  if (read_pair->reads.at(0).paired) {
-    // all valid alignments for individual reads in the pair
-    vector<ALIGNMENT> good_left_alignments_read1;
-    vector<ALIGNMENT> good_right_alignments_read1;
-    vector<ALIGNMENT> good_left_alignments_read2;
-    vector<ALIGNMENT> good_right_alignments_read2;
-
-    // Step 1: Align each read separately
-    if (read_pair->read1_passed_detection) {
-      if (ProcessRead(&read_pair->reads.at(0),
-                      &good_left_alignments_read1,
-                      &good_right_alignments_read1, err, messages)) {
-        read_pair->read1_passed_alignment = true;
-      }
-    }
-    if (read_pair->read2_passed_detection) {
-      if (ProcessRead(&read_pair->reads.at(1),
-                      &good_left_alignments_read2,
-                      &good_right_alignments_read2, err, messages)) {
-        read_pair->read2_passed_alignment = true;
-      }
-    }
-    // Need at least one read to pass
-    if (!(read_pair->read1_passed_alignment ||
-          read_pair->read2_passed_alignment)) {
-      return false;
-    }
-    if (align_debug) {
-      stringstream msg;
-      msg << "[BWAReadAligner]: read1 passed "
-           << read_pair->read1_passed_alignment;
-      PrintMessageDieOnError(msg.str(), DEBUG);
-      msg.clear();
-      msg << "[BWAReadAligner]: read2 passed "
-           << read_pair->read2_passed_alignment;
-      PrintMessageDieOnError(msg.str(), DEBUG);
-    }
-    // Step 2: Determine if unique valid alignment
-    if ((read_pair->read1_passed_alignment ||
-         read_pair->read2_passed_alignment)) {
-      if (align_debug) {
-        PrintMessageDieOnError("[BWAReadAligner]: checking paired alignment", DEBUG);
-      }
-      ALIGNMENT matealign;
-      size_t num_alignments = 0;
-      size_t index_of_hit;
-
-      // Get info for the read that aligned
-      if (read_pair->read1_passed_alignment) {
-	read_pair->aligned_read_num = 0;
-	num_alignments = good_left_alignments_read1.size();
-      } else {
-        // only read 2 aligned
-        read_pair->aligned_read_num = 1;
-        num_alignments = good_left_alignments_read2.size();
-      }
-
-      // Get good alignments
-      const vector<ALIGNMENT>& good_left =
-        read_pair->aligned_read_num == 0 ?
-        good_left_alignments_read1 :
-        good_left_alignments_read2;
-      const vector<ALIGNMENT>& good_right =
-        read_pair->aligned_read_num == 0 ?
-        good_right_alignments_read1 :
-        good_right_alignments_read2;
-
-      // If both aligned, find compatible
-      if (!read_pair->found_unique_alignment &&
-          read_pair->read1_passed_alignment &&
-          read_pair->read2_passed_alignment) {
-        if (align_debug) {
-          stringstream msg;
-          msg << "[BWAReadAligner]: checking for compatible alignment"
-              << " read 1 size " << good_left_alignments_read1.size()
-              << " read 2 size " << good_left_alignments_read2.size();
-          PrintMessageDieOnError(msg.str(), DEBUG);
-        }
-        // find compatible alignment
-        size_t index_of_mate;
-        if (FindCompatibleAlignment(good_left_alignments_read1,
-                                    good_left_alignments_read2,
-                                    good_right_alignments_read1,
-                                    good_right_alignments_read2,
-                                    &index_of_hit, &index_of_mate,
-				    &alternate_mappings)) {
-          if (align_debug) {
-            PrintMessageDieOnError("[BWAReadAligner]: found compatible alignments", DEBUG);
-          }
-          if (read_pair->aligned_read_num == 0) {
-            matealign = read_pair->
-              reads.at(1).reverse ?
-              good_left_alignments_read2.at(index_of_mate) :
-              good_right_alignments_read2.at(index_of_mate);
-          } else {
-            matealign = read_pair->
-              reads.at(0).reverse ?
-              good_left_alignments_read1.at(index_of_hit) :
-              good_right_alignments_read1.at(index_of_hit);
-            index_of_hit = index_of_mate;
-          }
-          read_pair->found_unique_alignment = true;
-        }
-      }
-
-      // Still didn't find alignment, or only one aligned,
-      // Check that mate is compatible
-      if (!read_pair->found_unique_alignment) {
-        vector<ALIGNMENT> mate_alignments;
-	// make sure mate isn't ginormous
-	if (read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.size()
-	    > MAX_MATE_LENGTH) {
-	  read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides =
-	    read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.substr(0, MAX_MATE_LENGTH);
-	  read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual =
-	    read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual.substr(0, MAX_MATE_LENGTH);
-	}
-        // Trim more harshly here
-        string trim_nucs;
-        string trim_quals;
-        TrimRead(read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides,
-                 read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual,
-                 &trim_nucs, &trim_quals, MATE_TRIM_QUAL);
-        read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides = trim_nucs;
-        read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual = trim_quals;
-        if (align_debug) {
-          PrintMessageDieOnError("[BWAReadAligner]: checking for mate alignment " + trim_nucs + " " + trim_quals, DEBUG);
-        }
-        if (!AlignMate(*read_pair, &mate_alignments,
-                       read_pair->reads.at(read_pair->aligned_read_num).repseq)) {
-          if (align_debug) {
-            PrintMessageDieOnError("[BWAReadAligner]: Mate not aligned.", DEBUG);
-          }
-        } else {
-          for (size_t i = 0; i < num_alignments; i++) {
-            const ALIGNMENT& lalign = good_left.at(i);
-            const ALIGNMENT& ralign = good_right.at(i);
-            if (CheckMateAlignment(mate_alignments, lalign, ralign,
-                                   &matealign)) {
-	      index_of_hit = i;
-              if (!read_pair->found_unique_alignment) {
-                read_pair->found_unique_alignment = true;
-              } else {
-                // multiple mapper, more than one good hit
-		if (allow_multi_mappers) {
-		  stringstream xa;
-		  xa << lalign.chrom << ":" << lalign.start << ";";
-		  alternate_mappings = alternate_mappings + xa.str();
-		} else {
-		  return false;
-		}
-              }
-            } else {
-	      if (align_debug) {
-		PrintMessageDieOnError("Check mate alignment failed", DEBUG);
-	      }
-	    }
-          }
-        }
-      }
-
-      // Step 3: Adjust alignment and output
-      if (align_debug) {
-        PrintMessageDieOnError("[BWAReadAligner]: adjust paired alignment and output", DEBUG);
-      }
-      if (read_pair->found_unique_alignment) {
-        ALIGNMENT final_left_alignment =
-          good_left.at(index_of_hit);
-        ALIGNMENT final_right_alignment =
-          good_right.at(index_of_hit);
-        // try stitching first
-        if (align_debug) {
-          PrintMessageDieOnError("[BWAReadAligner]: Try stitching", DEBUG);
-        }
-	if (StitchReads(read_pair, &final_left_alignment,
-                        &final_right_alignment)) {
-          if (OutputAlignment(read_pair, final_left_alignment,
-			      final_right_alignment,
-			      matealign, alternate_mappings, false)) {
-	    return true;
-	  }
-        } else {
-          if (OutputAlignment(read_pair, final_left_alignment,
-			      final_right_alignment,
-			      matealign, alternate_mappings, true)) {
-	    return true;
-	  }
-	}
-	// If we made it this far and didn't align, reset the
-	// read so we don't try again
-	if (align_debug) {
-	  PrintMessageDieOnError("[BWAReadAligner]: Failed to align", DEBUG);
-	}
-	read_pair->reads.at(0).ms_repeat_next_best_period = 0;
-	read_pair->reads.at(1).ms_repeat_next_best_period = 0;
-	return false;
-      }
-    }
-  } else {  // single end reads
-    // all valid alignments for each read
-    vector<ALIGNMENT> good_left_alignments_read1;
-    vector<ALIGNMENT> good_right_alignments_read1;
-    if (read_pair->read1_passed_detection) {
-      if (ProcessRead(&read_pair->reads.at(0),
-                      &good_left_alignments_read1,
-                      &good_right_alignments_read1, err, messages)) {
-        // Get rid of multi mappers
-	if (allow_multi_mappers) {
-	  if (good_left_alignments_read1.size() == 0) return false;
-	  if (good_left_alignments_read1.size() > 1) {
-	    for (size_t i = 1; i < good_left_alignments_read1.size(); i++) {
-	      stringstream xa;
-	      xa << good_left_alignments_read1.at(i).chrom << ":" << good_left_alignments_read1.at(i).start << ";";
-	      alternate_mappings = alternate_mappings + xa.str();
-	    }
-	  }
-	} else {
-	  if (good_left_alignments_read1.size() > 1) {
-	    return false;
-	  }
-	}
-        if (align_debug) {
-          PrintMessageDieOnError("[BWAReadAligner]: checking single end alignment.", DEBUG);
-        }
-        // Output the alignment
-        read_pair->read1_passed_alignment = true;
-        read_pair->found_unique_alignment = true;
-        read_pair->aligned_read_num = 0;
-        ALIGNMENT dummy_matealign;
-        if (OutputAlignment(read_pair, good_left_alignments_read1.front(),
-			    good_right_alignments_read1.front(),
-			    dummy_matealign, alternate_mappings, false)) {
-	  return true;
-	} else {
-	  // reset read so we don't try again
-	  read_pair->reads.at(0).ms_repeat_next_best_period = 0;
-	  return false;
-	}
-      }
-    }
-  }
-  return false;
-}
-
-bool BWAReadAligner::ProcessRead(MSReadRecord* read,
-                                 vector<ALIGNMENT>* good_left_alignments,
-                                 vector<ALIGNMENT>* good_right_alignments,
-                                 string* err,
-                                 string* messages) {
-  *err = "Alignment-errors-here:";
-  *messages = "Alignment-notes-here:";
-  if (align_debug) {
-    PrintMessageDieOnError("[ProcessRead]: " + read->ID + " " + read->left_flank_nuc + " " + read->right_flank_nuc, DEBUG);
-  }
-  // do the flanks consist of all repeats?
-  bool left_all_repeats = false;
-  bool right_all_repeats = false;
-
-  // Detected motif
-  const string& repseq = read->repseq;
-
-  // check that we have that repseq
-  if (_bwt_references->find(repseq) == _bwt_references->end()) {
-    *err += "Repseq-doesn't-exist-in-ref;";
-    return false;
-  }
-
-  // Check if flanks are perfect repeats
-  if (IsPerfectRepeat(read->left_flank_nuc, repseq) ||
-      IsPerfectRepeat(read->left_flank_nuc, reverseComplement(repseq))) {
-    read->left_perfect_repeat = true;
-    left_all_repeats = true;
-  }
-  if (IsPerfectRepeat(read->right_flank_nuc, repseq) ||
-      IsPerfectRepeat(read->right_flank_nuc, reverseComplement(repseq))) {
-    read->right_perfect_repeat = true;
-    right_all_repeats = true;
-  }
-  // don't continue if both are fully repetitive
-  if (left_all_repeats && right_all_repeats) {
-    *err += "Left-and-right-flanks-are-fully-repeitive;";
-    return false;
-  }
-
-  if (align_debug) {
-    PrintMessageDieOnError("[ProcessRead]: align flanks", DEBUG);
-  }
-  // Align the flanking regions
-  if (read->left_flank_nuc.size() > read->quality_scores.size() ||
-      read->right_flank_nuc.size() > read->quality_scores.size()) {
-    PrintMessageDieOnError("[ProcessRead]: Internal error: quality score length invalid", WARNING);
-  }
-  bwa_seq_t* seqs = BWAAlignFlanks(*read);
-  bwa_seq_t* seq_left = &seqs[0];
-  bwa_seq_t* seq_right = &seqs[1];
-
-  if (align_debug) {
-    PrintMessageDieOnError("[ProcessRead]: fill in coords", DEBUG);
-  }
-  // fill in alignment coordinates
-  vector<ALIGNMENT> left_alignments;
-  vector<ALIGNMENT> right_alignments;
-  if (!left_all_repeats) {
-    if (!GetAlignmentCoordinates(seq_left, repseq, &left_alignments)) {
-      bwa_free_read_seq(2, seqs);
-      *err += "No-left-alignment;";
-      return false;
-    }
-  }
-  if (!right_all_repeats) {
-    if (!GetAlignmentCoordinates(seq_right, repseq, &right_alignments)) {
-      bwa_free_read_seq(2, seqs);
-      *err += "No-right-alignment;";
-      return false;
-    }
-  }
-
-  // don't need seqs anymore
-  bwa_free_read_seq(2, seqs);
-
-  // get shared alignments
-  vector<ALIGNMENT> left_refids;
-  vector<ALIGNMENT> right_refids;
-  if (!GetSharedAlns(left_alignments, right_alignments,
-                     &left_refids, &right_refids)) {
-    *err += "No-shared-alignment-found;";
-    return false;
-  }
-
-  read->left_all_repeats = left_all_repeats;
-  read->right_all_repeats = right_all_repeats;
-  *good_left_alignments = left_refids;
-  *good_right_alignments = right_refids;
-
-  // Return true if at least one good alignment
-  return (good_left_alignments->size() >= 1 &&
-          good_right_alignments->size() >= 1);
-}
-
-bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
-  if (align_debug) {
-    PrintMessageDieOnError("[BWAAlignFlanks]: set up", DEBUG);
-  }
-  // set up bwa
-  int is_comp = _opts->mode&BWA_MODE_COMPREAD;
-  bwa_seq_t *seqs, *seq_left, *seq_right;
-  seqs = reinterpret_cast<bwa_seq_t*>(calloc(2, sizeof(bwa_seq_t)));
-  seq_left = &seqs[0];
-  seq_right= &seqs[1];
-
-  if (align_debug) {
-    PrintMessageDieOnError("[BWAAlignFlanks]: reverse", DEBUG);
-  }
-  // left in for historical reasons since BWA reverses sequence
-  const string& left_flank_nuc = reverseComplement(read.left_flank_nuc);
-  const string& right_flank_nuc = reverseComplement(read.right_flank_nuc);
-
-  if (align_debug) {
-    PrintMessageDieOnError("[BWAAlignFlanks]: left flank", DEBUG);
-  }
-  // LEFT FLANKING REGION
-  const string& left_qual =  reverse(read.quality_scores.
-                                     substr(0, left_flank_nuc.length()));
-  if (left_qual.size() != left_flank_nuc.size()) {
-    PrintMessageDieOnError("[BWAAlignFlanks]: Qual size does not match nuc size", WARNING);
-    return seqs;
-  }
-  seq_left->bc[0] = 0;
-  seq_left->tid = -1;
-  seq_left->qual = 0;
-  seq_left->full_len = seq_left->clip_len = seq_left->len =
-    left_flank_nuc.length();
-  seq_left->seq = reinterpret_cast<ubyte_t*>(calloc(seq_left->len, 1));
-  seq_left->qual = reinterpret_cast<ubyte_t*>(calloc(seq_left->len, 1));
-  for (int i = 0; i != seq_left->full_len; ++i) {
-    seq_left->seq[i] =
-      nst_nt4_table[static_cast<int>(left_flank_nuc.at(i))];
-    if (fastq) {
-      seq_left->qual[i] = left_qual.at(i)+33 < 126 ?
-        left_qual.at(i) + 33:126;
-    } else {
-      seq_left->qual[i] = 126;
-    }
-  }
-  seq_left->rseq = reinterpret_cast<ubyte_t*>(calloc(seq_left->full_len, 1));
-  memcpy(seq_left->rseq, seq_left->seq, seq_left->len);
-  seq_reverse(seq_left->len, seq_left->seq, 0);
-  seq_reverse(seq_left->len, seq_left->rseq, is_comp);
-  seq_reverse(seq_left->len, seq_left->qual, 0);
-  seq_left->name = strdup((const char*)read.ID.c_str());
-
-  if (align_debug) {
-    PrintMessageDieOnError("[BWAAlignFlanks]: right flank", DEBUG);
-  }
-  // RIGHT FLANKING REGION
-  const string& right_qual = reverse(read.quality_scores.
-                                     substr(read.quality_scores.size()
-                                            - right_flank_nuc.length(),
-                                            right_flank_nuc.length()));
-  seq_right->bc[0] = 0;
-  seq_right->tid = -1;
-  seq_right->qual = 0;
-  seq_right->full_len = seq_right->clip_len = seq_right->len =
-    right_flank_nuc.length();
-  seq_right->seq = reinterpret_cast<ubyte_t*>(calloc(seq_right->len, 1));
-  seq_right->qual = reinterpret_cast<ubyte_t*>(calloc(seq_right->len, 1));
-  for (int i = 0; i != seq_right->full_len; ++i) {
-    seq_right->seq[i] =
-      nst_nt4_table[static_cast<int>(right_flank_nuc.at(i))];
-    if (fastq) {
-      seq_right->qual[i] = right_qual.at(i)+33 < 126 ?
-        right_qual.at(i) + 33:126;
-    } else {
-      seq_right->qual[i] = 126;
-    }
-  }
-  seq_right->rseq = reinterpret_cast<ubyte_t*>(calloc(seq_right->full_len, 1));
-  memcpy(seq_right->rseq, seq_right->seq, seq_right->len);
-  seq_reverse(seq_right->len, seq_right->seq, 0);
-  seq_reverse(seq_right->len, seq_right->rseq, is_comp);
-  seq_reverse(seq_right->len, seq_right->qual, 0);
-  seq_right->name = strdup((const char*)read.ID.c_str());
-
-  // call bwa with appropriate options
-  bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
-                     2, seqs, _opts);
-
-  return seqs;
-}
-
-void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
-  vector<string> items;
-  split(refstring, '$', items);
-  refid->id = atoi(items.at(0).c_str());
-  refid->left = (items.at(1) == "L");
-  refid->chrom = items.at(2);
-  refid->start = atoi(items.at(3).c_str())+extend;
-  refid->end = atoi(items.at(4).c_str());
-  refid->copynum = atof(items.at(6).c_str());
-  if (items.size() > 7)
-    refid->name = items.at(7);
-}
 
 // ** copied from BWA ** //
 int64_t pos_end_multi(const bwt_multi1_t *p, int len) {
@@ -556,15 +77,341 @@ int64_t pos_end_multi(const bwt_multi1_t *p, int len) {
   }
 }
 
+BWAReadAligner::BWAReadAligner(BWT* bwt_reference,
+                               BNT* bnt_annotation,
+                               map<int, REFSEQ>* ref_sequences,
+                               gap_opt_t *opts) {
+  bwase_initialize();
+  _bwt_reference = bwt_reference;
+  _bnt_annotation = bnt_annotation;
+  _ref_sequences = ref_sequences;
+  _opts = opts;
+  _default_opts = gap_init_opt();
+  _default_opts->max_diff = 10;
+  _default_opts->max_gapo = 1;
+  _default_opts->max_gape = 10;
+  _default_opts->fnr = -1;
+
+  cigar_debug = false;
+  stitch_debug = false;
+}
+
+bool BWAReadAligner::ProcessReadPair(ReadPair* read_pair, string* err, string* messages) {
+  // Initialize status variables
+  read_pair->ResetAlignmentFlags();
+
+  if (read_pair->reads.at(0).paired) {
+    return ProcessPairedEndRead(read_pair, err, messages);
+  } else {
+    return ProcessSingleEndRead(read_pair, err, messages);
+  }
+}
+
+bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, string*messages) {
+  // Keep XA string for multi-mappers
+  string alternate_mappings = "";
+
+  // all valid alignments for individual reads in the pair
+  vector<ALIGNMENT> good_left_alignments_read1, good_right_alignments_read1,
+    good_left_alignments_read2, good_right_alignments_read2;
+
+  /* --- Step 1: Align each read separately --- */
+  read_pair->read1_passed_alignment =
+    ProcessRead(&read_pair->reads.at(0), read_pair->read1_passed_detection,
+		&good_left_alignments_read1, &good_right_alignments_read1, err, messages);
+  read_pair->read2_passed_alignment =
+    ProcessRead(&read_pair->reads.at(1), read_pair->read2_passed_detection,
+		&good_left_alignments_read2, &good_right_alignments_read2, err, messages);
+  if (!(read_pair->read1_passed_alignment ||
+	read_pair->read2_passed_alignment)) {
+    return false;
+  }
+
+  /* --- Step 2: Determine if unique valid alignment and check mate pair --- */
+  // Trim and align mate
+  TrimMate(read_pair);
+  vector<ALIGNMENT> mate_alignments;  
+  if (!AlignMate(*read_pair, &mate_alignments,
+		 read_pair->reads.at(read_pair->aligned_read_num).repseq)) {
+    return false;
+  }
+  // Set alignment info for the read that mapped
+  read_pair->aligned_read_num = read_pair->read1_passed_alignment ? 0 : 1;
+  const vector<ALIGNMENT>& good_left =
+    read_pair->aligned_read_num == 0 ?
+    good_left_alignments_read1 : good_left_alignments_read2;
+  const vector<ALIGNMENT>& good_right =
+    read_pair->aligned_read_num == 0 ?
+    good_right_alignments_read1 : good_right_alignments_read2;
+  // Find compatible alignment with mate
+  ALIGNMENT matealign;
+  size_t index_of_hit;
+  for (size_t i = 0; i < good_left.size(); i++) {
+    if (CheckMateAlignment(mate_alignments, good_left.at(i), good_right.at(i), &matealign)) {
+      index_of_hit = i;
+      if (!read_pair->found_unique_alignment) {
+	read_pair->found_unique_alignment = true;
+      } else { // multi-mapper
+	if (allow_multi_mappers) {
+	  stringstream xa;
+	  xa << good_left.at(i).chrom << ":" << good_left.at(i).start <<";";
+	  alternate_mappings = alternate_mappings + xa.str();
+	} else {
+	  return false;
+	}
+      }
+    }
+  }
+
+  /* --- Step 3: Adjust alignment and output --- */
+  if (!read_pair->found_unique_alignment) { return false; }
+  ALIGNMENT final_left_alignment =
+    good_left.at(index_of_hit);
+  ALIGNMENT final_right_alignment =
+    good_right.at(index_of_hit);
+  // try stitching first
+  bool treat_as_paired = StitchReads(read_pair, &final_left_alignment,
+				     &final_right_alignment);
+  if (OutputAlignment(read_pair, final_left_alignment, final_right_alignment,
+		      matealign, alternate_mappings, treat_as_paired)) {
+    return true;
+  }
+  // read so we don't try again
+  read_pair->reads.at(0).ms_repeat_next_best_period = 0;
+  read_pair->reads.at(1).ms_repeat_next_best_period = 0;
+  return false;
+}
+
+bool BWAReadAligner::ProcessSingleEndRead(ReadPair* read_pair, string* err, string* messages) {
+  if (align_debug) {
+    PrintMessageDieOnError("Processing single end read", DEBUG);
+  }
+  // Keep track of multiple mappers
+  string alternate_mappings = "";
+
+  // all valid alignments for each read
+  vector<ALIGNMENT> good_left_alignments_read1;
+  vector<ALIGNMENT> good_right_alignments_read1;
+  if (!ProcessRead(&read_pair->reads.at(0), read_pair->read1_passed_detection,
+		   &good_left_alignments_read1,
+		   &good_right_alignments_read1, err, messages)) {
+    return false;
+  }
+  // Get rid of multi mappers
+  if (good_left_alignments_read1.size() > 1) {
+    if (allow_multi_mappers) {
+      for (size_t i = 1; i < good_left_alignments_read1.size(); i++) {
+	stringstream xa;
+	xa << good_left_alignments_read1.at(i).chrom << ":" << good_left_alignments_read1.at(i).start << ";";
+	alternate_mappings = alternate_mappings + xa.str();
+      }
+    } else {
+      *err += "multi-mapper";
+      return false;
+    }
+  }
+  // Output the alignment
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: Output alignment", DEBUG);
+  }
+  read_pair->read1_passed_alignment = true;
+  read_pair->found_unique_alignment = true;
+  read_pair->aligned_read_num = 0;
+  ALIGNMENT dummy_matealign;
+  ALIGNMENT final_left_alignment = good_left_alignments_read1.front();
+  ALIGNMENT final_right_alignment = good_right_alignments_read1.front();
+  if (OutputAlignment(read_pair, final_left_alignment, final_right_alignment,
+		      dummy_matealign, alternate_mappings, false)) {
+    return true;
+  } else {
+    // reset read so we don't try again
+    read_pair->reads.at(0).ms_repeat_next_best_period = 0;
+    return false;
+  }
+  return false;
+}
+
+void BWAReadAligner::TrimMate(ReadPair* read_pair) {
+    // make sure mate isn't ginormous
+    if (read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.size()
+	> MAX_MATE_LENGTH) {
+      read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides =
+	read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.substr(0, MAX_MATE_LENGTH);
+      read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual =
+	read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual.substr(0, MAX_MATE_LENGTH);
+    }
+
+    // Trim more harshly here
+    string trim_nucs;
+    string trim_quals;
+    TrimRead(read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides,
+	     read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual,
+	     &trim_nucs, &trim_quals, MATE_TRIM_QUAL);
+    read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides = trim_nucs;
+    read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual = trim_quals;
+}
+
+bool BWAReadAligner::CheckFlanksForRepeats(MSReadRecord* read, const std::string& repseq) {
+  bool left_all_repeats = false;
+  bool right_all_repeats = false;
+  if (IsPerfectRepeat(read->left_flank_nuc, repseq) ||
+      IsPerfectRepeat(read->left_flank_nuc, reverseComplement(repseq))) {
+    read->left_perfect_repeat = true;
+    left_all_repeats = true;
+  }
+  if (IsPerfectRepeat(read->right_flank_nuc, repseq) ||
+      IsPerfectRepeat(read->right_flank_nuc, reverseComplement(repseq))) {
+    read->right_perfect_repeat = true;
+    right_all_repeats = true;
+  }
+  read->left_all_repeats = left_all_repeats;
+  read->right_all_repeats = right_all_repeats;
+  return !(left_all_repeats && right_all_repeats);
+}
+
+bool BWAReadAligner::ProcessRead(MSReadRecord* read, bool passed_detection,
+                                 vector<ALIGNMENT>* good_left_alignments,
+                                 vector<ALIGNMENT>* good_right_alignments,
+                                 string* err,
+                                 string* messages) {
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: process read " + read->ID  + " " + read->left_flank_nuc + " " + read->right_flank_nuc, DEBUG);
+  }
+  if (!passed_detection) return false;
+
+  *err = "Alignment-errors-here:";
+  *messages = "Alignment-notes-here:";
+
+  // Detected motif
+  const string& repseq = read->repseq;
+
+  // Check if flanks are perfect repeats
+  if (!CheckFlanksForRepeats(read, repseq)) {
+    *err += "Left-and-right-flanks-are-fully-repetitive;";
+    return false;
+  }
+
+  // Align the flanking regions
+  bwa_seq_t* seqs = BWAAlignFlanks(*read);
+  bwa_seq_t* seq_left = &seqs[0];
+  bwa_seq_t* seq_right = &seqs[1];
+
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: BWA alignment", DEBUG);
+  }
+  // fill in alignment coordinates
+  vector<ALIGNMENT> left_alignments, right_alignments;
+  if (!read->left_all_repeats) {
+    if (!GetAlignmentCoordinates(seq_left, repseq, &left_alignments)) {
+      bwa_free_read_seq(2, seqs);
+      *err += "No-left-alignment;";
+      return false;
+    }
+  }
+  if (!read->right_all_repeats) {
+    if (!GetAlignmentCoordinates(seq_right, repseq, &right_alignments)) {
+      bwa_free_read_seq(2, seqs);
+      *err += "No-right-alignment;";
+      return false;
+    }
+  }
+  // don't need seqs anymore
+  bwa_free_read_seq(2, seqs);
+
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: Get shared alignments", DEBUG);
+  }
+  // get shared alignments
+  if (!GetSharedAlns(left_alignments, right_alignments,
+                     good_left_alignments, good_right_alignments)) {
+    *err += "No-shared-alignment-found;";
+    return false;
+  }
+
+  // Set STR coordinates of shared alignments
+  if (!SetSTRCoordinates(good_left_alignments, good_right_alignments)) {
+    *err += "Could-not-set-str-coordinates;";
+    return false;
+  }
+
+  // Return true if at least one good alignment
+  return (good_left_alignments->size() >= 1 &&
+          good_right_alignments->size() >= 1);
+}
+
+void BWAReadAligner::SetSeq(bwa_seq_t* seq, const string& flank_nuc, const string& flank_qual, const string& readid) {
+  int is_comp = _opts->mode&BWA_MODE_COMPREAD;
+  seq->bc[0] = 0;
+  seq->tid = -1;
+  seq->qual = 0;
+  seq->full_len = seq->clip_len = seq->len = flank_nuc.length();
+  seq->seq = reinterpret_cast<ubyte_t*>(calloc(seq->len, 1));
+  seq->qual = reinterpret_cast<ubyte_t*>(calloc(seq->len, 1));
+  for (int i = 0; i != seq->full_len; ++i) {
+    seq->seq[i] = nst_nt4_table[static_cast<int>(flank_nuc.at(i))];
+    if (fastq) {
+      seq->qual[i] = (flank_qual.at(i)+33 < 126) ? flank_qual.at(i)+33 : 126;
+    } else { seq->qual[i] = 126; }
+  }
+  seq->rseq = reinterpret_cast<ubyte_t*>(calloc(seq->full_len, 1));
+  memcpy(seq->rseq, seq->seq, seq->len);
+  seq_reverse(seq->len, seq->seq, 0);
+  seq_reverse(seq->len, seq->rseq, is_comp);
+  seq_reverse(seq->len, seq->qual, 0);
+  seq->name = strdup((const char*)readid.c_str());
+}
+
+bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
+  // set up bwa
+  bwa_seq_t *seqs, *seq_left, *seq_right;
+  seqs = reinterpret_cast<bwa_seq_t*>(calloc(2, sizeof(bwa_seq_t)));
+  seq_left = &seqs[0];
+  seq_right = &seqs[1];
+
+  // left in for historical reasons since BWA reverses sequence
+  const string& left_flank_nuc = reverseComplement(read.left_flank_nuc);
+  const string& right_flank_nuc = reverseComplement(read.right_flank_nuc);
+  const string& left_qual =  reverse(read.quality_scores.
+                                     substr(0, left_flank_nuc.length()));
+  const string& right_qual = reverse(read.quality_scores.
+                                     substr(read.quality_scores.size()
+                                            - right_flank_nuc.length(),
+                                            right_flank_nuc.length()));
+  if (align_debug) {
+    stringstream msg;
+    msg << "[BWAAlignFlanks]: left nuc " << left_flank_nuc << " right nuc " << right_flank_nuc;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
+  if (left_qual.size() != left_flank_nuc.size() || right_qual.size() != right_flank_nuc.size()) {
+    PrintMessageDieOnError("[BWAAlignFlanks]: Internal error: Qual size does not match nuc size", WARNING);
+    return seqs;
+  }
+
+  // Set flanking regions
+  SetSeq(seq_left, left_flank_nuc, left_qual, read.ID);
+  SetSeq(seq_right, right_flank_nuc, right_qual, read.ID);
+
+  // call bwa with appropriate options
+  bwa_cal_sa_reg_gap(0, _bwt_reference->bwt, 2, seqs, _opts);
+  return seqs;
+}
+
+void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
+  vector<string> items;
+  split(refstring, '$', items);
+  refid->id = atoi(items.at(0).c_str());
+  refid->chrom = items.at(1);
+  refid->start = atoi(items.at(2).c_str())+extend;
+  refid->end = atoi(items.at(3).c_str())-extend;
+}
 
 bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
                                              const std::string&repseq,
                                              vector<ALIGNMENT>* alignments) {
   // fill in alignment properties
   bwa_aln2seq_core(aligned_seqs->n_aln, aligned_seqs->aln,
-                   aligned_seqs, 0, 1000);
-  bwa_cal_pac_pos_core(0, _bwt_references->
-                       at(repseq).bwt[1-aligned_seqs->strand],
+                   aligned_seqs, 0, 10000); // last arg gives max num multi-mappers
+  bwa_cal_pac_pos_core(0, _bwt_reference->bwt[1-aligned_seqs->strand],
                        &aligned_seqs[0], _opts->max_diff, _opts->fnr);
 
   // get coords
@@ -572,33 +419,31 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
     bwt_multi1_t *q = aligned_seqs->multi + i;
     // set pos
     if (!q->strand) {
-      q->pos = _bwt_references->at(repseq).bwt[1]->seq_len -
-        bwt_sa(_bwt_references->at(repseq).bwt[1], q->pos) +
+      q->pos = _bwt_reference->bwt[1]->seq_len -
+        bwt_sa(_bwt_reference->bwt[1], q->pos) +
         aligned_seqs[0].len;
     } else {
-      q->pos = bwt_sa(_bwt_references->at(repseq).bwt[0], q->pos);
+      q->pos = bwt_sa(_bwt_reference->bwt[0], q->pos);
     }
 
     int j, seqid;
     j = pos_end_multi(q, aligned_seqs->len) - q->pos;
-    if (q->pos >= _bnt_annotations->at(repseq).bns->l_pac) {
+    if (q->pos >= _bnt_annotation->bns->l_pac) {
       continue;
     }
-    bns_coor_pac2real(_bnt_annotations->at(repseq).bns, q->pos, j, &seqid);
+    bns_coor_pac2real(_bnt_annotation->bns, q->pos, j, &seqid);
 
     // fill in alignment info
     ALIGNMENT refid;
-    ParseRefid(_bnt_annotations->at(repseq).bns->anns[seqid].name, &refid);
+    ParseRefid(_bnt_annotation->bns->anns[seqid].name, &refid);
     refid.strand = q->strand;
     if (q->strand) {
       refid.pos = (refid.start-extend-PAD) +
-        static_cast<int>(q->pos - _bnt_annotations->
-                         at(repseq).bns->anns[seqid].offset) + 1;
+        static_cast<int>(q->pos - _bnt_annotation->bns->anns[seqid].offset) + 1;
     } else {
-      refid.pos = static_cast<int>(q->pos - _bnt_annotations->at(repseq).
-                                   bns->anns[seqid].offset - 2*j) +
-        (refid.start-extend-PAD);
+      refid.pos = static_cast<int>(q->pos - _bnt_annotation->bns->anns[seqid].offset - 2*j) + (refid.start-extend-PAD);
     }
+    refid.endpos = refid.pos + aligned_seqs->len;
     refid.repeat = repseq;
     alignments->push_back(refid);
   }
@@ -636,9 +481,8 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
        it != right_id_to_ref.end(); ++it) {
     int ref_key = it->first;
     if (left_id_to_ref.find(ref_key) != left_id_to_ref.end()) {
-      // check strand, L, R are compatible
-      if (left_id_to_ref[ref_key].strand == it->second.strand &&
-          left_id_to_ref[ref_key].left != it->second.left) {
+      // check strand compatible
+      if (left_id_to_ref[ref_key].strand == it->second.strand) {
         left_refids->push_back(left_id_to_ref[ref_key]);
         right_refids->push_back(it->second);
         found = true;
@@ -646,6 +490,109 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
     }
   }
   return found;
+}
+
+void BWAReadAligner::GetSpannedSTRs(const ALIGNMENT& lalign, const ALIGNMENT& ralign, const int& refid,
+				    vector<ReferenceSTR>* spanned_ref_strs, vector<string>* repseq) {
+  // Get min and max coordinates
+  int mincoord = lalign.pos < ralign.pos ? lalign.pos : ralign.pos;
+  int maxcoord = lalign.endpos > ralign.endpos ? lalign.endpos : ralign.endpos;
+  const map<string, vector<ReferenceSTR> > ref_strs = (*_ref_sequences)[refid].ref_strs;
+  for (map<string, vector<ReferenceSTR> >::const_iterator it = ref_strs.begin(); it != ref_strs.end(); it++) {
+    const string& motif = it->first;
+    if (align_debug) {
+      PrintMessageDieOnError("[GetSpannedSTRs]: Checking motif " + motif, DEBUG);
+    }
+    for (size_t i = 0; i < it->second.size(); i++) {
+      const ReferenceSTR& ref = it->second.at(i);
+      if (align_debug) {
+	stringstream msg;
+	msg << "[GetSpannedSTRs]: Checking " << ref.chrom << ":" << ref.start << "-" << ref.stop
+	    << " mincoord: " << mincoord << " maxcoord: " << maxcoord;
+	PrintMessageDieOnError(msg.str(), DEBUG);
+      }
+      if (mincoord < ref.start && maxcoord > ref.stop) {
+	spanned_ref_strs->push_back(ref);
+	repseq->push_back(motif);
+      }
+    }
+  }
+}
+
+bool BWAReadAligner::SetSTRCoordinates(vector<ALIGNMENT>* good_left_alignments,
+				       vector<ALIGNMENT>* good_right_alignments) {
+  vector<ALIGNMENT> processed_left_alignments;
+  vector<ALIGNMENT> processed_right_alignments;
+  if (align_debug) {
+    PrintMessageDieOnError("Setting STR coordinates...", DEBUG);
+  }
+  for (size_t i = 0; i < good_left_alignments->size(); i++) {
+    const ALIGNMENT& lalign = good_left_alignments->at(i);
+    const ALIGNMENT& ralign = good_right_alignments->at(i);
+    int refid = lalign.id;
+    if (align_debug) {
+      stringstream msg;
+      msg << "[SetSTRCoordinates]: Check " << refid;
+      PrintMessageDieOnError(msg.str(), DEBUG);
+    }
+    // Which STR is spanned by these two alignments
+    vector<ReferenceSTR> spanned_ref_strs;
+    vector<string> repseqs;
+    GetSpannedSTRs(lalign, ralign, refid, &spanned_ref_strs, &repseqs);
+    if (align_debug) {
+      stringstream msg;
+      msg << "[SetSTRCoordinates]: Found " << spanned_ref_strs.size() << " spanning STRs";
+      PrintMessageDieOnError(msg.str(), DEBUG);
+    }
+    for (size_t j = 0; j < spanned_ref_strs.size(); j++) {
+      if (align_debug) {
+	stringstream msg;
+	msg << "[SetSTRCoordinates]: Found spanned STR " << refid << spanned_ref_strs.at(j).chrom << ":" << spanned_ref_strs.at(j).start << "-" << spanned_ref_strs.at(j).stop << " "
+	    << " Left read starts at " << lalign.pos << " Right read starts at " << ralign.pos << " strand " << ralign.strand << endl;
+	PrintMessageDieOnError(msg.str(), DEBUG);
+      }
+      if (j >= 1) continue; // TODO: remove this, put field to keep track of if read spans more than 1 STR
+      float copynum = static_cast<float>(spanned_ref_strs.at(j).stop-spanned_ref_strs.at(j).start+1)/
+	static_cast<float>(repseqs.at(j).size());
+      copynum = ceilf(copynum * 10) / 10; // Round to 1 digit to match reference
+      ALIGNMENT l_spanning_alignment;
+      l_spanning_alignment.id = refid;
+      l_spanning_alignment.chrom = spanned_ref_strs.at(j).chrom;
+      l_spanning_alignment.start = spanned_ref_strs.at(j).start;
+      l_spanning_alignment.end = spanned_ref_strs.at(j).stop;
+      l_spanning_alignment.repeat = repseqs.at(j);
+      l_spanning_alignment.strand = lalign.strand;
+      l_spanning_alignment.pos = lalign.pos;
+      l_spanning_alignment.copynum = copynum;
+      ALIGNMENT r_spanning_alignment;
+      r_spanning_alignment.id = refid;
+      r_spanning_alignment.chrom = spanned_ref_strs.at(j).chrom;
+      r_spanning_alignment.start = spanned_ref_strs.at(j).start;
+      r_spanning_alignment.end = spanned_ref_strs.at(j).stop;
+      r_spanning_alignment.repeat = repseqs.at(j);
+      r_spanning_alignment.strand = ralign.strand;
+      r_spanning_alignment.pos = ralign.pos;
+      r_spanning_alignment.copynum = copynum;
+      if (l_spanning_alignment.pos < r_spanning_alignment.pos) {
+	if (align_debug) {
+	  PrintMessageDieOnError("Left alignment is left, forward strand", DEBUG);
+	}
+	l_spanning_alignment.left = true;
+	r_spanning_alignment.left = false;
+      } else {
+	if (align_debug) {
+	  PrintMessageDieOnError("Right alignment is left, reverse strand", DEBUG);
+	}
+	l_spanning_alignment.left = false;
+	r_spanning_alignment.left = true;
+      }
+      processed_left_alignments.push_back(l_spanning_alignment);
+      processed_right_alignments.push_back(r_spanning_alignment);
+    }
+  }
+  *good_left_alignments = processed_left_alignments;
+  *good_right_alignments = processed_right_alignments;
+  return good_left_alignments->size() >= 1;
 }
 
 bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
@@ -659,29 +606,11 @@ bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
                                at(1-num_aligned_read).orig_qual);
 
   // set up BWA alignment
-  int is_comp = _opts->mode&BWA_MODE_COMPREAD;
   bwa_seq_t *seq = reinterpret_cast<bwa_seq_t*>(calloc(1, sizeof(bwa_seq_t)));
-  seq->bc[0] = 0;
-  seq->tid = -1;
-  seq->qual = 0;
-  seq->full_len = seq->clip_len = seq->len = nucs.length();
-  seq->seq = reinterpret_cast<ubyte_t*>(calloc(seq->len, 1));
-  seq->qual = reinterpret_cast<ubyte_t*>(calloc(seq->len, 1));
-  for (int i = 0; i != seq->full_len; ++i) {
-    seq->seq[i] = nst_nt4_table[static_cast<int>(nucs.at(i))];
-    seq->qual[i] = qual.at(i)+33 < 126 ? qual.at(i) + 33:126;
-  }
-  seq->rseq = reinterpret_cast<ubyte_t*>(calloc(seq->full_len, 1));
-  memcpy(seq->rseq, seq->seq, seq->len);
-  seq_reverse(seq->len, seq->seq, 0);
-  seq_reverse(seq->len, seq->qual, 0);
-  seq_reverse(seq->len, seq->rseq, is_comp);
-  seq->name = strdup((const char*)read_pair.
-                     reads.at(1-num_aligned_read).ID.c_str());
+  SetSeq(seq, nucs, qual, read_pair.reads.at(1-num_aligned_read).ID.c_str());
 
   // call bwa with appropriate options
-  bwa_cal_sa_reg_gap(0, _bwt_references->at(repseq).bwt,
-                     1, seq, _default_opts);
+  bwa_cal_sa_reg_gap(0, _bwt_reference->bwt, 1, seq, _default_opts);
 
   if (seq->n_aln == 0) {
     bwa_free_read_seq(1, seq);
@@ -705,27 +634,9 @@ bool BWAReadAligner::CheckMateAlignment(const vector<ALIGNMENT>&
   // For each, check against STR alignment
   for (vector<ALIGNMENT>::const_iterator it = mate_alignments.begin();
        it != mate_alignments.end(); ++it) {
-    // Check chrom, position, and strand
-    if (align_debug) {
-      stringstream msg;
-      msg << "[CheckMateAlignment]: check mate finds "
-          << it->chrom << " "
-          << (abs(it->pos-left_alignment.pos)) << " "
-          << it->strand;
-      PrintMessageDieOnError(msg.str(), DEBUG);
-    }
     // find start of STR read
-    const int& str_pos = left_alignment.left ?
+    const int& str_pos = (left_alignment.pos < right_alignment.pos) ?
       left_alignment.pos : right_alignment.pos;
-    // check chrom, pos, and strand
-    if (align_debug) {
-      stringstream msg;
-      msg << "[CheckMateAlignment]: checks "
-	  << it->chrom << ": " << left_alignment.chrom
-	  << " " << abs(it->pos-str_pos) << ": " << MAX_PAIRED_DIFF
-	  << " " << it->strand << ": " << left_alignment.strand;
-      PrintMessageDieOnError(msg.str(), DEBUG);
-    }
     if ((it->chrom == left_alignment.chrom) &&
         (abs(it->pos-str_pos) <= MAX_PAIRED_DIFF) &&
         it->strand != left_alignment.strand) {
@@ -735,49 +646,6 @@ bool BWAReadAligner::CheckMateAlignment(const vector<ALIGNMENT>&
   }
   return false;
 }
-
-bool BWAReadAligner::FindCompatibleAlignment(const vector<ALIGNMENT>&
-                                             good_left1,
-                                             const vector<ALIGNMENT>&
-                                             good_left2,
-                                             const vector<ALIGNMENT>&
-                                             good_right1,
-                                             const vector<ALIGNMENT>&
-                                             good_right2,
-                                             size_t* index_of_hit,
-                                             size_t* index_of_mate,
-					     string* alternate_mappings) {
-  if (align_debug) {
-    PrintMessageDieOnError("[FindCompatibleAlignment]: Looking for compatible alignment", DEBUG);
-  }
-  bool found_unique = false;
-  // For each good left 1, check good left 2
-  for (size_t i1 = 0; i1 < good_left1.size(); i1++) {
-    for (size_t i2 = 0; i2 < good_left2.size(); i2++) {
-      const ALIGNMENT& l1 = good_left1.at(i1);
-      const ALIGNMENT& l2 = good_left2.at(i2);
-      if ((abs(l1.pos-l2.pos) <= MAX_PAIRED_DIFF) &&
-          (l1.strand != l2.strand) &&
-          (l1.chrom == l2.chrom)) {
-        if (found_unique) {
-	  if (allow_multi_mappers) {
-	    stringstream xa;
-	    xa << l1.chrom << ":" << l1.start << ";";
-	    *alternate_mappings = *alternate_mappings + xa.str();
-	  } else {
-	    return false;
-	  }
-        } else {
-          found_unique = true;
-          *index_of_hit = i1;
-          *index_of_mate = i2;
-        }
-      }
-    }
-  }
-  return found_unique;
-}
-
 
 bool BWAReadAligner::StitchReads(ReadPair* read_pair,
                                  ALIGNMENT* left_alignment,
@@ -947,22 +815,18 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
   if (align_debug) {
     PrintMessageDieOnError("[BWAReadAligner]: Output alignment", DEBUG);
   }
+
   const int& aligned_read_num = read_pair->aligned_read_num;
   read_pair->treat_as_paired = treat_as_paired;
 
   // Set info for aligned read
   read_pair->reads.at(aligned_read_num).chrom = left_alignment.chrom;
   read_pair->reads.at(aligned_read_num).strid = left_alignment.id;
-  if (left_alignment.left) {
-    read_pair->reads.at(aligned_read_num).msStart = left_alignment.start;
-    read_pair->reads.at(aligned_read_num).msEnd = left_alignment.end;
-  } else {
-    read_pair->reads.at(aligned_read_num).msStart = right_alignment.start;
-    read_pair->reads.at(aligned_read_num).msEnd = right_alignment.end;
-  }
+  read_pair->reads.at(aligned_read_num).msStart = left_alignment.start;
+  read_pair->reads.at(aligned_read_num).msEnd = left_alignment.end;
   read_pair->reads.at(aligned_read_num).refCopyNum = left_alignment.copynum;
   read_pair->reads.at(aligned_read_num).reverse = !left_alignment.left;
-
+  read_pair->reads.at(aligned_read_num).repseq = left_alignment.repeat;
   read_pair->reads.at(aligned_read_num).lStart = left_alignment.pos;
   read_pair->reads.at(aligned_read_num).lEnd = left_alignment.pos +
     read_pair->reads.at(aligned_read_num).left_flank_nuc.length();
@@ -991,10 +855,6 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
           read_pair->reads.at(aligned_read_num).msStart)
          || (read_pair->reads.at(aligned_read_num).lEnd <=
       read_pair->reads.at(aligned_read_num).msEnd))) {
-    if (align_debug) {
-      PrintMessageDieOnError("[BWAReadAligner]: Discarding: reverse " \
-                             "strand coords don't make sense.", DEBUG);
-    }
     return false;
   }
 
@@ -1073,7 +933,7 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
     const size_t& start_pos = read_pair->reads.
       at(1-aligned_read_num).reverse ?
       mate_alignment.pos : mate_alignment.pos-1;
-    string rseq;
+    string rseq; // TODO change for pairs
     try {
       rseq = refseq.sequence.
 	substr(start_pos - refseq.start, reglen);
@@ -1119,25 +979,27 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
 }
 
 bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
+  if (align_debug) {
+    stringstream msg;
+    msg << "[AdjustAlignment]: " << "lStart: " << aligned_read->lStart
+	<< " lEnd: " << aligned_read->lEnd << " rStart: " << aligned_read->rStart
+	<< " rEnd: " << aligned_read->rEnd << " reverse: " << aligned_read->reverse;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   // get reference sequence
   const size_t& reglen = !aligned_read->reverse ?
     (aligned_read->rEnd - aligned_read->lStart) :
     (aligned_read->lEnd - aligned_read->rStart);
   if ((_ref_sequences->find(aligned_read->strid) ==
        _ref_sequences->end())) {
-    if (align_debug) {
-      PrintMessageDieOnError("[AdjustAlignment]: returning false, " \
-                             "refseq index out of range.", DEBUG);
-    }
-    return false;
+    PrintMessageDieOnError("[AdjustAlignment]: Ref id out of range. Problem with lobSTR index", ERROR);
   }
   const REFSEQ& refseq = _ref_sequences->at(aligned_read->strid);
   size_t start_pos = !aligned_read->reverse ?
     aligned_read->lStart-1 : aligned_read->rStart;
-  // get sequences to pairwise align
   string rseq;
   try {
-    rseq = refseq.sequence.substr(start_pos - refseq.start-REFEXTEND, reglen+REFEXTEND);
+    rseq = refseq.sequence.substr(start_pos - refseq.start-REFEXTEND/2 + PAD, reglen+REFEXTEND);
   } catch(std::out_of_range & exception) { 
     return false;
   }
@@ -1149,7 +1011,7 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
     reverse(aligned_read->quality_scores);
 
   // update coords
-  aligned_read->read_start = start_pos - REFEXTEND;
+  aligned_read->read_start = start_pos - REFEXTEND/2;
   aligned_read->read_end = start_pos + reglen;
 
   // Global alignment read vs. region aligned to
@@ -1158,7 +1020,20 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   CIGAR_LIST cigar_list;
   nw(aligned_seq, rseq, aligned_seq_sw, ref_seq_sw,
      false, &sw_score, &cigar_list);
-
+  if (align_debug) {
+    stringstream msg;
+    msg << endl << "Aligned seq: " << aligned_seq << endl;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+    msg.clear();
+    msg << "Reference  : " << rseq << endl;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+    msg.clear();
+    msg << "Aligned SW:  " << aligned_seq_sw << endl;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+    msg.clear();
+    msg << "Ref     SW:  " << ref_seq_sw << endl;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   // get rid of end gaps
   if (cigar_list.cigars.at(0).cigar_type == 'D') {
     const int& num = cigar_list.cigars.at(0).num;
@@ -1415,6 +1290,5 @@ bool BWAReadAligner::GetSTRAllele(MSReadRecord* aligned_read,
   }
   return true;
 }
-
 
 BWAReadAligner::~BWAReadAligner() {}

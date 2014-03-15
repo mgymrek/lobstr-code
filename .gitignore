@@ -22,6 +22,7 @@ test.aligned.stats
 test.allelotype.stats
 test.post
 data/strinfo.hg19_1to6.tab
+test_data/*
 
 Makefile.in
 aclocal.m4

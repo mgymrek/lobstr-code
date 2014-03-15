@@ -33,6 +33,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 class ReadPair {
  public:
+  ReadPair();
+  ~ReadPair();
   // Read count
   size_t read_count;
   // Reads in a pair
@@ -54,6 +56,9 @@ class ReadPair {
   bool treat_as_paired;
   // String for alternate mappings
   std::string alternate_mappings;
+
+  /* Reset alignment flags */
+  void ResetAlignmentFlags();
 };
 
 #endif  // SRC_READPAIR_H_

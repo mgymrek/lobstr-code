@@ -33,25 +33,24 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 struct ALIGNMENT {
   // Identifier of the STR aligned to
   int id;
-  // Is this the left flanking region
-  bool left;
   // Chrom of the STR aligned to
   std::string chrom;
   // Start of the STR
   int start;
   // End of the STR
   int end;
+  // This alignment is on the left side
+  bool left;
   // Repeat motif
   std::string repeat;
-  // Reference copy number
-  float copynum;
-  // Name of the STR
-  std::string name;
   // true = positive, false = minus
   bool strand;
   // Position of the start of the alignment
   int pos;
-
+  // Position of the end of the alignment
+  int endpos;
+  // Copy number
+  float copynum;
   // provide overloaded operators to compare
   // when used as a map key
   bool operator<(const ALIGNMENT& ref_pos1) const {
@@ -67,24 +66,34 @@ struct ALIGNMENT {
 class BWAReadAligner {
   friend class BWAReadAlignerTest;
  public:
-  BWAReadAligner(std::map<std::string, BWT>* bwt_references,
-                 std::map<std::string, BNT>* bnt_annotations,
+  BWAReadAligner(BWT* bwt_reference,
+                 BNT* bnt_annotation,
                  std::map<int, REFSEQ>* ref_sequences,
                  gap_opt_t *opts);
   virtual ~BWAReadAligner();
 
-  // main function - align read pair
+  // main functions - align read pair
   bool ProcessReadPair(ReadPair* read_pair, std::string* err, std::string* messages);
+  bool ProcessPairedEndRead(ReadPair* read_pair, std::string* err, std::string* messages);
+  bool ProcessSingleEndRead(ReadPair* read_pair, std::string* err, std::string* messages);
 
  protected:
+  // Check if flanking regions fully repetitive
+  bool CheckFlanksForRepeats(MSReadRecord* read, const std::string& repseq);
+
   // Process a single read of a pair
   // Return possible alignments of flanking regions
   // in "good_*_alignments"
   bool ProcessRead(MSReadRecord* read,
+		   bool passed_detection,
                    std::vector<ALIGNMENT>* good_left_alignments,
                    std::vector<ALIGNMENT>* good_right_alignments,
                    std::string* err,
                    std::string* messages);
+
+  // Set up sequence info for BWA
+  void SetSeq(bwa_seq_t* seq, const std::string& flank_nuc,
+	      const std::string& flank_qual, const std::string& readid);
 
   // Call BWA to align flanking regions
   bwa_seq_t* BWAAlignFlanks(const MSReadRecord& read);
@@ -104,6 +113,17 @@ class BWAReadAligner {
                      std::vector<ALIGNMENT>* left_refids,
                      std::vector<ALIGNMENT>* right_refids);
 
+  // Set STR coordinates of shared alignments
+  bool SetSTRCoordinates(std::vector<ALIGNMENT>* good_left_alignments,
+			 std::vector<ALIGNMENT>* good_right_alignments);
+
+  // Get list of reference STRs spanned by a set of alignments
+  void GetSpannedSTRs(const ALIGNMENT& lalign, const ALIGNMENT& ralign, const int& refid,
+		      std::vector<ReferenceSTR>* spanned_ref_strs, std::vector<string>* repseq);
+
+  // Trim mate sequence
+  void TrimMate(ReadPair* read_pair);
+
   // Align mate
   bool AlignMate(const ReadPair& read_pair,
                  std::vector<ALIGNMENT>* mate_alignments,
@@ -115,14 +135,6 @@ class BWAReadAligner {
                           const ALIGNMENT& left_alignment,
                           const ALIGNMENT& right_alignment,
                           ALIGNMENT* mate_alignment);
-
-  // If both ends aligned to an STR, check if compatible
-  bool FindCompatibleAlignment(const std::vector<ALIGNMENT>& good_left1,
-                               const std::vector<ALIGNMENT>& good_left2,
-                               const std::vector<ALIGNMENT>& good_right1,
-                               const std::vector<ALIGNMENT>& good_right2,
-                               size_t* index_of_hit, size_t* index_of_mate,
-			       std::string* alternate_mappings);
 
   // Try stitching a pair of reads.
   // Update info in num_aligned_read and
@@ -153,9 +165,9 @@ class BWAReadAligner {
   bool GetSTRAllele(MSReadRecord* aligned_read,
                     const CIGAR_LIST& cigar_list);
   // store all BWT references
-  std::map<std::string, BWT>* _bwt_references;
+  BWT* _bwt_reference;
   // store all BWT annotations
-  std::map<std::string, BNT>* _bnt_annotations;
+  BNT* _bnt_annotation;
   // store all STR reference sequences
   std::map<int, REFSEQ>* _ref_sequences;
   // all bwa alignment options

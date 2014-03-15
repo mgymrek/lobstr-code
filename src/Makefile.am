@@ -123,6 +123,8 @@ liblobstr_a_SOURCES = \
 	FFT_nuc_vectors.cpp FFT_nuc_vectors.h \
 	gzstream.cpp gzstream.h \
 	STRRecord.h \
+	ReadPair.h \
+	ReadPair.cpp \
 	HammingWindowGenerator.cpp HammingWindowGenerator.h \
 	MultithreadData.cpp MultithreadData.h \
 	nw.cpp nw.h \
@@ -191,6 +193,7 @@ liballelotype_a_SOURCES = \
 	linear.h linear.cpp tron.cpp tron.h \
 	ReadContainer.cpp ReadContainer.h \
 	ReadPair.h \
+	ReadPair.cpp \
 	ReferenceSTR.cpp ReferenceSTR.h \
 	RemoveDuplicates.cpp RemoveDuplicates.h \
 	STRRecord.h \
