@@ -116,6 +116,9 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
     good_left_alignments_read2, good_right_alignments_read2;
 
   /* --- Step 1: Align each read separately --- */
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: Step 1: align each read separately", DEBUG);
+  }
   read_pair->read1_passed_alignment =
     ProcessRead(&read_pair->reads.at(0), read_pair->read1_passed_detection,
 		&good_left_alignments_read1, &good_right_alignments_read1, err, messages);
@@ -126,16 +129,30 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
 	read_pair->read2_passed_alignment)) {
     return false;
   }
+  if (read_pair->read1_passed_alignment) {
+    read_pair->aligned_read_num = 0;
+  } else {
+    read_pair->aligned_read_num = 1;
+  }
 
   /* --- Step 2: Determine if unique valid alignment and check mate pair --- */
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: Step 2: determine if unique valid alignment and check mate pair", DEBUG);
+  }
   // Trim and align mate
   TrimMate(read_pair);
+  if (align_debug) {
+    PrintMessageDieOnError("Aligning mate", DEBUG);
+  }
   vector<ALIGNMENT> mate_alignments;  
   if (!AlignMate(*read_pair, &mate_alignments,
 		 read_pair->reads.at(read_pair->aligned_read_num).repseq)) {
     return false;
   }
   // Set alignment info for the read that mapped
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: set alignment info for mapped read", DEBUG);
+  }
   read_pair->aligned_read_num = read_pair->read1_passed_alignment ? 0 : 1;
   const vector<ALIGNMENT>& good_left =
     read_pair->aligned_read_num == 0 ?
@@ -144,6 +161,9 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
     read_pair->aligned_read_num == 0 ?
     good_right_alignments_read1 : good_right_alignments_read2;
   // Find compatible alignment with mate
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: find compatible alignment with mate", DEBUG);
+  }
   ALIGNMENT matealign;
   size_t index_of_hit;
   for (size_t i = 0; i < good_left.size(); i++) {
@@ -164,14 +184,17 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
   }
 
   /* --- Step 3: Adjust alignment and output --- */
+  if (align_debug) {
+    PrintMessageDieOnError("[ProcessRead]: Step 3: adjust alignment and output", DEBUG);
+  }
   if (!read_pair->found_unique_alignment) { return false; }
   ALIGNMENT final_left_alignment =
     good_left.at(index_of_hit);
   ALIGNMENT final_right_alignment =
     good_right.at(index_of_hit);
   // try stitching first
-  bool treat_as_paired = StitchReads(read_pair, &final_left_alignment,
-				     &final_right_alignment);
+  bool treat_as_paired = !(StitchReads(read_pair, &final_left_alignment,
+				       &final_right_alignment));
   if (OutputAlignment(read_pair, final_left_alignment, final_right_alignment,
 		      matealign, alternate_mappings, treat_as_paired)) {
     return true;
@@ -232,23 +255,29 @@ bool BWAReadAligner::ProcessSingleEndRead(ReadPair* read_pair, string* err, stri
 }
 
 void BWAReadAligner::TrimMate(ReadPair* read_pair) {
-    // make sure mate isn't ginormous
-    if (read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.size()
-	> MAX_MATE_LENGTH) {
-      read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides =
-	read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.substr(0, MAX_MATE_LENGTH);
-      read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual =
-	read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual.substr(0, MAX_MATE_LENGTH);
-    }
-
-    // Trim more harshly here
-    string trim_nucs;
-    string trim_quals;
-    TrimRead(read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides,
-	     read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual,
-	     &trim_nucs, &trim_quals, MATE_TRIM_QUAL);
-    read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides = trim_nucs;
-    read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual = trim_quals;
+  if (align_debug) {
+    PrintMessageDieOnError("Trimming mate", DEBUG);
+    cerr << "Read pair size " << read_pair->reads.size() << " " << read_pair->aligned_read_num << endl;
+  }
+  // make sure mate isn't ginormous
+  if (read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.size()
+      > MAX_MATE_LENGTH) {
+    read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides =
+      read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides.substr(0, MAX_MATE_LENGTH);
+    read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual =
+      read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual.substr(0, MAX_MATE_LENGTH);
+  }
+  
+  if (align_debug) {
+    PrintMessageDieOnError("Trim more harshly", DEBUG);
+  }  // Trim more harshly here
+  string trim_nucs;
+  string trim_quals;
+  TrimRead(read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides,
+	   read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual,
+	   &trim_nucs, &trim_quals, MATE_TRIM_QUAL);
+  read_pair->reads.at(1-read_pair->aligned_read_num).orig_nucleotides = trim_nucs;
+  read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual = trim_quals;
 }
 
 bool BWAReadAligner::CheckFlanksForRepeats(MSReadRecord* read, const std::string& repseq) {
@@ -410,7 +439,7 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
                                              vector<ALIGNMENT>* alignments) {
   // fill in alignment properties
   bwa_aln2seq_core(aligned_seqs->n_aln, aligned_seqs->aln,
-                   aligned_seqs, 0, 10000); // last arg gives max num multi-mappers
+                   aligned_seqs, 0, 1000); // last arg gives max num multi-mappers
   bwa_cal_pac_pos_core(0, _bwt_reference->bwt[1-aligned_seqs->strand],
                        &aligned_seqs[0], _opts->max_diff, _opts->fnr);
 
@@ -598,6 +627,9 @@ bool BWAReadAligner::SetSTRCoordinates(vector<ALIGNMENT>* good_left_alignments,
 bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
                                vector<ALIGNMENT>* mate_alignments,
                                const string& repseq) {
+  if (align_debug) {
+    PrintMessageDieOnError("[AlignMate]: Aligning mate read", DEBUG);
+  }
   const int& num_aligned_read = read_pair.aligned_read_num;
   const string& nucs = reverseComplement(read_pair.reads.
                                          at(1-num_aligned_read).
@@ -617,6 +649,9 @@ bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
     return false;
   }
 
+  if (align_debug) {
+    PrintMessageDieOnError("[AlignMate]: Getting align coords", DEBUG);
+  }
   // Check alignment coordinates
   if (!GetAlignmentCoordinates(seq, repseq, mate_alignments)) {
     bwa_free_read_seq(1, seq);
@@ -631,6 +666,9 @@ bool BWAReadAligner::CheckMateAlignment(const vector<ALIGNMENT>&
                                         const ALIGNMENT& left_alignment,
                                         const ALIGNMENT& right_alignment,
                                         ALIGNMENT* mate_alignment) {
+  if (align_debug) {
+    PrintMessageDieOnError("[CheckMateAlignment]: looking for matches", DEBUG);
+  }
   // For each, check against STR alignment
   for (vector<ALIGNMENT>::const_iterator it = mate_alignments.begin();
        it != mate_alignments.end(); ++it) {
@@ -933,10 +971,10 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
     const size_t& start_pos = read_pair->reads.
       at(1-aligned_read_num).reverse ?
       mate_alignment.pos : mate_alignment.pos-1;
-    string rseq; // TODO change for pairs
+    string rseq;
     try {
       rseq = refseq.sequence.
-	substr(start_pos - refseq.start, reglen);
+	substr(start_pos - refseq.start + PAD, reglen);
     } catch(std::out_of_range & exception) {
       return false;      
     }
