@@ -84,7 +84,7 @@ void show_help() {
     "\nlobSTR [OPTIONS] " \
     "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
     "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
-    "    -o <output prefix> --rg-sample <STRING> --rg-library <STRING>\n" \
+    "    -o <output prefix> --rg-sample <STRING> --rg-lib <STRING>\n" \
     "Note: parameters are uploaded to Amazon S3 by default. This is for\n" \
     "us see how people are using the tool and to help us continue to improve\n" \
     "lobSTR. To turn this function off, specify --noweb.\n\n" \
@@ -590,7 +590,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     PrintMessageDieOnError("Must supply an s3cmd config file", ERROR);
   }
   if (read_group_sample.empty() || read_group_library.empty()) {
-    PrintMessageDieOnError("Must specify --rg-library and --rg-sample", ERROR);
+    PrintMessageDieOnError("Must specify --rg-lib and --rg-sample", ERROR);
   }
 }
 

@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Revisions     2014 Thomas Willems <twillems@mit.edu> 
 
 This file is part of lobSTR.
 
@@ -252,14 +253,14 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (loc_iter == ref_ext_nucleotides.end())
       PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
     string ref_ext_seq = loc_iter->second;
-    pair<int,int> num_end_matches = GetNumEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend);
+    pair<int,int> num_end_matches = AlignmentFilters::GetNumEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend);
     if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match)
       return false;
   }
 
   // check that both ends of the aligned read have sufficient bases before the first indel
   if (min_bp_before_indel > 0){
-    pair<int, int> num_bps = GetEndDistToIndel(aligned_read);
+    pair<int, int> num_bps = AlignmentFilters::GetEndDistToIndel(aligned_read);
     if (num_bps.first != -1 && num_bps.first < min_bp_before_indel)
       return false;
     if (num_bps.second != -1 && num_bps.second < min_bp_before_indel)

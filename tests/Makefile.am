@@ -21,16 +21,30 @@ TESTS_ENVIRONMENT =  \
   LOBSTR_TEST_DIR='$(abs_top_srcdir)/tests' \
   ;
 
-
 EXTRA_DIST = \
     $(TESTS) \
     ./runtest.sh \
-    ./tiny.fq \
+    ../models/illumina_v2.0.3.stepmodel \
+    ../models/illumina_v2.0.3.stuttermodel \
+    ../models/illumina_v2.0.3.stutterproblem \
     ./test.aligned.sorted.bam \
     ./test.aligned.sorted.bam.bai \
+    ./test.fa.gz \
+    ./test.fq.gz \
+    ./test.noindex.bam \
+    ./test.norg.bam \
+    ./test.norg.bam.bai \
+    ./test.nosample.bam \
+    ./test.nosample.bam.bai \
+    ./tiny.fq \
+    ./tmp_1.fa \
+    ./tmp_2.fa \
+    ./tmp_1.fq \
+    ./tmp_2.fq \
     ./small.fq \
     ./smallref/lobstr_test_ref.bed \
     ./smallref/readme.txt \
+    ./smallref/smallref_strinfo.tab \
     ./smallref/small_lobstr_ref/lobSTR_A.fa \
     ./smallref/small_lobstr_ref/lobSTR_A.fa.amb \
     ./smallref/small_lobstr_ref/lobSTR_A.fa.ann \

@@ -190,7 +190,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"min-read-end-match", 1, 0, OPT_MIN_READ_END_MATCH},
     {"noise_model", 1, 0, OPT_NOISEMODEL},
     {"no-rmdup", 0, 0, OPT_NORMDUP},
-    {"no-web", 0, 0, OPT_NOWEB},
+    {"noweb", 0, 0, OPT_NOWEB},
     {"out", 1, 0, OPT_OUTPUT},
     {"profile", 0, 0, OPT_PROFILE},
     {"reads", 0, 0, OPT_PRINT_READS},

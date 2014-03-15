@@ -128,6 +128,7 @@ liblobstr_a_SOURCES = \
 	HammingWindowGenerator.cpp HammingWindowGenerator.h \
 	MultithreadData.cpp MultithreadData.h \
 	nw.cpp nw.h \
+	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \
 	runtime_parameters.cpp runtime_parameters.h \
 	IFileReader.h RunInfo.h \
@@ -247,6 +248,8 @@ lobSTRTests_SOURCES = \
 	tests/BWAReadAligner_test.cpp \
 	tests/common_test.h \
 	tests/common_test.cpp \
+	tests/NWNoRefEndPenalty_test.h \
+	tests/NWNoRefEndPenalty_test.cpp \
 	tests/ReadContainer_test.h \
 	tests/ReadContainer_test.cpp \
 	tests/RemoveDuplicates_test.h \
@@ -270,6 +273,7 @@ lobSTRTests_SOURCES = \
 	HammingWindowGenerator.cpp \
 	MultithreadData.cpp \
 	nw.cpp nw.h \
+	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
