@@ -128,3 +128,48 @@ void AlignmentFiltersTest::test_GetNumEndMatches(){
 }
 
 
+void AlignmentFiltersTest::test_HasLargestEndMatches(){
+  AlignedRead aln;
+  string ref_seq;
+  int    ref_start;
+
+  // Simple case with perfect maximal match
+  aln.cigar_ops   = GetCigarOps("9M");
+  aln.read_start  = 102;
+  aln.nucleotides =   "ACACATACAC";
+  ref_seq         = "ACACACATACACACACAC";
+  ref_start       = 100;
+  CPPUNIT_ASSERT(AlignmentFilters::HasLargestEndMatches(&aln, ref_seq, ref_start, 10, 10));
+
+  // Perfect maximal match and soft clipping
+  aln.cigar_ops   = GetCigarOps("2S9M2S");
+  aln.read_start  = 102;
+  aln.nucleotides = "NNACACATACACNN";
+  ref_seq         = "ACACACATACACACACAC";
+  ref_start       = 100;
+  CPPUNIT_ASSERT(AlignmentFilters::HasLargestEndMatches(&aln, ref_seq, ref_start, 10, 10));
+
+  // Perfect non-maximal match
+  aln.cigar_ops   = GetCigarOps("8M");
+  aln.read_start  = 102;
+  aln.nucleotides =   "ACACACAC";
+  ref_seq         = "ACACACACACACACAC";
+  ref_start       = 100;
+  CPPUNIT_ASSERT(!AlignmentFilters::HasLargestEndMatches(&aln, ref_seq, ref_start, 10, 10));
+
+  // Maximal prefix but not maximal suffix
+  aln.cigar_ops   = GetCigarOps("9M");
+  aln.read_start  = 102;
+  aln.nucleotides =   "ACATTACAC";
+  ref_seq         = "ACACATCACACACTACAC";
+  ref_start       = 100;
+  CPPUNIT_ASSERT(!AlignmentFilters::HasLargestEndMatches(&aln, ref_seq, ref_start, 10, 10));
+ 
+  // Maximal suffix but not maximal prefix
+  aln.cigar_ops   = GetCigarOps("9M");
+  aln.read_start  = 102;
+  aln.nucleotides =   "ACACTACAC";
+  ref_seq         = "ACACATTACACACACAC";
+  ref_start       = 100;
+  CPPUNIT_ASSERT(!AlignmentFilters::HasLargestEndMatches(&aln, ref_seq, ref_start, 10, 10));
+}
