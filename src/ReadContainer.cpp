@@ -258,6 +258,19 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       return false;
   }
 
+
+  // check that the prefix and suffix of the read match maximally compared to proximal reference locations
+  if (maximal_end_match_window > 0){
+    map<pair<string,int>, string>::iterator loc_iter = ref_ext_nucleotides.find(pair<string,int>(aligned_read->chrom, aligned_read->msStart));
+    if (loc_iter == ref_ext_nucleotides.end())
+      PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
+    string ref_ext_seq = loc_iter->second;
+    bool maximum_end_matches = AlignmentFilters::HasLargestEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend, maximal_end_match_window, maximal_end_match_window);
+    if (!maximum_end_matches)
+      return false;
+  }
+
+
   // check that both ends of the aligned read have sufficient bases before the first indel
   if (min_bp_before_indel > 0){
     pair<int, int> num_bps = AlignmentFilters::GetEndDistToIndel(aligned_read);

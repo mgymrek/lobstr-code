@@ -198,7 +198,7 @@ namespace AlignmentFilters {
     int start, end;
     GetUnclippedInfo(aln, bases, start, end);
 
-    std::cerr << "Unclipped info: " << bases << " " << start << " " << end << std::endl;
+    //std::cerr << "Unclipped info: " << bases << " " << start << " " << end << std::endl;
 
     // Check that the prefix match is the longest
     vector<int> match_counts;
@@ -212,7 +212,7 @@ namespace AlignmentFilters {
 	if (i == start_index)
 	  continue;
 	if (match_counts[i] >= num_matches){
-	  std::cerr << "Prefix fail: " << start_index << " " << num_matches << " " << i << " " << match_counts[i] << std::endl; 
+	  //std::cerr << "Prefix fail: " << start_index << " " << num_matches << " " << i << " " << match_counts[i] << std::endl; 
 	  return false;
 	}
       }
@@ -229,7 +229,7 @@ namespace AlignmentFilters {
 	if (i == end_index)
 	  continue;
 	if (match_counts[i] >= num_matches){
-	  std::cerr << "Suffix fail: " << end_index << " " << num_matches << " " << i << " " << match_counts[i] << std::endl; 
+	  //std::cerr << "Suffix fail: " << end_index << " " << num_matches << " " << i << " " << match_counts[i] << std::endl; 
 	  return false;
 	}
       }
