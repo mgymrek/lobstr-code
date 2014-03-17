@@ -123,8 +123,8 @@ void show_help() {
     "                                from either end of the read.\n"
     "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"\
     "                                <INT> bp at both ends. \n"
-    "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= \n"
-    "                                those obtained when shifting the read ends by <INT> bp\n"
+    "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
+    "                                obtained when shifting the read ends by distances within <INT> bp\n"
     "--exclude-partial:              Do not report any information about partially\n" \
     "                                spanning reads.\n\n"
     "Additional options\n" \

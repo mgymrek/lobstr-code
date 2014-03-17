@@ -29,7 +29,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 namespace ZAlgorithm{
   void suffix_helper(int start, const string& s1, const string& s2, 
 		     vector<int>& s1_matches, vector<int>& num_matches){
-    num_matches  = vector<int>(s2.size(), 0);
+    num_matches  = vector<int>(s2.size(), -1);
     int leftmost = s2.size(), right_index = s2.size();
     for (int i = start; i >= 0; i--){
       if (i <= leftmost){
@@ -68,12 +68,12 @@ namespace ZAlgorithm{
 
   void prefix_helper(unsigned int start, const string& s1, const string& s2, 
 		     vector<int>& s1_matches, vector<int>& num_matches){
-    num_matches = vector<int>(s2.size(), 0);
+    num_matches = vector<int>(s2.size(), -1);
     int rightmost = 0, left_index = 0;
     for (int i = start; i < s2.size(); i++){
       if (i >= rightmost){
 	int index_a = 0, index_b = i;
-	while (index_a < s1.size() && index_b < s1.size() && s1[index_a] == s2[index_b]){
+	while (index_a < s1.size() && index_b < s2.size() && s1[index_a] == s2[index_b]){
 	  index_a++;
 	  index_b++;
 	}
