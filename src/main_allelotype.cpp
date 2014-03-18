@@ -41,14 +41,18 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+// Number of N's used to pad each reference
+const int PAD = 50;
 // Keep track of reference nucleotide for each STR
 map<pair<string,int>, string> ref_nucleotides;
 // Keep track of reference repseq for each STR
 map<pair<string,int>, string> ref_repseq;
 // Keep track of extended region around each STR
 map<pair<string,int>, string> ref_ext_nucleotides;
+// Keep track of reference STRs
+vector<ReferenceSTR> reference_strs;
 
-
+void LoadReference();
 
 void show_help() {
   const char* help = "\nTo train the genotyping noise model " \
@@ -368,6 +372,76 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
 }
 
+// TODO make this use old reference and move to a function
+void LoadReference() {
+  if (my_verbose) {
+    PrintMessageDieOnError("Loading reference STRs", PROGRESS);
+  }
+  // Load map of refid->loci, locus->repseq
+  map<int, vector<ReferenceSTR> > refid_to_refstrs;
+  TextFileReader tReader(index_prefix+"ref_map.tab");
+  string line;
+  while (tReader.GetNextLine(&line)) {
+    vector<string>items(0);
+    split(line, '\t', items);
+    if (items.size() != 3) {
+      PrintMessageDieOnError("Malformed map file", ERROR);
+    }
+    // Get refid
+    int refid = atoi(items.at(0).c_str());
+    vector<ReferenceSTR> refs;
+    refid_to_refstrs[refid] = refs;
+    // Get reference STRs
+    string regions_string = items.at(2);
+    vector<string>regions(0);
+    split(regions_string, ';', regions);
+    for (size_t i = 0; i < regions.size(); i++) {
+      vector<string>region_items(0);
+      split(regions.at(i), '_', region_items);
+      int start = atoi(region_items.at(0).c_str());
+      int stop = atoi(region_items.at(1).c_str());
+      string motif = region_items.at(2);
+      ReferenceSTR ref_str;
+      ref_str.start = start;
+      ref_str.stop = stop;
+      ref_str.motif = motif;
+      refid_to_refstrs[refid].push_back(ref_str);
+    }
+  }
+
+  // Load nucs for each locus
+  FastaFileReader faReader(index_prefix+"ref.fasta");
+  MSReadRecord ref_record;
+  while (faReader.GetNextRead(&ref_record)) {
+    vector<string> items;
+    string refstring = ref_record.ID;
+    split(refstring, '$', items);
+    if (items.size() == 4) {
+      string chrom = items.at(1);
+      int refid = atoi(items.at(0).c_str());
+      int start = atoi(items.at(2).c_str());
+      string nucs = ref_record.nucleotides;
+      if (use_chrom.empty() || use_chrom == chrom) {
+	// Get nucs for each locus at this refid
+	for (vector<ReferenceSTR>::iterator it = refid_to_refstrs[refid].begin();
+	     it != refid_to_refstrs[refid].end(); it++) {
+	  it->chrom = chrom; // Set chrom, wasn't set above
+	  pair<string, int> locus = it->GetLocus();
+	  int strlen = it->stop-it->start;
+	  // Get STR sequence
+	  ref_nucleotides[locus] = nucs.substr(it->start-start+PAD, strlen);
+	  // Get extended ref sequence
+	  ref_ext_nucleotides[locus] = nucs.substr(it->start-start+PAD-extend, 2*extend + strlen);
+	  // Add to reference STRs
+	  reference_strs.push_back(*it);
+	  // Get ref repseq
+	  ref_repseq[locus] = it->motif;
+	}
+      }
+    }
+  }
+}
+
 int main(int argc, char* argv[]) {
   time_t starttime, endtime;
   time(&starttime);
@@ -396,41 +470,11 @@ int main(int argc, char* argv[]) {
   NoiseModel nm(strinfofile, haploid_chroms);
 
   /* Load ref character and ref object for each STR */
-  // TODO make this use old reference and move to a function
-  if (my_verbose) {
-    PrintMessageDieOnError("Loading reference STRs", PROGRESS);
-  }
-  vector<ReferenceSTR> reference_strs;
   if (command != "train") {
-    FastaFileReader faReader(index_prefix+"ref.fa");
-    MSReadRecord ref_record;
-    while (faReader.GetNextRead(&ref_record)) {
-      vector<string> items;
-      string refstring = ref_record.ID;
-      split(refstring, '$', items);
-      if (items.size() >= 6) { // should be 6 or 7, depending if name field is present
-	string chrom = items.at(1); 
-        int start = atoi(items.at(2).c_str())+extend;
-	int str_start = atoi(items.at(2).c_str());
-	int str_end = atoi(items.at(3).c_str());
-	string repseq = items.at(4);
-	if (use_chrom.empty() || use_chrom == chrom) {
-	  ReferenceSTR ref_str;
-	  ref_str.start        = str_start+extend;
-	  ref_str.stop         = str_end-extend;
-	  ref_str.chrom        = chrom;
-	  reference_strs.push_back(ref_str);
-	  string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
-	  string repseq_in_ref = ref_record.nucleotides.substr(extend, repseq.size());
-	  pair<string, int> locus = pair<string,int>(chrom, start);
-	  ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
-	  ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
-	  ref_ext_nucleotides.insert(pair< pair<string, int>, string>(locus, ref_record.nucleotides));
-	}
-      }
-    }
+    LoadReference();
   }
 
+  /* Get list of bam files */
   vector<string>bam_files;
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
 

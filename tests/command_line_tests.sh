@@ -98,7 +98,7 @@ echo
 echo "Testing good bam input..."
 allelotype \
   --command classify \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
   --bam ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam,${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
   --out ${OUTDIR}/lobtest \
@@ -108,7 +108,7 @@ testcode 0
 echo "Testing invalid path to bam input..."
 allelotype \
   --command classify \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
   --bam ${LOBSTR_TEST_DIR=.}/bad.bam \
   --out ${OUTDIR}/lobtest \
@@ -118,7 +118,7 @@ testcode 1
 echo "Testing bam file with no index..."
 allelotype \
   --command classify \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
   --bam ${LOBSTR_TEST_DIR=.}/test.noindex.bam \
   --out ${OUTDIR}/lobtest \
@@ -128,7 +128,7 @@ testcode 1
 echo "Testing bam file with no sample in read group..."
 allelotype \
   --command classify \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
   --bam ${LOBSTR_TEST_DIR=.}/test.nosample.bam \
   --out ${OUTDIR}/lobtest \
@@ -138,7 +138,7 @@ testcode 0
 echo "Testing bam file with no read group..."
 allelotype \
   --command classify \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
   --bam ${LOBSTR_TEST_DIR=.}/test.norg.bam \
   --out ${OUTDIR}/lobtest \

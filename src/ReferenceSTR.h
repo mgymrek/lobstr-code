@@ -30,6 +30,10 @@ struct ReferenceSTR {
   std::string chrom;
   int start;
   int stop;
+  std::string motif;
+  pair<string, int> GetLocus() {
+    return pair<string, int>(chrom, start);
+  }
 };
 
 class ReferenceSTRContainer {
