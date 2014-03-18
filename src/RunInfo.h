@@ -121,10 +121,6 @@ class RunInfo {
 	ss << "Num calls >=5x\t" << num_calls5x.at(i) << std::endl;
 	ss << "Mean coverage\t" << static_cast<float>(total_coverage.at(i))/static_cast<float>(num_calls.at(i)) << std::endl;
 	ss << "Mean perc. agree\t" << static_cast<float>(total_agree.at(i))/static_cast<float>(num_calls.at(i)) << std::endl;
-	ss << "Read filter stats:" << std::endl;
-	for (int i = 0; i < FilterCounter::NUM_FILTERS; i++)
-	  ss << "\t" << filter_counter.GetFilterType(i) << ":\t" << filter_counter.GetFilterCount(i) << std::endl;
-	ss << std::endl;
       }
       ss << "Call type by period (0/0, 0/1, 1/1, 1/2)" << std::endl;
       for (size_t i = 0; i < calltype_by_period.size(); i++) {
@@ -135,6 +131,11 @@ class RunInfo {
 	}
 	ss << std::endl;
       }
+
+      ss << "Read filter stats:" << std::endl;
+      for (int i = 0; i < FilterCounter::NUM_FILTERS; i++)
+	ss << "\t" << filter_counter.GetFilterType(i) << ":\t" << filter_counter.GetFilterCount(i) << std::endl;
+      ss << std::endl;
     }
 
     return ss.str();

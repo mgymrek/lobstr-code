@@ -294,7 +294,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       return false;
     }
   }
-  
+  filter_counter.increment(FilterCounter::UNFILTERED);
   return true;
 }
 

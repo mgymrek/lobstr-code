@@ -31,7 +31,7 @@ class FilterCounter {
   uint64_t* counts;
   
  public:
-  const static int NUM_FILTERS     = 9;
+  const static int NUM_FILTERS     = 10;
   const static int NOT_UNIT        = 0;
   const static int DIFF_FROM_REF   = 1;
   const static int MAPPING_QUALITY = 2;
@@ -41,7 +41,8 @@ class FilterCounter {
   const static int NUM_END_MATCHES = 6;
   const static int NOT_MAXIMAL_END = 7;
   const static int BP_BEFORE_INDEL = 8;
-  
+  const static int UNFILTERED      = 9;
+
   FilterCounter();
   
   void increment(const int type);
