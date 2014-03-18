@@ -29,7 +29,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 namespace AlignmentFilters {
-
   template<typename CigarIterator> int GetDistToIndel(CigarIterator iter, CigarIterator end){
     // Process leading clipping ops
     if (iter != end && iter->Type == 'H')

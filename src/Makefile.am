@@ -121,6 +121,7 @@ liblobstr_a_SOURCES = \
 	FastqPairedFileReader.cpp FastqPairedFileReader.h \
 	FFT_four_nuc_vectors.cpp FFT_four_nuc_vectors.h \
 	FFT_nuc_vectors.cpp FFT_nuc_vectors.h \
+	FilterCounter.cpp FilterCounter.h \
 	gzstream.cpp gzstream.h \
 	STRRecord.h \
 	HammingWindowGenerator.cpp HammingWindowGenerator.h \
@@ -186,6 +187,7 @@ liballelotype_a_SOURCES = \
 	FastqFileReader.cpp FastqFileReader.h \
 	FastaPairedFileReader.cpp FastaPairedFileReader.h \
 	FastqPairedFileReader.cpp FastqPairedFileReader.h \
+	FilterCounter.cpp FilterCounter.h \
 	Genotyper.cpp Genotyper.h \
 	gzstream.cpp gzstream.h \
 	NoiseModel.cpp NoiseModel.h \
@@ -271,6 +273,7 @@ lobSTRTests_SOURCES = \
 	FastqPairedFileReader.cpp \
 	FFT_four_nuc_vectors.cpp \
 	FFT_nuc_vectors.cpp \
+	FilterCounter.h FilterCounter.cpp \
 	gzstream.cpp \
 	HammingWindowGenerator.cpp \
 	MultithreadData.cpp \

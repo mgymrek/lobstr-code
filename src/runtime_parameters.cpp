@@ -23,6 +23,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/runtime_parameters.h"
 
 RunInfo run_info;
+FilterCounter filter_counter;
 
 int MIN_PERIOD=1;
 int MAX_PERIOD=6;
