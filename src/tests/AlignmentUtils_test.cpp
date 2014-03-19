@@ -24,27 +24,19 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <string>
 #include <vector>
-#include "src/tests/BWAReadAligner_test.h"
+#include "src/tests/AlignmentUtils_test.h"
 #include "src/cigar.h"
 #include "src/MSReadRecord.h"
 #include "src/ReadPair.h"
 
 // Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_REGISTRATION(BWAReadAlignerTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(AlignmentUtilsTest);
 
-void BWAReadAlignerTest::setUp() {
-  BWT bwt_refs;
-  BNT bnt_anns;
-  std::map<int, REFSEQ> refs;
-  gap_opt_t* opts;
-  _aligner = new BWAReadAligner(&bwt_refs, &bnt_anns, &refs, opts);
-}
+void AlignmentUtilsTest::setUp() {}
 
-void BWAReadAlignerTest::tearDown() {
-  delete _aligner;
-}
+void AlignmentUtilsTest::tearDown() {}
 
-void BWAReadAlignerTest::test_StitchReads() {
+void AlignmentUtilsTest::test_StitchReads() {
   ReadPair read_pair;
   read_pair.aligned_read_num = 0;
   ALIGNMENT left_alignment;
@@ -63,14 +55,14 @@ void BWAReadAlignerTest::test_StitchReads() {
   left_alignment.left = true;
   read_pair.reads.push_back(read1);
   read_pair.reads.push_back(read2);
-  CPPUNIT_ASSERT_MESSAGE("Stitching failed", _aligner->StitchReads(&read_pair, &left_alignment, &right_alignment));
+  CPPUNIT_ASSERT_MESSAGE("Stitching failed", AlignmentUtils::StitchReads(&read_pair, &left_alignment, &right_alignment));
   CPPUNIT_ASSERT_MESSAGE("Incorrect stitching returned - nucs", read_pair.reads.at(0).nucleotides == "AACCTACAGAAAATATTTCAGTATTTTGGTACATGAAGATCCATGTTGAGAGAGAAAGAAACAGAGAGTGAGAGAGAGACAGAGAGAGAGAGAGAGATTTGGAANAGAAACTTCCAATGTNCTTN");
   CPPUNIT_ASSERT_MESSAGE("Incorrect stitching returned - qual", read_pair.reads.at(0).quality_scores == "ffffefffffee``ceeedeeeeeeeeeeaeeeeeee`eeeeeeeedeeedadeeeeeeedde`deeededaaedededadeaecdad`d_dadaba\\Y^`BBBBBBBBB__``_JJGIIBIQQB");
   read_pair.reads.at(0).orig_nucleotides = "ACGTAATTAATAATAATAATAATAATAATAATAATAATAATAATAAAGTAGCCAGGTATGGAGGCACAGGTCTGTAGTACCAGCTG";
   read_pair.reads.at(1).orig_nucleotides = "TGAGCTCAAGTTGTCCTTCTGCTTCAGCTTCCCAAGTAGCTGGGACTACAGACCTGTGCCTCCATACCTGGCTACTTTATTATTATTATTATTATTATTAT";
   read_pair.reads.at(0).orig_qual = "26:=67;>:;?>:?><>>=<A=>9<<>=?>><;2996;98<<>:B>?<>A>:44?;=?;<;=;8585:8:73578:3461222010";
   read_pair.reads.at(1).orig_qual = ".4339638<4=7;==;@>=@?<B@?@><?=::;;>::?;8=<?A>:==:=?:=7<:<>96767997456=:55516886:7474685356174443/5031";
-  CPPUNIT_ASSERT_MESSAGE("Stitching failed", _aligner->StitchReads(&read_pair, &left_alignment, &right_alignment));
+  CPPUNIT_ASSERT_MESSAGE("Stitching failed", AlignmentUtils::StitchReads(&read_pair, &left_alignment, &right_alignment));
   CPPUNIT_ASSERT_MESSAGE("Incorrect stitching returned - nucs", read_pair.reads.at(0).nucleotides == "ACGTAATTAATAATAATAATAATAATAATAATAATAATAATAATAAAGTAGCCAGGTATGGAGGCACAGGTCTGTAGTCCCAGCTACTTGGGAAGCTGAAGCAGAAGGACAACTTGAGCTCA");
 
   // Case 1.5 reads stitch nicely from other direction
@@ -78,7 +70,7 @@ void BWAReadAlignerTest::test_StitchReads() {
   read_pair.reads.at(1).orig_nucleotides = "ATTTACCTATCCTGTAGATTATTTTCACTGTGGGGAATAGATAGATAGATGGATAGATAGATAGATAGATAGATAGATACGAATGTACACATGAAATACAA";
 read_pair.reads.at(0).orig_qual = "TGTATTTCATGTGTACATTCGTATCTATCTATCTATCTATCTATCTATCCATCTATCTATCTATTCCCCACAGTGAAAATAATCTACAGGATAGGTAAATA";
   read_pair.reads.at(1).orig_qual = "ATTTACCTATCCTGTAGATTATTTTCACTGTGGGGAATAGATAGATAGATGGATAGATAGATAGATAGATAGATAGATACGAATGTACACATGAAATACAA";
-  CPPUNIT_ASSERT_MESSAGE("Stitching failed", _aligner->StitchReads(&read_pair, &left_alignment, &right_alignment));
+  CPPUNIT_ASSERT_MESSAGE("Stitching failed", AlignmentUtils::StitchReads(&read_pair, &left_alignment, &right_alignment));
   CPPUNIT_ASSERT_MESSAGE("Incorrect stitching returned - nucs", read_pair.reads.at(0).nucleotides == "TTGTATTTCATGTGTACATTCGTATCTATCTATCTATCTATCTATCTATCCATCTATCTATCTATTCCCCACAGTGAAAATAATCTACAGGATAGGTAAATA");
 
   // Case 2: too repetitive to stitch
@@ -86,41 +78,41 @@ read_pair.reads.at(0).orig_qual = "TGTATTTCATGTGTACATTCGTATCTATCTATCTATCTATCTATC
   read_pair.reads.at(0).orig_qual = "AACCTACAGAAAATATTTCAGTATTTTGGTACATGAAGATCCATGTTGAGAGAGAAAGAAACAGAGAGTGAAGAGAGAGAGAGAGAGAGAGAGAGAGAGAG";
   read_pair.reads.at(1).orig_nucleotides = "GTTTCTTTCTCTCTCAACATGGATCTTCATGTACCAAAATACTGAAATATTTTCTGTAGGTTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCT";
   read_pair.reads.at(1).orig_qual = "GTTTCTTTCTCTCTCAACATGGATCTTCATGTACCAAAATACTGAAATATTTTCTGTAGGTTCTCTCTCTCTCTCTCTCTCTCTCTCTCTCT";
-  CPPUNIT_ASSERT_MESSAGE("This stitch should be too repetitive", !(_aligner->StitchReads(&read_pair, &left_alignment, &right_alignment)));
+  CPPUNIT_ASSERT_MESSAGE("This stitch should be too repetitive", !(AlignmentUtils::StitchReads(&read_pair, &left_alignment, &right_alignment)));
 
   // Case 3: reads don't stitch
   read_pair.reads.at(0).orig_nucleotides = "AACCTACAGAAAATATTTCAGTATTTTGGTACATGAAGATCCATGTTGAGAGAGAAAGAAACAGAGAGTGAAGAGAGAGAGAGAGAGAGAGAGAGAGAGAG";
   read_pair.reads.at(1).orig_nucleotides = "AGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAACCTACAGAAAATATTTCAGTATTTTGGTACATGAAGATCCATGTTGAGAGAGAAAGAAAC";
-  CPPUNIT_ASSERT_MESSAGE("This should not stitch", !(_aligner->StitchReads(&read_pair, &left_alignment, &right_alignment)));
+  CPPUNIT_ASSERT_MESSAGE("This should not stitch", !(AlignmentUtils::StitchReads(&read_pair, &left_alignment, &right_alignment)));
 }
 
-void BWAReadAlignerTest::test_GetMapq() {
+void AlignmentUtilsTest::test_GetMapq() {
   int edit;
   // Case 1: no mismatches
   std::string aligned = "ACACGTACGTTATCGATCGAT";
   std::string ref = "ACACGTACGTTATCGATCGAT";
   std::string qual = "eeeeedeeedadeeeeeeedd";
-  CPPUNIT_ASSERT_EQUAL(0, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(0, AlignmentUtils::GetMapq(aligned, ref, qual, &edit));
   CPPUNIT_ASSERT_EQUAL(edit, 0);
 
   // Case 2: mismatches
   aligned = "TCACGTACGTTATCGATCGAT";
-  CPPUNIT_ASSERT_EQUAL(static_cast<int>('e')-33, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(static_cast<int>('e')-33, AlignmentUtils::GetMapq(aligned, ref, qual, &edit));
   CPPUNIT_ASSERT_EQUAL(edit, 1);
 
   // Case 3: gaps, no mismatches
   aligned = "AC-ACGTACGTTATCGATCGAT";
   ref = "ACTACGTACGTTATCGATCGAT";
-  CPPUNIT_ASSERT_EQUAL(0, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(0, AlignmentUtils::GetMapq(aligned, ref, qual, &edit));
   CPPUNIT_ASSERT_EQUAL(edit, 0);
 
   // Case 4: gaps and mismatches
   aligned = "AC-ACGTACGTTATCGATCGAC";
-  CPPUNIT_ASSERT_EQUAL(static_cast<int>('d')-33, _aligner->GetMapq(aligned, ref, qual, &edit));
+  CPPUNIT_ASSERT_EQUAL(static_cast<int>('d')-33, AlignmentUtils::GetMapq(aligned, ref, qual, &edit));
   CPPUNIT_ASSERT_EQUAL(edit, 1);
 }
 
-void BWAReadAlignerTest::test_GetSTRAllele() {
+void AlignmentUtilsTest::test_GetSTRAllele() {
   // Set up read record and test cigar
   MSReadRecord testRead;
   testRead.msStart = 1000;
@@ -137,7 +129,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(match_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "150M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(0, testRead.diffFromRef);
 
 
@@ -156,7 +148,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "50M4D100M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(-4, testRead.diffFromRef);
 
   // 2b: del at end of STR
@@ -172,7 +164,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "100M4D50M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(-4, testRead.diffFromRef);
 
   // 2c: del in middle of STR
@@ -188,7 +180,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "75M4D75M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(-4, testRead.diffFromRef);
 
   // Case 3: Ins part of STR
@@ -205,7 +197,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "50M4I96M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(4, testRead.diffFromRef);
 
   // 3b: Ins at end of STR
@@ -221,7 +213,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "100M4I46M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(4, testRead.diffFromRef);
 
   // 3c: Ins in middle of STR
@@ -237,7 +229,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "75M4I71M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(4, testRead.diffFromRef);
 
 
@@ -254,7 +246,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M4D125M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(0, testRead.diffFromRef);
 
   // Case 5: Del part of R flank
@@ -270,7 +262,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "125M4D25M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(0, testRead.diffFromRef);
 
   // Case 6: Ins part of L flank
@@ -286,7 +278,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M4I121M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(0, testRead.diffFromRef);
 
   // Case 7: Ins part of R flank
@@ -302,7 +294,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r_cigar);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "125M4I21M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", _aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele failed", AlignmentUtils::GetSTRAllele(&testRead, testCigar));
   CPPUNIT_ASSERT_EQUAL(0, testRead.diffFromRef);
 
   // Case 8: Ins in all three
@@ -331,7 +323,7 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r3);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M2I48M2I47M3I23M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail, CIGAR too long", !_aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail, CIGAR too long", !AlignmentUtils::GetSTRAllele(&testRead, testCigar));
 
   // Case 9: Del in all three
   testCigar.cigars.clear();
@@ -358,6 +350,6 @@ void BWAReadAlignerTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r3);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M2D50M2D50M3D25M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail. Cigar string too long.", !_aligner->GetSTRAllele(&testRead, testCigar));
+  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail. Cigar string too long.", !AlignmentUtils::GetSTRAllele(&testRead, testCigar));
 }
 

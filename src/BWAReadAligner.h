@@ -25,46 +25,11 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-#include "src/cigar.h"
+#include "src/Alignment.h"
 #include "src/common.h"
 #include "src/ReadPair.h"
 
-// Store a single alignment found by BWA
-struct ALIGNMENT {
-  // Identifier of the STR aligned to
-  int id;
-  // Chrom of the STR aligned to
-  std::string chrom;
-  // Start of the STR
-  int start;
-  // End of the STR
-  int end;
-  // This alignment is on the left side
-  bool left;
-  // Repeat motif
-  std::string repeat;
-  // true = positive, false = minus
-  bool strand;
-  // Position of the start of the alignment
-  int pos;
-  // Position of the end of the alignment
-  int endpos;
-  // Copy number
-  float copynum;
-  // provide overloaded operators to compare
-  // when used as a map key
-  bool operator<(const ALIGNMENT& ref_pos1) const {
-    if (chrom != ref_pos1.chrom) return true;
-    if (start == ref_pos1.start) {
-      return end < ref_pos1.end;
-    } else {
-      return start < ref_pos1.start;
-    }
-  }
-};
-
 class BWAReadAligner {
-  friend class BWAReadAlignerTest;
  public:
   BWAReadAligner(BWT* bwt_reference,
                  BNT* bnt_annotation,
@@ -136,13 +101,6 @@ class BWAReadAligner {
                           const ALIGNMENT& right_alignment,
                           ALIGNMENT* mate_alignment);
 
-  // Try stitching a pair of reads.
-  // Update info in num_aligned_read and
-  // treat as single alignment
-  bool StitchReads(ReadPair* read_pair,
-                   ALIGNMENT* left_alignment,
-                   ALIGNMENT* right_alignment);
-
   // Output fields for successful alignment
   bool OutputAlignment(ReadPair* read_pair,
                        const ALIGNMENT& left_alignment,
@@ -155,15 +113,6 @@ class BWAReadAligner {
   // update cigar score.
   bool AdjustAlignment(MSReadRecord* aligned_read);
 
-  // Calculate map quality score
-  int GetMapq(const std::string& aligned_sw_string,
-              const std::string& ref_sw_string,
-              const std::string& aligned_quals,
-              int* edit_dist);
-
-  // Refine the cigar score and recalculate number of repeats
-  bool GetSTRAllele(MSReadRecord* aligned_read,
-                    const CIGAR_LIST& cigar_list);
   // store all BWT references
   BWT* _bwt_reference;
   // store all BWT annotations
@@ -174,10 +123,6 @@ class BWAReadAligner {
   gap_opt_t *_opts;
   // default options
   gap_opt_t *_default_opts;
-
-  // Debug params
-  bool cigar_debug;
-  bool stitch_debug;
 };
 
 #endif  // SRC_BWAREADALIGNER_H_

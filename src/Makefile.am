@@ -109,6 +109,8 @@ libbamtools_a_SOURCES = \
 	utils/utils_global.h
 
 liblobstr_a_SOURCES = \
+	Alignment.h \
+	AlignmentUtils.h AlignmentUtils.cpp \
 	BamFileReader.cpp BamFileReader.h \
 	BamPairedFileReader.cpp BamPairedFileReader.h \
 	BWAReadAligner.cpp BWAReadAligner.h \
@@ -244,8 +246,8 @@ lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
 	tests/AlignmentFilters_test.h \
 	tests/AlignmentFilters_test.cpp \
-	tests/BWAReadAligner_test.h \
-	tests/BWAReadAligner_test.cpp \
+	tests/AlignmentUtils_test.h \
+	tests/AlignmentUtils_test.cpp \
 	tests/common_test.h \
 	tests/common_test.cpp \
 	tests/NWNoRefEndPenalty_test.h \
@@ -257,6 +259,7 @@ lobSTRTests_SOURCES = \
 	tests/VCFWriter_test.h \
 	tests/VCFWriter_test.cpp \
 	AlignmentFilters.cpp \
+	AlignmentUtils.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
 	BWAReadAligner.cpp \
