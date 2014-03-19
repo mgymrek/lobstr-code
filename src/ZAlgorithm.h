@@ -25,4 +25,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 namespace ZAlgorithm{
   void GetPrefixMatchCounts(const std::string& s1, const std::string& s2, std::vector<int>& num_matches);
   void GetSuffixMatchCounts(const std::string& s1, const std::string& s2, std::vector<int>& num_matches);
+  void GetPrefixMatchCounts(const std::string& s1, const std::string& s2, int s2_start, int s2_stop, std::vector<int>& num_matches);
+  void GetSuffixMatchCounts(const std::string& s1, const std::string& s2, int s2_start, int s2_stop, std::vector<int>& num_matches);
 }

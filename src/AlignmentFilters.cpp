@@ -189,7 +189,7 @@ namespace AlignmentFilters {
 
   /*
     
-   */
+   */ 
   bool HasLargestEndMatches(AlignedRead* aln, const string& ref_seq, int ref_seq_start, int max_external, int max_internal){
     // Extract sequence, start and end coordinates of read after clipping
     string bases;
@@ -197,36 +197,41 @@ namespace AlignmentFilters {
     GetUnclippedInfo(aln, bases, start, end);
 
     // Check that the prefix match is the longest
-    vector<int> match_counts;
-    ZAlgorithm::GetPrefixMatchCounts(bases, ref_seq, match_counts);
-    if (ref_seq.size() != match_counts.size())
-      PrintMessageDieOnError("Length of Z-algorithm output must match that of the reference sequence", ERROR);
     if (start >= ref_seq_start && start < ref_seq_start + ref_seq.size()){
       int start_index = start - ref_seq_start;
-      int num_matches = match_counts[start_index];
-      for (int i = max(0, start_index-max_external); i < ref_seq.size() && i <= start_index + max_internal; i++){
-	if (i == start_index)
-	  continue;
-	if (match_counts[i] >= num_matches)
-	  return false;
-      }
-    }
-    
-    // Check that the suffix match is the longest
-    ZAlgorithm::GetSuffixMatchCounts(bases, ref_seq, match_counts);
-    if (ref_seq.size() != match_counts.size())
-      PrintMessageDieOnError("Length of Z-algorithm output must match that of the reference sequence", ERROR);
-    if (end >= ref_seq_start && end < ref_seq_start + ref_seq.size()){
-      int end_index   = end - ref_seq_start;
-      int num_matches = match_counts[end_index];
-      for (int i = max(0, end_index-max_internal); i < ref_seq.size() && i <= end_index + max_external; i++){
-	if (i == end_index)
+      int start       = max(0, start_index - max_external);
+      int stop        = min((int)(ref_seq.size()-1), start_index + max_internal);
+      vector<int> match_counts;
+      ZAlgorithm::GetPrefixMatchCounts(bases, ref_seq, start, stop, match_counts);
+
+      int align_index = start_index - start;
+      int num_matches = match_counts[align_index];
+      for (unsigned int i = 0; i < match_counts.size(); i++){
+	if (i == align_index)
 	  continue;
 	if (match_counts[i] >= num_matches)
 	  return false;
       }
     }
 
+    // Check that the suffix match is the longest
+    if (end >= ref_seq_start && end < ref_seq_start + ref_seq.size()){
+      int end_index = end - ref_seq_start;
+      int start     = max(0, end_index - max_internal);
+      int stop      = min((int)(ref_seq.size()-1), end_index + max_external);
+      vector<int> match_counts;
+      ZAlgorithm::GetSuffixMatchCounts(bases, ref_seq, start, stop, match_counts);
+      
+      int align_index = end_index - start;
+      int num_matches = match_counts[align_index];
+      for (unsigned int i = 0; i < match_counts.size(); i++){
+	if (i == align_index)
+	  continue;
+	if (match_counts[i] >= num_matches)
+	  return false;
+      }
+    }    
+   
     return true;
   }
 }
