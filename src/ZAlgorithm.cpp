@@ -28,47 +28,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 
 namespace ZAlgorithm{
-  /*
-  void suffix_helper(int start, const std::string& s1, const std::string& s2, 
-		     std::vector<int>& s1_matches, std::vector<int>& num_matches){
-    num_matches  = std::vector<int>(s2.size(), -1);
-    int leftmost = s2.size(), right_index = s2.size();
-    for (int i = start; i >= 0; i--){
-      if (i <= leftmost){
-	int index_a = s1.size()-1, index_b = i;
-	while (index_a >= 0 && index_b >= 0 && s1[index_a] == s2[index_b]){
-	  index_a--;
-	  index_b--;
-	}
-	num_matches[i] = i - index_b;
-	if (index_b < i){
-	  right_index = i;
-	  leftmost    = index_b + 1;
-	}
-      }
-      else {
-	int twin     = i - right_index + s1.size()-1;
-	int new_left = i - s1_matches[twin] + 1;
-	if (new_left > leftmost)
-	  num_matches[i] = s1_matches[twin];
-	else if (new_left < leftmost)
-	  num_matches[i] = i-leftmost+1;
-	else {
-	  int index_a = s1.size()-2-i+leftmost, index_b = leftmost-1;
-	  while (index_a >= 0 && index_b >= 0 && s1[index_a] == s2[index_b]){
-	    index_a--;
-	    index_b--;
-	  }
-	  num_matches[i] = i-index_b;
-	  right_index    = i;
-	  leftmost       = index_b + 1;
-	}
-      }
-    }
-  }
-  */
-
-
   void suffix_helper(const std::string& s1, const std::string& s2, int s2_left, int s2_right,
 		     std::vector<int>& s1_matches, std::vector<int>& num_matches){
     num_matches  = std::vector<int>(s2_right - s2_left + 1, -1);
@@ -107,49 +66,6 @@ namespace ZAlgorithm{
     }
   }
 
-
-
-
-  /*
-  void prefix_helper(unsigned int start, const std::string& s1, const std::string& s2, 
-		     std::vector<int>& s1_matches, std::vector<int>& num_matches){
-    num_matches = std::vector<int>(s2.size(), -1);
-    int rightmost = 0, left_index = 0;
-    for (int i = start; i < s2.size(); i++){
-      if (i >= rightmost){
-	int index_a = 0, index_b = i;
-	while (index_a < s1.size() && index_b < s2.size() && s1[index_a] == s2[index_b]){
-	  index_a++;
-	  index_b++;
-	}
-	num_matches[i] = index_b - i;
-	if (index_b > i){
-	  left_index = i;
-	  rightmost  = index_b - 1;
-	}
-      }
-      else {
-	int twin      = i - left_index;
-	int new_right = i + s1_matches[twin] - 1;
-	if (new_right < rightmost)
-	  num_matches[i] = s1_matches[twin];
-	else if (new_right > rightmost)
-	  num_matches[i] = rightmost-i+1;
-	else {
-	  int index_a = rightmost+1-i, index_b = rightmost+1;
-	  while (index_a < s1.size() && index_b < s2.size() && s1[index_a] == s2[index_b]){
-	    index_a++;
-	    index_b++;
-	  }
-	  num_matches[i] = index_b - i;
-	  left_index     = i;
-	  rightmost      = index_b - 1;
-	}
-      }
-    }
-  }
-  */
-
   void prefix_helper(const std::string& s1, const std::string& s2, int s2_left, int s2_right,
 		     std::vector<int>& s1_matches, std::vector<int>& num_matches, int offset){
     num_matches = std::vector<int>(s2_right-s2_left+1+offset, -1);
@@ -157,7 +73,7 @@ namespace ZAlgorithm{
     for (int i = s2_left; i <= s2_right; i++){
       if (i >= rightmost){
 	int index_a = 0, index_b = i;
-	while (index_a < s1.size() && index_b < s2.size() && s1[index_a] == s2[index_b]){
+	while (index_a < static_cast<int>(s1.size()) && index_b < static_cast<int>(s2.size()) && s1[index_a] == s2[index_b]){
 	  index_a++;
 	  index_b++;
 	}
@@ -176,7 +92,7 @@ namespace ZAlgorithm{
 	  num_matches[i-s2_left+offset] = rightmost-i+1;
 	else {
 	  int index_a = rightmost+1-i, index_b = rightmost+1;
-	  while (index_a < s1.size() && index_b < s2.size() && s1[index_a] == s2[index_b]){
+	  while (index_a < static_cast<int>(s1.size()) && index_b < static_cast<int>(s2.size()) && s1[index_a] == s2[index_b]){
 	    index_a++;
 	    index_b++;
 	  }
@@ -187,7 +103,6 @@ namespace ZAlgorithm{
       }
     }
   }
-
 
 
   void GetPrefixMatchCounts(const std::string& s1, const std::string& s2, std::vector<int>& num_matches) {
@@ -203,7 +118,7 @@ namespace ZAlgorithm{
   }  
 
   void GetPrefixMatchCounts(const std::string& s1, const std::string& s2, int s2_start, int s2_stop, std::vector<int>& num_matches) {
-    if (s2_start < 0 or s2_stop >= s2.size())
+    if (s2_start < 0 or s2_stop >= static_cast<int>(s2.size()))
 	PrintMessageDieOnError("Invalid string indices provided to GetPrefixMatchCounts", ERROR);
     std::vector<int> s1_matches;
     prefix_helper(s1, s1, 1, s1.size()-1, s1_matches, s1_matches,  1);
@@ -211,7 +126,7 @@ namespace ZAlgorithm{
   }  
 
   void GetSuffixMatchCounts(const std::string& s1, const std::string& s2, int s2_start, int s2_stop, std::vector<int>& num_matches) {
-     if (s2_start < 0 or s2_stop >= s2.size())
+    if (s2_start < 0 or s2_stop >= static_cast<int>(s2.size()))
 	PrintMessageDieOnError("Invalid string indices provided to GetSuffixMatchCounts", ERROR);
     std::vector<int> s1_matches;
     suffix_helper(s1, s1, 0, s1.size()-2, s1_matches, s1_matches);

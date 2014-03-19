@@ -40,7 +40,11 @@ namespace AlignmentFilters {
   /* Minimum distances from 5' and 3' end of reads to first indel. If no such indel exists, returns (-1,-1). */
   std::pair<int,int> GetEndDistToIndel(AlignedRead* aln);
 
-  /* Returns true iff the alignment ends match maximally compared to other positions within the specified window. */
+  /* Returns true iff the alignment has: 
+     1) a maximal matching prefix compared to alignments that start [-max_upstream, max_downstream] from the 5' alignment position of the read
+     2) a maximal matching suffix compared to alignments that end   [-max_downstream, max_upstream] from the 3' alignment position of the read
+     Ignores clipped bases when performing these comparions 
+  */
   bool HasLargestEndMatches(AlignedRead* aln, const std::string& ref_seq, int ref_seq_start, int max_upstream, int max_downstream);
 }
 
