@@ -640,6 +640,8 @@ void LoadReference() {
       refseq.chrom = items.at(1);
       int refid = atoi(items.at(0).c_str());
       ref_sequences.insert(pair<int, REFSEQ>(refid, refseq));
+    } else {
+      PrintMessageDieOnError("Malformed reference fasta", ERROR);
     }
   }
 

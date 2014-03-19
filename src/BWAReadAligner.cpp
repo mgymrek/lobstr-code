@@ -51,6 +51,8 @@ const int MAX_PAIRED_DIFF = 1000;
 const int MATE_TRIM_QUAL = 30;
 // trim mate to this length
 const size_t MAX_MATE_LENGTH = 100;
+// maximum matches per flank
+const int MAX_MAP_PER_FLANK = 1000;
 
 // ** copied from BWA ** //
 int64_t pos_end_multi(const bwt_multi1_t *p, int len) {
@@ -376,7 +378,7 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
                                              vector<ALIGNMENT>* alignments) {
   // fill in alignment properties
   bwa_aln2seq_core(aligned_seqs->n_aln, aligned_seqs->aln,
-                   aligned_seqs, 0, 1000); // last arg gives max num multi-mappers
+                   aligned_seqs, 0, MAX_MAP_PER_FLANK); // last arg gives max num multi-mappers
   bwa_cal_pac_pos_core(0, _bwt_reference->bwt[1-aligned_seqs->strand],
                        &aligned_seqs[0], _opts->max_diff, _opts->fnr);
 
@@ -443,15 +445,19 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
       right_id_to_ref.erase((*it).id);
     }
   }
-  for (map<int, ALIGNMENT>::const_iterator it = right_id_to_ref.begin();
-       it != right_id_to_ref.end(); ++it) {
+  // Iterate through shortest map first
+  const map<int, ALIGNMENT>& smaller_id_to_ref = (right_id_to_ref.size() < left_id_to_ref.size()) ?
+    right_id_to_ref : left_id_to_ref;
+  const map<int, ALIGNMENT>& larger_id_to_ref = (right_id_to_ref.size() < left_id_to_ref.size()) ?
+    left_id_to_ref : right_id_to_ref;
+  for (map<int, ALIGNMENT>::const_iterator it = smaller_id_to_ref.begin();
+       it != smaller_id_to_ref.end(); it++) {
     int ref_key = it->first;
-    if (left_id_to_ref.find(ref_key) != left_id_to_ref.end()) {
-      // check strand compatible
-      if (left_id_to_ref[ref_key].strand == it->second.strand) {
-        left_refids->push_back(left_id_to_ref[ref_key]);
-        right_refids->push_back(it->second);
-        found = true;
+    if (larger_id_to_ref.find(ref_key) != larger_id_to_ref.end()) {
+      if (right_id_to_ref[ref_key].strand == left_id_to_ref[ref_key].strand) {
+	left_refids->push_back(left_id_to_ref[ref_key]);
+	right_refids->push_back(right_id_to_ref[ref_key]);
+	found = true;
       }
     }
   }
