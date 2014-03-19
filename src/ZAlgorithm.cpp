@@ -27,9 +27,9 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 
 namespace ZAlgorithm{
-  void suffix_helper(int start, const string& s1, const string& s2, 
-		     vector<int>& s1_matches, vector<int>& num_matches){
-    num_matches  = vector<int>(s2.size(), -1);
+  void suffix_helper(int start, const std::string& s1, const std::string& s2, 
+		     std::vector<int>& s1_matches, std::vector<int>& num_matches){
+    num_matches  = std::vector<int>(s2.size(), -1);
     int leftmost = s2.size(), right_index = s2.size();
     for (int i = start; i >= 0; i--){
       if (i <= leftmost){
@@ -66,9 +66,9 @@ namespace ZAlgorithm{
   }
 
 
-  void prefix_helper(unsigned int start, const string& s1, const string& s2, 
-		     vector<int>& s1_matches, vector<int>& num_matches){
-    num_matches = vector<int>(s2.size(), -1);
+  void prefix_helper(unsigned int start, const std::string& s1, const std::string& s2, 
+		     std::vector<int>& s1_matches, std::vector<int>& num_matches){
+    num_matches = std::vector<int>(s2.size(), -1);
     int rightmost = 0, left_index = 0;
     for (int i = start; i < s2.size(); i++){
       if (i >= rightmost){
@@ -104,14 +104,14 @@ namespace ZAlgorithm{
     }
   }
 
-  void GetPrefixMatchCounts(const string& s1, const string& s2, vector<int>& num_matches) {
-    vector<int> s1_matches;
+  void GetPrefixMatchCounts(const std::string& s1, const std::string& s2, std::vector<int>& num_matches) {
+    std::vector<int> s1_matches;
     prefix_helper(1, s1, s1, s1_matches, s1_matches);
     prefix_helper(0, s1, s2, s1_matches, num_matches);
   }  
 
-  void GetSuffixMatchCounts(const string& s1, const string& s2, vector<int>& num_matches) {
-    vector<int> s1_matches;
+  void GetSuffixMatchCounts(const std::string& s1, const std::string& s2, std::vector<int>& num_matches) {
+    std::vector<int> s1_matches;
     suffix_helper(s1.size()-2, s1, s1, s1_matches, s1_matches);
     suffix_helper(s2.size()-1, s1, s2, s1_matches, num_matches);
   }  

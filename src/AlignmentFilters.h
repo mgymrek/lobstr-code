@@ -27,8 +27,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/AlignedRead.h"
 
-using namespace std;
-
 namespace AlignmentFilters {
   /* Returns the vector of CigarOps corresponding to the CIGAR string. */
   std::vector<BamTools::CigarOp> GetCigarOps(std::string cigar_string);
