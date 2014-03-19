@@ -32,6 +32,8 @@ class FilterCounter {
   
  public:
   const static int NUM_FILTERS     = 10;
+
+  // Various filter types
   const static int NOT_UNIT        = 0;
   const static int DIFF_FROM_REF   = 1;
   const static int MAPPING_QUALITY = 2;
@@ -45,10 +47,13 @@ class FilterCounter {
 
   FilterCounter();
   
+  /* Increment the count for the provided filter type */
   void increment(const int type);
   
+  /* Returns the name of the filter associated with the provided filter type */
   std::string GetFilterType(const int type);
 
+  /* Returns the count associated with the provided filter type */
   uint64_t GetFilterCount(const int type);
 
   ~FilterCounter();
