@@ -21,6 +21,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_RUNINFO_H_
 #define SRC_RUNINFO_H_
 
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -134,7 +135,7 @@ class RunInfo {
 
       ss << "Read filter stats:" << std::endl;
       for (int i = 0; i < FilterCounter::NUM_FILTERS; i++)
-	ss << "\t" << filter_counter.GetFilterType(i) << ":\t" << filter_counter.GetFilterCount(i) << std::endl;
+	ss << "\t" << std::setw(25) << filter_counter.GetFilterType(i) << ":\t" << filter_counter.GetFilterCount(i) << std::endl;
       ss << std::endl;
     }
 
