@@ -225,27 +225,36 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   }
   // apply filters
   if (unit) {
-    if (aligned_read->diffFromRef % aligned_read->period != 0) return false;
+    if (aligned_read->diffFromRef % aligned_read->period != 0){ 
+      filter_counter.increment(FilterCounter::NOT_UNIT);
+      return false;
+    }
   }
   if (abs(aligned_read->diffFromRef) > max_diff_ref) {
+    filter_counter.increment(FilterCounter::DIFF_FROM_REF);
     return false;
   }
   if (aligned_read->mapq > max_mapq) {
+    filter_counter.increment(FilterCounter::MAPPING_QUALITY);
     return false;
   }
   if (aligned_read->matedist > max_matedist) {
+    filter_counter.increment(FilterCounter::MATE_DIST);
     return false;
   }
   // Check if the allele length is valid
   if (aligned_read->diffFromRef + (aligned_read->refCopyNum*aligned_read->period) < MIN_ALLELE_SIZE) {
+    filter_counter.increment(FilterCounter::ALLELE_SIZE);
     return false;
   }
 
   // check that read sufficiently spans STR
   int max_read_start = aligned_read->msStart - min_border;
   int min_read_stop  = aligned_read->msEnd   + min_border;
-  if (aln.Position > max_read_start || aln.GetEndPosition() < min_read_stop)
-    return false;
+  if (aln.Position > max_read_start || aln.GetEndPosition() < min_read_stop){
+    filter_counter.increment(FilterCounter::SPANNING_AMOUNT);
+    return false; 
+  }
   
   // check that both ends of the read contain sufficient perfect matches
   if (min_read_end_match > 0){
@@ -254,19 +263,38 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
     string ref_ext_seq = loc_iter->second;
     pair<int,int> num_end_matches = AlignmentFilters::GetNumEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend);
-    if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match)
+    if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match){
+      filter_counter.increment(FilterCounter::NUM_END_MATCHES);
       return false;
+    }
+  }
+
+  // check that the prefix and suffix of the read match maximally compared to proximal reference locations
+  if (maximal_end_match_window > 0){
+    map<pair<string,int>, string>::iterator loc_iter = ref_ext_nucleotides.find(pair<string,int>(aligned_read->chrom, aligned_read->msStart));
+    if (loc_iter == ref_ext_nucleotides.end())
+      PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
+    string ref_ext_seq = loc_iter->second;
+    bool maximum_end_matches = AlignmentFilters::HasLargestEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend, maximal_end_match_window, maximal_end_match_window);
+    if (!maximum_end_matches){
+      filter_counter.increment(FilterCounter::NOT_MAXIMAL_END);
+      return false;
+    }
   }
 
   // check that both ends of the aligned read have sufficient bases before the first indel
   if (min_bp_before_indel > 0){
     pair<int, int> num_bps = AlignmentFilters::GetEndDistToIndel(aligned_read);
-    if (num_bps.first != -1 && num_bps.first < min_bp_before_indel)
+    if (num_bps.first != -1 && num_bps.first < min_bp_before_indel){
+      filter_counter.increment(FilterCounter::BP_BEFORE_INDEL);
       return false;
-    if (num_bps.second != -1 && num_bps.second < min_bp_before_indel)
+    }
+    if (num_bps.second != -1 && num_bps.second < min_bp_before_indel){
+      filter_counter.increment(FilterCounter::BP_BEFORE_INDEL);
       return false;
+    }
   }
-  
+  filter_counter.increment(FilterCounter::UNFILTERED);
   return true;
 }
 

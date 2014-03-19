@@ -25,6 +25,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 #include "src/RunInfo.h"
+#include "src/FilterCounter.h"
 
 // period range for genotyper
 extern int MIN_PERIOD;
@@ -32,6 +33,9 @@ extern int MAX_PERIOD;
 
 // global variables that probably shouldn't be global variables
 extern RunInfo run_info;
+
+// when allelotyping, tracks why filtered reads were omitted
+extern FilterCounter filter_counter;
 
 // stores user arguments for lobSTR alignment
 // used to store the bam header for allelotyping step
@@ -140,6 +144,7 @@ extern int min_border;
 extern int min_bp_before_indel;
 extern int min_read_end_match;
 extern int max_matedist;
+extern int maximal_end_match_window;
 
 // debug
 extern bool profile;

@@ -25,36 +25,15 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
 
-#include "src/tests/NWNoRefEndPenalty_test.h"
 #include "src/common.h"
+#include "src/tests/DNATools.h"
+#include "src/tests/NWNoRefEndPenalty_test.h"
+
+using namespace std;
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(NWNoRefEndPenaltyTest);
 
-using namespace std;
-
-
-char GetChar(int index){
-  switch(index){
-  case 0:
-    return 'A';
-  case 1:
-    return 'C';
-  case 2:
-    return 'G';
-  case 3:
-    return 'T';
-  default:
-    return 'N';
-  }
-}
-
-string RandDNA(const int length){
-  stringstream seq;
-  for (int j = 0; j < length; j++)
-    seq << GetChar(rand()%4);
-  return seq.str();
-}
 
 void NWNoRefEndPenaltyTest::setUp() {} 
 void NWNoRefEndPenaltyTest::tearDown() {}
@@ -64,7 +43,7 @@ int NWNoRefEndPenaltyTest::GenAlignments(int num_trials, double mut_prob, double
   int num_correct = 0;
   for (int i = 0; i < num_trials; i++){
     // Create random reference sequence
-    string ref_seq = RandDNA(REF_LEN);
+    string ref_seq = DNATools::RandDNA(REF_LEN);
 
     // Choose the read region
     int read_start  = rand()%(ref_seq.size()-READ_LEN+1);
@@ -75,10 +54,10 @@ int NWNoRefEndPenaltyTest::GenAlignments(int num_trials, double mut_prob, double
     for (unsigned int i = PERFECT_FLANK; i < read_seq.size()-PERFECT_FLANK; i++){
       float prob = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
       if (prob <= mut_prob)
-	mut_read_seq_ss << RandDNA(1);
+	mut_read_seq_ss << DNATools::RandDNA(1);
       else if (prob - mut_prob <= ins_prob){
 	int ins_size = rand()%(MAX_INS-1) + 1;
-	mut_read_seq_ss << RandDNA(ins_size);
+	mut_read_seq_ss << DNATools::RandDNA(ins_size);
       }
       else if (prob - mut_prob - ins_prob <= del_prob){
 	int del_size = rand()%(MAX_DEL-1) + 1;

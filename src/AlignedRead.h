@@ -22,9 +22,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/api/BamAlignment.h"
 
-using namespace std;
-using BamTools::CigarOp;
-
 /*
   Struct to keep track of aligned read used in allelotyping
  */
@@ -37,7 +34,7 @@ struct AlignedRead {
   int read_start;
   std::string nucleotides;
   std::string qualities;
-  vector<BamTools::CigarOp> cigar_ops;
+  std::vector<BamTools::CigarOp> cigar_ops;
   std::string repseq;
   int period;
   int diffFromRef;

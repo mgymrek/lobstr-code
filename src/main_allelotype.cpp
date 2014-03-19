@@ -123,6 +123,8 @@ void show_help() {
     "                                from either end of the read.\n"
     "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"\
     "                                <INT> bp at both ends. \n"
+    "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
+    "                                obtained when shifting the read ends by distances within <INT> bp\n"
     "--exclude-partial:              Do not report any information about partially\n" \
     "                                spanning reads.\n\n"
     "Additional options\n" \
@@ -151,6 +153,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAX_DIFF_REF,
     OPT_MAXMAPQ,
     OPT_MAXMATEDIST,
+    OPT_MAXIMAL_END_MATCH_WINDOW,
     OPT_MIN_BORDER,
     OPT_MIN_BP_BEFORE_INDEL,
     OPT_MIN_HET_FREQ,
@@ -184,6 +187,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
     {"max-matedist", 1, 0, OPT_MAXMATEDIST},
+    {"maximal-end-match", 1, 0, OPT_MAXIMAL_END_MATCH_WINDOW},
     {"min-border", 1, 0, OPT_MIN_BORDER},
     {"min-bp-before-indel", 1, 0, OPT_MIN_BP_BEFORE_INDEL},
     {"min-het-freq", 1, 0, OPT_MIN_HET_FREQ},
@@ -257,6 +261,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MAX_DIFF_REF:
       max_diff_ref = atoi(optarg);
       AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_MAXIMAL_END_MATCH_WINDOW:
+      maximal_end_match_window = atoi(optarg);
+      AddOption("maximal-end-match", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_MAXMAPQ:
       max_mapq = atoi(optarg);
