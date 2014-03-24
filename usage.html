@@ -34,15 +34,23 @@
 	<br />
 	<b>To run an example using files available in the download</b>:
 	<br /> <tt>lobSTR 	    --p1 PATH_TO_LOBSTR/tests/tmp_1.fq --p2
-	  PATH_TO_LOBSTR/tests/tmp_2.fq -q 	    --index-prefix hg19/lobstr_v2.0.3_hg19_ref/lobSTR_ 	    -o test  --rg-sample mysample	    </tt>
+	  PATH_TO_LOBSTR/tests/tmp_2.fq -q 	    --index-prefix
+	hg19/lobstr_v2.0.3_hg19_ref/lobSTR_ 	    -o test
+	--rg-sample mysample --rg-lib mylibrary	    </tt>
 	<br><br>
 	<tt>samtools sort test.aligned.bam test.sorted</tt><br>
 	<tt>samtools index test.sorted.bam</tt>
 	<br><br>
 	<tt>allelotype 	    --command classify 	    --bam test.sorted.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina_v2.0.3 	    --out test --strinfo hg19/lobstr_v2.0.3_hg19_strinfo.tab	--index-prefix hg19/lobstr_v2.0.3_hg19_ref/lobSTR_	</tt>    <br /><br />
 
-	Note the index and str info files are available in the resource bundle. 
-
+	The index and str info files are available in the resource bundle. 
+	<p>
+	  Note that the arguments <tt>--rg-sample</tt>
+	  and <tt>--rg-lib</tt> are now required to run lobSTR. These
+	  flags add the appropriate read group information to the
+	  output bam file. For more information on these, see
+	  the <a href="faq.html">faq page</a>.
+	<p>
 	This will create the example output files:
 	<ul>
 	  <li>test.aligned.bam</li>
@@ -115,8 +123,10 @@
 	    are reported in the old Phred format (Illumina 1.3+,
 	    Illumina 1.5+) where quality scores are given as Phred
 	    + 64 rather than Phred + 33</li>
-	  <li>--rg-sample STRING: Use this in the read group SM tag. <b>Allelotype will assume all reads with the same sample should be processed as a single individual.</b></li
-																						<li>--rg-lib STRING: Use this in the read group LB tag</li>
+	  <li>--rg-sample STRING: (required) Use this in the read group SM
+	  tag. <b>Allelotype will assume all reads with the same
+	  sample should be processed as a single individual.</b></li>
+	  <li>--rg-lib STRING: (required) Use this in the read group LB tag</li>
 	  <li>-h, --help: display a helpful usage message</li>
 	  <li>-v, --verbose: verbose mode. Display descriptive messages</li>
 	  <li>--version: print out lobSTR program version</li>
