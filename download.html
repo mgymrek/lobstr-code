@@ -7,6 +7,12 @@
     <div class="wrapper">
       {% include menu.html %}
       <section>
+	<h2> lobSTR call sets </h2>
+	Below are links to VCFs we've generated using lobSTR for a variety of population-scale sequencing projects. 
+	<br>
+	<ul>
+	  <li> lobSTR calls for Phase 1 of the 1000 Genomes Project <a href="http://erlichlab.wi.mit.edu/lobSTR/1000Genomes_Phase_1.vcf.gz"> 1000Genomes_Phase_1.vcf.gz </a> </li>
+	</ul>
 	<h2>lobSTR compiled binaries</h2>
 	<ul>
 	  <li> Linux 64 bit (x86-64) <a href="http://erlichlab.wi.mit.edu/lobSTR/lobstr_v2.0.4.linux64.tar.gz">lobstr_v2.0.4.linux64.tar.gz</a>
@@ -33,7 +39,7 @@
 	  <li> Redundant aligned.tab and genotypes.tab files are no longer generated. Only BAM and VCF files are output.</li>
 	  <li> Removed feature to report reads that partially span an STR </li>
 	</ul>
-	<h4>New in version 2.0.2</h4>
+	<h3>New in version 2.0.2</h4>
 	<ul>
 	  <li> Removed R dependency of allelotype step and improved stutter model.</li>
 	  <li> Added option to add a read group tag to alignments, plus set map quality in BAM files to 255 in order to allow compatibility with downstream analysis tools.</li>
@@ -41,7 +47,7 @@
 	  <li> Added the option to exclude information on partially spanning reads from the allelotype output file.
 	</ul>
 	
-	<h4>New in version 2.0</h4>
+	<h3>New in version 2.0</h4>
 	<ul>
 	  <li>Support for paired end reads. lobSTR uses mate pair information to
 	    increase confidence in STR alignments. lobSTR can still run in
