@@ -377,6 +377,8 @@ void NoiseModel::FitStepProb(const map<int, map <int,int> > & step_size_by_perio
     for (int j = 1; j <= period*3; j++) {
       pdf_model.at(period-MIN_PERIOD).at(zero_index+j) =
         pdf_model.at(period-MIN_PERIOD).at(zero_index+j)/total_mass;
+      pdf_model.at(period-MIN_PERIOD).at(zero_index-j) =
+	pdf_model.at(period-MIN_PERIOD).at(zero_index-j)/total_mass;
     }
   }
 
