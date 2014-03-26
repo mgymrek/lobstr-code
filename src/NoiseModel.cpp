@@ -190,11 +190,13 @@ void NoiseModel::Train(ReadContainer* read_container) {
 bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
                                aligned_reads,
                                float* mode) {
-  if (aligned_reads.size() < MIN_TRAIN_COV) return false;
+  if (aligned_reads.size() < MIN_TRAIN_COV) {
+    return false;
+  }
   
-  int top_copy_count;
+  int top_copy_count = 0;
   float top_copy;
-  int second_copy_count;
+  int second_copy_count = 0;
   float second_copy;
   map<float, int> copy_to_count;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
