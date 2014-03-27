@@ -1,0 +1,36 @@
+.box-table-a
+{
+	font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+	font-size: 12px;
+	margin: 45px;
+	width: 480px;
+	text-align: left;
+	border-collapse: collapse;
+}
+.box-table-a th
+{
+	font-size: 13px;
+	font-weight: normal;
+	padding: 8px;
+	background: #CCCCCC;
+	border-top: 4px solid #BCBCBC;
+	border-bottom: 1px solid #fff;
+	color: black;
+}
+.box-table-a td
+{
+	padding: 8px;
+	background: #ECECEC;
+	border-bottom: 1px solid #fff;
+	color: black;
+	border-top: 1px solid transparent;
+}
+.box-table-a tr:hover td
+{
+	background: #5E5E5E;
+	color: #DFDFDF;
+}
+
+table#YSTRTable td:nth-child(6) {
+   display: none;
+}
