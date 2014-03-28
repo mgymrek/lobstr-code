@@ -110,6 +110,7 @@ void show_help() {
     "\n\nOptions:\n" \
     "-h,--help      display this help screen\n" \
     "-v,--verbose   print out useful progress messages\n" \
+    "--quiet    don't print anything to stderr or stdout\n" \
     "--version      print out lobSTR program version\n" \
     "-q,--fastq     reads are in fastq format (default: fasta)\n" \
     "--bam          reads are in bam format (default: fasta)\n" \
@@ -201,6 +202,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_OUTPUT,
     OPT_HELP,
     OPT_VERBOSE,
+    OPT_QUIET,
     OPT_DEBUG,
     OPT_ALIGN_DEBUG,
     OPT_FASTQ,
@@ -216,6 +218,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_EXTEND,
     OPT_MAX_PERIOD,
     OPT_MIN_PERIOD,
+    OPT_MIN_FLANK_ALLOW_MISMATCH,
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
@@ -225,7 +228,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MIN_READ_LENGTH,
     OPT_MAX_READ_LENGTH,
     OPT_ERROR_RATE,
-    OPT_MIN_COVERAGE,
     OPT_WHY_NOT,
     OPT_ENTROPY_THRESHOLD,
     OPT_DEBUG_ENTROPY,
@@ -276,6 +278,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"multi", 0, 0, OPT_MULTI},
     {"help", 0, 0, OPT_HELP},
     {"verbose", 0, 0, OPT_VERBOSE},
+    {"quiet", 0, 0, OPT_QUIET},
     {"debug", 0, 0, OPT_DEBUG},
     {"fastq", 0, 0, OPT_FASTQ},
     {"bam", 0, 0, OPT_BAM},
@@ -285,7 +288,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"align-debug", 0, 0, OPT_ALIGN_DEBUG},
     {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
-    {"min-coverage", 1, 0, OPT_MIN_COVERAGE},
+    {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
     {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
     {"profile", 0, 0, OPT_PROFILE},
@@ -335,6 +338,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_VERBOSE:
       my_verbose++;
     break;
+    case OPT_QUIET:
+      quiet++;
+      break;
     case 'h':
     case OPT_HELP:
       show_help();
@@ -470,6 +476,10 @@ void parse_commandline_options(int argc, char* argv[]) {
       max_read_length = atoi(optarg);
       AddOption("max-read-length", string(optarg), true, &user_defined_arguments);
       break;
+    case OPT_MIN_FLANK_ALLOW_MISMATCH:
+      min_length_to_allow_mismatches = atoi(optarg);
+      AddOption("min-flank-allow-mismatch", string(optarg), true, &user_defined_arguments);
+      break;
     case OPT_ENTROPY_THRESHOLD:
       entropy_threshold = atof(optarg);
       AddOption("entropy-threshold", string(optarg), true, &user_defined_arguments);
@@ -560,7 +570,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     ch = getopt_long(argc, argv, "hvqp:f:t:g:o:m:s:d:e:g:r:u?",
                      long_options, &option_index);
   }
-
   // any arguments left over are extra
   if (optind < argc) {
     PrintMessageDieOnError("Unnecessary leftover arguments", ERROR);
@@ -1105,10 +1114,10 @@ void multi_thread_process_loop(vector<string> files1,
 }
 
 int main(int argc, char* argv[]) {
-  PrintLobSTR();
   time_t starttime, processing_starttime,endtime;
   time(&starttime);
   parse_commandline_options(argc, argv);
+  if (!quiet) PrintLobSTR();
   unit_name = paired?"pairs":"reads";
   PrintMessageDieOnError("Getting run info", PROGRESS);
   run_info.Reset();
@@ -1214,7 +1223,7 @@ int main(int argc, char* argv[]) {
   delete hamgen;
   delete tukgen;
   OutputRunStatistics();
-  OutputRunningTimeInformation(starttime,processing_starttime,endtime,
-                               threads, run_info.num_processed_units);
+  if (!quiet) OutputRunningTimeInformation(starttime,processing_starttime,endtime,
+					   threads, run_info.num_processed_units);
   return 0;
 }

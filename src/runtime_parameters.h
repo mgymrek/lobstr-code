@@ -70,6 +70,7 @@ extern bool debug;
 extern bool fastq;
 extern bool bam;
 extern bool noweb;
+extern bool quiet;
 
 // threading
 extern size_t threads;

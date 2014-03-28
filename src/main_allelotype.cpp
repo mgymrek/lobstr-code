@@ -100,6 +100,7 @@ void show_help() {
     "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
     "-v,--verbose:                   print out helpful progress messages\n" \
+    "--quiet                         don't print anything to stderr or stdout\n" \
     "--version:                      print out allelotype program version number\n\n" \
     "Options for calculating and reporting allelotypes:\n" \
     "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
@@ -164,6 +165,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_OUTPUT,
     OPT_PRINT_READS,
     OPT_PROFILE,
+    OPT_QUIET,
     OPT_STRINFO,
     OPT_UNIT,
     OPT_VERBOSE,
@@ -197,6 +199,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"noweb", 0, 0, OPT_NOWEB},
     {"out", 1, 0, OPT_OUTPUT},
     {"profile", 0, 0, OPT_PROFILE},
+    {"quiet", 0, 0, OPT_QUIET},
     {"reads", 0, 0, OPT_PRINT_READS},
     {"strinfo", 1, 0, OPT_STRINFO},
     {"unit", 0, 0, OPT_UNIT},
@@ -318,6 +321,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_PROFILE:
       profile++;
       break;
+    case OPT_QUIET:
+      quiet++;
+      break;
     case OPT_STRINFO:
       strinfofile = string(optarg);
       AddOption("strinfo", string(optarg), true, &user_defined_arguments_allelotyper);
@@ -379,9 +385,9 @@ void parse_commandline_options(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
   time_t starttime, endtime;
   time(&starttime);
-  PrintLobSTR();
   /* parse command line options */
   parse_commandline_options(argc, argv);
+  if (!quiet) PrintLobSTR();
   PrintMessageDieOnError("Getting run info", PROGRESS);
   run_info.Reset();
   run_info.starttime = GetTime();
@@ -508,9 +514,11 @@ int main(int argc, char* argv[]) {
   run_info.endtime = GetTime();
   OutputRunStatistics();
   time(&endtime);
-  stringstream msg;
-  int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << GetDurationString(seconds_elapsed) << " elapsed";
-  PrintMessageDieOnError(msg.str(), PROGRESS);
+  if (!quiet) {
+    stringstream msg;
+    int seconds_elapsed = difftime(endtime, starttime);
+    msg << "Done! " << GetDurationString(seconds_elapsed) << " elapsed";
+    PrintMessageDieOnError(msg.str(), PROGRESS);
+  }
   return 0;
 }

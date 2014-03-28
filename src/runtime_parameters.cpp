@@ -45,6 +45,7 @@ bool debug = false;
 bool fastq = false;
 bool bam = false;
 bool noweb = false;
+bool quiet = false;
 
 // threading
 size_t threads = 1;
@@ -92,7 +93,7 @@ int max_align = 10;
 int max_diff_ref = 50;
 bool unit = false;
 int extend = 1000;
-int min_length_to_allow_mismatches = 8;
+int min_length_to_allow_mismatches = 15;
 std::string index_prefix = "";
 int gap_open = 1;
 int gap_extend = 1;

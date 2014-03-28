@@ -147,8 +147,10 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   }
   stringstream ss;
   ss  << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
-       << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
-  cerr << ss.str();
+      << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
+  if (!quiet) {
+    cerr << ss.str();
+  }
   if (msgtype == ERROR) {
     run_info.error = ss.str();
     run_info.endtime = GetTime();
