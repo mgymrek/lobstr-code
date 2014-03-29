@@ -107,6 +107,7 @@ bwt_aln1_t *bwt_match_gap(bwt_t *const bwts[2], int len, const ubyte_t *seq[2], 
 	int best_score = aln_score(opt->max_diff+1, opt->max_gapo+1, opt->max_gape+1, opt);
 	int best_diff = opt->max_diff + 1, max_diff = opt->max_diff;
 	int best_cnt = 0;
+	int hit_cnt = 0; // Number of alignment hits found so far
 	int max_entries = 0, j, _j, n_aln, m_aln;
 	bwt_aln1_t *aln;
 
@@ -192,7 +193,9 @@ bwt_aln1_t *bwt_match_gap(bwt_t *const bwts[2], int len, const ubyte_t *seq[2], 
 				p->n_mm = e.n_mm; p->n_gapo = e.n_gapo; p->n_gape = e.n_gape; p->a = a;
 				p->k = k; p->l = l;
 				p->score = score;
+				hit_cnt += l-k+1;
 				++n_aln;
+				if ((opt->max_hits_quit_aln != -1) && (hit_cnt > opt->max_hits_quit_aln)) break; // Found too many hits, stop now
 			}
 			continue;
 		}

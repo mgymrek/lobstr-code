@@ -219,6 +219,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAX_PERIOD,
     OPT_MIN_PERIOD,
     OPT_MIN_FLANK_ALLOW_MISMATCH,
+    OPT_MAX_HITS_QUIT_ALN,
+    OPT_ALLOW_ONE_FLANK_ALN,
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
@@ -289,6 +291,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
     {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
+    {"max-hits-quit-aln", 1, 0, OPT_MAX_HITS_QUIT_ALN},
+    {"allow-one-flank-align", 0, 0, OPT_ALLOW_ONE_FLANK_ALN},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
     {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
     {"profile", 0, 0, OPT_PROFILE},
@@ -450,6 +454,14 @@ void parse_commandline_options(int argc, char* argv[]) {
         PrintMessageDieOnError("Invalid min flank length", ERROR);
       }
       AddOption("minflank", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_MAX_HITS_QUIT_ALN:
+      max_hits_quit_aln = atoi(optarg);
+      AddOption("max-hits-quit-aln", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_ALLOW_ONE_FLANK_ALN:
+      allow_one_flank_align++;
+      AddOption("allow-one-flank-align", "", false, &user_defined_arguments);
       break;
     case OPT_MAX_DIFF_REF:
       max_diff_ref = atoi(optarg);
@@ -1177,6 +1189,8 @@ int main(int argc, char* argv[]) {
   opts->max_gape = gap_extend;
   // take the first INT subsequence as seed
   opts->seed_len = 5;
+  // Set additional alignment params
+  opts->max_hits_quit_aln = max_hits_quit_aln;
 
   // get the input files
   if (paired && !bam) {
@@ -1223,7 +1237,7 @@ int main(int argc, char* argv[]) {
   delete hamgen;
   delete tukgen;
   OutputRunStatistics();
-  if (!quiet) OutputRunningTimeInformation(starttime,processing_starttime,endtime,
-					   threads, run_info.num_processed_units);
+  OutputRunningTimeInformation(starttime,processing_starttime,endtime,
+			       threads, run_info.num_processed_units);
   return 0;
 }

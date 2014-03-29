@@ -92,15 +92,16 @@ typedef struct {
 #define BWA_MODE_IL13       0x200
 
 typedef struct {
-	int s_mm, s_gapo, s_gape;
-	int mode; // bit 24-31 are the barcode length
-	int indel_end_skip, max_del_occ, max_entries;
-	float fnr;
-	int max_diff, max_gapo, max_gape;
-	int max_seed_diff, seed_len;
-	int n_threads;
-	int max_top2;
-	int trim_qual;
+  int s_mm, s_gapo, s_gape;
+  int mode; // bit 24-31 are the barcode length
+  int indel_end_skip, max_del_occ, max_entries;
+  float fnr;
+  int max_diff, max_gapo, max_gape;
+  int max_seed_diff, seed_len;
+  int n_threads;
+  int max_top2;
+  int trim_qual;
+  int max_hits_quit_aln;
 } gap_opt_t;
 
 #define BWA_PET_STD   1
