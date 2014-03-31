@@ -557,6 +557,11 @@ bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
 }
 
 void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
+  if (align_debug) {
+    stringstream msg;
+    msg << "Parsing refstring " << refstring;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   vector<string> items;
   split(refstring, '$', items);
   refid->id = atoi(items.at(0).c_str());
@@ -631,7 +636,7 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
     refid.repeat = repseq;
     alignments->push_back(refid);
   }
-  return true;
+  return (alignments->size() >= 1);
 }
 
 bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
@@ -659,8 +664,13 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
       dummy_lalign.id = it->id;
       dummy_lalign.left = !it->left;
       dummy_lalign.chrom = it->chrom;
-      dummy_lalign.start = it->start;
-      dummy_lalign.end = it->end;
+      if (dummy_lalign.left) {
+	dummy_lalign.start = it->start - extend;
+	dummy_lalign.end = it->end - extend;
+      } else {
+	dummy_lalign.start = it->start;
+	dummy_lalign.end = it->end;
+      }
       dummy_lalign.copynum = it->copynum;
       dummy_lalign.strand = it->strand;
       dummy_lalign.repeat = it->repeat;
@@ -682,8 +692,13 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
       dummy_ralign.id = it->id;
       dummy_ralign.left = !it->left;
       dummy_ralign.chrom = it->chrom;
-      dummy_ralign.start = it->start;
-      dummy_ralign.end = it->end;
+      if (dummy_ralign.left) {
+	dummy_ralign.start = it->start - extend;
+	dummy_ralign.end = it->end - extend;
+      } else {
+	dummy_ralign.start = it->start;
+	dummy_ralign.end = it->end;
+      }
       dummy_ralign.copynum = it->copynum;
       dummy_ralign.strand = it->strand;
       dummy_ralign.repeat = it->repeat;
@@ -1044,6 +1059,12 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
   // Set info for aligned read
   read_pair->reads.at(aligned_read_num).chrom = left_alignment.chrom;
   read_pair->reads.at(aligned_read_num).strid = left_alignment.id;
+  if (align_debug) {
+    stringstream msg;
+    msg << "Left aln start: " << left_alignment.start << " Right aln start: " << right_alignment.start
+	<< " Left aln end: " << left_alignment.end << " Right aln end: " << right_alignment.end;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   if (left_alignment.left) {
     read_pair->reads.at(aligned_read_num).msStart = left_alignment.start;
     read_pair->reads.at(aligned_read_num).msEnd = left_alignment.end;
@@ -1249,7 +1270,14 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   CIGAR_LIST cigar_list;
   nw(aligned_seq, rseq, aligned_seq_sw, ref_seq_sw,
      false, &sw_score, &cigar_list);
-
+  if (align_debug) {
+    stringstream msg;
+    msg << "Aseq " << aligned_seq_sw;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+    stringstream msg2;
+    msg2 << "Rseq " << ref_seq_sw;
+    PrintMessageDieOnError(msg2.str(), DEBUG);
+  }
   // get rid of end gaps
   if (cigar_list.cigars.at(0).cigar_type == 'D') {
     const int& num = cigar_list.cigars.at(0).num;
