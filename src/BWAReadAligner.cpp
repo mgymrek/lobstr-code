@@ -521,28 +521,9 @@ bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
   seq_reverse(seq_right->len, seq_right->qual, 0);
   seq_right->name = strdup((const char*)read.ID.c_str());
 
-  // call bwa with appropriate options TODO
-  //  bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
-  //                   2, seqs, _opts);
-  if (seq_left->len >= min_length_to_allow_mismatches) {
-    _opts->fnr = fpr;
-    _opts->max_diff = -1;
-  } else {
-    _opts->fnr = -1;
-    _opts->max_diff = 0;
-  }
+  // call bwa with appropriate options
   bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
-                     1, seq_left, _opts);
-  if (seq_right->len >= min_length_to_allow_mismatches) {
-    _opts->fnr = fpr;
-    _opts->max_diff = -1;
-  } else {
-    _opts->fnr = -1;
-    _opts->max_diff = 0;
-  }
-  bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
-                     1, seq_right, _opts);
-
+                     2, seqs, _opts);
   return seqs;
 }
 

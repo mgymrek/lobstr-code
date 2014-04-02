@@ -218,7 +218,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_EXTEND,
     OPT_MAX_PERIOD,
     OPT_MIN_PERIOD,
-    OPT_MIN_FLANK_ALLOW_MISMATCH,
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
@@ -288,7 +287,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"align-debug", 0, 0, OPT_ALIGN_DEBUG},
     {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
-    {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
     {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
     {"profile", 0, 0, OPT_PROFILE},
@@ -475,10 +473,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MAX_READ_LENGTH:
       max_read_length = atoi(optarg);
       AddOption("max-read-length", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_MIN_FLANK_ALLOW_MISMATCH:
-      min_length_to_allow_mismatches = atoi(optarg);
-      AddOption("min-flank-allow-mismatch", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_ENTROPY_THRESHOLD:
       entropy_threshold = atof(optarg);
