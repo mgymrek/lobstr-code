@@ -175,6 +175,10 @@ void show_help() {
     "-r <float>                 edit distance allowed during alignment\n" \
     "                           of each flanking region (ignored if -m\n" \
     "                           is set) (default: 0.01)\n" \
+    "--max-hits-quit-aln <int>  Stop alignment search after int hits found.\n" \
+    "                           Default: 1000. Use -1 for no limit.\n" \
+    "--min-flank-allow-mismatch <int>  Mininum length of flanking region to allow\n" \
+    "                           mismatches. Default: 30.\n" \
     "\n\nAdvanced options - Amazon Web Services:\n" \
     "--use-s3 <bucket>          Files are read from this s3 bucket\n" \
     "                           WARNING s3 mode DELETES FILES after processing\n" \
@@ -220,7 +224,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MIN_PERIOD,
     OPT_MIN_FLANK_ALLOW_MISMATCH,
     OPT_MAX_HITS_QUIT_ALN,
-    OPT_ALLOW_ONE_FLANK_ALN,
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
@@ -292,7 +295,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
     {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
     {"max-hits-quit-aln", 1, 0, OPT_MAX_HITS_QUIT_ALN},
-    {"allow-one-flank-align", 0, 0, OPT_ALLOW_ONE_FLANK_ALN},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
     {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
     {"profile", 0, 0, OPT_PROFILE},
@@ -458,10 +460,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MAX_HITS_QUIT_ALN:
       max_hits_quit_aln = atoi(optarg);
       AddOption("max-hits-quit-aln", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_ALLOW_ONE_FLANK_ALN:
-      allow_one_flank_align++;
-      AddOption("allow-one-flank-align", "", false, &user_defined_arguments);
       break;
     case OPT_MAX_DIFF_REF:
       max_diff_ref = atoi(optarg);
