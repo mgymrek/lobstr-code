@@ -552,7 +552,6 @@ bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
   }
   bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
                      1, seq_right, _opts);
-
   return seqs;
 }
 
