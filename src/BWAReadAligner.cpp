@@ -350,7 +350,7 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   *err = "Alignment-errors-here:";
   *messages = "Alignment-notes-here:";
   if (align_debug) {
-    PrintMessageDieOnError("[ProcessRead]: " + read->ID + " " + read->left_flank_nuc + " " + read->right_flank_nuc, DEBUG);
+    PrintMessageDieOnError("[ProcessRead]: " + read->ID + " " + read->left_flank_nuc + " " + read->right_flank_nuc + " " + read->detected_ms_region_nuc, DEBUG);
   }
   // do the flanks consist of all repeats?
   bool left_all_repeats = false;
@@ -397,32 +397,36 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read,
   if (align_debug) {
     PrintMessageDieOnError("[ProcessRead]: fill in coords", DEBUG);
   }
-  // fill in alignment coordinates
+  // fill in alignment coordinates - only require one to go on
   vector<ALIGNMENT> left_alignments;
   vector<ALIGNMENT> right_alignments;
+  bool one_flank_aligned = false;
   if (!left_all_repeats) {
-    if (!GetAlignmentCoordinates(seq_left, repseq, &left_alignments)) {
-      bwa_free_read_seq(2, seqs);
-      *err += "No-left-alignment;";
-      return false;
+    if (GetAlignmentCoordinates(seq_left, repseq, &left_alignments)) {
+      one_flank_aligned++;
     }
   }
   if (!right_all_repeats) {
-    if (!GetAlignmentCoordinates(seq_right, repseq, &right_alignments)) {
-      bwa_free_read_seq(2, seqs);
-      *err += "No-right-alignment;";
-      return false;
+    if (GetAlignmentCoordinates(seq_right, repseq, &right_alignments)) {
+      one_flank_aligned++;
     }
   }
-
   // don't need seqs anymore
   bwa_free_read_seq(2, seqs);
+
+  // If didn't find anything, quit
+  if (!one_flank_aligned) {
+    *err += "No-flank-aligned;";
+    return false;
+  }
 
   // get shared alignments
   vector<ALIGNMENT> left_refids;
   vector<ALIGNMENT> right_refids;
   if (!GetSharedAlns(left_alignments, right_alignments,
-                     &left_refids, &right_refids)) {
+                     &left_refids, &right_refids,
+		     static_cast<int>(read->detected_ms_region_nuc.size()),
+		     static_cast<int>(read->left_flank_nuc.size()))) {
     *err += "No-shared-alignment-found;";
     return false;
   }
@@ -521,32 +525,42 @@ bwa_seq_t* BWAReadAligner::BWAAlignFlanks(const MSReadRecord& read) {
   seq_reverse(seq_right->len, seq_right->qual, 0);
   seq_right->name = strdup((const char*)read.ID.c_str());
 
-  // call bwa with appropriate options TODO
-  //  bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
-  //                   2, seqs, _opts);
+  // call bwa with appropriate options (separate for each flank)
   if (seq_left->len >= min_length_to_allow_mismatches) {
     _opts->fnr = fpr;
-    _opts->max_diff = -1;
+    _opts->max_diff = max_mismatch;
+    _opts->max_gapo = gap_open;
+    _opts->max_gape = gap_extend;
   } else {
     _opts->fnr = -1;
     _opts->max_diff = 0;
+    _opts->max_gapo = 0;
+    _opts->max_gape = 0;
   }
   bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
                      1, seq_left, _opts);
   if (seq_right->len >= min_length_to_allow_mismatches) {
     _opts->fnr = fpr;
-    _opts->max_diff = -1;
+    _opts->max_diff = max_mismatch;
+    _opts->max_gapo = gap_open;
+    _opts->max_gape = gap_extend;
   } else {
     _opts->fnr = -1;
     _opts->max_diff = 0;
+    _opts->max_gapo = 0;
+    _opts->max_gape = 0;
   }
   bwa_cal_sa_reg_gap(0, _bwt_references->at(read.repseq).bwt,
                      1, seq_right, _opts);
-
   return seqs;
 }
 
 void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
+  if (align_debug) {
+    stringstream msg;
+    msg << "Parsing refstring " << refstring;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   vector<string> items;
   split(refstring, '$', items);
   refid->id = atoi(items.at(0).c_str());
@@ -578,6 +592,7 @@ int64_t pos_end_multi(const bwt_multi1_t *p, int len) {
 bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
                                              const std::string&repseq,
                                              vector<ALIGNMENT>* alignments) {
+  alignments->clear();
   // fill in alignment properties
   bwa_aln2seq_core(aligned_seqs->n_aln, aligned_seqs->aln,
                    aligned_seqs, 0, 1000);
@@ -620,50 +635,122 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
     refid.repeat = repseq;
     alignments->push_back(refid);
   }
-  return true;
+  return (alignments->size() >= 1);
 }
 
 bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
                                    const vector<ALIGNMENT>& map2,
                                    vector<ALIGNMENT>* left_refids,
-                                   vector<ALIGNMENT>* right_refids) {
-  if (map1.size() == 0 || map2.size() == 0) return false;
+                                   vector<ALIGNMENT>* right_refids,
+				   int ms_len, int left_flank_len) {
+  if (align_debug) {
+    stringstream msg;
+    msg << "[GetSharedAln]: " << allow_one_flank_align << " map 1 size " << map1.size() << " map 2 size " << map2.size();
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
+  if (!allow_one_flank_align && (map1.size() == 0 || map2.size() == 0)) return false;
+  if (map1.size() == 0 && map2.size() == 0) return false;
   // get keys that are shared and consistent
   map<int, ALIGNMENT> left_id_to_ref;
   map<int, ALIGNMENT> right_id_to_ref;
-  bool found = false;
-  for (vector<ALIGNMENT>::const_iterator it = map1.begin();
-       it != map1.end(); ++it) {
-    // Must see every ID only once
-    if (left_id_to_ref.find((*it).id) == left_id_to_ref.end()) {
-      left_id_to_ref[(*it).id] = *it;
-    } else {
-      left_id_to_ref.erase((*it).id);
-    }
-  }
-  for (vector<ALIGNMENT>::const_iterator it = map2.begin();
-       it != map2.end(); ++it) {
-    // Must see every ID only once
-    if (right_id_to_ref.find((*it).id) == right_id_to_ref.end()) {
-      right_id_to_ref[(*it).id] = *it;
-    } else {
-      right_id_to_ref.erase((*it).id);
-    }
-  }
-  for (map<int, ALIGNMENT>::const_iterator it = right_id_to_ref.begin();
-       it != right_id_to_ref.end(); ++it) {
-    int ref_key = it->first;
-    if (left_id_to_ref.find(ref_key) != left_id_to_ref.end()) {
-      // check strand, L, R are compatible
-      if (left_id_to_ref[ref_key].strand == it->second.strand &&
-          left_id_to_ref[ref_key].left != it->second.left) {
-        left_refids->push_back(left_id_to_ref[ref_key]);
-        right_refids->push_back(it->second);
-        found = true;
+
+  if (map1.size() == 0) { // only right flank aligned
+    if (!allow_multi_mappers && map2.size() > 1) return false;
+    // For each right alignment, make a dummy left alignment
+    for (vector<ALIGNMENT>::const_iterator it = map2.begin();
+	 it != map2.end(); ++it) {
+      ALIGNMENT dummy_lalign;
+      dummy_lalign.id = it->id;
+      dummy_lalign.left = !it->left;
+      dummy_lalign.chrom = it->chrom;
+      if (dummy_lalign.left) {
+	dummy_lalign.start = it->start - extend;
+	dummy_lalign.end = it->end - extend;
+      } else {
+	dummy_lalign.start = it->start;
+	dummy_lalign.end = it->end;
+      }
+      dummy_lalign.copynum = it->copynum;
+      dummy_lalign.strand = it->strand;
+      dummy_lalign.repeat = it->repeat;
+      dummy_lalign.pos = it->pos - ms_len - left_flank_len; // approx
+      left_refids->push_back(dummy_lalign);
+      right_refids->push_back(*it);
+      if (align_debug) {
+	stringstream msg;
+	msg << "Dummy left_align, chrom:pos " << dummy_lalign.chrom << ":" << dummy_lalign.pos << " right pos " << it->pos << " left flank len " << left_flank_len << " ms len " << ms_len << endl;
+	PrintMessageDieOnError(msg.str(), DEBUG);
       }
     }
+    return true;
+  } else if (map2.size() == 0) { // only right flank aligned
+    if (!allow_multi_mappers && map1.size() > 1) return false;
+    for (vector<ALIGNMENT>::const_iterator it = map1.begin();
+	 it != map1.end(); ++it) {
+      ALIGNMENT dummy_ralign;
+      dummy_ralign.id = it->id;
+      dummy_ralign.left = !it->left;
+      dummy_ralign.chrom = it->chrom;
+      if (dummy_ralign.left) {
+	dummy_ralign.start = it->start - extend;
+	dummy_ralign.end = it->end - extend;
+      } else {
+	dummy_ralign.start = it->start;
+	dummy_ralign.end = it->end;
+      }
+      dummy_ralign.copynum = it->copynum;
+      dummy_ralign.strand = it->strand;
+      dummy_ralign.repeat = it->repeat;
+      dummy_ralign.pos = it->pos + left_flank_len + ms_len; // approx
+      left_refids->push_back(*it);
+      right_refids->push_back(dummy_ralign);
+      if (align_debug) {
+	stringstream msg;
+	msg << "[GetSharedAln]: Dummy right_align, chrom:pos " << dummy_ralign.chrom << ":" <<dummy_ralign.pos << " left pos " << it->pos << " left flank len " << left_flank_len << " ms len " << ms_len << endl;
+	PrintMessageDieOnError(msg.str(), DEBUG);
+      }
+    }
+    return true;
+  } else { // both aligned, find matching ones
+    bool found = false;
+    for (vector<ALIGNMENT>::const_iterator it = map1.begin();
+	 it != map1.end(); ++it) {
+      // Must see every ID only once
+      if (left_id_to_ref.find((*it).id) == left_id_to_ref.end()) {
+	left_id_to_ref[(*it).id] = *it;
+      } else {
+	left_id_to_ref.erase((*it).id);
+      }
+    }
+    for (vector<ALIGNMENT>::const_iterator it = map2.begin();
+	 it != map2.end(); ++it) {
+      // Must see every ID only once
+      if (right_id_to_ref.find((*it).id) == right_id_to_ref.end()) {
+	right_id_to_ref[(*it).id] = *it;
+      } else {
+	right_id_to_ref.erase((*it).id);
+      }
+    }
+    for (map<int, ALIGNMENT>::const_iterator it = right_id_to_ref.begin();
+	 it != right_id_to_ref.end(); ++it) {
+      int ref_key = it->first;
+      if (left_id_to_ref.find(ref_key) != left_id_to_ref.end()) {
+	// check strand, L, R are compatible
+	if (left_id_to_ref[ref_key].strand == it->second.strand &&
+	    left_id_to_ref[ref_key].left != it->second.left) {
+	  left_refids->push_back(left_id_to_ref[ref_key]);
+	  right_refids->push_back(it->second);
+	  if (align_debug) {
+	    stringstream msg;
+	    msg << "[GetSharedAln]: Real align left pos " << left_id_to_ref[ref_key].pos << " right pos " << it->second.pos;
+	    PrintMessageDieOnError(msg.str(), DEBUG);
+	  }
+	  found = true;
+	}
+      }
+    }
+    return found;
   }
-  return found;
 }
 
 bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
@@ -971,6 +1058,12 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
   // Set info for aligned read
   read_pair->reads.at(aligned_read_num).chrom = left_alignment.chrom;
   read_pair->reads.at(aligned_read_num).strid = left_alignment.id;
+  if (align_debug) {
+    stringstream msg;
+    msg << "Left aln start: " << left_alignment.start << " Right aln start: " << right_alignment.start
+	<< " Left aln end: " << left_alignment.end << " Right aln end: " << right_alignment.end;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   if (left_alignment.left) {
     read_pair->reads.at(aligned_read_num).msStart = left_alignment.start;
     read_pair->reads.at(aligned_read_num).msEnd = left_alignment.end;
@@ -1176,7 +1269,14 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   CIGAR_LIST cigar_list;
   nw(aligned_seq, rseq, aligned_seq_sw, ref_seq_sw,
      false, &sw_score, &cigar_list);
-
+  if (align_debug) {
+    stringstream msg;
+    msg << "Aseq " << aligned_seq_sw;
+    PrintMessageDieOnError(msg.str(), DEBUG);
+    stringstream msg2;
+    msg2 << "Rseq " << ref_seq_sw;
+    PrintMessageDieOnError(msg2.str(), DEBUG);
+  }
   // get rid of end gaps
   if (cigar_list.cigars.at(0).cigar_type == 'D') {
     const int& num = cigar_list.cigars.at(0).num;

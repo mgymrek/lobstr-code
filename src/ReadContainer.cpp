@@ -259,8 +259,13 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   // check that both ends of the read contain sufficient perfect matches
   if (min_read_end_match > 0){
     map<pair<string,int>, string>::iterator loc_iter = ref_ext_nucleotides.find(pair<string,int>(aligned_read->chrom, aligned_read->msStart));
-    if (loc_iter == ref_ext_nucleotides.end())
-      PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
+    if (loc_iter == ref_ext_nucleotides.end()) {
+      stringstream msg;
+      msg << "No extended reference sequence found for locus " << aligned_read->chrom << ":"
+	  <<aligned_read->msStart << " read " << aligned_read->ID;
+      PrintMessageDieOnError(msg.str(), WARNING);
+      return false;
+    }
     string ref_ext_seq = loc_iter->second;
     pair<int,int> num_end_matches = AlignmentFilters::GetNumEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend);
     if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match){
@@ -272,8 +277,13 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   // check that the prefix and suffix of the read match maximally compared to proximal reference locations
   if (maximal_end_match_window > 0){
     map<pair<string,int>, string>::iterator loc_iter = ref_ext_nucleotides.find(pair<string,int>(aligned_read->chrom, aligned_read->msStart));
-    if (loc_iter == ref_ext_nucleotides.end())
-      PrintMessageDieOnError("No extended reference sequence found for locus", ERROR);
+    if (loc_iter == ref_ext_nucleotides.end()) {
+      stringstream msg;
+      msg << "No extended reference sequence found for locus " << aligned_read->chrom << ":"
+	  << aligned_read->msStart << " read " << aligned_read->ID;
+      PrintMessageDieOnError(msg.str(), WARNING);
+      return false;
+    }
     string ref_ext_seq = loc_iter->second;
     bool maximum_end_matches = AlignmentFilters::HasLargestEndMatches(aligned_read, ref_ext_seq, aligned_read->msStart-extend, maximal_end_match_window, maximal_end_match_window);
     if (!maximum_end_matches){

@@ -175,6 +175,10 @@ void show_help() {
     "-r <float>                 edit distance allowed during alignment\n" \
     "                           of each flanking region (ignored if -m\n" \
     "                           is set) (default: 0.01)\n" \
+    "--max-hits-quit-aln <int>  Stop alignment search after int hits found.\n" \
+    "                           Default: 1000. Use -1 for no limit.\n" \
+    "--min-flank-allow-mismatch <int>  Mininum length of flanking region to allow\n" \
+    "                           mismatches. Default: 30.\n" \
     "\n\nAdvanced options - Amazon Web Services:\n" \
     "--use-s3 <bucket>          Files are read from this s3 bucket\n" \
     "                           WARNING s3 mode DELETES FILES after processing\n" \
@@ -219,6 +223,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAX_PERIOD,
     OPT_MIN_PERIOD,
     OPT_MIN_FLANK_ALLOW_MISMATCH,
+    OPT_MAX_HITS_QUIT_ALN,
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
@@ -289,6 +294,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
     {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
+    {"max-hits-quit-aln", 1, 0, OPT_MAX_HITS_QUIT_ALN},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
     {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
     {"profile", 0, 0, OPT_PROFILE},
@@ -451,6 +457,10 @@ void parse_commandline_options(int argc, char* argv[]) {
       }
       AddOption("minflank", string(optarg), true, &user_defined_arguments);
       break;
+    case OPT_MAX_HITS_QUIT_ALN:
+      max_hits_quit_aln = atoi(optarg);
+      AddOption("max-hits-quit-aln", string(optarg), true, &user_defined_arguments);
+      break;
     case OPT_MAX_DIFF_REF:
       max_diff_ref = atoi(optarg);
       if (max_diff_ref <=0 ) {
@@ -475,10 +485,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MAX_READ_LENGTH:
       max_read_length = atoi(optarg);
       AddOption("max-read-length", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_MIN_FLANK_ALLOW_MISMATCH:
-      min_length_to_allow_mismatches = atoi(optarg);
-      AddOption("min-flank-allow-mismatch", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_ENTROPY_THRESHOLD:
       entropy_threshold = atof(optarg);
@@ -1177,6 +1183,8 @@ int main(int argc, char* argv[]) {
   opts->max_gape = gap_extend;
   // take the first INT subsequence as seed
   opts->seed_len = 5;
+  // Set additional alignment params
+  opts->max_hits_quit_aln = max_hits_quit_aln;
 
   // get the input files
   if (paired && !bam) {
@@ -1223,7 +1231,7 @@ int main(int argc, char* argv[]) {
   delete hamgen;
   delete tukgen;
   OutputRunStatistics();
-  if (!quiet) OutputRunningTimeInformation(starttime,processing_starttime,endtime,
-					   threads, run_info.num_processed_units);
+  OutputRunningTimeInformation(starttime,processing_starttime,endtime,
+			       threads, run_info.num_processed_units);
   return 0;
 }

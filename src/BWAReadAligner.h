@@ -102,7 +102,8 @@ class BWAReadAligner {
   bool GetSharedAlns(const std::vector<ALIGNMENT>& map1,
                      const std::vector<ALIGNMENT>& map2,
                      std::vector<ALIGNMENT>* left_refids,
-                     std::vector<ALIGNMENT>* right_refids);
+                     std::vector<ALIGNMENT>* right_refids,
+		     int ms_len, int left_flank_len);
 
   // Align mate
   bool AlignMate(const ReadPair& read_pair,
