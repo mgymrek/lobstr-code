@@ -86,7 +86,7 @@ void show_help() {
     "                                or read (--command classify) noise model\n" \
     "                                parameters to.\n" \
     "                                An example is $PATH_TO_LOBSTR/models/illumina2\n" \
-    "--index-prefix <STRING>         (REQUIRED for --command classify) prefix for lobSTR's bwa reference\n" \
+    "--index-prefix <STRING>         (REQUIRED) prefix for lobSTR's bwa reference\n" \
     "                                (must be same as for lobSTR alignment)\n" \
     "--no-rmdup:                     don't remove pcr duplicates before allelotyping\n" \
     "                                Must use this option if calling multiple samples\n" \
@@ -126,8 +126,6 @@ void show_help() {
     "                                <INT> bp at both ends. \n"
     "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
     "                                obtained when shifting the read ends by distances within <INT> bp\n"
-    "--exclude-partial:              Do not report any information about partially\n" \
-    "                                spanning reads.\n\n"
     "Additional options\n" \
     "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n\n" \
     "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
