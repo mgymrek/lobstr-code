@@ -113,6 +113,8 @@ class RunInfo {
 	if (num_mates > 0) {
 	  ss << "Mean insert size: " << static_cast<float>(total_insert)/static_cast<float>(num_mates) << std::endl;
 	}
+      } else {
+	ss << "No reads aligned" << std::endl;
       }
     } else {
       ss << "Allelotype stats" << std::endl;
