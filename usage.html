@@ -112,8 +112,7 @@
 	    format</li>
 	  <li>--bam: the input files are in bam format</li>
 	  <li>--bampair: the input bam files are paired-end. Note: bam
-	    files MUST be sorted by read name (samtools sort -n
-	    file.bam prefix)</li>
+	    files MUST have read pairs next to each other. This can be achieved by sorting the file by read name with "samtools sort -n file.bam". This can also be achieved using the bamcollate2 utility of <a href="https://github.com/gt1/biobambam">biobambam</a></li>
 	  <li>--gzip: the input files are gzipped (only works for fasta
 	    or fastq input)</li>
 	  <li>--bwaq INT: trim reads based on quality score. Same as
