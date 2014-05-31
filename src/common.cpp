@@ -84,7 +84,7 @@ void OutputRunStatistics() {
   PrintMessageDieOnError("Outputting run statistics", PROGRESS);
   TextFileWriter sWriter(output_prefix + (program == LOBSTR? ".aligned.stats":".allelotype.stats"));
   // Output run statistics to stats file
-  string stats_string = run_info.PrintToString((program == LOBSTR ? 0: 1));
+  string stats_string = run_info.PrintToString((program == LOBSTR ? 0: 1), filter_counter);
   sWriter.Write(stats_string);
   // Upload to AWS S3
   if (!noweb) {
@@ -147,8 +147,10 @@ void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
   }
   stringstream ss;
   ss  << "[" << (program == LOBSTR ? "lobSTR":"allelotype")
-       << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
-  cerr << ss.str();
+      << "-" << _GIT_VERSION << "] " << currentDateTime() << " " << typestring << msg << endl;
+  if (!quiet) {
+    cerr << ss.str();
+  }
   if (msgtype == ERROR) {
     run_info.error = ss.str();
     run_info.endtime = GetTime();

@@ -21,9 +21,12 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_RUNINFO_H_
 #define SRC_RUNINFO_H_
 
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "src/FilterCounter.h"
 
 /*
   RunInfo stores information about the run that will be uploaded to Amazon for further analysis
@@ -87,7 +90,7 @@ class RunInfo {
   }
   
   // Print to string
-  std::string PrintToString(int program) {
+  std::string PrintToString(int program, FilterCounter& filter_counter) {
     std::stringstream ss;
     ss << "Starttime: " << starttime << std::endl;
     ss << "Endtime: " << endtime << std::endl;
@@ -110,6 +113,8 @@ class RunInfo {
 	if (num_mates > 0) {
 	  ss << "Mean insert size: " << static_cast<float>(total_insert)/static_cast<float>(num_mates) << std::endl;
 	}
+      } else {
+	ss << "No reads aligned" << std::endl;
       }
     } else {
       ss << "Allelotype stats" << std::endl;
@@ -119,7 +124,6 @@ class RunInfo {
 	ss << "Num calls >=5x\t" << num_calls5x.at(i) << std::endl;
 	ss << "Mean coverage\t" << static_cast<float>(total_coverage.at(i))/static_cast<float>(num_calls.at(i)) << std::endl;
 	ss << "Mean perc. agree\t" << static_cast<float>(total_agree.at(i))/static_cast<float>(num_calls.at(i)) << std::endl;
-	ss << std::endl;
       }
       ss << "Call type by period (0/0, 0/1, 1/1, 1/2)" << std::endl;
       for (size_t i = 0; i < calltype_by_period.size(); i++) {
@@ -130,6 +134,11 @@ class RunInfo {
 	}
 	ss << std::endl;
       }
+
+      ss << "Read filter stats:" << std::endl;
+      for (int i = 0; i < FilterCounter::NUM_FILTERS; i++)
+	ss << "\t" << std::setw(25) << filter_counter.GetFilterType(i) << ":\t" << filter_counter.GetFilterCount(i) << std::endl;
+      ss << std::endl;
     }
 
     return ss.str();

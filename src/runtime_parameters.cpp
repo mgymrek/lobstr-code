@@ -23,6 +23,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/runtime_parameters.h"
 
 RunInfo run_info;
+FilterCounter filter_counter;
 
 int MIN_PERIOD=1;
 int MAX_PERIOD=6;
@@ -44,6 +45,7 @@ bool debug = false;
 bool fastq = false;
 bool bam = false;
 bool noweb = false;
+bool quiet = false;
 
 // threading
 size_t threads = 1;
@@ -90,10 +92,14 @@ int max_align = 10;
 int max_diff_ref = 50;
 bool unit = false;
 int extend = 1000;
+int min_length_to_allow_mismatches = 30;
+int max_hits_quit_aln = 1000;
+bool allow_one_flank_align = true;
 std::string index_prefix = "";
-int gap_open = 0; // By default, don't allow any gaps in flanks when aligning
-int gap_extend = 0;
-float fpr = 0.01;
+int gap_open = 1;
+int gap_extend = 1;
+float fpr = -1;
+int max_mismatch = 1;
 std::string read_group_sample = "";
 std::string read_group_library = "";
 bool include_orig_read_start = false;
@@ -113,6 +119,7 @@ bool include_gl = false;
 bool print_reads = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
+int maximal_end_match_window = 0;
 int min_border   = 0;
 int min_bp_before_indel = 0;
 int min_read_end_match = 0;

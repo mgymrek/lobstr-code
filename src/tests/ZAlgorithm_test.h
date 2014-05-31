@@ -18,38 +18,29 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef SRC_TESTS_NWNOREFENDPENALTY_H__
-#define SRC_TESTS_NWNOREFENDPENALTY_H__
+#ifndef SRC_TESTS_ZALGORITHM_H__
+#define SRC_TESTS_ZALGORITHM_H__
 
 #include <cppunit/extensions/HelperMacros.h>
 
-#include "src/NWNoRefEndPenalty.h"
+#include "src/ZAlgorithm.h"
 
-class NWNoRefEndPenaltyTest :
+class ZAlgorithmTest :
 public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(NWNoRefEndPenaltyTest);
-  CPPUNIT_TEST(test_Align_Mut_Only);
-  CPPUNIT_TEST(test_Align_Ins_Only);
-  CPPUNIT_TEST(test_Align_Del_Only);
-  CPPUNIT_TEST(test_Align_All_Muts);
+  CPPUNIT_TEST_SUITE(ZAlgorithmTest);
+  CPPUNIT_TEST(test_Prefix);
+  CPPUNIT_TEST(test_Suffix);
   CPPUNIT_TEST_SUITE_END();
 
  public:
-  static const int MAX_INS=10, MAX_DEL=10, PERFECT_FLANK=10; 
-  static const int REF_LEN=150, READ_LEN=50; 
-  static const int RAND_SEED=21312278;
-  static const int NUM_TRIALS=1000;
-  static const double MIN_FRAC_CORRECT=0.9;
-
+  const static int NUM_TRIALS=1000;
+  const static int LENGTH=100;
   void setUp();
   void tearDown();
-  int  GenAlignments(int num_trials, double mut_prob, double ins_prob, double del_prob);
-  void test_Align_Mut_Only();
-  void test_Align_Ins_Only();
-  void test_Align_Del_Only();
-  void test_Align_All_Muts();
-  
+  void test_Prefix();
+  void test_Suffix();
+    
  private:
 };
 
-#endif //  SRC_TESTS_NWNOREFENDPENALTY_H_
+#endif //  SRC_TESTS_ZALGORITHM_H_

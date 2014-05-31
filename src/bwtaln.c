@@ -33,6 +33,7 @@ gap_opt_t *gap_init_opt()
 	o->n_threads = 1;
 	o->max_top2 = 30;
 	o->trim_qual = 0;
+	o->max_hits_quit_aln = -1; // no limit
 	return o;
 }
 

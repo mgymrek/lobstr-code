@@ -30,6 +30,7 @@ public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(AlignmentFiltersTest);
   CPPUNIT_TEST(test_GetDistToIndel);
   CPPUNIT_TEST(test_GetNumEndMatches);
+  CPPUNIT_TEST(test_HasLargestEndMatches);
   CPPUNIT_TEST_SUITE_END();
 
  public:
@@ -37,6 +38,7 @@ public CppUnit::TestFixture {
   void tearDown();
   void test_GetDistToIndel();
   void test_GetNumEndMatches();
+  void test_HasLargestEndMatches();
  private:
 };
 

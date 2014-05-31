@@ -27,6 +27,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/tests/ReadContainer_test.h"
 #include "src/tests/RemoveDuplicates_test.h"
 #include "src/tests/VCFWriter_test.h"
+#include "src/tests/ZAlgorithm_test.h"
 
 int main( int argc, char **argv) {
   // Adds the test to the list of tests to run
@@ -38,6 +39,7 @@ int main( int argc, char **argv) {
   runner.addTest(ReadContainerTest::suite());
   runner.addTest(RemoveDuplicatesTest::suite());
   runner.addTest(VCFWriterTest::suite());
+  runner.addTest(ZAlgorithmTest::suite());
 
   // Run the tests
   bool wasSucessful = runner.run();

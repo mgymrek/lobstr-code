@@ -24,9 +24,7 @@ bin_SCRIPTS =
 scriptdir = $(pkgdatadir)/scripts
 
 script_SCRIPTS = \
-	checks_utils.py \
-	lobSTR_alignment_checks.py \
-	lobSTR_allelotype_checks.py \
+	GetSTRInfo.py \
 	lobstr_index.py
 
 EXTRA_DIST = $(script_SCRIPTS) \

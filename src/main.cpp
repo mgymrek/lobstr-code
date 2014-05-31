@@ -110,6 +110,7 @@ void show_help() {
     "\n\nOptions:\n" \
     "-h,--help      display this help screen\n" \
     "-v,--verbose   print out useful progress messages\n" \
+    "--quiet    don't print anything to stderr or stdout\n" \
     "--version      print out lobSTR program version\n" \
     "-q,--fastq     reads are in fastq format (default: fasta)\n" \
     "--bam          reads are in bam format (default: fasta)\n" \
@@ -174,6 +175,10 @@ void show_help() {
     "-r <float>                 edit distance allowed during alignment\n" \
     "                           of each flanking region (ignored if -m\n" \
     "                           is set) (default: 0.01)\n" \
+    "--max-hits-quit-aln <int>  Stop alignment search after int hits found.\n" \
+    "                           Default: 1000. Use -1 for no limit.\n" \
+    "--min-flank-allow-mismatch <int>  Mininum length of flanking region to allow\n" \
+    "                           mismatches. Default: 30.\n" \
     "\n\nAdvanced options - Amazon Web Services:\n" \
     "--use-s3 <bucket>          Files are read from this s3 bucket\n" \
     "                           WARNING s3 mode DELETES FILES after processing\n" \
@@ -200,6 +205,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_OUTPUT,
     OPT_HELP,
     OPT_VERBOSE,
+    OPT_QUIET,
     OPT_DEBUG,
     OPT_ALIGN_DEBUG,
     OPT_FASTQ,
@@ -215,6 +221,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_EXTEND,
     OPT_MAX_PERIOD,
     OPT_MIN_PERIOD,
+    OPT_MIN_FLANK_ALLOW_MISMATCH,
+    OPT_MAX_HITS_QUIT_ALN,
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
@@ -224,7 +232,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MIN_READ_LENGTH,
     OPT_MAX_READ_LENGTH,
     OPT_ERROR_RATE,
-    OPT_MIN_COVERAGE,
     OPT_WHY_NOT,
     OPT_ENTROPY_THRESHOLD,
     OPT_DEBUG_ENTROPY,
@@ -273,6 +280,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"multi", 0, 0, OPT_MULTI},
     {"help", 0, 0, OPT_HELP},
     {"verbose", 0, 0, OPT_VERBOSE},
+    {"quiet", 0, 0, OPT_QUIET},
     {"debug", 0, 0, OPT_DEBUG},
     {"fastq", 0, 0, OPT_FASTQ},
     {"bam", 0, 0, OPT_BAM},
@@ -282,7 +290,8 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"align-debug", 0, 0, OPT_ALIGN_DEBUG},
     {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
-    {"min-coverage", 1, 0, OPT_MIN_COVERAGE},
+    {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
+    {"max-hits-quit-aln", 1, 0, OPT_MAX_HITS_QUIT_ALN},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
     {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
     {"profile", 0, 0, OPT_PROFILE},
@@ -331,6 +340,9 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_VERBOSE:
       my_verbose++;
     break;
+    case OPT_QUIET:
+      quiet++;
+      break;
     case 'h':
     case OPT_HELP:
       show_help();
@@ -440,6 +452,10 @@ void parse_commandline_options(int argc, char* argv[]) {
         PrintMessageDieOnError("Invalid min flank length", ERROR);
       }
       AddOption("minflank", string(optarg), true, &user_defined_arguments);
+      break;
+    case OPT_MAX_HITS_QUIT_ALN:
+      max_hits_quit_aln = atoi(optarg);
+      AddOption("max-hits-quit-aln", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MAX_DIFF_REF:
       max_diff_ref = atoi(optarg);
@@ -552,7 +568,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     ch = getopt_long(argc, argv, "hvqp:f:t:g:o:m:s:d:e:g:r:u?",
                      long_options, &option_index);
   }
-
   // any arguments left over are extra
   if (optind < argc) {
     PrintMessageDieOnError("Unnecessary leftover arguments", ERROR);
@@ -1080,10 +1095,10 @@ void multi_thread_process_loop(vector<string> files1,
 }
 
 int main(int argc, char* argv[]) {
-  PrintLobSTR();
   time_t starttime, processing_starttime,endtime;
   time(&starttime);
   parse_commandline_options(argc, argv);
+  if (!quiet) PrintLobSTR();
   unit_name = paired?"pairs":"reads";
   PrintMessageDieOnError("Getting run info", PROGRESS);
   run_info.Reset();
@@ -1115,6 +1130,8 @@ int main(int argc, char* argv[]) {
   opts->max_gape = gap_extend;
   // take the first INT subsequence as seed
   opts->seed_len = 5;
+  // Set additional alignment params
+  opts->max_hits_quit_aln = max_hits_quit_aln;
 
   // get the input files
   if (paired && !bam) {
@@ -1163,6 +1180,6 @@ int main(int argc, char* argv[]) {
   DestroyReference();
   OutputRunStatistics();
   OutputRunningTimeInformation(starttime,processing_starttime,endtime,
-                               threads, run_info.num_processed_units);
+			       threads, run_info.num_processed_units);
   return 0;
 }

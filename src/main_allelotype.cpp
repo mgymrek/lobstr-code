@@ -90,7 +90,7 @@ void show_help() {
     "                                or read (--command classify) noise model\n" \
     "                                parameters to.\n" \
     "                                An example is $PATH_TO_LOBSTR/models/illumina2\n" \
-    "--index-prefix <STRING>         (REQUIRED for --command classify) prefix for lobSTR's bwa reference\n" \
+    "--index-prefix <STRING>         (REQUIRED) prefix for lobSTR's bwa reference\n" \
     "                                (must be same as for lobSTR alignment)\n" \
     "--no-rmdup:                     don't remove pcr duplicates before allelotyping\n" \
     "                                Must use this option if calling multiple samples\n" \
@@ -104,6 +104,7 @@ void show_help() {
     "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
     "-v,--verbose:                   print out helpful progress messages\n" \
+    "--quiet                         don't print anything to stderr or stdout\n" \
     "--version:                      print out allelotype program version number\n\n" \
     "Options for calculating and reporting allelotypes:\n" \
     "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
@@ -127,8 +128,8 @@ void show_help() {
     "                                from either end of the read.\n"
     "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"\
     "                                <INT> bp at both ends. \n"
-    "--exclude-partial:              Do not report any information about partially\n" \
-    "                                spanning reads.\n\n"
+    "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
+    "                                obtained when shifting the read ends by distances within <INT> bp\n"
     "Additional options\n" \
     "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n\n" \
     "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
@@ -155,6 +156,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAX_DIFF_REF,
     OPT_MAXMAPQ,
     OPT_MAXMATEDIST,
+    OPT_MAXIMAL_END_MATCH_WINDOW,
     OPT_MIN_BORDER,
     OPT_MIN_BP_BEFORE_INDEL,
     OPT_MIN_HET_FREQ,
@@ -165,6 +167,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_OUTPUT,
     OPT_PRINT_READS,
     OPT_PROFILE,
+    OPT_QUIET,
     OPT_STRINFO,
     OPT_UNIT,
     OPT_VERBOSE,
@@ -188,6 +191,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
     {"max-matedist", 1, 0, OPT_MAXMATEDIST},
+    {"maximal-end-match", 1, 0, OPT_MAXIMAL_END_MATCH_WINDOW},
     {"min-border", 1, 0, OPT_MIN_BORDER},
     {"min-bp-before-indel", 1, 0, OPT_MIN_BP_BEFORE_INDEL},
     {"min-het-freq", 1, 0, OPT_MIN_HET_FREQ},
@@ -197,6 +201,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"noweb", 0, 0, OPT_NOWEB},
     {"out", 1, 0, OPT_OUTPUT},
     {"profile", 0, 0, OPT_PROFILE},
+    {"quiet", 0, 0, OPT_QUIET},
     {"reads", 0, 0, OPT_PRINT_READS},
     {"strinfo", 1, 0, OPT_STRINFO},
     {"unit", 0, 0, OPT_UNIT},
@@ -262,6 +267,10 @@ void parse_commandline_options(int argc, char* argv[]) {
       max_diff_ref = atoi(optarg);
       AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
+    case OPT_MAXIMAL_END_MATCH_WINDOW:
+      maximal_end_match_window = atoi(optarg);
+      AddOption("maximal-end-match", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
     case OPT_MAXMAPQ:
       max_mapq = atoi(optarg);
       AddOption("mapq", string(optarg), true, &user_defined_arguments_allelotyper);
@@ -313,6 +322,9 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_PROFILE:
       profile++;
+      break;
+    case OPT_QUIET:
+      quiet++;
       break;
     case OPT_STRINFO:
       strinfofile = string(optarg);
@@ -367,8 +379,8 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (strinfofile.empty()) {
     PrintMessageDieOnError("Must specify --strinfo", ERROR);
   }
-  if (index_prefix.empty() && command != "train") {
-    PrintMessageDieOnError("Must specify --index-prefix for classifying", ERROR);
+  if (index_prefix.empty()) {
+    PrintMessageDieOnError("Must specify --index-prefix", ERROR);
   }
 }
 
@@ -445,9 +457,9 @@ void LoadReference() {
 int main(int argc, char* argv[]) {
   time_t starttime, endtime;
   time(&starttime);
-  PrintLobSTR();
   /* parse command line options */
   parse_commandline_options(argc, argv);
+  if (!quiet) PrintLobSTR();
   PrintMessageDieOnError("Getting run info", PROGRESS);
   run_info.Reset();
   run_info.starttime = GetTime();
@@ -470,8 +482,36 @@ int main(int argc, char* argv[]) {
   NoiseModel nm(strinfofile, haploid_chroms);
 
   /* Load ref character and ref object for each STR */
-  if (command != "train") {
-    LoadReference();
+  if (my_verbose) {
+    PrintMessageDieOnError("Loading reference STRs", PROGRESS);
+  }
+  vector<ReferenceSTR> reference_strs;
+  FastaFileReader faReader(index_prefix+"ref.fasta");
+  MSReadRecord ref_record;
+  while (faReader.GetNextRead(&ref_record)) {
+    vector<string> items;
+    string refstring = ref_record.ID;
+    split(refstring, '$', items);
+    if (items.size() >= 6) { // should be 6 or 7, depending if name field is present
+      string chrom = items.at(1); 
+      int start = atoi(items.at(2).c_str())+extend;
+      int str_start = atoi(items.at(2).c_str());
+      int str_end = atoi(items.at(3).c_str());
+      string repseq = items.at(4);
+      if (use_chrom.empty() || use_chrom == chrom) {
+	ReferenceSTR ref_str;
+	ref_str.start        = str_start+extend;
+	ref_str.stop         = str_end-extend;
+	ref_str.chrom        = chrom;
+	reference_strs.push_back(ref_str);
+	string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
+	string repseq_in_ref = ref_record.nucleotides.substr(extend, repseq.size());
+	pair<string, int> locus = pair<string,int>(chrom, start);
+	ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
+	ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
+	ref_ext_nucleotides.insert(pair< pair<string, int>, string>(locus, ref_record.nucleotides));
+      }
+    }
   }
 
   /* Get list of bam files */
@@ -547,9 +587,11 @@ int main(int argc, char* argv[]) {
   run_info.endtime = GetTime();
   OutputRunStatistics();
   time(&endtime);
-  stringstream msg;
-  int seconds_elapsed = difftime(endtime, starttime);
-  msg << "Done! " << GetDurationString(seconds_elapsed) << " elapsed";
-  PrintMessageDieOnError(msg.str(), PROGRESS);
+  if (!quiet) {
+    stringstream msg;
+    int seconds_elapsed = difftime(endtime, starttime);
+    msg << "Done! " << GetDurationString(seconds_elapsed) << " elapsed";
+    PrintMessageDieOnError(msg.str(), PROGRESS);
+  }
   return 0;
 }

@@ -34,10 +34,10 @@ namespace RemoveDuplicates {
   void RemovePCRDuplicates(std::list<AlignedRead>* aligned_reads);
 
   /* Get representative read from group of duplicates, read with highest qual score */
-  void GetRepRead(const list<AlignedRead>& aligned_reads, AlignedRead* rep_alignment);
+  void GetRepRead(const std::list<AlignedRead>& aligned_reads, AlignedRead* rep_alignment);
 
   /* Get quality score of a read */
-  float GetScore(const string& quality_string);
+  float GetScore(const std::string& quality_string);
 }
 
 #endif  // SRC_REMOVEDUPLICATES_H_
