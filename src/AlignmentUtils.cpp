@@ -166,17 +166,13 @@ namespace AlignmentUtils {
 	stitched_qual.append(qa);
       }
     }
-    stitched_string.append(seq2.substr(overlap_len + 1));
-    stitched_qual.append(seq2_qual.substr(overlap_len + 1));
+    if (seq2.length() > overlap_len+1) {
+      stitched_string.append(seq2.substr(overlap_len + 1));
+      stitched_qual.append(seq2_qual.substr(overlap_len + 1));
+    }
     // put stitched info in aligned read
     read_pair->reads.at(num_aligned_read).nucleotides = stitched_string;
     read_pair->reads.at(num_aligned_read).quality_scores = stitched_qual;
-    read_pair->reads.at(num_aligned_read).right_flank_nuc =
-      stitched_string.substr(seq1.length() - read_pair->
-			     reads.at(num_aligned_read).
-			     right_flank_index_from_end -
-			     read_pair->reads.at(num_aligned_read).
-			     right_flank_nuc.length());
     if (best_stitch_is_backwards) {
       if (left_alignment->left) {
 	left_alignment->pos -= (seq1.length() - overlap_len);
