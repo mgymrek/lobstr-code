@@ -745,8 +745,7 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
   read_pair->reads.at(aligned_read_num).strid = left_alignment.id;
   if (align_debug) {
     stringstream msg;
-    msg << "Left aln start: " << left_alignment.start << " Right aln start: " << right_alignment.start
-	<< " Left aln end: " << left_alignment.end << " Right aln end: " << right_alignment.end;
+    msg << "Left aln start: " << left_alignment.pos <<" Right aln start: " << right_alignment.pos;
     PrintMessageDieOnError(msg.str(), DEBUG);
   }
   if (left_alignment.left) {

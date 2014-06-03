@@ -29,7 +29,7 @@ using namespace std;
 // Minimum number of bp for stitch overlap
 const size_t MIN_STITCH_OVERLAP = 16;
 // Percent identity required to stitch
-const float STITCH_REQUIRED_SCORE = 0.8;
+const float STITCH_REQUIRED_SCORE = 0.85;
 // Allowed difference in score between returned stitch
 // and next best stitch
 const float STITCH_DIFF = 0.1;
@@ -68,133 +68,127 @@ namespace AlignmentUtils {
   bool StitchReads(ReadPair* read_pair,
 		   ALIGNMENT* left_alignment,
 		   ALIGNMENT* right_alignment) {
-    try { // TODO remove this try/catch
-      // Set up
-      const int& num_aligned_read = read_pair->aligned_read_num;
-      string seq1 = read_pair->reads.at(num_aligned_read).orig_nucleotides;
-      string seq2 = reverseComplement(read_pair->reads.
-				      at(1-num_aligned_read).
-				      orig_nucleotides);
-      string seq1_qual = read_pair->reads.at(num_aligned_read).orig_qual;
-      string seq2_qual = reverse(read_pair->reads.
-				 at(1-num_aligned_read).orig_qual);
-      bool best_stitch_is_backwards = false;
-      vector<float> scores;
-      scores.push_back(0);
-      float score, max_score = 0;
-      size_t overlap_len, max_score_index = -1;
-      // Gradually bring ends together and try to stitch
-      for (size_t i = 0; i <= seq1.length() - MIN_STITCH_OVERLAP; i++) {
-	score = 0;
-	overlap_len = seq1.length()-i;
-	for (size_t j = 0; j < overlap_len; j++) {
-	  if (j >=  seq2.length()) {
-	    score = 0;
-	  } else {
-	    if (seq1.at(i+j) == seq2.at(j)) {
-	      score += 1;
-	    }
-	  }
-	}
-	if (score/overlap_len >= max_score) {
-	  max_score = score/overlap_len;
-	  max_score_index = i;
-	}
-	scores.push_back(score/overlap_len);
-      }
-      // Other direction
-      for (size_t i = 0; i <= seq2.length() - MIN_STITCH_OVERLAP; i++) {
-	score = 0;
-	overlap_len = seq2.length()-i;
-	for (size_t j = 0; j < overlap_len; j++) {
-	  if (j >=  seq1.length()) {
-	    score = 0;
-	  } else {
-	    if (seq2.at(i+j) == seq1.at(j)) {
-	      score += 1;
-	    }
-	  }
-	}
-	if (score/overlap_len >= max_score) {
-	  max_score = score/overlap_len;
-	  max_score_index = i + (seq1.length() - MIN_STITCH_OVERLAP) + 1;
-	}
-	scores.push_back(score/overlap_len);
-      }
-      
-      // Check if too many matches
-      for (size_t i = 0; i < scores.size(); i++) {
-	if ((max_score - scores.at(i) <= STITCH_DIFF) && i != max_score_index+1) {
-	  return false;
-	}
-      }
-      if (max_score_index >= (seq1.length()-MIN_STITCH_OVERLAP)) {
-	best_stitch_is_backwards = true;
-	max_score_index = max_score_index - seq1.length()
-	  + MIN_STITCH_OVERLAP - 1;
-	string tmp = seq1;
-	seq1 = seq2;
-	seq2 = tmp;
-	tmp = seq1_qual;
-	seq1_qual = seq2_qual;
-	seq2_qual = tmp;
-      }
-      
-      // Check if stitch is good enough
-      overlap_len = seq1.length() - max_score_index - 1;
-      if ((overlap_len < MIN_STITCH_OVERLAP) ||
-	  (max_score < STITCH_REQUIRED_SCORE)) {
-	return false;
-      }
-      string stitched_string = seq1.
-	substr(0, static_cast<int>(max_score_index));
-      string stitched_qual = seq1_qual.
-	substr(0, static_cast<int>(max_score_index));
-      string na, nb, qa, qb;
-      
-      for (size_t i = 0; i <= overlap_len; i++) {
-	na = seq1.substr(max_score_index+i, 1);
-	nb = seq2.substr(i, 1);
-	qa = seq1_qual.substr(max_score_index+i, 1);
-	qb = seq2_qual.substr(i, 1);
-	if (qa > qb) {
-	  stitched_string.append(na);
-	  stitched_qual.append(qa);
-	} else if (qa < qb) {
-	  stitched_string.append(nb);
-	  stitched_qual.append(qb);
-	} else {
-	  stitched_string.append(na);
-	  stitched_qual.append(qa);
-	}
-      }
-      stitched_string.append(seq2.substr(overlap_len + 1));
-      stitched_qual.append(seq2_qual.substr(overlap_len + 1));
-      
-      // put stitched info in aligned read
-      read_pair->reads.at(num_aligned_read).nucleotides = stitched_string;
-      read_pair->reads.at(num_aligned_read).quality_scores = stitched_qual;
-      read_pair->reads.at(num_aligned_read).right_flank_nuc =
-	stitched_string.substr(seq1.length() - read_pair->
-			       reads.at(num_aligned_read).
-			       right_flank_index_from_end -
-			       read_pair->reads.at(num_aligned_read).
-			       right_flank_nuc.length());
-      if (!left_alignment->left) {
-	right_alignment->pos -= ((seq2.length() - overlap_len)+
-				 read_pair->reads.at(num_aligned_read).
-				 right_flank_index_from_end);
-      } else {
-	left_alignment->pos -= read_pair->reads.at(num_aligned_read).
-	  left_flank_index_from_start;
-      }
-      return true;
-    } catch(std::out_of_range & exception) {
-      PrintMessageDieOnError("Stitching failed " + read_pair->reads.at(0).ID, WARNING);
+    // Set up
+    const int& num_aligned_read = read_pair->aligned_read_num;
+    string seq1 = read_pair->reads.at(num_aligned_read).orig_nucleotides;
+    string seq2 = reverseComplement(read_pair->reads.
+				    at(1-num_aligned_read).
+				    orig_nucleotides);
+    string seq1_qual = read_pair->reads.at(num_aligned_read).orig_qual;
+    string seq2_qual = reverse(read_pair->reads.
+			       at(1-num_aligned_read).orig_qual);
+    if (seq1.length() <= MIN_STITCH_OVERLAP ||
+	seq2.length() <= MIN_STITCH_OVERLAP) { 
       return false;
     }
+    bool best_stitch_is_backwards = false;
+    vector<float> scores;
+    scores.push_back(0);
+    float score, max_score = 0;
+    size_t overlap_len, max_score_index = -1;
+    // Gradually bring ends together and try to stitch
+    for (size_t i = 0; i <= seq1.length() - MIN_STITCH_OVERLAP; i++) {
+      score = 0;
+      overlap_len = seq1.length()-i;
+      for (size_t j = 0; j < overlap_len; j++) {
+	if (j >=  seq2.length()) {
+	  score = 0;
+	} else {
+	  if (seq1.at(i+j) == seq2.at(j)) {
+	    score += 1;
+	  }
+	}
+      }
+      if (score/overlap_len >= (max_score+STITCH_DIFF)) {
+	max_score = score/overlap_len;
+	max_score_index = i;
+      }
+      scores.push_back(score/overlap_len);
+    }
+    // Other direction
+    for (size_t i = 0; i <= seq2.length() - MIN_STITCH_OVERLAP; i++) {
+      score = 0;
+      overlap_len = seq2.length()-i;
+      for (size_t j = 0; j < overlap_len; j++) {
+	if (j >=  seq1.length()) {
+	  score = 0;
+	} else {
+	  if (seq2.at(i+j) == seq1.at(j)) {
+	    score += 1;
+	  }
+	}
+      }
+      if (score/overlap_len >= (max_score+STITCH_DIFF)) {
+	max_score = score/overlap_len;
+	max_score_index = i;
+	best_stitch_is_backwards = true;
+      }
+      scores.push_back(score/overlap_len);
+    }
+    if (best_stitch_is_backwards) {
+      overlap_len = seq2.length() - max_score_index - 1;
+    } else {
+      overlap_len = seq1.length() - max_score_index - 1;
+    }
+    // Check if stitch is good enough
+    if ((overlap_len < MIN_STITCH_OVERLAP) ||
+	(max_score < STITCH_REQUIRED_SCORE)) {
+      return false;
+    }
+    if (best_stitch_is_backwards) {
+      string tmp = seq1;
+      seq1 = seq2;
+      seq2 = tmp;
+      tmp = seq1_qual;
+      seq1_qual = seq2_qual;
+      seq2_qual = tmp;
+    }
+    
+    string stitched_string = seq1.
+      substr(0, static_cast<int>(max_score_index));
+    string stitched_qual = seq1_qual.
+      substr(0, static_cast<int>(max_score_index));
+    string na, nb, qa, qb;
+    
+    for (size_t i = 0; i <= overlap_len; i++) {
+      na = seq1.substr(max_score_index+i, 1);
+      nb = seq2.substr(i, 1);
+      qa = seq1_qual.substr(max_score_index+i, 1);
+      qb = seq2_qual.substr(i, 1);
+      if (qa > qb) {
+	stitched_string.append(na);
+	stitched_qual.append(qa);
+      } else if (qa < qb) {
+	stitched_string.append(nb);
+	stitched_qual.append(qb);
+      } else {
+	stitched_string.append(na);
+	stitched_qual.append(qa);
+      }
+    }
+    stitched_string.append(seq2.substr(overlap_len + 1));
+    stitched_qual.append(seq2_qual.substr(overlap_len + 1));
+    // put stitched info in aligned read
+    read_pair->reads.at(num_aligned_read).nucleotides = stitched_string;
+    read_pair->reads.at(num_aligned_read).quality_scores = stitched_qual;
+    read_pair->reads.at(num_aligned_read).right_flank_nuc =
+      stitched_string.substr(seq1.length() - read_pair->
+			     reads.at(num_aligned_read).
+			     right_flank_index_from_end -
+			     read_pair->reads.at(num_aligned_read).
+			     right_flank_nuc.length());
+    if (best_stitch_is_backwards) {
+      if (left_alignment->left) {
+	left_alignment->pos -= (seq1.length() - overlap_len);
+      }
+    } else {
+      if (!left_alignment->left) {
+	right_alignment->pos -= (seq2.length() - overlap_len);
+      }
+    }
+    return true;
   }
-
+  
   bool GetSTRAllele(MSReadRecord* aligned_read,
 		    const CIGAR_LIST& cigar_list) {
     // index where STR starts in the read
