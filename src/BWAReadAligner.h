@@ -81,11 +81,13 @@ class BWAReadAligner {
 
   // Set STR coordinates of shared alignments
   bool SetSTRCoordinates(std::vector<ALIGNMENT>* good_left_alignments,
-			 std::vector<ALIGNMENT>* good_right_alignments);
+			 std::vector<ALIGNMENT>* good_right_alignments,
+			 size_t read_length);
 
   // Get list of reference STRs spanned by a set of alignments
   void GetSpannedSTRs(const ALIGNMENT& lalign, const ALIGNMENT& ralign, const int& refid,
-		      std::vector<ReferenceSTR>* spanned_ref_strs, std::vector<string>* repseq);
+		      std::vector<ReferenceSTR>* spanned_ref_strs, std::vector<string>* repseq,
+		      size_t read_length);
 
   // Trim mate sequence
   void TrimMate(ReadPair* read_pair);

@@ -83,6 +83,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
   size_t nuc_start;
   size_t nuc_end;
   string detected_microsatellite_nucleotides = "";
+  size_t next_best_period;
   EntropyDetection ed_filter(read->nucleotides,
                              fft_window_size, fft_window_step);
   if (!ed_filter.EntropyIsAboveThreshold()) {
@@ -125,7 +126,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
   }
 
   size_t best_period = 0;
-  size_t next_best_period = 0;
   int min_period_to_try = min_period == 1 ? 2 : min_period;
 
   // if contains > 80% of same nucleotide and has stretch of more than 6, use that
@@ -137,7 +137,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
       *messages += "Passed-homopolymer-one-abundant-nuc-check;";
     }
     best_period = 1;
-    next_best_period = 0;
   } else {
     // Step 3 - Do FFT on the newly extract microsatellite region
     TukeyWindowGenerator *pTukeyWindowGenerator =
@@ -205,7 +204,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
       if (newperiod != best_period) {
         if ((energy.at(newperiod - min_period_to_try))>next_best_energy) {
           next_best_energy = energy.at(newperiod - min_period_to_try);
-          next_best_period = newperiod;
         }
       }
     }
@@ -219,13 +217,8 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
       }
       return false;
     }
-    if (fabs(next_best_energy-best_energy)/
-        ((best_energy+next_best_energy)/2) > closeness) {
-      next_best_period = 0;
-    }
     if (next_best_period == 4 && best_period == 2) {
       best_period = 4;
-      next_best_period = 0;
     }
   }
 

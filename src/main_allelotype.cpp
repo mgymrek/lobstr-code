@@ -384,7 +384,7 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
 }
 
-// TODO make this use old reference and move to a function
+// TODO use this
 void LoadReference() {
   if (my_verbose) {
     PrintMessageDieOnError("Loading reference STRs", PROGRESS);
@@ -482,37 +482,7 @@ int main(int argc, char* argv[]) {
   NoiseModel nm(strinfofile, haploid_chroms);
 
   /* Load ref character and ref object for each STR */
-  if (my_verbose) {
-    PrintMessageDieOnError("Loading reference STRs", PROGRESS);
-  }
-  vector<ReferenceSTR> reference_strs;
-  FastaFileReader faReader(index_prefix+"ref.fasta");
-  MSReadRecord ref_record;
-  while (faReader.GetNextRead(&ref_record)) {
-    vector<string> items;
-    string refstring = ref_record.ID;
-    split(refstring, '$', items);
-    if (items.size() >= 6) { // should be 6 or 7, depending if name field is present
-      string chrom = items.at(1); 
-      int start = atoi(items.at(2).c_str())+extend;
-      int str_start = atoi(items.at(2).c_str());
-      int str_end = atoi(items.at(3).c_str());
-      string repseq = items.at(4);
-      if (use_chrom.empty() || use_chrom == chrom) {
-	ReferenceSTR ref_str;
-	ref_str.start        = str_start+extend;
-	ref_str.stop         = str_end-extend;
-	ref_str.chrom        = chrom;
-	reference_strs.push_back(ref_str);
-	string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
-	string repseq_in_ref = ref_record.nucleotides.substr(extend, repseq.size());
-	pair<string, int> locus = pair<string,int>(chrom, start);
-	ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));
-	ref_repseq.insert(pair< pair<string, int>, string>(locus, repseq_in_ref));
-	ref_ext_nucleotides.insert(pair< pair<string, int>, string>(locus, ref_record.nucleotides));
-      }
-    }
-  }
+  LoadReference();
 
   /* Get list of bam files */
   vector<string>bam_files;

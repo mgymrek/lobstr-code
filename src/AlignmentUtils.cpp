@@ -28,8 +28,8 @@ using namespace std;
 
 // Minimum number of bp for stitch overlap
 const size_t MIN_STITCH_OVERLAP = 16;
-// Percent identity required to stitch
-const float STITCH_REQUIRED_SCORE = 0.85;
+// Percent identity required to stitch (be stringent, don't allow any mismatches)
+const float STITCH_REQUIRED_SCORE = 1.0;
 // Allowed difference in score between returned stitch
 // and next best stitch
 const float STITCH_DIFF = 0.1;
@@ -89,9 +89,9 @@ namespace AlignmentUtils {
     // Gradually bring ends together and try to stitch
     for (size_t i = 0; i <= seq1.length() - MIN_STITCH_OVERLAP; i++) {
       score = 0;
-      overlap_len = seq1.length()-i;
+      overlap_len = seq1.length() - i;
       for (size_t j = 0; j < overlap_len; j++) {
-	if (j >=  seq2.length()) {
+	if (j >= seq2.length()) {
 	  score = 0;
 	} else {
 	  if (seq1.at(i+j) == seq2.at(j)) {
@@ -99,7 +99,7 @@ namespace AlignmentUtils {
 	  }
 	}
       }
-      if (score/overlap_len >= (max_score+STITCH_DIFF)) {
+      if (score/overlap_len >= max_score) {
 	max_score = score/overlap_len;
 	max_score_index = i;
       }
@@ -108,7 +108,7 @@ namespace AlignmentUtils {
     // Other direction
     for (size_t i = 0; i <= seq2.length() - MIN_STITCH_OVERLAP; i++) {
       score = 0;
-      overlap_len = seq2.length()-i;
+      overlap_len = seq2.length() - i;
       for (size_t j = 0; j < overlap_len; j++) {
 	if (j >=  seq1.length()) {
 	  score = 0;
@@ -118,7 +118,7 @@ namespace AlignmentUtils {
 	  }
 	}
       }
-      if (score/overlap_len >= (max_score+STITCH_DIFF)) {
+      if (score/overlap_len >= max_score) {
 	max_score = score/overlap_len;
 	max_score_index = i;
 	best_stitch_is_backwards = true;
@@ -135,6 +135,15 @@ namespace AlignmentUtils {
 	(max_score < STITCH_REQUIRED_SCORE)) {
       return false;
     }
+    // Check if too many good scores
+    int numhits = 0;
+    for (size_t i = 0; i < scores.size(); i++) {
+      if (scores.at(i) >= max_score - STITCH_DIFF) {
+	numhits += 1;
+      }
+    }
+    if (numhits > 1) return false;
+
     if (best_stitch_is_backwards) {
       string tmp = seq1;
       seq1 = seq2;
@@ -181,6 +190,9 @@ namespace AlignmentUtils {
       if (!left_alignment->left) {
 	right_alignment->pos -= (seq2.length() - overlap_len);
       }
+    }
+    if (align_debug) {
+      PrintMessageDieOnError("[StitchReads]: Found stitching", DEBUG);
     }
     return true;
   }
