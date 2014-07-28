@@ -430,7 +430,7 @@ int main(int argc, char* argv[]) {
 	ref_str.stop         = str_end-extend;
 	ref_str.chrom        = chrom;
 	reference_strs.push_back(ref_str);
-	string refnuc = ref_record.nucleotides.substr(extend, ref_record.nucleotides.length()-2*extend);
+	string refnuc = ref_record.nucleotides.substr(extend-1, ref_record.nucleotides.length()-2*extend+1);
 	string repseq_in_ref = ref_record.nucleotides.substr(extend, repseq.size());
 	pair<string, int> locus = pair<string,int>(chrom, start);
 	ref_nucleotides.insert(pair< pair<string, int>, string>(locus, refnuc));

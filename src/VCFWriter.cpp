@@ -174,7 +174,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   output_stream << "END=" << str_record.stop << ";"
 		<< "MOTIF=" << str_record.repseq << ";"
 		<< "REF=" << str_record.refcopy << ";"
-		<< "RL=" << str_record.stop - str_record.start<< ";"
+		<< "RL=" << str_record.stop - str_record.start + 1 << ";"
 		<< "RPA=" << repeats_per_allele.str() << ";"
 		<< "RU=" << str_record.repseq_in_ref << ";"
 		<< "VT=STR" << "\t";

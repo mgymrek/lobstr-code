@@ -119,7 +119,8 @@ void Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
     if (it->mate) continue;
-    if (it->diffFromRef != 0 && std::find(alleles->begin(), alleles->end(), it->diffFromRef) == alleles->end()) {
+    if (it->diffFromRef != 0 && std::find(alleles->begin(), alleles->end(), it->diffFromRef) == alleles->end() &&
+	it->diffFromRef+it->refCopyNum*it->period > 0) {
       alleles->push_back(it->diffFromRef);
     }
   }
@@ -378,7 +379,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   str_record.stop = read_list.front().msEnd;
   str_record.repseq = read_list.front().repseq;
   str_record.refcopy = static_cast<float>((read_list.front().msEnd-
-					   read_list.front().msStart))/
+					   read_list.front().msStart+1))/
     static_cast<float>(read_list.front().period);
   if (ref_nucleotides->find
       (pair<string,int>(str_record.chrom, str_record.start))
