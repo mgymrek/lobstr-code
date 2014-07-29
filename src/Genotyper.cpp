@@ -119,8 +119,9 @@ void Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
     if (it->mate) continue;
+    int refcopy = it->msEnd - it->msStart + 1;
     if (it->diffFromRef != 0 && std::find(alleles->begin(), alleles->end(), it->diffFromRef) == alleles->end() &&
-	it->diffFromRef+it->refCopyNum*it->period > 0) {
+	it->diffFromRef+refcopy >= 1) {
       alleles->push_back(it->diffFromRef);
     }
   }
