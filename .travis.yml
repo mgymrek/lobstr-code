@@ -2,7 +2,6 @@ language: objective-c
 compiler:
   - clang
 before_install:
-  - sudo apt-get install g++ libtool pkg-config libfftw3-dev libboost-dev libcppunit-dev libz-dev lcov libgsl0-dev
   - brew update
   - brew install md5sha1sum
   - brew install xz
