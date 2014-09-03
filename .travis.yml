@@ -1,16 +1,35 @@
-language: cpp
+language: objective-c
 compiler:
   - clang
-  - gcc
 before_install:
   - sudo apt-get install g++ libtool pkg-config libfftw3-dev libboost-dev libcppunit-dev libz-dev lcov libgsl0-dev
+  - brew update
+  - brew install md5sha1sum
+  - brew install xz
+  - brew install lcov
+  - brew install gettext
+  - brew install fftw
+  - brew install boost
+  - brew install cppunit
+  - brew install gsl
+  - which automake
+  - automake --version
+  - which autoconf
+  - autoconf --version
+  - which autopoint
+  - autopoint --version
+  - which gettext
+  - gettext --version
+  - which autoreconf
+  - autoreconf --version
 script:
-  - ./reconf
-  - ./configure
-  - make
-  - make check
-  - make dist
-  - ./make_src_dist.sh
-  - ./make_bin_dist.sh
-after_success:
-  - ./config/rebuild-coverage.sh
+- "( git fetch --unshallow ; true )"
+- ls -l
+- ./reconf
+- ls -l
+- git describe --always
+- ./configure
+- make
+- make check VERBOSE=yes
+- cat tests/compute-show-env.sh.log ; true
+- cat ./test-suite.log ; true
