@@ -13,9 +13,10 @@ bin_PROGRAMS = lobSTR \
 	lobSTRIndex \
 	allelotype
 
-AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS) $(GSL_LIBS) $(GSLCBLAS_LIBS)
 
-AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/
+AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/ \
+	$(GSL_FLAGS) $(GSLCBLAS_FLAGS)
 
 noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a libbamtools.a
 
@@ -228,7 +229,7 @@ lobSTR_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
-allelotype_LDADD = liballelotype.a libbamtools.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
+allelotype_LDADD = liballelotype.a libbamtools.a $(LIBS) $(PROTOBUF_LIBS)
 allelotype_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 # (Copied from coreutils' tests/local.mk)
@@ -239,7 +240,9 @@ TESTS_ENVIRONMENT =  \
   ;
 
 TESTS = lobSTRTests
+
 check_PROGRAMS = $(TESTS)
+
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
 	tests/AlignmentFilters_test.h \
