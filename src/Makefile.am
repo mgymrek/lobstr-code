@@ -239,9 +239,11 @@ TESTS_ENVIRONMENT =  \
   LOBSTR_TEST_DIR='$(abs_top_srcdir)/tests' \
   ;
 
-TESTS = lobSTRTests
+TESTS = lobSTRTests gsl_test
 
 check_PROGRAMS = $(TESTS)
+
+gsl_test_SOURCES = tests/gsl_test.cpp
 
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
