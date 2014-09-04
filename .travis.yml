@@ -15,10 +15,6 @@ before_install:
   - automake --version
   - which autoconf
   - autoconf --version
-  - which autopoint
-  - autopoint --version
-  - which gettext
-  - gettext --version
   - which autoreconf
   - autoreconf --version
 script:
