@@ -26,5 +26,3 @@ script:
 - ./configure
 - make
 - make check VERBOSE=yes
-- cat tests/compute-show-env.sh.log ; true
-- cat ./test-suite.log ; true
