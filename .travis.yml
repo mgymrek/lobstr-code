@@ -26,3 +26,4 @@ script:
 - ./configure
 - make
 - make check VERBOSE=yes
+- cat ./tests/test-suite.log ; true
