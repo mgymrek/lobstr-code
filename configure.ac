@@ -22,12 +22,14 @@ LT_INIT([static])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
+AX_CXX_COMPILE_STDCXX_11([noext],[optional])
+AX_CXX_HEADER_STDCXX_TR1
+
 
 ## Check for GSL (GNU Scientific Library)
 AC_CHECK_LIB([m],[cos])
 AC_CHECK_LIB([gslcblas],[cblas_dgemm])
 AC_CHECK_LIB([gsl],[gsl_blas_dgemm])
-
 
 PKG_CHECK_MODULES([FFTW], [fftw3])
 AX_PTHREAD([],[

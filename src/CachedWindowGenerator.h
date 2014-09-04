@@ -21,13 +21,26 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_CACHEDWINDOWGENERATOR_H__
 #define SRC_CACHEDWINDOWGENERATOR_H__
 
+#include "config.h"
 #include <pthread.h>
-#include <tr1/unordered_map>
 
 #include <string>
 #include <vector>
 
 typedef std::vector<double> WindowVector;
+
+#if defined HAVE_CXX11
+  #include <unordered_map>
+  typedef std::unordered_map<size_t, WindowVector> WINDOWS_HASH;
+#elif defined STDCXX_TR1_HEADERS
+  #include <tr1/unordered_map>
+  typedef std::tr1::unordered_map<size_t, WindowVector> WINDOWS_HASH;
+#else
+  /* Fall back to regular map */
+  #include <map>
+  typedef std::map<size_t, WindowVector> WINDOWS_HASH_TYPE;
+#endif
+
 
 class CachedWindowGenerator {
  public:
@@ -36,7 +49,6 @@ class CachedWindowGenerator {
 
  protected:
   pthread_mutex_t access_lock;
-  typedef std::tr1::unordered_map<size_t, WindowVector> WINDOWS_HASH;
   WINDOWS_HASH cached_windows;
   const std::string window_function_name;
   explicit CachedWindowGenerator(const std::string& name);
