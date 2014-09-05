@@ -191,8 +191,8 @@ liballelotype_a_SOURCES = \
 	FilterCounter.cpp FilterCounter.h \
 	Genotyper.cpp Genotyper.h \
 	gzstream.cpp gzstream.h \
+	logistic_regression.cpp logistic_regression.h \
 	NoiseModel.cpp NoiseModel.h \
-	linear.h linear.cpp tron.cpp tron.h \
 	ReadContainer.cpp ReadContainer.h \
 	ReadPair.h \
 	ReferenceSTR.cpp ReferenceSTR.h \
@@ -208,10 +208,6 @@ liballelotype_a_SOURCES = \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
-	linear.cpp linear.h \
-	predict.c \
-	train.c	\
-	tron.cpp tron.h \
 	api/BamReader.h api/BamMultiReader.h \
 	api/BamAlignment.h api/BamWriter.h \
 	api/SamHeader.h api/SamReadGroup.h \
@@ -243,7 +239,9 @@ TESTS = lobSTRTests gsl_test
 
 check_PROGRAMS = $(TESTS)
 
-gsl_test_SOURCES = tests/gsl_test.cpp
+gsl_test_SOURCES = \
+	tests/gsl_test.cpp \
+	logistic_regression.cpp logistic_regression.h
 
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \

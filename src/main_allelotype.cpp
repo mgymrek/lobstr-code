@@ -405,7 +405,7 @@ int main(int argc, char* argv[]) {
   boost::split(haploid_chroms,haploid_chroms_string,boost::is_any_of(","));
 
   /* initialize noise model */
-  NoiseModel nm(strinfofile, haploid_chroms);
+  NoiseModel nm(strinfofile, haploid_chroms, noise_model);
 
   /* Load ref character and ref object for each STR */
   if (my_verbose) {
@@ -453,7 +453,7 @@ int main(int argc, char* argv[]) {
     nm.Train(&read_container);
   } 
   else if (command == "classify") {
-    if (!nm.ReadNoiseModelFromFile(noise_model))
+    if (!nm.ReadNoiseModelFromFile())
       PrintMessageDieOnError("Problem reading noise file", ERROR);
   }
   if (command == "classify") {

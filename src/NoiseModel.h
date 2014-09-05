@@ -21,8 +21,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_NOISEMODEL_H_
 #define SRC_NOISEMODEL_H_
 
-#include "src/linear.h"
-
 #include <algorithm>
 #include <list>
 #include <string>
@@ -53,7 +51,8 @@ struct STRINFO {
 class NoiseModel {
  public:
   NoiseModel(const std::string& strinfofile,
-             const std::vector<std::string>& haploid_chroms_);
+             const std::vector<std::string>& haploid_chroms_,
+	     const string& noise_model);
   ~NoiseModel();
   
   /* Read STR info from file */
@@ -63,7 +62,7 @@ class NoiseModel {
   void Train(ReadContainer* read_container);
 
   /* Read noise model from file */
-  bool ReadNoiseModelFromFile(const std::string& filename);
+  bool ReadNoiseModelFromFile();
 
   /* What is the prob of observing STR=b when true value is STR=a*/
   float GetTransitionProb(int a, int b, int period, int length,
@@ -84,20 +83,14 @@ class NoiseModel {
   /* Fit logistic model for noise/no noise decision */
   void FitMutationProb(const std::vector<AlignedRead>& reads_for_training);
 
-  /* Read regression problem from file */
-  void read_problem(const char *filename);
-
   /* Fit Poisson model for number of noise steps */
   void FitStepProb(const std::map<int, std::map <int,int> >& step_size_by_period);
 
   /* model data */
-  std::string stutter_problem_filename;
   std::string stutter_model_filename;
   std::string stepsize_model_filename;
-  // stutter probability problem
-  struct problem stutter_prob;
-  // logistic regression of prob. of stutter
-  model* stutter_prob_model;
+  // logistic regression coefficients for stutter prob model
+  vector<double> stutter_prob_model;
   // probability of stutter to increase allele length
   float p_incr;
   // mean step size mod period
