@@ -603,6 +603,13 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
 }
 
+void CheckIndexVersion() {
+  if (fexists((index_prefix+"strdict.txt").c_str())) {
+    PrintMessageDieOnError("It appears you are using an outdated lobSTR index. Please " \
+			   "use the index for version 3.0.0 or above.", ERROR);
+  }
+}
+
 void LoadChromSizes() {
   TextFileReader tReader(index_prefix+"chromsizes.tab");
   string line;
@@ -1112,6 +1119,8 @@ int main(int argc, char* argv[]) {
   run_info.params = user_defined_arguments;
 
   PrintMessageDieOnError("Initializing...", PROGRESS);
+  // Check that we are using the correct index version
+  CheckIndexVersion();
   // Set chrom sizes
   LoadChromSizes();
   // Load referencpe
