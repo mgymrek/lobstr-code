@@ -30,17 +30,17 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 #include "src/common.h"
+#include "src/logistic_regression.h"
 #include "src/NoiseModel.h"
 #include "src/runtime_parameters.h"
 #include "src/TextFileReader.h"
 #include "src/TextFileWriter.h"
 
-#define Malloc(type,n) (type *)malloc((n)*sizeof(type))
-
 const size_t MIN_TRAIN_COV = 5;
 const float MIN_TRAIN_AGREE = 0.5;
 const float SMALL_CONST = 1e-4;
 const size_t MIN_READS_FOR_TRAINING = 1000;
+const size_t NUM_PARAMS = 5;
 
 using namespace std;
 
@@ -74,11 +74,11 @@ static float mmod(int step, int period) {
 }
 
 NoiseModel::NoiseModel(const string& strinfofile,
-                       const vector<string>& haploid_chroms_) {
+                       const vector<string>& haploid_chroms_,
+		       const string& noise_model) {
   // Read STR info
   ReadSTRInfo(strinfofile);
   // Set noise model filenames
-  stutter_problem_filename = noise_model + ".stutterproblem";
   stutter_model_filename = noise_model + ".stuttermodel";
   stepsize_model_filename = noise_model + ".stepmodel";
   // Determine MIN PERIOD
@@ -227,60 +227,54 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
   return false;
 }
 
-void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) {  
-  // set up problem
-  TextFileWriter pWriter(stutter_problem_filename);
-  stringstream ssp;
-  for (size_t i = 0; i < reads_for_training.size() ; i++) {
+void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) {
+  // Set up data for logistic regression
+  size_t numreads = reads_for_training.size();
+  vector<bool> y;
+  y.resize(numreads);
+  vector<vector<double> >x;
+  x.resize(numreads);
+  for (size_t i=0; i<numreads; i++) {
     pair<string, int> coord (reads_for_training.at(i).chrom,
-                             reads_for_training.at(i).msStart);
-    double stuttered = (static_cast<double>
-                        (reads_for_training.at(i).stutter))== 1?1:-1;
-    ssp << stuttered << " "
-        << 1 << ":"
-        << reads_for_training.at(i).period << " "
-        << 2 << ":"
-        << reads_for_training.at(i).msEnd -
-      reads_for_training.at(i).msStart + 
-      reads_for_training.at(i).diffFromRef << " "
-        << 3 << ":"
-        << strInfo.at(coord).gc << " "
-        << 4 << ":"
-        << strInfo.at(coord).score << endl;
+			     reads_for_training.at(i).msStart);
+    y.at(i) = reads_for_training.at(i).stutter;
+    vector<double> xx;
+    xx.resize(4);
+    xx.at(0) = reads_for_training.at(i).period;
+    xx.at(1) = reads_for_training.at(i).msEnd - reads_for_training.at(i).msStart + reads_for_training.at(i).diffFromRef;
+    xx.at(2) = strInfo.at(coord).gc;
+    xx.at(3) = strInfo.at(coord).score;
+    x.at(i) = xx;
   }
-  pWriter.Write(ssp.str());
-  read_problem(stutter_problem_filename.c_str());
+  // Run logistic regression
+  vector<double> coeffs;
+  coeffs.resize(NUM_PARAMS);
+  if (logistic_regression(y, x, y.size(), 4,
+			  0.001, 1e-5, 1e-5, 1000, &coeffs) != 0) {
+    PrintMessageDieOnError("Logistic regression failed", ERROR);
+  }
+  // Write output file (for now match old format to keep compatbility)
+  TextFileWriter nWriter(stutter_model_filename);
+  stringstream ss;
+  ss << "solver_type L2R_LR" << endl;
+  ss << "nr_class 2" << endl;
+  ss << "label -1 1" << endl;
+  ss << "nr_feature 4" << endl;
+  ss << "bias 0" << endl;
+  ss << "w" << endl;
+  for (int i=0; i<coeffs.size(); i++) {
+    ss << coeffs.at(i) << endl;
+  }
+  nWriter.Write(ss.str());
   if (my_verbose) {
     stringstream msg;
     msg << "Using " << reads_for_training.size() << " reads for training."
-         << " (Required: " << MIN_READS_FOR_TRAINING << ")" << endl;
-    msg << "Training data written to " << stutter_problem_filename;
+         << " (Required: " << MIN_READS_FOR_TRAINING << ")";
     PrintMessageDieOnError(msg.str(), PROGRESS);
   }
   if (reads_for_training.size() < MIN_READS_FOR_TRAINING) {
     PrintMessageDieOnError("Too few reads for training", ERROR);
   }
-
-  // set up LIBLINEAR params
-  struct parameter stutter_prob_params;
-  stutter_prob_params.solver_type = L2R_LR;
-  stutter_prob_params.eps = 0.01;
-  stutter_prob_params.C = 1;
-  stutter_prob_params.nr_weight = 0;
-  stutter_prob_params.p = 0.1;
-  stutter_prob_params.weight_label = NULL;
-	stutter_prob_params.weight = NULL;
-
-  const char* params_msg = check_parameter(&stutter_prob,
-                                           &stutter_prob_params);
-  if (params_msg != NULL) {
-    PrintMessageDieOnError(string(params_msg), ERROR);
-  }
-  // Build model and write to file
-  stutter_prob_model = train(&stutter_prob, &stutter_prob_params);
-  save_model(stutter_model_filename.c_str(), stutter_prob_model);
-
-  free_and_destroy_model(&stutter_prob_model);
 }
 
 void NoiseModel::FitStepProb(const map<int, map <int,int> > & step_size_by_period) {
@@ -419,21 +413,13 @@ float NoiseModel::GetTransitionProb(int a, int b,
   if (abs(b-a)> 3*period) {
     return 0;
   }
-  double* pests = (double*) malloc(2*sizeof(double));
-  feature_node* x = Malloc(struct feature_node, 4);
-  x[0].index = 1;
-  x[0].value = period;
-  x[1].index = 2;
-  x[1].value = length;
-  x[2].index = 3;
-  x[2].value = gc;
-  x[3].index = 4;
-  x[3].value = score;
-  x[4].index = -1;
-  predict_probability(stutter_prob_model, x, pests);
-  float mutProb = pests[1];
-  free(x);
-  free(pests);
+  vector<double> x;
+  x.resize(NUM_PARAMS-1);
+  x.at(0) = period;
+  x.at(1) = length;
+  x.at(2) = gc;
+  x.at(3) = score;
+  float mutProb = logistic_regression_predict(x, stutter_prob_model);
   float lik;
   if (a == b) {
     lik = (1-mutProb);
@@ -444,18 +430,25 @@ float NoiseModel::GetTransitionProb(int a, int b,
   return lik;
 }
 
-bool NoiseModel::ReadNoiseModelFromFile(const string& filename) {
+bool NoiseModel::ReadNoiseModelFromFile() {
   // *** Step 1: Read logistic regression model ***
   if (debug) {
     PrintMessageDieOnError("[NoiseModel] Loading stutter prob from file...", DEBUG);
   }
-  stutter_prob_model = load_model(stutter_model_filename.c_str());
+  stutter_prob_model.resize(NUM_PARAMS);
+  TextFileReader sFile(stutter_model_filename.c_str());
+  string line;
+  for (int i=0; i<6; i++) {sFile.GetNextLine(&line);} // header lines
+  for (size_t i=0; i<NUM_PARAMS; i++) {
+    sFile.GetNextLine(&line);
+    stutter_prob_model.at(i) = atof(line.c_str());
+  }
+
   // *** Step 2: Read step size parameters ***
   if (debug) {
     PrintMessageDieOnError("[NoiseModel] Loading step size params from file...", DEBUG);
   }
   TextFileReader nFile(stepsize_model_filename.c_str());
-  string line;
   if (debug) {
     PrintMessageDieOnError("[NoiseModel] Getting average step size...", DEBUG);
   }
@@ -481,136 +474,6 @@ bool NoiseModel::ReadNoiseModelFromFile(const string& filename) {
     }
   }
   return true;
-}
-
-/* copied from train.c */
-static int max_line_len;
-static char *line = NULL;
-double bias;
-struct feature_node *x_space;
-static char* readline(FILE *input)
-{
-	int len;
-	
-	if(fgets(line,max_line_len,input) == NULL)
-		return NULL;
-
-	while(strrchr(line,'\n') == NULL)
-	{
-		max_line_len *= 2;
-		line = (char *) realloc(line,max_line_len);
-		len = (int) strlen(line);
-		if(fgets(line+len,max_line_len-len,input) == NULL)
-			break;
-	}
-	return line;
-}
-
-static void exit_input_error(int line_num)
-{
-	fprintf(stderr,"Wrong input format at line %d\n", line_num);
-	exit(1);
-}
-// read in a problem (in libsvm format)
-void NoiseModel::read_problem(const char *filename)
-{
-	int max_index, inst_max_index, i;
-	long int elements, j;
-	FILE *fp = fopen(filename,"r");
-	char *endptr;
-	char *idx, *val, *label;
-
-	if(fp == NULL)
-	{
-		fprintf(stderr,"can't open input file %s\n",filename);
-		exit(1);
-	}
-
-	stutter_prob.l = 0;
-	elements = 0;
-	max_line_len = 1024;
-	line = Malloc(char,max_line_len);
-	while(readline(fp)!=NULL)
-	{
-		char *p = strtok(line," \t"); // label
-
-		// features
-		while(1)
-		{
-			p = strtok(NULL," \t");
-			if(p == NULL || *p == '\n') // check '\n' as ' ' may be after the last feature
-				break;
-			elements++;
-		}
-		elements++; // for bias term
-		stutter_prob.l++;
-	}
-	rewind(fp);
-
-	stutter_prob.bias=bias;
-
-	stutter_prob.y = Malloc(double,stutter_prob.l);
-	stutter_prob.x = Malloc(struct feature_node *,stutter_prob.l);
-	x_space = Malloc(struct feature_node,elements+stutter_prob.l);
-
-	max_index = 0;
-	j=0;
-	for(i=0;i<stutter_prob.l;i++)
-	{
-		inst_max_index = 0; // strtol gives 0 if wrong format
-		readline(fp);
-		stutter_prob.x[i] = &x_space[j];
-		label = strtok(line," \t\n");
-		if(label == NULL) // empty line
-			exit_input_error(i+1);
-
-		stutter_prob.y[i] = strtod(label,&endptr);
-		if(endptr == label || *endptr != '\0')
-			exit_input_error(i+1);
-
-		while(1)
-		{
-			idx = strtok(NULL,":");
-			val = strtok(NULL," \t");
-
-			if(val == NULL)
-				break;
-
-			errno = 0;
-			x_space[j].index = (int) strtol(idx,&endptr,10);
-			if(endptr == idx || errno != 0 || *endptr != '\0' || x_space[j].index <= inst_max_index)
-				exit_input_error(i+1);
-			else
-				inst_max_index = x_space[j].index;
-
-			errno = 0;
-			x_space[j].value = strtod(val,&endptr);
-			if(endptr == val || errno != 0 || (*endptr != '\0' && !isspace(*endptr)))
-				exit_input_error(i+1);
-
-			++j;
-		}
-
-		if(inst_max_index > max_index)
-			max_index = inst_max_index;
-
-		if(stutter_prob.bias >= 0)
-			x_space[j++].value = stutter_prob.bias;
-
-		x_space[j++].index = -1;
-	}
-
-	if(stutter_prob.bias >= 0)
-	{
-		stutter_prob.n=max_index+1;
-		for(i=1;i<stutter_prob.l;i++)
-			(stutter_prob.x[i]-2)->index = stutter_prob.n; 
-		x_space[j-2].index = stutter_prob.n;
-	}
-	else
-		stutter_prob.n=max_index;
-
-	fclose(fp);
 }
 
 NoiseModel::~NoiseModel() {}

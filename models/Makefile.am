@@ -16,7 +16,9 @@ modeldir = $(pkgdatadir)/models
 dist_model_DATA = \
 	illumina_v2.0.3.stepmodel \
 	illumina_v2.0.3.stuttermodel \
-	illumina_v2.0.3.stutterproblem
+	illumina_v2.0.3.stutterproblem \
+	illumina_v3.pcrfree.stepmodel \
+	illumina_v3.pcrfree.stuttermodel
 
 EXTRA_DIST = $(dist_model_DATA)
 
