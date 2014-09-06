@@ -39,7 +39,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 // extend reference this much to perform local realignment
-const int REFEXTEND = 10;
+const int REFEXTEND = 50;
 extern unsigned char nst_nt4_table[256];
 // Number of N's used to pad each reference
 const int PAD = 50;
@@ -568,6 +568,14 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
       right_id_to_ref : left_id_to_ref;
     const map<int, ALIGNMENT>& larger_id_to_ref = (right_id_to_ref.size() < left_id_to_ref.size()) ?
       left_id_to_ref : right_id_to_ref;
+    // TODO remove
+    for (map<int, ALIGNMENT>::const_iterator it = smaller_id_to_ref.begin();
+	 it != smaller_id_to_ref.end(); it++) {
+    }
+    for (map<int, ALIGNMENT>::const_iterator it = larger_id_to_ref.begin();
+	 it != larger_id_to_ref.end(); it++) {
+    }
+
     for (map<int, ALIGNMENT>::const_iterator it = smaller_id_to_ref.begin();
 	 it != smaller_id_to_ref.end(); it++) {
       int ref_key = it->first;
@@ -588,35 +596,8 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
 	  found = true;
 	}
       }
-      for (vector<ALIGNMENT>::const_iterator it = map2.begin();
-	   it != map2.end(); ++it) {
-	// Must see every ID only once
-	if (right_id_to_ref.find((*it).id) == right_id_to_ref.end()) {
-	  right_id_to_ref[(*it).id] = *it;
-	} else {
-	  right_id_to_ref.erase((*it).id);
-	}
-      }
-      for (map<int, ALIGNMENT>::const_iterator it = right_id_to_ref.begin();
-	   it != right_id_to_ref.end(); ++it) {
-	int ref_key = it->first;
-	if (left_id_to_ref.find(ref_key) != left_id_to_ref.end()) {
-	  // check strand, L, R are compatible
-	  if (left_id_to_ref[ref_key].strand == it->second.strand &&
-	      left_id_to_ref[ref_key].left != it->second.left) {
-	    left_refids->push_back(left_id_to_ref[ref_key]);
-	    right_refids->push_back(it->second);
-	    if (align_debug) {
-	      stringstream msg;
-	      msg << "[GetSharedAln]: Real align left pos " << left_id_to_ref[ref_key].pos << " right pos " << it->second.pos;
-	      PrintMessageDieOnError(msg.str(), DEBUG);
-	    }
-	    found = true;
-	  }
-	}
-      }
-      return found;
     }
+    return found;
   }
 }
 
