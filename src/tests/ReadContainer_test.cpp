@@ -65,13 +65,13 @@ void ReadContainerTest::test_AddReadsFromFile() {
   ref_str.start = 38110651;
   ref_str.stop  = 38110651;
   _read_container->ClearReads();
-  _read_container->AddReadsFromFile(ref_str, ref_ext_nucleotides);
+  _read_container->AddReadsFromFile(ref_str, ref_ext_nucleotides, vector<string>(0));
   CPPUNIT_ASSERT_EQUAL(static_cast<int>(_read_container->aligned_str_map_.size()), 1);
   // When region not in file
   _read_container->ClearReads();
   ref_str.start = 0;
   ref_str.stop = 0;
-  _read_container->AddReadsFromFile(ref_str, ref_ext_nucleotides);
+  _read_container->AddReadsFromFile(ref_str, ref_ext_nucleotides, vector<string>(0));
   CPPUNIT_ASSERT(_read_container->aligned_str_map_.empty());
 }
 

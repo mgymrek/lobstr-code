@@ -13,9 +13,10 @@ bin_PROGRAMS = lobSTR \
 	lobSTRIndex \
 	allelotype
 
-AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS) $(GSL_LIBS) $(GSLCBLAS_LIBS)
 
-AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/
+AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/ \
+	$(GSL_FLAGS) $(GSLCBLAS_FLAGS)
 
 noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a libbamtools.a
 
@@ -190,8 +191,8 @@ liballelotype_a_SOURCES = \
 	FilterCounter.cpp FilterCounter.h \
 	Genotyper.cpp Genotyper.h \
 	gzstream.cpp gzstream.h \
+	logistic_regression.cpp logistic_regression.h \
 	NoiseModel.cpp NoiseModel.h \
-	linear.h linear.cpp tron.cpp tron.h \
 	ReadContainer.cpp ReadContainer.h \
 	ReadPair.h \
 	ReferenceSTR.cpp ReferenceSTR.h \
@@ -207,10 +208,6 @@ liballelotype_a_SOURCES = \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
-	linear.cpp linear.h \
-	predict.c \
-	train.c	\
-	tron.cpp tron.h \
 	api/BamReader.h api/BamMultiReader.h \
 	api/BamAlignment.h api/BamWriter.h \
 	api/SamHeader.h api/SamReadGroup.h \
@@ -228,7 +225,7 @@ lobSTR_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
-allelotype_LDADD = liballelotype.a libbamtools.a $(BLAS_LIBS) $(LIBS) $(FLIBS) $(PROTOBUF_LIBS)
+allelotype_LDADD = liballelotype.a libbamtools.a $(LIBS) $(PROTOBUF_LIBS)
 allelotype_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 # (Copied from coreutils' tests/local.mk)
@@ -239,7 +236,9 @@ TESTS_ENVIRONMENT =  \
   ;
 
 TESTS = lobSTRTests
+
 check_PROGRAMS = $(TESTS)
+
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
 	tests/AlignmentFilters_test.h \
@@ -250,6 +249,8 @@ lobSTRTests_SOURCES = \
 	tests/common_test.cpp \
 	tests/DNATools.h \
 	tests/DNATools.cpp \
+	tests/logistic_regression_test.h \
+	tests/logistic_regression_test.cpp \
 	tests/NWNoRefEndPenalty_test.h \
 	tests/NWNoRefEndPenalty_test.cpp \
 	tests/ReadContainer_test.h \
@@ -276,6 +277,7 @@ lobSTRTests_SOURCES = \
 	FilterCounter.h FilterCounter.cpp \
 	gzstream.cpp \
 	HammingWindowGenerator.cpp \
+	logistic_regression.cpp \
 	MultithreadData.cpp \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \

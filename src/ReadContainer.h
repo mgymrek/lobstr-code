@@ -54,7 +54,7 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides);
+  void AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides, const vector<string>& chroms_to_include);
 
   /* Clear reads from container */
   void ClearReads();
