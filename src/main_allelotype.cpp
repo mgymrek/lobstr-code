@@ -56,7 +56,7 @@ void show_help() {
     " --haploid chrY\n\n" \
     "Training outputs model files: \n" \
     "   <noisemodelprefix>.stepmodel\n" \
-    "   <noisemodelprefix>.stutterproblem\n\n" \
+    "   <noisemodelprefix>.stuttermodel\n\n" \
     "To run str profiling on a set of aligned reads:\n" \
     "allelotype --command classify [OPTIONS] --bam <input.bam> "  \
     "--noise_model <noisemodelprefix> [--no-rmdup] --strinfo <strinfo.tab> " \
