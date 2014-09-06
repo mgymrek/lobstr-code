@@ -645,12 +645,22 @@ bool BWAReadAligner::SetSTRCoordinates(vector<ALIGNMENT>* good_left_alignments,
       msg << "[SetSTRCoordinates]: Found " << spanned_ref_strs.size() << " spanned STRs";
       PrintMessageDieOnError(msg.str(), DEBUG);
     }
+    if (spanned_ref_strs.size() == 0) continue;
+    ALIGNMENT l_spanning_alignment, r_spanning_alignment;
     for (size_t j = 0; j < spanned_ref_strs.size(); j++) {
-      if (j >= 1) continue; // TODO: remove this, put field to keep track of if read spans more than 1 STR
+      if (j >= 1) {
+	// If a single read spans multiple STRs, keep track of the other ones
+	stringstream other_spanned_strs;
+	other_spanned_strs << spanned_ref_strs.at(j).chrom << ":"
+			   << spanned_ref_strs.at(j).start << ":"
+			   << repseqs.at(j) << ";";
+	l_spanning_alignment.other_spanned_strs += other_spanned_strs.str();
+	r_spanning_alignment.other_spanned_strs += other_spanned_strs.str();
+	continue;
+      }
       float copynum = static_cast<float>(spanned_ref_strs.at(j).stop-spanned_ref_strs.at(j).start+1)/
 	static_cast<float>(repseqs.at(j).size());
       copynum = ceilf(copynum * 10) / 10; // Round to 1 digit to match reference
-      ALIGNMENT l_spanning_alignment;
       l_spanning_alignment.id = refid;
       l_spanning_alignment.chrom = spanned_ref_strs.at(j).chrom;
       l_spanning_alignment.start = spanned_ref_strs.at(j).start;
@@ -659,7 +669,6 @@ bool BWAReadAligner::SetSTRCoordinates(vector<ALIGNMENT>* good_left_alignments,
       l_spanning_alignment.strand = lalign.strand;
       l_spanning_alignment.pos = lalign.pos;
       l_spanning_alignment.copynum = copynum;
-      ALIGNMENT r_spanning_alignment;
       r_spanning_alignment.id = refid;
       r_spanning_alignment.chrom = spanned_ref_strs.at(j).chrom;
       r_spanning_alignment.start = spanned_ref_strs.at(j).start;
@@ -675,9 +684,9 @@ bool BWAReadAligner::SetSTRCoordinates(vector<ALIGNMENT>* good_left_alignments,
 	l_spanning_alignment.left = false;
 	r_spanning_alignment.left = true;
       }
-      processed_left_alignments.push_back(l_spanning_alignment);
-      processed_right_alignments.push_back(r_spanning_alignment);
     }
+    processed_left_alignments.push_back(l_spanning_alignment);
+    processed_right_alignments.push_back(r_spanning_alignment);
   }
   *good_left_alignments = processed_left_alignments;
   *good_right_alignments = processed_right_alignments;
@@ -771,6 +780,7 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
     read_pair->reads.at(aligned_read_num).right_flank_nuc.length();
 
   read_pair->alternate_mappings = alternate_mappings;
+  read_pair->other_spanned_strs = left_alignment.other_spanned_strs;
 
   // checks to make sure the alignment is reasonable
   // coords make sense on forward strand

@@ -56,6 +56,8 @@ class ReadPair {
   bool treat_as_paired;
   // String for alternate mappings
   std::string alternate_mappings;
+  // Keep track of other STRs spanned by the primary read
+  std::string other_spanned_strs;
 
   /* Reset alignment flags */
   void ResetAlignmentFlags();

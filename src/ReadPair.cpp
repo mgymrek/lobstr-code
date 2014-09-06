@@ -27,4 +27,6 @@ void ReadPair::ResetAlignmentFlags() {
   read2_passed_alignment = false;
   found_unique_alignment = false;
   aligned_read_num = -1;
+  alternate_mappings = "";
+  other_spanned_strs = "";
 }

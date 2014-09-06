@@ -175,6 +175,10 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   if (!read_pair.alternate_mappings.empty()) {
     bam_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
   }
+  // XO: other spanned STRs
+  if (!read_pair.other_spanned_strs.empty()) {
+    bam_alignment.AddTag("XO", "Z", read_pair.other_spanned_strs);
+  }
   // XS: start pos of matching STR
   bam_alignment.AddTag("XS", "i", read_pair.reads.
                        at(aligned_read_num).msStart);

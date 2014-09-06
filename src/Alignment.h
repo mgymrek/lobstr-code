@@ -43,6 +43,8 @@ struct ALIGNMENT {
   int endpos;
   // Copy number
   float copynum;
+  // Keep track of other STRs spanned by this read
+  std::string other_spanned_strs;
   // provide overloaded operators to compare
   // when used as a map key
   bool operator<(const ALIGNMENT& ref_pos1) const {
