@@ -43,9 +43,6 @@ class BWAReadAligner {
   bool ProcessSingleEndRead(ReadPair* read_pair, std::string* err, std::string* messages);
 
  protected:
-  // Check if flanking regions fully repetitive
-  bool CheckFlanksForRepeats(MSReadRecord* read, const std::string& repseq);
-
   // Process a single read of a pair
   // Return possible alignments of flanking regions
   // in "good_*_alignments"
@@ -68,7 +65,6 @@ class BWAReadAligner {
 
   // Get the coordinates of each alignment
   bool GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
-                               const std::string& repseq,
                                std::vector<ALIGNMENT>* alignments);
 
   // Get a unique shared alignment between left and right flanks
@@ -94,8 +90,7 @@ class BWAReadAligner {
 
   // Align mate
   bool AlignMate(const ReadPair& read_pair,
-                 std::vector<ALIGNMENT>* mate_alignments,
-                 const std::string& repseq);
+                 std::vector<ALIGNMENT>* mate_alignments);
 
   // Check that the mate pair maps to the same region
   // If yes, update mate_alignment info

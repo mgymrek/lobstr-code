@@ -113,23 +113,6 @@ void CommonTest::test_GenerateAllKmers() {
   CPPUNIT_ASSERT_MESSAGE("Should be 64 dinucleotides", kmers.size() == 64);
 }
 
-void CommonTest::test_IsPerfectRepeat() {
-  // Case 1: perfect repeat
-  std::string nucs = "ATATATATATATATATATATAT";
-  std::string repeat = "AT";
-  CPPUNIT_ASSERT_MESSAGE("Should be perfect repeat", IsPerfectRepeat(nucs, repeat));
-
-  // Case 2: obviously not perfect repeat
-  nucs = "ACGATTGCGCGGCGG";
-  repeat = "AT";
-  CPPUNIT_ASSERT_MESSAGE("Not perfect", !IsPerfectRepeat(nucs, repeat));
-
-  // Case 3: close but not perfect
-  nucs = "ATATATAGATATATA";
-  repeat = "AT";
-  CPPUNIT_ASSERT_MESSAGE("Not perfect", !IsPerfectRepeat(nucs, repeat));
-}
-
 void CommonTest::test_reverseComplement() {
   // Case 1: upper case
   std::string nucs = "ACGATCGTGTCATGCNNACCACG";

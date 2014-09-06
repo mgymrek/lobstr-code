@@ -33,7 +33,6 @@ public CppUnit::TestFixture {
   CPPUNIT_TEST(test_getMSSeq);
   CPPUNIT_TEST(test_getMinPermutation);
   CPPUNIT_TEST(test_getCanonicalRepeat);
-  CPPUNIT_TEST(test_IsPerfectRepeat);
   CPPUNIT_TEST(test_reverseComplement);
   CPPUNIT_TEST(test_reverse);
   CPPUNIT_TEST_SUITE_END();
@@ -47,7 +46,6 @@ public CppUnit::TestFixture {
   void test_getMinPermutation();
   void test_getCanonicalRepeat();
   void test_GenerateAllKmers();
-  void test_IsPerfectRepeat();
   void test_reverseComplement();
   void test_reverse();
 };

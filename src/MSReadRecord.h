@@ -106,14 +106,6 @@ class MSReadRecord {
   int read_start;
   // five prime pos
   int read_end;
-  // is the left flank in the repeat region
-  bool left_all_repeats;
-  // is the right flank in the repeat region
-  bool right_all_repeats;
-  // is the left flank perfect repeat
-  bool left_perfect_repeat;
-  // is the right flank perfect repeat
-  bool right_perfect_repeat;
   // detected STR (reset by BWAReadAligner.cpp)
   std::string  detected_ms_nuc;
   // is the read paired?

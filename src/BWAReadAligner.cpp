@@ -127,8 +127,7 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
   // Trim and align mate
   TrimMate(read_pair);
   vector<ALIGNMENT> mate_alignments;  
-  if (!AlignMate(*read_pair, &mate_alignments,
-		 read_pair->reads.at(read_pair->aligned_read_num).repseq)) {
+  if (!AlignMate(*read_pair, &mate_alignments)) {
     if (align_debug) {
       PrintMessageDieOnError("[ProcessPairedEndRead]: Didn't align mate", DEBUG);
     }
@@ -143,13 +142,13 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
     read_pair->aligned_read_num == 0 ?
     good_right_alignments_read1 : good_right_alignments_read2;
   // Find compatible alignment with mate
-  ALIGNMENT matealign;
-  size_t index_of_hit;
+  ALIGNMENT matealign, final_left_alignment, final_right_alignment;
   for (size_t i = 0; i < good_left.size(); i++) {
     if (CheckMateAlignment(mate_alignments, good_left.at(i), good_right.at(i), &matealign)) {
-      index_of_hit = i;
       if (!read_pair->found_unique_alignment) {
 	read_pair->found_unique_alignment = true;
+	final_left_alignment = good_left.at(i);
+	final_right_alignment = good_right.at(0);
       } else { // multi-mapper
 	if (allow_multi_mappers) {
 	  stringstream xa;
@@ -166,11 +165,6 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
   }
 
   /* --- Step 3: Adjust alignment and output --- */
-  if (!read_pair->found_unique_alignment) { return false; }
-  ALIGNMENT final_left_alignment =
-    good_left.at(index_of_hit);
-  ALIGNMENT final_right_alignment =
-    good_right.at(index_of_hit);
   // try stitching first
   bool treat_as_paired = !(AlignmentUtils::StitchReads(read_pair, &final_left_alignment,
 						       &final_right_alignment));
@@ -241,24 +235,6 @@ void BWAReadAligner::TrimMate(ReadPair* read_pair) {
   read_pair->reads.at(1-read_pair->aligned_read_num).orig_qual = trim_quals;
 }
 
-bool BWAReadAligner::CheckFlanksForRepeats(MSReadRecord* read, const std::string& repseq) {
-  bool left_all_repeats = false;
-  bool right_all_repeats = false;
-  if (IsPerfectRepeat(read->left_flank_nuc, repseq) ||
-      IsPerfectRepeat(read->left_flank_nuc, reverseComplement(repseq))) {
-    read->left_perfect_repeat = true;
-    left_all_repeats = true;
-  }
-  if (IsPerfectRepeat(read->right_flank_nuc, repseq) ||
-      IsPerfectRepeat(read->right_flank_nuc, reverseComplement(repseq))) {
-    read->right_perfect_repeat = true;
-    right_all_repeats = true;
-  }
-  read->left_all_repeats = left_all_repeats;
-  read->right_all_repeats = right_all_repeats;
-  return !(left_all_repeats && right_all_repeats);
-}
-
 bool BWAReadAligner::ProcessRead(MSReadRecord* read, bool passed_detection,
                                  vector<ALIGNMENT>* good_left_alignments,
                                  vector<ALIGNMENT>* good_right_alignments,
@@ -274,15 +250,6 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read, bool passed_detection,
   *err = "Alignment-errors-here:";
   *messages = "Alignment-notes-here:";
 
-  // Detected motif
-  const string& repseq = read->repseq;
-
-  // Check if flanks are perfect repeats
-  if (!CheckFlanksForRepeats(read, repseq)) {
-    *err += "Left-and-right-flanks-are-fully-repetitive;";
-    return false;
-  }
-
   // Align the flanking regions
   bwa_seq_t* seqs = BWAAlignFlanks(*read);
   bwa_seq_t* seq_left = &seqs[0];
@@ -291,15 +258,11 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read, bool passed_detection,
   // fill in alignment coordinates
   vector<ALIGNMENT> left_alignments, right_alignments;
   bool one_flank_aligned = false;
-  if (!read->left_all_repeats) {
-    if (GetAlignmentCoordinates(seq_left, repseq, &left_alignments)) {
-      one_flank_aligned++;
-    }
+  if (GetAlignmentCoordinates(seq_left, &left_alignments)) {
+    one_flank_aligned++;
   }
-  if (!read->right_all_repeats) {
-    if (GetAlignmentCoordinates(seq_right, repseq, &right_alignments)) {
-      one_flank_aligned++;
-    }
+  if (GetAlignmentCoordinates(seq_right, &right_alignments)) {
+    one_flank_aligned++;
   }
   // don't need seqs anymore
   bwa_free_read_seq(2, seqs);
@@ -426,7 +389,6 @@ void BWAReadAligner::ParseRefid(const string& refstring, ALIGNMENT* refid) {
 }
 
 bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
-                                             const std::string&repseq,
                                              vector<ALIGNMENT>* alignments) {
   alignments->clear();
   // fill in alignment properties
@@ -465,7 +427,6 @@ bool BWAReadAligner::GetAlignmentCoordinates(bwa_seq_t* aligned_seqs,
       refid.pos = static_cast<int>(q->pos - _bnt_annotation->bns->anns[seqid].offset - 2*j) + (refid.start-extend-PAD);
     }
     refid.endpos = refid.pos + aligned_seqs->len;
-    refid.repeat = repseq;
     alignments->push_back(refid);
   }
   return (alignments->size() >= 1);
@@ -603,7 +564,7 @@ void BWAReadAligner::GetSpannedSTRs(const ALIGNMENT& lalign, const ALIGNMENT& ra
     msg << "[GetSpannedSTRs]: Mincoord: " << mincoord << " Maxcoord: " << maxcoord;
     PrintMessageDieOnError(msg.str(), DEBUG);
   }
-  if (maxcoord - mincoord > read_length + max_diff_ref) {
+  if (maxcoord - mincoord > static_cast<int>(read_length) + max_diff_ref) {
     if (align_debug) {
       stringstream msg;
       msg << "[GetSpannedSTRs]: span too large. quitting";
@@ -694,8 +655,7 @@ bool BWAReadAligner::SetSTRCoordinates(vector<ALIGNMENT>* good_left_alignments,
 }
 
 bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
-                               vector<ALIGNMENT>* mate_alignments,
-                               const string& repseq) {
+                               vector<ALIGNMENT>* mate_alignments) {
   const int& num_aligned_read = read_pair.aligned_read_num;
   const string& nucs = reverseComplement(read_pair.reads.
                                          at(1-num_aligned_read).
@@ -716,7 +676,7 @@ bool BWAReadAligner::AlignMate(const ReadPair& read_pair,
   }
 
   // Check alignment coordinates
-  if (!GetAlignmentCoordinates(seq, repseq, mate_alignments)) {
+  if (!GetAlignmentCoordinates(seq, mate_alignments)) {
     bwa_free_read_seq(1, seq);
     return false;
   }

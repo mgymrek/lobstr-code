@@ -305,25 +305,6 @@ string getFirstString(const std::string& seq1, const std::string& seq2) {
   return seq1;
 }
 
-bool IsPerfectRepeat(const std::string& sequence,
-                     const std::string& repeat) {
-  // find first occurrence of repeat
-  size_t found;
-  found = sequence.find(repeat);
-
-  if (found == string::npos || found > repeat.length() - 1) return false;
-  // check the part before found
-  if (sequence.substr(0, found) != repeat.substr(repeat.length() - found,
-                                                 found)) return false;
-  for (size_t i = found; i < sequence.length()
-         - repeat.length() + 1; i += repeat.length()) {
-    string test_seq = sequence.substr(i, repeat.length());
-    if (test_seq != repeat) return false;
-  }
-  // check the part after
-  return true;
-}
-
 float GetAverageQualityScore(const vector<string>& qualities) {
   if (qualities.size() == 0) { return 0;}
   float average_quality = 0;

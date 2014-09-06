@@ -103,9 +103,6 @@ bool getMSSeq(const std::string& nucs, int k, std::string* repeat, std::string* 
 // compare seqs lexicographically
 std::string getFirstString(const std::string& seq1, const std::string& seq2);
 
-// determine if sequence is perfect repeat
-bool IsPerfectRepeat(const std::string& sequence, const std::string& repeat);
-
 // convert chromosome string to a number (e.g. "chr2" to 2)
 int GetChromNumber(std::string chromosome);
 
