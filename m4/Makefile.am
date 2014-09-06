@@ -16,7 +16,9 @@ m4macros = acx_pthread.m4 \
 	ax_pthread.m4 \
 	ax_blas.m4 \
 	ax_boost_base.m4 \
-	ax_check_zlib.m4
+	ax_check_zlib.m4 \
+	ax_cxx_compile_stdcxx_11.m4 \
+	ax_cxx_header_stdcxx_tr1.m4
 
 
 # The following is boilerplate

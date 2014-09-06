@@ -4,7 +4,7 @@
 ## This is a template to run tests through 'make check'.
 ## exit with zero code to signal success.
 ##
-OUTDIR=$(mktemp -d) || exit 1
+OUTDIR=$(mktemp -d lobSTRXXXXXX) || exit 1
 testcode() {
   if [ $? != "$@" ]; then exit 1; fi;
 }
