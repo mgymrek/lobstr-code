@@ -18,6 +18,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <assert.h> 
 #include <math.h>
 #include <gsl/gsl_multimin.h>
 #include <iostream>
@@ -155,6 +156,7 @@ int logistic_regression(const vector<bool>& y, const vector<vector<double> >& x,
 }
 
 double logistic_regression_predict(std::vector<double> x, std::vector<double> coeffs) {
+  assert (x.size() == coeffs.size()-1);
   size_t n = coeffs.size();
   double z = coeffs.at(0);
   for (size_t i=0; i<n-1; i++) {

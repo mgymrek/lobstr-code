@@ -235,13 +235,9 @@ TESTS_ENVIRONMENT =  \
   LOBSTR_TEST_DIR='$(abs_top_srcdir)/tests' \
   ;
 
-TESTS = lobSTRTests gsl_test
+TESTS = lobSTRTests
 
 check_PROGRAMS = $(TESTS)
-
-gsl_test_SOURCES = \
-	tests/gsl_test.cpp \
-	logistic_regression.cpp logistic_regression.h
 
 lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
@@ -253,6 +249,8 @@ lobSTRTests_SOURCES = \
 	tests/common_test.cpp \
 	tests/DNATools.h \
 	tests/DNATools.cpp \
+	tests/logistic_regression_test.h \
+	tests/logistic_regression_test.cpp \
 	tests/NWNoRefEndPenalty_test.h \
 	tests/NWNoRefEndPenalty_test.cpp \
 	tests/ReadContainer_test.h \
@@ -279,6 +277,7 @@ lobSTRTests_SOURCES = \
 	FilterCounter.h FilterCounter.cpp \
 	gzstream.cpp \
 	HammingWindowGenerator.cpp \
+	logistic_regression.cpp \
 	MultithreadData.cpp \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
