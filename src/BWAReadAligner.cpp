@@ -568,14 +568,6 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
       right_id_to_ref : left_id_to_ref;
     const map<int, ALIGNMENT>& larger_id_to_ref = (right_id_to_ref.size() < left_id_to_ref.size()) ?
       left_id_to_ref : right_id_to_ref;
-    // TODO remove
-    for (map<int, ALIGNMENT>::const_iterator it = smaller_id_to_ref.begin();
-	 it != smaller_id_to_ref.end(); it++) {
-    }
-    for (map<int, ALIGNMENT>::const_iterator it = larger_id_to_ref.begin();
-	 it != larger_id_to_ref.end(); it++) {
-    }
-
     for (map<int, ALIGNMENT>::const_iterator it = smaller_id_to_ref.begin();
 	 it != smaller_id_to_ref.end(); it++) {
       int ref_key = it->first;
