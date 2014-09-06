@@ -788,14 +788,6 @@ void single_thread_process_loop(const vector<string>& files1,
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       read_pair.read_count = num_reads_processed;
-      // reset fields
-      read_pair.reads.at(0).repseq = "";
-      read_pair.reads.at(0).ms_repeat_best_period = 0;
-      if (read_pair.reads.at(0).paired) {
-        read_pair.reads.at(1).repseq = "";
-        read_pair.reads.at(1).ms_repeat_best_period = 0;
-      }
-
       // Check read length
       if (!(read_pair.reads.at(0).nucleotides.length() >= min_read_length) &&
           (read_pair.reads.at(0).nucleotides.length() <= max_read_length)) {
@@ -899,14 +891,6 @@ void* satellite_process_consumer_thread(void *arg) {
     }
     bases += pReadRecord->reads.at(0).nucleotides.length();
     if (pReadRecord->reads.at(0).paired) bases += pReadRecord->reads.at(1).nucleotides.length();
-
-    // Reset fields
-    pReadRecord->reads.at(0).repseq = "";
-    pReadRecord->reads.at(0).ms_repeat_best_period = 0;
-    if (pReadRecord->reads.at(0).paired) {
-      pReadRecord->reads.at(1).repseq = "";
-      pReadRecord->reads.at(1).ms_repeat_best_period = 0;
-    }
 
     // STEP 1: Sensing
     string err, messages;

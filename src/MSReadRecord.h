@@ -46,16 +46,9 @@ class MSReadRecord {
   std::string orig_qual;
 
   // *** set during detection *** //
-  // detected rep seq
-  std::string repseq;
-  // is canonical repseq the reverse of how it appears?
-  bool repseq_reverse;
-  // location in the read where the STR starts
   int ms_start;
   // location in the read whre the STR ends
   int ms_end;
-  // best period determined for the STR
-  int ms_repeat_best_period;
   // left flanking nucleotides
   std::string left_flank_nuc;
   int left_flank_index_from_start;
@@ -66,6 +59,8 @@ class MSReadRecord {
   int right_flank_index_from_end;
 
   // *** set during alignment *** //
+  // Repeat motif
+  std::string repseq;
   // start of the original read (before trimming)
   // Note: this field is deprecated and was used only
   // for coordination with STRangers
