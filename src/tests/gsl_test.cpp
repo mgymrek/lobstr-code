@@ -83,5 +83,19 @@ int main (void)
   if (coeffs.at(2) < 0.12 || coeffs.at(2) > 0.14) {
     errx(1, "Example 2: Slope2 term doesn't match");
   }
+
+  // Test prediction
+  vector<double> vals;
+  vals.push_back(1);
+  vals.push_back(2);
+  vector<double> cfs;
+  cfs.push_back(-0.5);
+  cfs.push_back(1.2);
+  cfs.push_back(3);
+  double pred = logistic_regression_predict(vals, cfs);
+  printf("Prediction result: %g (R result: 0.9987706)\n", pred);
+  if (pred < 0.98 || pred > 1) {
+    errx(1, "Example 3: Test prediction failed");
+  }
   return 0;
 }

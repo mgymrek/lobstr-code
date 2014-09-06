@@ -227,27 +227,32 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
   return false;
 }
 
-void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) {  
+void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) {
   // Set up data for logistic regression
+  size_t numreads = reads_for_training.size();
   vector<bool> y;
+  y.resize(numreads);
   vector<vector<double> >x;
-  for (size_t i=0; i<reads_for_training.size(); i++) {
+  x.resize(numreads);
+  for (size_t i=0; i<numreads; i++) {
     pair<string, int> coord (reads_for_training.at(i).chrom,
 			     reads_for_training.at(i).msStart);
-    y.push_back(reads_for_training.at(i).stutter);
+    y.at(i) = reads_for_training.at(i).stutter;
     vector<double> xx;
     xx.resize(4);
-    xx.push_back(reads_for_training.at(i).period);
-    xx.push_back(reads_for_training.at(i).msEnd - reads_for_training.at(i).msStart + reads_for_training.at(i).diffFromRef);
-    xx.push_back(strInfo.at(coord).gc);
-    xx.push_back(strInfo.at(coord).score);
-    x.push_back(xx);
+    xx.at(0) = reads_for_training.at(i).period;
+    xx.at(1) = reads_for_training.at(i).msEnd - reads_for_training.at(i).msStart + reads_for_training.at(i).diffFromRef;
+    xx.at(2) = strInfo.at(coord).gc;
+    xx.at(3) = strInfo.at(coord).score;
+    x.at(i) = xx;
   }
   // Run logistic regression
   vector<double> coeffs;
   coeffs.resize(NUM_PARAMS);
-  logistic_regression(y, x, static_cast<int>(reads_for_training.size()), 4,
-		      0.001, 1e-4, 1e-3, 100, &coeffs);
+  if (logistic_regression(y, x, y.size(), 4,
+			  0.001, 1e-5, 1e-5, 1000, &coeffs) != 0) {
+    PrintMessageDieOnError("Logistic regression failed", ERROR);
+  }
   // Write output file (for now match old format to keep compatbility)
   TextFileWriter nWriter(stutter_model_filename);
   stringstream ss;
@@ -260,10 +265,11 @@ void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) 
   for (int i=0; i<coeffs.size(); i++) {
     ss << coeffs.at(i) << endl;
   }
+  nWriter.Write(ss.str());
   if (my_verbose) {
     stringstream msg;
     msg << "Using " << reads_for_training.size() << " reads for training."
-         << " (Required: " << MIN_READS_FOR_TRAINING << ")" << endl;
+         << " (Required: " << MIN_READS_FOR_TRAINING << ")";
     PrintMessageDieOnError(msg.str(), PROGRESS);
   }
   if (reads_for_training.size() < MIN_READS_FOR_TRAINING) {

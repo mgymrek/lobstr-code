@@ -89,7 +89,8 @@ void ReadContainer::GetSampleInfo() {
   }
 }
 
-void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides) {
+void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides,
+				     const vector<string>& chroms_to_include) {
   if (ref_str.chrom != "NA") {
     int refid = -1;
     if (chrom_to_refid.find(ref_str.chrom) !=
@@ -108,6 +109,9 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<strin
   while (reader.GetNextAlignment(aln)) {
     AlignedRead aligned_read;
     if (ParseRead(aln, &aligned_read, ref_ext_nucleotides)) {
+      if (chroms_to_include.size() > 0 && find(chroms_to_include.begin(), chroms_to_include.end(), aligned_read.chrom) == chroms_to_include.end()) {
+	continue;
+      }
       // Add to map
       pair<string, int> coord
 	(aligned_read.chrom, aligned_read.msStart);

@@ -20,7 +20,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <math.h>
 #include <gsl/gsl_multimin.h>
-
+#include <iostream>
 #include "src/logistic_regression.h"
 
 using namespace std;
@@ -137,12 +137,16 @@ int logistic_regression(const vector<bool>& y, const vector<vector<double> >& x,
     iter++;
     status = gsl_multimin_fdfminimizer_iterate(s);
     if (status) {
+      cerr << "Internal error in linear regression " << endl;
       retcode = 1;
       break;
     }
     status = gsl_multimin_test_gradient(s->gradient, epsabs);
   } while (status == GSL_CONTINUE && iter < maxiter);
-  if (iter >= maxiter) retcode = 1;
+  if (iter >= maxiter) {
+    cerr << "Reached max iterations " << endl;
+    retcode = 1;
+  }
   for (int k = 0; k < n+1; k++) {
     coeffs->at((size_t)k) = gsl_vector_get(s->x, k);
   }

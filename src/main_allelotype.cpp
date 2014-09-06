@@ -31,13 +31,10 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/FastaFileReader.h"
 #include "src/Genotyper.h"
 #include "src/MSReadRecord.h"
-#include "src/linear.h"
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
 #include "src/ReferenceSTR.h"
 #include "src/runtime_parameters.h"
-
-#define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 
 using namespace std;
 
@@ -55,10 +52,10 @@ void show_help() {
     "from a set of aligned reads:\n"                            \
     "allelotype --command train [OPTIONS] --bam <input.bam> "   \
     "--noise_model <noisemodelprefix> --strinfo <strinfo.tab> " \
+    " --index-prefix $PATH_TO_INDEX/lobSTR_ " \
     " --haploid chrY\n\n" \
     "Training outputs model files: \n" \
     "   <noisemodelprefix>.stepmodel\n" \
-    "   <noisemodelprefix>.stuttermodel\n" \
     "   <noisemodelprefix>.stutterproblem\n\n" \
     "To run str profiling on a set of aligned reads:\n" \
     "allelotype --command classify [OPTIONS] --bam <input.bam> "  \
@@ -294,7 +291,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_NOISEMODEL:
       noise_model = string(optarg);
       if ((command == "train") &&
-          (fexists(noise_model.c_str()) || (fexists((noise_model+".stuttermodel").c_str())))) {
+          (fexists((noise_model+".stepmodel").c_str()) || (fexists((noise_model+".stuttermodel").c_str())))) {
         PrintMessageDieOnError("Cannot write to specified noise model file. " \
                                "This file already exists.", ERROR);
       }
@@ -448,7 +445,7 @@ int main(int argc, char* argv[]) {
     ReadContainer read_container(bam_files);
     ReferenceSTR dummy_ref_str;
     dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
-    read_container.AddReadsFromFile(dummy_ref_str, ref_ext_nucleotides);
+    read_container.AddReadsFromFile(dummy_ref_str, ref_ext_nucleotides, haploid_chroms);
     if (my_verbose) PrintMessageDieOnError("Training noise model", PROGRESS);
     nm.Train(&read_container);
   } 
@@ -485,7 +482,7 @@ int main(int argc, char* argv[]) {
       ref_region.start = begin;
       ref_region.stop = end;
       if (use_chrom.empty() || (use_chrom == chrom)) {
-	str_container.AddReadsFromFile(ref_region, ref_ext_nucleotides);
+	str_container.AddReadsFromFile(ref_region, ref_ext_nucleotides, vector<string>(0));
 	for (size_t i = 0; i < ref_str_chunk.size(); i++) {
 	  // Check that we don't process the same locus twice
 	  if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {
