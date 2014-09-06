@@ -83,16 +83,16 @@ lobSTR \
   --gzip \
   --rg-lib test --rg-sample test >/dev/null 2>&1
 testcode 0
-echo "Testing fastq input single end with multithread..."
-lobSTR \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
-  --out ${OUTDIR}/lobtest \
-  --verbose \
-  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
-  -p 2 \
-  -q \
-  --rg-lib test --rg-sample test >/dev/null 2>&1
-testcode 0
+#echo "Testing fastq input single end with multithread..."
+#lobSTR \
+#  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref/lobSTR_ \
+#  --out ${OUTDIR}/lobtest \
+#  --verbose \
+#  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+#  -p 2 \
+#  -q \
+#  --rg-lib test --rg-sample test >/dev/null 2>&1
+#testcode 0
 echo "### Allelotype tests ###"
 echo
 echo "Testing good bam input..."
