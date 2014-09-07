@@ -45,34 +45,6 @@ void CommonTest::test_TrimRead() {
   CPPUNIT_ASSERT_MESSAGE("wrong trimmed quals", trimmed_quals == "eeeeeeeeeeeeeffffffffffffffffffffffffffffffffffffffff");
 }
 
-void CommonTest::test_getMinPermutation() {
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("A") == "A");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("G") == "G");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TACG") == "ACGT");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TAGTACTAT") == "ACTATTAGT");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("CGCTCCC") == "CCCCGCT");
-}
-
-void CommonTest::test_getCanonicalRepeat() {
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AAAAAAA") == "A");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("TTT") == "A");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("ATCGATC") == "ATCATCG");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("TATATA") == "AT");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AGTCAGTC") == "ACTG");
-}
-
-void CommonTest::test_GenerateAllKmers() {
-  std::vector<std::string> kmers;
-  GenerateAllKmers(1, &kmers);
-  CPPUNIT_ASSERT_MESSAGE("Should be 4 homopolymers", kmers.size() == 4);
-  kmers.clear();
-  GenerateAllKmers(2, &kmers);
-  CPPUNIT_ASSERT_MESSAGE("Should be 16 dinucleotides", kmers.size() == 16);
-  kmers.clear();
-  GenerateAllKmers(3, &kmers);
-  CPPUNIT_ASSERT_MESSAGE("Should be 64 dinucleotides", kmers.size() == 64);
-}
-
 void CommonTest::test_reverseComplement() {
   // Case 1: upper case
   std::string nucs = "ACGATCGTGTCATGCNNACCACG";

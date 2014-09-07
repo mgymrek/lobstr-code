@@ -224,22 +224,6 @@ void TrimRead(const string& input_nucs,
   *trimmed_quals = input_quals.substr(0, max_x + 1);
 }
 
-size_t count(const string& s, const char& c) {
-  size_t num = 0;
-  for (size_t i = 0; i < s.length(); i++) {
-    if (s[i] == c) num++;
-  }
-  return num;
-}
-
-string getFirstString(const std::string& seq1, const std::string& seq2) {
-  for (size_t i = 0; i < seq1.size(); i++) {
-    if (nucToNumber(seq1[i]) < nucToNumber(seq2[i])) return seq1;
-    if (nucToNumber(seq1[i]) > nucToNumber(seq2[i])) return seq2;
-  }
-  return seq1;
-}
-
 float GetAverageQualityScore(const vector<string>& qualities) {
   if (qualities.size() == 0) { return 0;}
   float average_quality = 0;
@@ -260,19 +244,6 @@ float GetQualityScore(const std::string& quality_score) {
   return total_quality/quality_score.size();
 }
 
-int GetChromNumber(string chromosome) {
-  // get whatever is after "chr"
-  string chrom_string = chromosome.substr(3);
-  // convert this to a number
-  if (chrom_string == "X") {
-    return 23;
-  } else if (chrom_string == "Y") {
-    return 24;
-  } else {
-    return atoi(chrom_string.c_str());
-  }
-}
-
 bool fexists(const char *filename) {
   ifstream ifile(filename);
   return ifile;
@@ -283,61 +254,6 @@ bool valid_nucleotides_string(const string &str) {
     return false;
   }
   return str.find_first_not_of("ACGTNacgtn");
-}
-
-std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold) {
-  size_t countA = 0, countC = 0, countG = 0, countT = 0;
-  for (size_t i = 0; i < nuc.length(); i++) {
-    switch (nuc[i]) {
-      case 'A':
-      case 'a':
-        countA++;
-      break;
-      case 'C':
-      case 'c':
-        countC++;
-      break;
-      case 'G':
-      case 'g':
-        countG++;
-      break;
-      case 'T':
-      case 't':
-        countT++;
-      break;
-      case 'N':
-      case 'n':
-        break;
-      default:
-	PrintMessageDieOnError("ERROR: invalid nucleotide string " + nuc, ERROR);
-    }
-  }
-  size_t threshold = nuc.length()*perc_threshold;
-  if (countA >= threshold)
-    return "A";
-  if (countC >= threshold)
-    return "C";
-  if (countG >= threshold)
-    return "G";
-  if (countT >= threshold)
-    return "T";
-  return "";
-}
-
-int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc) {
-  int runsize = 0;
-  int maxrunsize = 0;
-  for (size_t i = 0; i < nuc.size(); i++) {
-    if (nuc[i] == abundant_nuc) {
-      runsize++;
-    } else {
-      if (runsize > maxrunsize) {
-        maxrunsize = runsize;
-        runsize = 0;
-      }
-    }
-  }
-  return maxrunsize;
 }
 
 double calculate_N_percentage(const std::string& nuc) {
@@ -397,55 +313,6 @@ std::string reverse(const std::string& s) {
     rev.replace(size-i-1, 1, s.substr(i, 1));
   }
   return rev;
-}
-
-void GenerateAllKmers(int size, std::vector<std::string>* kmers) {
-  std::vector<std::string> current_kmers;
-  std::vector<std::string> next_kmers;
-  current_kmers.push_back("");  
-  for (int i = 0; i < size; i++) {
-    for (size_t j = 0; j < current_kmers.size(); j++) {
-      for (int k = 0; k < 4; k++) {
-	std::string newkmer = current_kmers[j] + std::string(NUCLEOTIDES[k]);
-	next_kmers.push_back(newkmer);
-      }
-    }
-    current_kmers = next_kmers;
-    next_kmers.clear();
-  }
-  *kmers = current_kmers;
-}
-
-std::string getMinPermutation(const std::string& msnucs){
-  std::string minPerm = msnucs;
-  for(size_t i = 1; i < msnucs.size(); i++){
-    std::string otherPerm = msnucs.substr(i)+msnucs.substr(0,i);
-    minPerm = getFirstString(minPerm, otherPerm);
-  }
-  return minPerm;
-}
-
-
-std::string getCanonicalRepeat(const std::string& msnucs) {
-  // Find the smallest subunit
-  std::string subunit = msnucs;
-  for (size_t segLen = 1; segLen < msnucs.size(); segLen++) {
-    if(msnucs.size() % segLen == 0){
-      std::string seq = msnucs.substr(0, segLen);
-      bool match = true;
-      for (size_t seg = 0; seg < msnucs.size()/segLen; seg++) {
-	if (msnucs.substr(seg*segLen, segLen) != seq) {
-	  match = false;
-	  break;
-	}
-      }
-      if (match) {
-	subunit = seq;
-	break;
-      }
-    }
-  }
-  return getFirstString(getMinPermutation(subunit), getMinPermutation(reverseComplement(subunit)));
 }
 
 IFileReader* create_file_reader(const string& filename1,
@@ -556,18 +423,6 @@ std::string string_replace(std::string src,
   }
   return src;
 }
-
-std::string fftw_complex_to_string(fftw_complex v) {
-  stringstream s;
-  s.setf(ios::fixed, ios::floatfield);
-  s.width(7);
-  s.precision(5);
-  s << v[0] << " ";
-  s << ((v[1] >= 0) ? "+ " : "- ");
-  s << (std::abs(v[1])) << "i";
-  return s.str();
-}
-
 
 std::vector<std::string> &split(const std::string &s,
                                 char delim, std::vector<std::string> &elems) {

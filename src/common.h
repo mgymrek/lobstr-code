@@ -21,7 +21,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_COMMON_H__
 #define SRC_COMMON_H__
 
-#include <fftw3.h>
 #include <stdio.h>
 
 #include <cmath>
@@ -94,15 +93,6 @@ void TrimRead(const std::string& input_nucs,
               std::string* trimmed_quals,
               int cutoff);
 
-// count number of occurrences of char in string
-size_t count(const std::string& s, const char& c);
-
-// compare seqs lexicographically
-std::string getFirstString(const std::string& seq1, const std::string& seq2);
-
-// convert chromosome string to a number (e.g. "chr2" to 2)
-int GetChromNumber(std::string chromosome);
-
 // get the average quality score from a group of quality scores
 float GetAverageQualityScore(const std::vector<std::string>& qualities);
 
@@ -115,17 +105,6 @@ bool fexists(const char *filename);
 // check if the string contains only valid nucleotides
 bool valid_nucleotides_string(const std::string &str);
 
-// determine which nucleotide is overrepresented
-std::string OneAbundantNucleotide(const std::string& nuc, float perc_threshold);
-
-// determine max length run of single nucleotide
-int CountAbundantNucRuns(const std::string& nuc, char abundant_nuc);
-
-// determine the magnitude of a complex number
-inline double magnitude(const fftw_complex n) {
-  return std::sqrt( n[0]*n[0] + n[1]*n[1] );
-}
-
 // get the percentage of N's in the read
 double calculate_N_percentage(const std::string& nucleotides);
 
@@ -135,20 +114,11 @@ int nucToNumber(const char& nuc);
 // get the reverse complement of a nucleotide string
 std::string reverseComplement(const std::string& nucs);
 
-// get the reverse fo a string
+// get the reverse of a string
 std::string reverse(const std::string& s);
 
 // get the complement of a nucleotide
 char complement(const char nucleotide);
-
-// Generate all nucleotide kmers of a certain size
-void GenerateAllKmers(int size, std::vector<std::string>* kmers);
-
-// get the minimum cyclic permutation of the provided sequence 
-std::string getMinPermutation(const std::string& msnucs);
-
-// get the canonical version of the smallest repeating subunit
-std::string getCanonicalRepeat(const std::string& msnucs);
 
 // get the appropriate fiile reader
 IFileReader* create_file_reader(const std::string& filename1,
@@ -187,42 +157,6 @@ void OutputRunningTimeInformation(const size_t start_time,
 std::string string_replace(std::string src,
                            const std::string& target,
                            const std::string& replace);
-
-// debugging functions
-std::string fftw_complex_to_string(fftw_complex v);
-
-// print a matlab vector for debugging
-template<typename TYPE>
-void debug_print_matlab_vector(const std::vector<TYPE> &v,
-                               const std::string& varname) {
-  std::cerr << varname << " = [ ";
-
-  if (v.size()>8) {
-    std::cerr << std::endl;
-  }
-
-  int col = 0;
-  std::streamsize old_precision =std::cerr.precision();
-  std::cerr.precision(4);
-  std::ios_base::fmtflags old_flags = std::cerr.flags();
-  std::cerr.setf(std::ios::fixed, std::ios::floatfield);
-  std::streamsize old_width = std::cerr.width();
-  for ( size_t i = 0 ; i < v.size(); ++i ) {
-    std::cerr << std::setw(8) << v[i];
-    col++;
-    if (col == 8) {
-      col = 0;
-      std::cerr << " ..." << std::endl;
-    } else {
-      std::cerr << " ";
-    }
-  }
-  std::cerr << "]" << std::endl;
-
-  std::cerr.precision(old_precision);
-  std::cerr.flags(old_flags);
-  std::cerr.width(old_width);
-}
 
 std::vector<std::string> &split(const std::string &s, char delim,
                                 std::vector<std::string> &elems);

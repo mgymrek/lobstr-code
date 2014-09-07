@@ -29,9 +29,6 @@ class CommonTest :
 public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(CommonTest);
   CPPUNIT_TEST(test_TrimRead);
-  CPPUNIT_TEST(test_GenerateAllKmers);
-  CPPUNIT_TEST(test_getMinPermutation);
-  CPPUNIT_TEST(test_getCanonicalRepeat);
   CPPUNIT_TEST(test_reverseComplement);
   CPPUNIT_TEST(test_reverse);
   CPPUNIT_TEST_SUITE_END();
@@ -42,9 +39,6 @@ public CppUnit::TestFixture {
  private:
   void test_TrimRead();
   void test_getMSSeq();
-  void test_getMinPermutation();
-  void test_getCanonicalRepeat();
-  void test_GenerateAllKmers();
   void test_reverseComplement();
   void test_reverse();
 };
