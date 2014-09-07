@@ -15,7 +15,7 @@ bin_PROGRAMS = lobSTR \
 
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS) $(GSL_LIBS)
 
-AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/ \
+AM_CPPFLAGS = $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/ \
 	$(GSL_CFLAGS)
 
 noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a libbamtools.a
@@ -110,22 +110,22 @@ libbamtools_a_SOURCES = \
 	utils/utils_global.h
 
 liblobstr_a_SOURCES = \
+	Alignment.h \
+	AlignmentUtils.h AlignmentUtils.cpp \
 	BamFileReader.cpp BamFileReader.h \
 	BamPairedFileReader.cpp BamPairedFileReader.h \
 	BWAReadAligner.cpp BWAReadAligner.h \
-	CachedWindowGenerator.cpp CachedWindowGenerator.h \
 	common.cpp common.h \
 	EntropyDetection.cpp EntropyDetection.h \
 	FastaFileReader.cpp FastaFileReader.h \
 	FastaPairedFileReader.cpp FastaPairedFileReader.h \
 	FastqFileReader.cpp FastqFileReader.h \
 	FastqPairedFileReader.cpp FastqPairedFileReader.h \
-	FFT_four_nuc_vectors.cpp FFT_four_nuc_vectors.h \
-	FFT_nuc_vectors.cpp FFT_nuc_vectors.h \
 	FilterCounter.cpp FilterCounter.h \
 	gzstream.cpp gzstream.h \
 	STRRecord.h \
-	HammingWindowGenerator.cpp HammingWindowGenerator.h \
+	ReadPair.h \
+	ReadPair.cpp \
 	MultithreadData.cpp MultithreadData.h \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
@@ -137,7 +137,6 @@ liblobstr_a_SOURCES = \
 	STRDetector.cpp STRDetector.h \
 	TextFileReader.cpp TextFileReader.h \
 	TextFileWriter.cpp TextFileWriter.h \
-	TukeyWindowGenerator.cpp TukeyWindowGenerator.h \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
@@ -195,6 +194,7 @@ liballelotype_a_SOURCES = \
 	NoiseModel.cpp NoiseModel.h \
 	ReadContainer.cpp ReadContainer.h \
 	ReadPair.h \
+	ReadPair.cpp \
 	ReferenceSTR.cpp ReferenceSTR.h \
 	RemoveDuplicates.cpp RemoveDuplicates.h \
 	STRRecord.h \
@@ -220,7 +220,7 @@ lobSTRIndex_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(FFTW_LIBS) $(PROTOBUF_LIBS) $(GSL_LIBS)
+lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(PROTOBUF_LIBS) $(GSL_LIBS)
 lobSTR_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
@@ -243,8 +243,8 @@ lobSTRTests_SOURCES = \
 	tests/main_test.cpp \
 	tests/AlignmentFilters_test.h \
 	tests/AlignmentFilters_test.cpp \
-	tests/BWAReadAligner_test.h \
-	tests/BWAReadAligner_test.cpp \
+	tests/AlignmentUtils_test.h \
+	tests/AlignmentUtils_test.cpp \
 	tests/common_test.h \
 	tests/common_test.cpp \
 	tests/DNATools.h \
@@ -262,32 +262,30 @@ lobSTRTests_SOURCES = \
 	tests/ZAlgorithm_test.h \
 	tests/ZAlgorithm_test.cpp \
 	AlignmentFilters.cpp \
+	AlignmentUtils.cpp \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
 	BWAReadAligner.cpp \
-	CachedWindowGenerator.cpp \
 	common.cpp \
 	EntropyDetection.cpp \
 	FastaFileReader.cpp \
 	FastaPairedFileReader.cpp \
 	FastqFileReader.cpp \
 	FastqPairedFileReader.cpp \
-	FFT_four_nuc_vectors.cpp \
-	FFT_nuc_vectors.cpp \
 	FilterCounter.h FilterCounter.cpp \
 	gzstream.cpp \
-	HammingWindowGenerator.cpp \
 	logistic_regression.cpp \
 	MultithreadData.cpp \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \
+	ReadPair.h \
+	ReadPair.cpp \
 	runtime_parameters.cpp \
 	SamFileWriter.cpp \
 	STRDetector.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
-	TukeyWindowGenerator.cpp \
 	ReadContainer.cpp \
 	RemoveDuplicates.cpp \
 	VCFWriter.cpp \
@@ -302,5 +300,5 @@ lobSTRTests_SOURCES = \
 	api/SamReadGroupDictionary.h
 
 lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
-lobSTRTests_LDADD = libbamtools.a libindex.a $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
+lobSTRTests_LDADD = libbamtools.a libindex.a $(CPPUNIT_LIBS) -ldl
 lobSTRTests_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)

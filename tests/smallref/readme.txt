@@ -7,4 +7,4 @@ cat /san/melissa/workspace/lobstr-code-production/resource_bundles/hg19/lobstr_v
 python /san/melissa/workspace/lobstr-code-production/scripts/lobstr_index.py \
   --str lobstr_test_ref.bed \
   --ref /data/dbase/human/hg19/fasta/hg19.fa \
-  --out_dir small_lobstr_ref -v
+  --out_dir small_lobstr_ref_v2 -v

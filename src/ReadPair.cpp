@@ -15,32 +15,18 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
-#ifndef SRC_TESTS_COMMON_TEST_H__
-#define SRC_TESTS_COMMON_TEST_H__
+#include "src/ReadPair.h"
 
-#include <cppunit/extensions/HelperMacros.h>
+ReadPair::ReadPair() {};
+ReadPair::~ReadPair() {};
 
-#include "src/common.h"
-
-class CommonTest :
-public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(CommonTest);
-  CPPUNIT_TEST(test_TrimRead);
-  CPPUNIT_TEST(test_reverseComplement);
-  CPPUNIT_TEST(test_reverse);
-  CPPUNIT_TEST_SUITE_END();
-
- public:
-  void setUp();
-  void tearDown();
- private:
-  void test_TrimRead();
-  void test_getMSSeq();
-  void test_reverseComplement();
-  void test_reverse();
-};
-
-#endif //  SRC_TESTS_COMMON_TEST_H__
+void ReadPair::ResetAlignmentFlags() {
+  read1_passed_alignment = false;
+  read2_passed_alignment = false;
+  found_unique_alignment = false;
+  aligned_read_num = -1;
+  alternate_mappings = "";
+  other_spanned_strs = "";
+}

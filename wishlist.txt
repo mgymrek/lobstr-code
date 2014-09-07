@@ -1,5 +1,6 @@
 lobSTR wish list... some day these features will be added
 
+- report STRs spanned by mate pair reads
 - ability to call more than 2 alleles at loci (such as DYS464) with multiple copies
 - improved remove duplicates algorithm
 - ability to easily compare lobSTR results to capillary electrophoresis callsets

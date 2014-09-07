@@ -89,6 +89,10 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
     run_info.num_nonunit++;
   }
   // Write aligned read
+  if (align_debug) {
+    PrintMessageDieOnError("[SamFileWriter.cpp]: Writing alignment output", DEBUG);
+  }
+		  
   BamAlignment bam_alignment;
   BamAlignment mate_alignment;
   bool str_alignment_is_first = false; // Does the STR alignment have a smaller start coord than mate
@@ -114,6 +118,9 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       str_alignment_is_first = true;
     }
   } else {
+    if (align_debug) {
+      PrintMessageDieOnError("[SamFileWriter.cpp]: Alignment is single end", DEBUG);
+    }
     bam_alignment.SetIsPaired(false);
     bam_alignment.SetIsProperPair(false);    
     bam_alignment.SetIsFirstMate(false);
@@ -167,6 +174,10 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   // XA: alternate alignments
   if (!read_pair.alternate_mappings.empty()) {
     bam_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
+  }
+  // XO: other spanned STRs
+  if (!read_pair.other_spanned_strs.empty()) {
+    bam_alignment.AddTag("XO", "Z", read_pair.other_spanned_strs);
   }
   // XS: start pos of matching STR
   bam_alignment.AddTag("XS", "i", read_pair.reads.
@@ -288,6 +299,9 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       writer.SaveAlignment(bam_alignment);
     }
   } else {
+    if (align_debug) {
+      PrintMessageDieOnError("[SamFileWriter.cpp]: Done writing single end alignment", DEBUG);
+    }
     writer.SaveAlignment(bam_alignment);
   }
 }

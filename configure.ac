@@ -27,7 +27,6 @@ AC_PROG_INSTALL
 PKG_CHECK_MODULES([GSL],[gsl])
 
 
-PKG_CHECK_MODULES([FFTW], [fftw3])
 AX_PTHREAD([],[
    AC_MSG_ERROR([Pthread support is required for LobSTR])
 ])

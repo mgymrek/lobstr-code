@@ -31,9 +31,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(CommonTest);
 
-void CommonTest::setUp() {
-  InitializeRepeatTables();
-}
+void CommonTest::setUp() {}
 
 void CommonTest::tearDown() {}
 
@@ -45,89 +43,6 @@ void CommonTest::test_TrimRead() {
   TrimRead(input_nucs, input_quals, &trimmed_nucs, &trimmed_quals, QUAL_CUTOFF);
   CPPUNIT_ASSERT_MESSAGE("wrong trimmed nucs", trimmed_nucs == "ACAGTCGATCGTAGCTAGCGCTAGCTACTAGCATCGATCGATCGATCGTACGT");
   CPPUNIT_ASSERT_MESSAGE("wrong trimmed quals", trimmed_quals == "eeeeeeeeeeeeeffffffffffffffffffffffffffffffffffffffff");
-}
-
-void CommonTest::test_getMSSeq() {
-  std::string err, second_repseq;
-  // Case 1: simple
-  std::string nucs = "ATATATATATATATATAT";
-  int k = 2;
-  std::string repeat;
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
-  CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AT");
-
-  // Case 2: mismatches
-  nucs = "ATATATATATATGTATATAT";
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
-  CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AT");
-  
-  // Case 3: indels
-  nucs = "ATATATATATTATATATATAT";
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
-  CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AT");
-  
-  // Case 4: both
-  nucs = "CAGCAGCAGCAGCAGGCAGCAGCAT";
-  k = 3;
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
-  CPPUNIT_ASSERT_MESSAGE("wrong motif returned", repeat == "AGC");
-
-  // Case 5: nucs too short
-  nucs = "CCG";
-  k = 6;
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq should have failed", !getMSSeq(nucs, k, &repeat, &second_repseq, &err));
-
-  // Case 6: ambiguity between mono and other repeat type
-  nucs = "TTTTGTTTTGTTTTGTTTTTTTTTTTTTTTTTTTTTTT";
-  k = 5;
-  CPPUNIT_ASSERT_MESSAGE("getMSSeq failed", getMSSeq(nucs, k, &repeat, &second_repseq, &err));
-  CPPUNIT_ASSERT_MESSAGE("wrong primary motif returned", repeat == "AAAAC");
-  CPPUNIT_ASSERT_MESSAGE("wrong secondary motif return", second_repseq == "A");
-}
-
-void CommonTest::test_getMinPermutation() {
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("A") == "A");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("G") == "G");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TACG") == "ACGT");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("TAGTACTAT") == "ACTATTAGT");
-  CPPUNIT_ASSERT_MESSAGE("Wrong minimum permutation", getMinPermutation("CGCTCCC") == "CCCCGCT");
-}
-
-void CommonTest::test_getCanonicalRepeat() {
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AAAAAAA") == "A");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("TTT") == "A");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("ATCGATC") == "ATCATCG");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("TATATA") == "AT");
-  CPPUNIT_ASSERT_MESSAGE("Wrong canonical repeat", getCanonicalRepeat("AGTCAGTC") == "ACTG");
-}
-
-void CommonTest::test_GenerateAllKmers() {
-  std::vector<std::string> kmers;
-  GenerateAllKmers(1, &kmers);
-  CPPUNIT_ASSERT_MESSAGE("Should be 4 homopolymers", kmers.size() == 4);
-  kmers.clear();
-  GenerateAllKmers(2, &kmers);
-  CPPUNIT_ASSERT_MESSAGE("Should be 16 dinucleotides", kmers.size() == 16);
-  kmers.clear();
-  GenerateAllKmers(3, &kmers);
-  CPPUNIT_ASSERT_MESSAGE("Should be 64 dinucleotides", kmers.size() == 64);
-}
-
-void CommonTest::test_IsPerfectRepeat() {
-  // Case 1: perfect repeat
-  std::string nucs = "ATATATATATATATATATATAT";
-  std::string repeat = "AT";
-  CPPUNIT_ASSERT_MESSAGE("Should be perfect repeat", IsPerfectRepeat(nucs, repeat));
-
-  // Case 2: obviously not perfect repeat
-  nucs = "ACGATTGCGCGGCGG";
-  repeat = "AT";
-  CPPUNIT_ASSERT_MESSAGE("Not perfect", !IsPerfectRepeat(nucs, repeat));
-
-  // Case 3: close but not perfect
-  nucs = "ATATATAGATATATA";
-  repeat = "AT";
-  CPPUNIT_ASSERT_MESSAGE("Not perfect", !IsPerfectRepeat(nucs, repeat));
 }
 
 void CommonTest::test_reverseComplement() {

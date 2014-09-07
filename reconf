@@ -34,7 +34,7 @@ To build lobSTR from a git repository, the following programs are needed:
    A C++ compiler
 
 As well as several libraries:
-   Boost, FFTW3, CPPUNIT, BLAS
+   Boost, CPPUNIT, GSL
 
 Please consult the lobSTR website for more information:
    http://melissagymrek.com/lobstr-code/

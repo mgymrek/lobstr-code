@@ -1,69 +1,58 @@
-def usage():
-    print """
-python lobstr_index.py [OPTIONS] --str <str_file> --ref <ref_file> --out_dir <output directory>
-
-OPTIONS:
---str: bed file containing str information
---ref: reference genome in fasta format
---out_dir: path to write results to
--h, --help: print this usage screen
--v: verbose
---extend: the length of flanking region to include on either side of the STR. (default 1000). Note, if you change this paramter, YOU MUST USE THE SAME --extend OPTION WHEN YOU CALL lobSTR
+DESCRIPTION = """
+Create lobSTR index
 
 In $out_dir, creates:
-Creates BWT references for each repeat unit
-Also outputs a file with the sizes of chromosomes and a
-table with all STR repeat units
+A bed file with merged reference regions
+BWT index
+A file with chromosome sizes
+Table mapping reference regions to which STRs they contain
 
-Requires lobSTRIndex to be installed in the $PATH.
+***Requires lobSTRIndex and bedtools to be installed in the $PATH.***
 """
 
+import argparse
 import os
+import pyfasta
+import shutil
+from subprocess import Popen, PIPE, STDOUT
 import sys
-import getopt
-from Bio.Seq import Seq
-from Bio import SeqIO
+import tempfile
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "hv", ["help","str=", "ref=", "out_dir=", "extend="])
-except getopt.GetoptError, err:
-    # print help information and exit:
-    print str(err) # will print something like "option -a not recognized"
-    usage()
-    sys.exit(2)
-args = [item[0] for item in opts]
-
-if (not("--str" in args and "--ref" in args and "--out_dir" in args)):
-    usage()
-    sys.exit(2)
-# initialize variables
-strfile = ""
-reffile = ""
-outdir = ""
-extend = 1000
-pad = 50
-verbose = False
-
-for o,a in opts:
-    if o == "-v": verbose = True
-    if o == "--str": strfile = a
-    if o == "--ref": reffile = a
-    if o == "--out_dir": outdir = a
-    if o == "--extend": extend = int(a)
-    if o == "-h" or o == "--help":
-        usage()
-        sys.exit(0)
+STRREFFILE = None
+REFFASTA = None
+OUTDIR = None
+EXTEND = 1000
+VERBOSE = False
+PAD = 50
+DEBUG = False
 
 ###########################
 # methods
 nucToNumber={"A":0,"C":1,"G":2,"T":3}
-def loadGenome(genomeFile):
-    """ load human genome"""
-    handle = open(genomeFile,"rU")
-    genome = SeqIO.to_dict(SeqIO.parse(handle,"fasta"))
-    return genome
 
-def getCanonicalMS(repseq):   
+def PROGRESS(msg):
+    sys.stderr.write(msg.strip() + "\n")
+
+def RunCommand(cmd):
+    if DEBUG:
+        PROGRESS("CMD: %s"%cmd)
+        return
+    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, \
+                  stderr=STDOUT, close_fds=True)
+    ex = p.wait()
+    if ex != 0:
+        PROGRESS("ERROR: command '%s' failed"%cmd)
+        sys.exit(1)
+
+def GetRepseq(repseq):
+    """ Get canonical STR sequence, considering both strands """
+    repseq_f = getCanonicalMS(repseq)
+    repseq_r = getCanonicalMS(reverseComplement(repseq))
+    repseq = compareString(repseq_f, repseq_r)
+    return repseq
+
+def getCanonicalMS(repseq):
+    """ Get canonical STR sequence """
     size = len(repseq)
     canonical = repseq
     for i in range(size):
@@ -76,6 +65,7 @@ def getCanonicalMS(repseq):
     return canonical
 
 def compareString(seq1,seq2):
+    """ Compare two strings alphabetically """
     size = len(seq1)
     for i in range(size):
         if nucToNumber[seq1[i]] < nucToNumber[seq2[i]]: 
@@ -84,8 +74,8 @@ def compareString(seq1,seq2):
             return seq2
     return seq1
         
-
 def reverseComplement(seq):
+    """ Get the reverse complement of a nucleotide string """
     newseq = ""
     size = len(seq)
     for i in range(len(seq)):
@@ -96,118 +86,94 @@ def reverseComplement(seq):
         if char == "T": newseq += "A"
     return newseq
 
+def WriteChromSizes(genome, outfile):
+    f = open(outfile, "w")
+    for chrom in genome.keys():
+        f.write("\t".join(map(str,[chrom, len(genome[chrom])]))+"\n")
+    f.close()
+
 def PadFlank(seq, n):
     return "N"*n+seq+"N"*n
 
-def processTRF(strfile, outdir, genome):
-    repToFile = {} # map repseq -> file
-    sevenmerdict = {}
-    g = open(outdir+"/lobSTR_strdict.txt","w")
-    # write chrom sizes to strdict
-    for chrom in genome:
-        print chrom, str(len(genome[chrom]))
-        g.write("\t".join(["REF",chrom, str(len(genome[chrom]))])+"\n")
+def GenerateMergedReferenceBed(str_ref_file, annotated_ref):
+    """ Generated merged reference region """
+    # Get temp file names
+    tmpdir = tempfile.mkdtemp()
+    sorted_ref_withflank = os.path.join(tmpdir, "lobSTR_ref_plusflank_sorted.bed")
+    merged_ref = os.path.join(tmpdir, "lobSTR_ref_merged.bed")
+    # Generate reference file
+    cmd_sort = """cat %s | awk '{print $1 "\\t" $2-1000 "\\t" $3+1000 "\\t" $0}' | cut -f 4 --complement | \
+awk '($2>0)' | cut -f 1-5,17 | sortBed -i stdin > %s """%(str_ref_file, sorted_ref_withflank)
+    RunCommand(cmd_sort)
+    cmd_merge = """mergeBed -i %s > %s"""%(sorted_ref_withflank, merged_ref)
+    RunCommand(cmd_merge)
+    cmd_annot = """intersectBed -a %s -b %s -wa -wb | awk '{print $1 "\\t" $2 "\\t" $3 "\\t" $7"_"$8"_"$9";"}' | \
+bedtools groupby -g 1,2,3 -c 4 -o concat > %s"""%(merged_ref, sorted_ref_withflank, annotated_ref)
+    RunCommand(cmd_annot)
+    # Clean up
+    shutil.rmtree(tmpdir)
 
-    f = open(strfile, "r")
-    allfasta = open(outdir+"/lobSTR_ref.fa", "w")
-    line = f.readline()
-    ident = 0
-    while line !="":
-        items = line.strip().split("\t")
-        chrom, start, end, copynum, repseq = items[0], int(items[1]), int(items[2]), items[4], items[14]
-        try:
-            name = items[15]
-            if len(name) > 15: name = name[0:15] # truncate if too long
-        except: name="."
-        # extract flanking regions
-        if "$" not in chrom:
-            try:
-                leftFlank = str(genome[chrom][max(start-extend,0):end].seq).upper()
-                rightFlank = str(genome[chrom][start:min(end+extend,len(genome[chrom]))].seq).upper()
-                strregion = str(genome[chrom][max(start-extend,0):min(end+extend,len(genome[chrom]))].seq).upper()
-                repseq = getCanonicalMS(repseq)
-                revrepseq = getCanonicalMS(reverseComplement(repseq))
-                repseq = compareString(repseq, revrepseq)
-            except:
-                repseq = ""
-        
-        if len(repseq) <= 6 and len(repseq) >= 1 and (start-extend) > 0 and "$" not in chrom and len(strregion) > 0:
-            # write fasta entries
-            lident = ">"+"$".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
-            rident = ">"+"$".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
-            strident = ">"+"$".join(map(str,[ident,chrom,start-extend,end+extend,repseq,copynum,name]))
-            try:
-                repToFile[repseq].write(rident+"\n")
-                repToFile[repseq].write(PadFlank(rightFlank,pad)+"\n")
-                repToFile[repseq].write(lident+"\n")
-                repToFile[repseq].write(PadFlank(leftFlank,pad)+"\n")
-            except:
-                repToFile[repseq] = open(outdir+"/lobSTR_%s.fa"%repseq,"w")
-                repToFile[repseq].write(rident+"\n")
-                repToFile[repseq].write(PadFlank(rightFlank,pad)+"\n")
-                repToFile[repseq].write(lident+"\n")
-                repToFile[repseq].write(PadFlank(leftFlank,pad)+"\n")
-                # write ms dict entry
-                g.write(repseq + "\n")
-            # write whole region to master fasta reference
-            allfasta.write(strident+"\n")
-            allfasta.write(strregion+"\n")
-            ident = ident + 1
-        elif len(repseq) == 7 and "$" not in chrom:
-             # write fasta entries
-            lident = ">"+"$".join(map(str,[ident,"L",chrom,start-extend,end,repseq, copynum, name]))
-            rident = ">"+"$".join(map(str,[ident,"R",chrom,start,end+extend,repseq, copynum, name]))
-            if repseq not in sevenmerdict.keys():
-                sevenmerdict[repseq] =(rident+"\n")
-                sevenmerdict[repseq]+=(rightFlank+"\n")
-                sevenmerdict[repseq]+=(lident+"\n")
-                sevenmerdict[repseq]+=(leftFlank+"\n")
-                # write ms dict entry
-                g.write(repseq + "\n")
-            else:
-                sevenmerdict[repseq]+=(rident+"\n")
-                sevenmerdict[repseq]+=(rightFlank+"\n")
-                sevenmerdict[repseq]+=(lident+"\n")
-                sevenmerdict[repseq]+=(leftFlank+"\n")
-            ident = ident + 1
-        line = f.readline()
-    # close all the files
-    f.close()
-    g.close()
-    for item in repToFile: repToFile[item].close()
-    for item in sevenmerdict:
-        f = open(outdir+"/lobSTR_%s.fa"%item,"w")
-        f.write(sevenmerdict[item])
-        f.close()
-    allfasta.close()
-    print "Processed %s records"%ident
-    return repToFile, sevenmerdict
+def GetRefFasta(merged_str_file, str_ref_fasta, str_map_file):
+    """ Get reference fasta and map file from the bed file """
+    f_merged = open(merged_str_file, "r")
+    f_fa = open(str_ref_fasta, "w")
+    f_map = open(str_map_file, "w")
+    # Write fasta and map entry for each reference chunk
+    line = f_merged.readline()
+    refnum = 0
+    while line != "":
+        chrom, start, end, annot = line.strip().split("\t")
+        start = int(start)
+        end = int(end)
+        if end >= len(genome[chrom]): end = len(genome[chrom])-1
+        refseq = PadFlank(genome[chrom][start:end], PAD).upper()
+        annotations = annot.split(";")[:-1]
+        motifs = [GetRepseq(item.split("_")[2]) for item in annotations]
+        annotations = [annotations[i] + "_" + motifs[i] for i in range(len(annotations))]
+        # Write to fasta file
+        f_fa.write(">%s$%s$%s$%s\n"%(refnum, chrom, start, end))
+        f_fa.write("%s\n"%refseq)
+        # Write to map file
+        f_map.write("\t".join(map(str,[refnum, ";".join(set(motifs)), ";".join(annotations)]))+"\n")
+        # Get next record
+        line = f_merged.readline()
+        refnum += 1
+    f_merged.close()
+    f_fa.close()
+    f_map.close()
 
-def bwaIndex(repToFile, sevenmerdict):
-    for rep in repToFile:
-        filename = repToFile[rep].name
-        cmd = "lobSTRIndex index -a is %s"%filename
-        os.system(cmd)
-    for rep in sevenmerdict:
-        filename = outdir+"/lobSTR_%s.fa"%rep
-        cmd = "lobSTRIndex index -a is %s"%filename
-        os.system(cmd)
+def bwaIndex(str_ref_fasta):
+    cmd = "lobSTRIndex index -a is %s"%str_ref_fasta
+    RunCommand(cmd)
 
-###########################
-def main():
-    # load genome
-    if (verbose): print "Loading genome..."
-    genome = loadGenome(reffile)
+##########################
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument("--str", help="Bed file containing STR information.", required=True, type=str)
+    parser.add_argument("--ref", help="Reference genome in fasta format", required=True, type=str)
+    parser.add_argument("--out_dir", help="Path to write results to", required=True, type=str)
+    parser.add_argument("--extend", help="Length of flanking region to include on either side of the STR. (default 1000)", required=False, type=int)
+    parser.add_argument("--verbose", help="Print out useful messages", required=False, action="store_true")
+    parser.add_argument("--debug", help="Don't run commands, just pring them", required=False, action="store_true")
 
-    # make individual fasta files for each repeat unit
-    # and write ms info to a file
-    if (verbose): print "Processing STR table..."
-    repToFile, sevenmerdict = processTRF(strfile, outdir, genome)
-    
-    # call bwa index on each of them
-    if (verbose): print "Building bwa index..."
-    bwaIndex(repToFile, sevenmerdict)
+    args = parser.parse_args()
+    STRREFFILE = args.str
+    REFFILE = args.ref
+    OUTDIR = args.out_dir
+    if not os.path.exists(OUTDIR): os.mkdir(OUTDIR)
+    if args.verbose: VERBOSE = True
+    if args.debug: DEBUG = True
 
-main()
+    if VERBOSE: PROGRESS("Loading genome...")
+    genome = pyfasta.Fasta(REFFILE)
+    if not DEBUG: WriteChromSizes(genome, os.path.join(OUTDIR, "lobSTR_chromsizes.tab"))
 
+    if VERBOSE: PROGRESS("Processing STR table...")
+    merged_str_file = os.path.join(OUTDIR, "lobSTR_mergedref.bed")
+    str_ref_fasta = os.path.join(OUTDIR, "lobSTR_ref.fasta")
+    str_map_file = os.path.join(OUTDIR, "lobSTR_ref_map.tab")
+    GenerateMergedReferenceBed(STRREFFILE, merged_str_file)
+    if not DEBUG: GetRefFasta(merged_str_file, str_ref_fasta, str_map_file)
 
+    if VERBOSE: PROGRESS("Building BWA index...")
+    bwaIndex(str_ref_fasta)

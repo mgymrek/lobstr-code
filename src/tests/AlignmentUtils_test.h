@@ -18,29 +18,28 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef SRC_TESTS_COMMON_TEST_H__
-#define SRC_TESTS_COMMON_TEST_H__
+#ifndef SRC_TESTS_ALIGNMENTUTILS_H__
+#define SRC_TESTS_ALIGNMENTUTILS_H__
 
 #include <cppunit/extensions/HelperMacros.h>
 
-#include "src/common.h"
+#include "src/AlignmentUtils.h"
 
-class CommonTest :
+class AlignmentUtilsTest :
 public CppUnit::TestFixture {
-  CPPUNIT_TEST_SUITE(CommonTest);
-  CPPUNIT_TEST(test_TrimRead);
-  CPPUNIT_TEST(test_reverseComplement);
-  CPPUNIT_TEST(test_reverse);
+  CPPUNIT_TEST_SUITE(AlignmentUtilsTest);
+  CPPUNIT_TEST(test_StitchReads);
+  CPPUNIT_TEST(test_GetMapq);
+  CPPUNIT_TEST(test_GetSTRAllele);
   CPPUNIT_TEST_SUITE_END();
 
  public:
   void setUp();
   void tearDown();
- private:
-  void test_TrimRead();
-  void test_getMSSeq();
-  void test_reverseComplement();
-  void test_reverse();
+
+  void test_StitchReads();
+  void test_GetMapq();
+  void test_GetSTRAllele();
 };
 
-#endif //  SRC_TESTS_COMMON_TEST_H__
+#endif //  SRC_TESTS_ALIGNMENTUTILS_H__

@@ -42,16 +42,12 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/common.h"
 #include "src/FastaFileReader.h"
 #include "src/FastqFileReader.h"
-#include "src/FFT_four_nuc_vectors.h"
-#include "src/FFT_nuc_vectors.h"
-#include "src/HammingWindowGenerator.h"
 #include "src/IFileReader.h"
 #include "src/MSReadRecord.h"
 #include "src/MultithreadData.h"
 #include "src/SamFileWriter.h"
 #include "src/STRDetector.h"
 #include "src/runtime_parameters.h"
-#include "src/TukeyWindowGenerator.h"
 
 using namespace std;
 const int READPROGRESS = 10000;
@@ -73,10 +69,10 @@ map<int, REFSEQ> ref_sequences;
 std::string unit_name;
 
 // alignment references, keep global
-void LoadReference(const std::string& repseq);
-void DestroyReferences();
-map<std::string, BWT> bwt_references;
-map<std::string, BNT> bnt_annotations;
+BNT bnt_annotation;
+BWT bwt_reference;
+void LoadReference();
+void DestroyReference();
 gap_opt_t *opts;
 
 void show_help() {
@@ -142,10 +138,6 @@ void show_help() {
     "                           (default: 12)\n" \
     "--entropy-threshold <FLOAT> threshold score to call a window periodic\n"\
     "                            (defualt: 0.45)\n" \
-    "--minperiod <INT>          minimum period to attempt to detect\n"\
-    "                           must be >= 2 (default: 2)\n" \
-    "--maxperiod <INT>          maximum period to attempt to detect\n"\
-    "                           must be <= 6 (default: 6)\n" \
     "--minflank <INT>           minimum length of flanking region to\n" \
     "                           try to align (default: 10)\n" \
     "--maxflank <INT>           length to trim the ends of flanking\n" \
@@ -201,7 +193,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_PAIR1,
     OPT_PAIR2,
     OPT_GZIP,
-    OPT_TABLE,
     OPT_GENOME,
     OPT_OUTPUT,
     OPT_HELP,
@@ -220,35 +211,24 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_FFT_WINDOW_STEP,
     OPT_LOBE_THRESHOLD,
     OPT_EXTEND,
-    OPT_MAX_PERIOD,
-    OPT_MIN_PERIOD,
     OPT_MIN_FLANK_ALLOW_MISMATCH,
     OPT_MAX_HITS_QUIT_ALN,
     OPT_MIN_FLANK_LEN,
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
     OPT_MULTI,
-    OPT_FFTW_DEBUG,
-    OPT_LOBE_DEBUG,
     OPT_MIN_READ_LENGTH,
     OPT_MAX_READ_LENGTH,
     OPT_ERROR_RATE,
-    OPT_WHY_NOT,
     OPT_ENTROPY_THRESHOLD,
-    OPT_DEBUG_ENTROPY,
-    OPT_PROFILE,
     OPT_INDEX,
     OPT_GAP_OPEN,
     OPT_GAP_EXTEND,
     OPT_FPR,
-    OPT_EXTEND_FLANK,
     OPT_SW,
-    OPT_DEBUGADJUST,
-    OPT_ORIG_READ,
     OPT_MAPQ,
     OPT_BWAQ,
     OPT_OLDILLUMINA,
-    OPT_CHECKNEXTBEST,
     OPT_USES3,
     OPT_S3CONFIG,
     OPT_S3DEBUG,
@@ -265,7 +245,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"p1", 1, 0, OPT_PAIR1},
     {"p2", 1, 0, OPT_PAIR2},
     {"gzip", 0, 0, OPT_GZIP},
-    {"table", 1, 0, OPT_TABLE},
     {"genome", 1, 0, OPT_GENOME},
     {"out", 1, 0, OPT_OUTPUT},
     {"threads", 1, 0, OPT_THREADS},
@@ -275,8 +254,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"fft-window-step", 1, 0, OPT_FFT_WINDOW_STEP},
     {"lobe-threshold", 1, 0, OPT_LOBE_THRESHOLD},
     {"extend", 1, 0, OPT_EXTEND},
-    {"maxperiod", 1, 0, OPT_MAX_PERIOD},
-    {"minperiod", 1, 0, OPT_MIN_PERIOD},
     {"minflank", 1, 0, OPT_MIN_FLANK_LEN},
     {"maxflank", 1, 0, OPT_MAX_FLANK_LEN},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
@@ -288,26 +265,17 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"fastq", 0, 0, OPT_FASTQ},
     {"bam", 0, 0, OPT_BAM},
     {"bampair", 0, 0, OPT_BAMPAIR},
-    {"fftw-debug", 0, 0, OPT_FFTW_DEBUG},
-    {"lobe-debug", 0, 0, OPT_LOBE_DEBUG},
     {"align-debug", 0, 0, OPT_ALIGN_DEBUG},
     {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
     {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
     {"max-hits-quit-aln", 1, 0, OPT_MAX_HITS_QUIT_ALN},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
-    {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
-    {"profile", 0, 0, OPT_PROFILE},
     {"index-prefix", 1, 0, OPT_INDEX},
-    {"extend-flank", 1, 0, OPT_EXTEND_FLANK},
     {"nw-score", 1, 0, OPT_SW},
     {"mapq", 1, 0, OPT_MAPQ},
     {"bwaq", 1, 0, OPT_BWAQ},
     {"oldillumina", 0, 0, OPT_OLDILLUMINA},
-    {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
-    {"why-not", 0, 0, OPT_WHY_NOT},
-    {"orig", 0, 0, OPT_ORIG_READ},
-    {"nextbest", 0, 0, OPT_CHECKNEXTBEST},
     {"use-s3", 1, 0, OPT_USES3},
     {"s3config", 1, 0, OPT_S3CONFIG},
     {"s3debug", 0, 0, OPT_S3DEBUG},
@@ -325,20 +293,11 @@ void parse_commandline_options(int argc, char* argv[]) {
       unit++;
       AddOption("unit", "", false, &user_defined_arguments);
       break;
-    case OPT_PROFILE:
-      profile++;
-      break;
-    case OPT_WHY_NOT:
-      why_not_debug++;
-      break;
     case OPT_ALIGN_DEBUG:
       align_debug++;
       break;
     case OPT_DEBUG:
       debug++;
-      break;
-    case OPT_DEBUGADJUST:
-      debug_adjust++;
       break;
     case 'v':
     case OPT_VERBOSE:
@@ -429,20 +388,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       }
       AddOption("extend", string(optarg), true, &user_defined_arguments);
       break;
-    case OPT_MIN_PERIOD:
-      min_period = atoi(optarg);
-      if (min_period <= 0) {
-        PrintMessageDieOnError("Invalid min period", ERROR);
-      }
-      AddOption("minperiod", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_MAX_PERIOD:
-      max_period = atoi(optarg);
-      if (max_period <= 0) {
-        PrintMessageDieOnError("Invalid max period", ERROR);
-      }
-      AddOption("maxperiod", string(optarg), true, &user_defined_arguments);
-      break;
     case OPT_MAX_FLANK_LEN:
       max_flank_len = atoi(optarg);
       if (max_flank_len <= 0) {
@@ -472,12 +417,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       allow_multi_mappers++;
       AddOption("multi", "", false, &user_defined_arguments);
       break;
-    case OPT_FFTW_DEBUG:
-      fftw_debug = true;
-      break;
-    case OPT_LOBE_DEBUG:
-      lobe_debug = true;
-      break;
     case OPT_MIN_READ_LENGTH:
       min_read_length = atoi(optarg);
       AddOption("min-read-length", string(optarg), true, &user_defined_arguments);
@@ -489,9 +428,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_ENTROPY_THRESHOLD:
       entropy_threshold = atof(optarg);
       AddOption("entropy-threshold", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_DEBUG_ENTROPY:
-      entropy_debug++;
       break;
     case OPT_INDEX:
       index_prefix = string(optarg);
@@ -512,10 +448,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       fpr = atof(optarg);
       AddOption("fpr", string(optarg), true, &user_defined_arguments);
       break;
-    case OPT_EXTEND_FLANK:
-      extend_flank = atoi(optarg);
-      AddOption("extend-flank", string(optarg), true, &user_defined_arguments);
-      break;
     case OPT_SW:
       min_sw_score = atoi(optarg);
       AddOption("min-sw-score", string(optarg), true, &user_defined_arguments);
@@ -531,14 +463,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_OLDILLUMINA:
       QUALITY_CONSTANT = 64;
       AddOption("oldillumina", "", false, &user_defined_arguments);
-      break;
-    case OPT_ORIG_READ:
-      include_orig_read_start++;
-      user_defined_arguments += "orig-read-start=True;";
-      break;
-    case OPT_CHECKNEXTBEST:
-      check_next_best++;
-      AddOption("check-next-best", "", false, &user_defined_arguments);
       break;
     case OPT_USES3:
       using_s3++;
@@ -584,14 +508,8 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (fft_window_step > fft_window_size) {
     PrintMessageDieOnError("fft_window_step must be <=fft_window_size", ERROR);
   }
-  if (min_period > max_period) {
-    PrintMessageDieOnError("min_period must be <=max_period", ERROR);
-  }
   if (min_flank_len > max_flank_len) {
     PrintMessageDieOnError("min_flank_len must be <= max_flank_len", ERROR);
-  }
-  if (min_period < 1 || max_period > 6) {
-    PrintMessageDieOnError("lobSTR can currently only profile STRs for periods 1 thorugh 6", ERROR);
   }
   // check that we have the mandatory parameters
   if ((((!paired || bam) && input_files_string.empty()) ||
@@ -611,11 +529,22 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
 }
 
-void LoadReference(const std::string& repseq) {
+void LoadChromSizes() {
+  TextFileReader tReader(index_prefix+"chromsizes.tab");
+  string line;
+  while (tReader.GetNextLine(&line)) {
+    vector<string> items(0);
+    split(line, '\t', items);
+    if (items.size() != 2) {
+      PrintMessageDieOnError("Chromosome sizes file malformed", ERROR);
+    }
+    chrom_sizes[items[0]] = atoi(items[1].c_str());
+  }
+}
+
+void LoadReference() {
   // Load BWT index
-  string prefix = index_prefix;
-  prefix += repseq;
-  prefix += ".fa";
+  string prefix = index_prefix + "ref.fasta";
 
   string bwt_str = prefix+".bwt";
   bwt_t *bwt_forward, *bwt_reverse;
@@ -630,32 +559,77 @@ void LoadReference(const std::string& repseq) {
   string rsa_str = prefix+".rsa";
   bwt_restore_sa(rsa_str.c_str(), bwt_reverse);
 
-  BWT bwt_ref;
-  bwt_ref.bwt[0] = bwt_forward;
-  bwt_ref.bwt[1] = bwt_reverse;
-  bwt_references.insert(pair<string, BWT>(repseq, bwt_ref));
+  bwt_reference.bwt[0] = bwt_forward;
+  bwt_reference.bwt[1] = bwt_reverse;
 
   // Load BNT annotations
-  BNT bnt;
   bntseq_t *bns;
   bns = bns_restore(prefix.c_str());
-  bnt.bns = bns;
-  bnt_annotations.insert(pair<string, BNT>(repseq, bnt));
+  bnt_annotation.bns = bns;
+
+  // Load fasta reference with all STR sequences
+  FastaFileReader faReader(index_prefix+"ref.fasta");
+  MSReadRecord ref_record;
+  while (faReader.GetNextRead(&ref_record)) {
+    REFSEQ refseq;
+    vector<string> items;
+    string refstring = ref_record.ID;
+    split(refstring, '$', items);
+    if (items.size() == 4) {
+      refseq.sequence = ref_record.orig_nucleotides;
+      refseq.start = atoi(items.at(2).c_str());
+      refseq.chrom = items.at(1);
+      int refid = atoi(items.at(0).c_str());
+      ref_sequences.insert(pair<int, REFSEQ>(refid, refseq));
+    } else {
+      PrintMessageDieOnError("Malformed reference fasta", ERROR);
+    }
+  }
+
+  // Load map
+  TextFileReader tReader(index_prefix+"ref_map.tab");
+  string line;
+  while (tReader.GetNextLine(&line)) {
+    vector<string>items(0);
+    split(line, '\t', items);
+    if (items.size() != 3) {
+      PrintMessageDieOnError("Malformed map file", ERROR);
+    }
+    // Get refid
+    int refid = atoi(items.at(0).c_str());
+    // Get motifs
+    string motif_string = items.at(1);
+    vector<string>motifs(0);
+    split(motif_string, ';', motifs);
+    ref_sequences[refid].motifs = motifs;
+    for (size_t i = 0; i < motifs.size(); i++) {
+      vector<ReferenceSTR> vec;
+      ref_sequences[refid].ref_strs.insert(pair<string, vector<ReferenceSTR> >(motifs.at(i), vec));
+    }
+    // Get reference STRs
+    string regions_string = items.at(2);
+    vector<string>regions(0);
+    split(regions_string, ';', regions);
+    for (size_t i = 0; i < regions.size(); i++) {
+      vector<string>region_items(0);
+      split(regions.at(i), '_', region_items);
+      string motif = region_items.at(3);
+      int start = atoi(region_items.at(0).c_str());
+      int stop = atoi(region_items.at(1).c_str());
+      ReferenceSTR ref_str;
+      ref_str.chrom = ref_sequences[refid].chrom;
+      ref_str.start = start;
+      ref_str.stop = stop;
+      ref_sequences[refid].ref_strs[motif].push_back(ref_str);
+    }
+  }
 }
 
-void DestroyReferences() {
-  for (map<string, BWT>::iterator it = bwt_references.begin();
-       it != bwt_references.end(); ++it) {
-    bwt_destroy(it->second.bwt[0]);
-    bwt_destroy(it->second.bwt[1]);
-  }
-  for (map<string, BNT>::iterator it = bnt_annotations.begin();
-       it != bnt_annotations.end(); ++it) {
-    bns_destroy(it->second.bns);
-  }
+void DestroyReference() {
+  bwt_destroy(bwt_reference.bwt[0]);
+  bwt_destroy(bwt_reference.bwt[1]);
+  bns_destroy(bnt_annotation.bns);
 }
-
-
 
 /*
  * process read in single thread
@@ -665,8 +639,8 @@ void single_thread_process_loop(const vector<string>& files1,
   ReadPair read_pair;
   SamFileWriter samWriter(output_prefix + ".aligned.bam", chrom_sizes);
   STRDetector *pDetector = new STRDetector();
-  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references,
-                                                &bnt_annotations,
+  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_reference,
+                                                &bnt_annotation,
                                                 &ref_sequences, opts);
   std::string file1;
   std::string file2;
@@ -733,16 +707,6 @@ void single_thread_process_loop(const vector<string>& files1,
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       read_pair.read_count = num_reads_processed;
-      // reset fields
-      read_pair.reads.at(0).repseq = "";
-      read_pair.reads.at(0).ms_repeat_best_period = 0;
-      read_pair.reads.at(0).ms_repeat_next_best_period = 0;
-      if (read_pair.reads.at(0).paired) {
-        read_pair.reads.at(1).repseq = "";
-        read_pair.reads.at(1).ms_repeat_best_period = 0;
-        read_pair.reads.at(1).ms_repeat_next_best_period = 0;
-      }
-
       // Check read length
       if (!(read_pair.reads.at(0).nucleotides.length() >= min_read_length) &&
           (read_pair.reads.at(0).nucleotides.length() <= max_read_length)) {
@@ -771,42 +735,6 @@ void single_thread_process_loop(const vector<string>& files1,
         aligned = true;
         if (debug) { // if aligned, what was the repseq we aligned to
           PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-1)", DEBUG);
-        }
-      } else {
-        read_pair.read1_passed_detection = false;
-        read_pair.read2_passed_detection = false;
-        // Try second best period for each read
-        if (read_pair.reads.at(0).ms_repeat_next_best_period != 0) {
-          read_pair.reads.at(0).ms_repeat_best_period =
-            read_pair.reads.at(0).ms_repeat_next_best_period;
-          string err, second_best_repseq;
-          if (getMSSeq(read_pair.reads.at(0).detected_ms_region_nuc,
-                       read_pair.reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
-            read_pair.reads.at(0).repseq = repseq;
-            read_pair.read1_passed_detection = true;
-          }
-        }
-        if (read_pair.reads.at(0).paired) {
-          if (read_pair.reads.at(1).ms_repeat_next_best_period != 0) {
-            read_pair.reads.at(1).ms_repeat_best_period =
-              read_pair.reads.at(1).ms_repeat_next_best_period;
-            string err, second_best_repseq;
-            if (getMSSeq(read_pair.reads.at(1).detected_ms_region_nuc,
-                         read_pair.reads.at(1).ms_repeat_best_period,
-                         &repseq, &second_best_repseq, &err)) {
-              read_pair.reads.at(1).repseq = repseq;
-              read_pair.read2_passed_detection = true;
-            }
-          }
-        }
-        if (read_pair.read1_passed_detection ||
-            read_pair.read2_passed_detection) {
-          if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {
-            aligned = true;
-            if (debug) { // if aligned, what was the repseq we aligned to
-              PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (aligned-round-2)", DEBUG);
-            }
-          }
         }
       }
       if (aligned) {
@@ -845,8 +773,8 @@ void single_thread_process_loop(const vector<string>& files1,
 void* satellite_process_consumer_thread(void *arg) {
   MultithreadData *pMT_DATA = reinterpret_cast<MultithreadData*>(arg);
   STRDetector *pDetector = new STRDetector();
-  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_references,
-                                                &bnt_annotations,
+  BWAReadAligner *pAligner = new BWAReadAligner(&bwt_reference,
+                                                &bnt_annotation,
                                                 &ref_sequences, opts);
   int aligned = false;
 #ifdef DEBUG_THREADS
@@ -883,16 +811,6 @@ void* satellite_process_consumer_thread(void *arg) {
     bases += pReadRecord->reads.at(0).nucleotides.length();
     if (pReadRecord->reads.at(0).paired) bases += pReadRecord->reads.at(1).nucleotides.length();
 
-    // Reset fields
-    pReadRecord->reads.at(0).repseq = "";
-    pReadRecord->reads.at(0).ms_repeat_best_period = 0;
-    pReadRecord->reads.at(0).ms_repeat_next_best_period = 0;
-    if (pReadRecord->reads.at(0).paired) {
-      pReadRecord->reads.at(1).repseq = "";
-      pReadRecord->reads.at(1).ms_repeat_best_period = 0;
-      pReadRecord->reads.at(1).ms_repeat_next_best_period = 0;
-    }
-
     // STEP 1: Sensing
     string err, messages;
     if (!pDetector->ProcessReadPair(pReadRecord, &err, &messages)) {
@@ -904,39 +822,6 @@ void* satellite_process_consumer_thread(void *arg) {
     // STEP 2: Alignment
     if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
       aligned = true;
-    } else {
-      pReadRecord->read1_passed_detection = false;
-      pReadRecord->read2_passed_detection = false;
-      // Try second best period for each read
-      if (pReadRecord->reads.at(0).ms_repeat_next_best_period != 0) {
-        pReadRecord->reads.at(0).ms_repeat_best_period =
-          pReadRecord->reads.at(0).ms_repeat_next_best_period;
-        string err, second_best_repseq;
-        if (getMSSeq(pReadRecord->reads.at(0).detected_ms_region_nuc,
-                     pReadRecord->reads.at(0).ms_repeat_best_period, &repseq, &second_best_repseq, &err)) {
-          pReadRecord->reads.at(0).repseq = repseq;
-          pReadRecord->read1_passed_detection = true;
-        }
-      }
-      if (pReadRecord->reads.at(0).paired) {
-        if (pReadRecord->reads.at(1).ms_repeat_next_best_period != 0) {
-          pReadRecord->reads.at(1).ms_repeat_best_period =
-            pReadRecord->reads.at(1).ms_repeat_next_best_period;
-          string err, second_best_repseq;
-          if (getMSSeq(pReadRecord->reads.at(1).detected_ms_region_nuc,
-                       pReadRecord->reads.at(1).ms_repeat_best_period,
-                       &repseq, &second_best_repseq, &err)) {
-            pReadRecord->reads.at(1).repseq = repseq;
-            pReadRecord->read2_passed_detection = true;
-          }
-        }
-      }
-      if (pReadRecord->read1_passed_detection ||
-          pReadRecord->read2_passed_detection) {
-        if (pAligner->ProcessReadPair(pReadRecord, &err, &messages)) {
-          aligned = true;
-        }
-      }
     }
     if (aligned) {
       pMT_DATA->post_new_output_read(pReadRecord);
@@ -1137,38 +1022,12 @@ int main(int argc, char* argv[]) {
   run_info.params = user_defined_arguments;
 
   PrintMessageDieOnError("Initializing...", PROGRESS);
-  // open file with all names
-  TextFileReader tReader(index_prefix+"strdict.txt");
-  string line = "";
-  while (tReader.GetNextLine(&line)) {
-    // set chrom sizes
-    if (line.substr(0, 3) == "REF") {
-      vector<string> items(0);
-      split(line, '\t', items);
-      chrom_sizes[items[1]] = atoi(items[2].c_str());
-    } else {
-      // make sure repeat is valid
-      if (count(line, line.at(0)) != line.length() || line.length() == 1) {
-        LoadReference(line);
-      }
-    }
-  }
-
-  // Load fasta reference with all STR sequences
-  FastaFileReader faReader(index_prefix+"ref.fa");
-  MSReadRecord ref_record;
-  while (faReader.GetNextRead(&ref_record)) {
-    REFSEQ refseq;
-    vector<string> items;
-    string refstring = ref_record.ID;
-    split(refstring, '$', items);
-    if (items.size() >= 6) { // should be 6 or 7, depending if name column is present
-      refseq.sequence = ref_record.orig_nucleotides;
-      refseq.start = atoi(items.at(2).c_str());
-      int refid = atoi(items.at(0).c_str());
-      ref_sequences.insert(pair<int, REFSEQ>(refid, refseq));
-    }
-  }
+  // Check that we are using the correct index version
+  CheckIndexVersion();
+  // Set chrom sizes
+  LoadChromSizes();
+  // Load referencpe
+  LoadReference();
 
   // set up options
   opts = gap_init_opt();
@@ -1196,19 +1055,6 @@ int main(int argc, char* argv[]) {
   } else {
     boost::split(input_files, input_files_string, boost::is_any_of(","));
   }
-  // Initialize fft
-  // Create the singleton HammingWindow (before starting any threads)
-  HammingWindowGenerator* hamgen =
-    HammingWindowGenerator::GetHammingWindowSingleton();
-  TukeyWindowGenerator* tukgen =
-    TukeyWindowGenerator::GetTukeyWindowSingleton();
-
-  // Initialize global FFTW plans
-  FFT_NUC_VECTOR::initialize_fftw_plans();
-
-  // Initialize repeat maps
-  PrintMessageDieOnError("Initializing repeat tables...", PROGRESS);
-  InitializeRepeatTables();
 
   // run detection/alignment
   PrintMessageDieOnError("Running detection/alignment...", PROGRESS);
@@ -1228,8 +1074,7 @@ int main(int argc, char* argv[]) {
   }
   time(&endtime);
   run_info.endtime = GetTime();
-  delete hamgen;
-  delete tukgen;
+  DestroyReference();
   OutputRunStatistics();
   OutputRunningTimeInformation(starttime,processing_starttime,endtime,
 			       threads, run_info.num_processed_units);
