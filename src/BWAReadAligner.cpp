@@ -163,6 +163,7 @@ bool BWAReadAligner::ProcessPairedEndRead(ReadPair* read_pair, string* err, stri
       }
     }
   }
+  if (!read_pair->found_unique_alignment) return false;
 
   /* --- Step 3: Adjust alignment and output --- */
   // try stitching first
@@ -469,7 +470,7 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
       right_refids->push_back(*it);
       if (align_debug) {
 	stringstream msg;
-	msg << "Dummy left_align, chrom:pos " << dummy_lalign.chrom << ":" << dummy_lalign.pos << "-" << dummy_lalign.endpos << " right pos " << it->pos << " left flank len " << left_flank_len << " right flank len " << right_flank_len <<" ms len " << ms_len << " strand " << it->strand;
+	msg << "Dummy left_align, chrom:pos " << dummy_lalign.chrom << ":" << dummy_lalign.pos << "-" << dummy_lalign.endpos << " right pos " << it->pos << " left flank len " << left_flank_len << " right flank len " << right_flank_len <<" ms len " << ms_len << " strand " << it->strand << " id " << dummy_lalign.id;
 	PrintMessageDieOnError(msg.str(), DEBUG);
       }
     }
@@ -496,7 +497,7 @@ bool BWAReadAligner::GetSharedAlns(const vector<ALIGNMENT>& map1,
       right_refids->push_back(dummy_ralign);
       if (align_debug) {
 	stringstream msg;
-	msg << "[GetSharedAln]: Dummy right_align, chrom:pos " << dummy_ralign.chrom << ":" <<dummy_ralign.pos << " left pos " << it->pos << " left flank len " << left_flank_len << " ms len " << ms_len << " left strand " << it->strand;
+	msg << "[GetSharedAln]: Dummy right_align, chrom:pos " << dummy_ralign.chrom << ":" <<dummy_ralign.pos << " left pos " << it->pos << " left flank len " << left_flank_len << " ms len " << ms_len << " left strand " << it->strand << " id " << dummy_ralign.id;
 	PrintMessageDieOnError(msg.str(), DEBUG);
       }
     }
@@ -719,7 +720,7 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
   read_pair->reads.at(aligned_read_num).strid = left_alignment.id;
   if (align_debug) {
     stringstream msg;
-    msg << "Left aln start: " << left_alignment.pos <<" Right aln start: " << right_alignment.pos;
+    msg << "Left aln start: " << left_alignment.pos << " Right aln start: " << right_alignment.pos << " ids " << left_alignment.id << " " << right_alignment.id;
     PrintMessageDieOnError(msg.str(), DEBUG);
   }
   if (left_alignment.left) {
