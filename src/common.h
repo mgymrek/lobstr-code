@@ -76,6 +76,9 @@ void OutputRunStatistics();
 void PrintMessageDieOnError(const std::string& msg,
                             MSGTYPE msgtype);
 
+// Check index version
+void CheckIndexVersion();
+
 // Debug statements
 std::string GetReadDebug(const ReadPair& read_pair,
                          const std::string& detector_err,

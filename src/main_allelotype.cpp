@@ -469,11 +469,12 @@ int main(int argc, char* argv[]) {
   vector<string> haploid_chroms;
   boost::split(haploid_chroms,haploid_chroms_string,boost::is_any_of(","));
 
+  /* Load ref character and ref object for each STR */
+  CheckIndexVersion();
+  LoadReference();
+
   /* initialize noise model */
   NoiseModel nm(strinfofile, haploid_chroms, noise_model);
-
-  /* Load ref character and ref object for each STR */
-  LoadReference();
 
   /* Get list of bam files */
   vector<string>bam_files;
