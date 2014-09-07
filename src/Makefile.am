@@ -159,7 +159,6 @@ libindex_a_SOURCES = \
 	utils.c \
 	utils.h \
 	simple_dp.c \
-	kstring.c kstring.h \
 	bwtsw2_core.c \
 	khash.h kseq.h ksort.h kvec.h \
 	bwtsw2_main.c \
@@ -171,6 +170,7 @@ libindex_a_SOURCES = \
 	bwase.h \
 	bwt_gen.c bwt_gen.h \
 	bwtsw2.h \
+	kstring.h kstring.c \
 	QSufSort.c QSufSort.h \
 	bntseq.c bntseq.h \
 	bwtmisc.c \

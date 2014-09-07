@@ -228,6 +228,9 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
 }
 
 void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) {
+  if (reads_for_training.size() < MIN_READS_FOR_TRAINING) {
+    PrintMessageDieOnError("Too few reads for training", ERROR);
+  }
   // Set up data for logistic regression
   size_t numreads = reads_for_training.size();
   vector<bool> y;
@@ -271,9 +274,6 @@ void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) 
     msg << "Using " << reads_for_training.size() << " reads for training."
          << " (Required: " << MIN_READS_FOR_TRAINING << ")";
     PrintMessageDieOnError(msg.str(), PROGRESS);
-  }
-  if (reads_for_training.size() < MIN_READS_FOR_TRAINING) {
-    PrintMessageDieOnError("Too few reads for training", ERROR);
   }
 }
 

@@ -9,7 +9,17 @@ testcode() {
   if [ $? != "$@" ]; then exit 1; fi;
 }
 
-## Show Environment
+echo "### lobSTR index ###"
+echo "Test lobSTRIndex usage..."
+lobSTRIndex
+testcode 0
+
+echo "Testing building small index..."
+cp ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ref.fasta ${OUTDIR}/
+lobSTRIndex index \
+  -a is \
+  ${OUTDIR}/lobSTR_ref.fasta
+testcode 0 >/dev/null 2>&1
 
 echo "### lobSTR tests ###"
 echo "Testing bam input..."
@@ -144,6 +154,26 @@ allelotype \
   --out ${OUTDIR}/lobtest \
   --verbose \
   --noise_model ${LOBSTR_TEST_DIR=.}/../models/illumina_v2.0.3 >/dev/null 2>&1
+testcode 1
+echo "Testing training... not enough reads"
+allelotype \
+  --command train \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
+  --bam ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
+  --noise_model ${OUTDIR}/lobtest \
+  --haploid chrY \
+  --verbose >/dev/null 2>&1
+testcode 1
+echo "Testing training... enough reads"
+allelotype \
+  --command train \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
+  --bam ${LOBSTR_TEST_DIR=.}/test.chrY.aligned.sorted.bam \
+  --noise_model ${OUTDIR}/lobtest \
+  --haploid chrY \
+  --verbose >/dev/null 2>&1
 testcode 1
 
 exit 0
