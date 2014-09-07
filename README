@@ -1,1 +1,5 @@
 For full documentation, see the lobSTR website: http://lobstr.teamerlich.org/
+
+NOTE: the git repository is currently under construction as we are working on lobSTR v3. This release contains major changes to our STR calling algorithm ans is in *alpha* mode. Use at your own risk. Stable lobSTR releases can be found on the lobSTR website.
+
+lobSTR v3 requires a new index and will not work with previous indices. The new hg19 index can be found here: http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3_hg19_resource_bundle.tar.gz.
