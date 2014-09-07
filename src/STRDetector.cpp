@@ -26,6 +26,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+const int EXTEND_FLANK = 6;
+
 STRDetector::STRDetector() {}
 
 bool STRDetector::ProcessReadPair(ReadPair* read_pair, string* err, string* messages) {
@@ -106,6 +108,18 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
       *err += "failed-second-STR-region-location-sanity-check;";
     }
     return false;
+  }
+
+  // allow more nucleotides in detection step
+  if ((nuc_start-EXTEND_FLANK >= 0) &&
+      (nuc_start-EXTEND_FLANK < read_length) &&
+      (nuc_end + EXTEND_FLANK + 1 < read_length)) {
+    detected_microsatellite_nucleotides =
+      read->nucleotides.substr(nuc_start-EXTEND_FLANK,
+                               nuc_end - nuc_start+1+2*EXTEND_FLANK);
+  } else {
+    detected_microsatellite_nucleotides =
+      read->nucleotides.substr(nuc_start, nuc_end - nuc_start+1);
   }
 
   read->left_flank_nuc = (nuc_start>0) ?
