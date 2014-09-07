@@ -151,8 +151,6 @@ extern int maximal_end_match_window;
 
 // debug
 extern bool profile;
-extern bool fftw_debug;
-extern bool lobe_debug;
 extern bool microsatellite_detection_debug;
 extern bool period_detection_debug;
 extern bool force_noise_y;

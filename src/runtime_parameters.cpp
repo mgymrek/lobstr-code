@@ -126,8 +126,6 @@ int min_read_end_match = 0;
 
 // debugging
 bool profile = false;
-bool fftw_debug = false;
-bool lobe_debug = false;
 bool microsatellite_detection_debug = false;
 bool period_detection_debug = false;
 bool force_noise_y = false;

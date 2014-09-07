@@ -15,7 +15,7 @@ bin_PROGRAMS = lobSTR \
 
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS) $(GSL_LIBS) $(GSLCBLAS_LIBS)
 
-AM_CPPFLAGS = $(FFTW_CFLAGS) $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/ \
+AM_CPPFLAGS = $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/ \
 	$(GSL_FLAGS) $(GSLCBLAS_FLAGS)
 
 noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a libbamtools.a
@@ -122,14 +122,11 @@ liblobstr_a_SOURCES = \
 	FastaPairedFileReader.cpp FastaPairedFileReader.h \
 	FastqFileReader.cpp FastqFileReader.h \
 	FastqPairedFileReader.cpp FastqPairedFileReader.h \
-	FFT_four_nuc_vectors.cpp FFT_four_nuc_vectors.h \
-	FFT_nuc_vectors.cpp FFT_nuc_vectors.h \
 	FilterCounter.cpp FilterCounter.h \
 	gzstream.cpp gzstream.h \
 	STRRecord.h \
 	ReadPair.h \
 	ReadPair.cpp \
-	HammingWindowGenerator.cpp HammingWindowGenerator.h \
 	MultithreadData.cpp MultithreadData.h \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
@@ -141,7 +138,6 @@ liblobstr_a_SOURCES = \
 	STRDetector.cpp STRDetector.h \
 	TextFileReader.cpp TextFileReader.h \
 	TextFileWriter.cpp TextFileWriter.h \
-	TukeyWindowGenerator.cpp TukeyWindowGenerator.h \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
 	ZippedTextFileReader.cpp ZippedTextFileReader.h \
@@ -225,7 +221,7 @@ lobSTRIndex_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(FFTW_LIBS) $(PROTOBUF_LIBS)
+lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(PROTOBUF_LIBS)
 lobSTR_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
@@ -278,11 +274,8 @@ lobSTRTests_SOURCES = \
 	FastaPairedFileReader.cpp \
 	FastqFileReader.cpp \
 	FastqPairedFileReader.cpp \
-	FFT_four_nuc_vectors.cpp \
-	FFT_nuc_vectors.cpp \
 	FilterCounter.h FilterCounter.cpp \
 	gzstream.cpp \
-	HammingWindowGenerator.cpp \
 	logistic_regression.cpp \
 	MultithreadData.cpp \
 	nw.cpp nw.h \
@@ -295,7 +288,6 @@ lobSTRTests_SOURCES = \
 	STRDetector.cpp \
 	TextFileReader.cpp \
 	TextFileWriter.cpp \
-	TukeyWindowGenerator.cpp \
 	ReadContainer.cpp \
 	RemoveDuplicates.cpp \
 	VCFWriter.cpp \
@@ -310,5 +302,5 @@ lobSTRTests_SOURCES = \
 	api/SamReadGroupDictionary.h
 
 lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
-lobSTRTests_LDADD = libbamtools.a libindex.a $(FFTW_LIBS) $(CPPUNIT_LIBS) -ldl
+lobSTRTests_LDADD = libbamtools.a libindex.a $(CPPUNIT_LIBS) -ldl
 lobSTRTests_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)

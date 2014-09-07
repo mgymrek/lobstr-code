@@ -29,7 +29,6 @@ AC_CHECK_LIB([gslcblas],[cblas_dgemm])
 AC_CHECK_LIB([gsl],[gsl_blas_dgemm])
 
 
-PKG_CHECK_MODULES([FFTW], [fftw3])
 AX_PTHREAD([],[
    AC_MSG_ERROR([Pthread support is required for LobSTR])
 ])

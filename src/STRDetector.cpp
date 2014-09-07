@@ -18,24 +18,11 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include <fftw3.h>
-#include <unistd.h>
-
-#include <algorithm>
-#include <cmath>
-#include <cstdlib>
-#include <iterator>
-#include <string>
-#include <vector>
-
 #include "src/common.h"
 #include "src/EntropyDetection.h"
-#include "src/FFT_four_nuc_vectors.h"
-#include "src/HammingWindowGenerator.h"
 #include "src/ISatellite.h"
 #include "src/runtime_parameters.h"
 #include "src/STRDetector.h"
-#include "src/TukeyWindowGenerator.h"
 
 using namespace std;
 
@@ -72,8 +59,6 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
     }
     return false;
   }
-
-  vector<double> window_lobe_detection;
 
   //  Step 1 - sliding window
   size_t nuc_start;

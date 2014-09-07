@@ -42,16 +42,12 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/common.h"
 #include "src/FastaFileReader.h"
 #include "src/FastqFileReader.h"
-#include "src/FFT_four_nuc_vectors.h"
-#include "src/FFT_nuc_vectors.h"
-#include "src/HammingWindowGenerator.h"
 #include "src/IFileReader.h"
 #include "src/MSReadRecord.h"
 #include "src/MultithreadData.h"
 #include "src/SamFileWriter.h"
 #include "src/STRDetector.h"
 #include "src/runtime_parameters.h"
-#include "src/TukeyWindowGenerator.h"
 
 using namespace std;
 const int READPROGRESS = 10000;
@@ -227,8 +223,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAX_FLANK_LEN,
     OPT_MAX_DIFF_REF,
     OPT_MULTI,
-    OPT_FFTW_DEBUG,
-    OPT_LOBE_DEBUG,
     OPT_MIN_READ_LENGTH,
     OPT_MAX_READ_LENGTH,
     OPT_ERROR_RATE,
@@ -285,8 +279,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"fastq", 0, 0, OPT_FASTQ},
     {"bam", 0, 0, OPT_BAM},
     {"bampair", 0, 0, OPT_BAMPAIR},
-    {"fftw-debug", 0, 0, OPT_FFTW_DEBUG},
-    {"lobe-debug", 0, 0, OPT_LOBE_DEBUG},
     {"align-debug", 0, 0, OPT_ALIGN_DEBUG},
     {"min-read-length", 1, 0, OPT_MIN_READ_LENGTH},
     {"max-read-length", 1, 0, OPT_MAX_READ_LENGTH},
@@ -467,12 +459,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_MULTI:
       allow_multi_mappers++;
       AddOption("multi", "", false, &user_defined_arguments);
-      break;
-    case OPT_FFTW_DEBUG:
-      fftw_debug = true;
-      break;
-    case OPT_LOBE_DEBUG:
-      lobe_debug = true;
       break;
     case OPT_MIN_READ_LENGTH:
       min_read_length = atoi(optarg);
@@ -1136,15 +1122,6 @@ int main(int argc, char* argv[]) {
   } else {
     boost::split(input_files, input_files_string, boost::is_any_of(","));
   }
-  // Initialize fft
-  // Create the singleton HammingWindow (before starting any threads)
-  HammingWindowGenerator* hamgen =
-    HammingWindowGenerator::GetHammingWindowSingleton();
-  TukeyWindowGenerator* tukgen =
-    TukeyWindowGenerator::GetTukeyWindowSingleton();
-
-  // Initialize global FFTW plans
-  FFT_NUC_VECTOR::initialize_fftw_plans();
 
   // Initialize repeat maps
   PrintMessageDieOnError("Initializing repeat tables...", PROGRESS);
@@ -1168,8 +1145,6 @@ int main(int argc, char* argv[]) {
   }
   time(&endtime);
   run_info.endtime = GetTime();
-  delete hamgen;
-  delete tukgen;
   DestroyReference();
   OutputRunStatistics();
   OutputRunningTimeInformation(starttime,processing_starttime,endtime,
