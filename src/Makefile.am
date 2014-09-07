@@ -13,10 +13,10 @@ bin_PROGRAMS = lobSTR \
 	lobSTRIndex \
 	allelotype
 
-AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS) $(GSL_LIBS) $(GSLCBLAS_LIBS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(ZLIB_LDFLAGS) $(GSL_LIBS)
 
 AM_CPPFLAGS = $(PROTOBUF_CFLAGS) -I$(top_srcdir)/src/ -I$(top_srcdir)/ \
-	$(GSL_FLAGS) $(GSLCBLAS_FLAGS)
+	$(GSL_CFLAGS)
 
 noinst_LIBRARIES = liblobstr.a libindex.a liballelotype.a libbamtools.a
 
@@ -215,17 +215,17 @@ liballelotype_a_SOURCES = \
 
 lobSTRIndex_SOURCES = main.c main.h
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTRIndex_LDADD = $(AM_LDADD) libindex.a libbamtools.a
+lobSTRIndex_LDADD = $(AM_LDADD) libindex.a libbamtools.a $(GSL_LIBS)
 lobSTRIndex_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
-lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(PROTOBUF_LIBS)
+lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(PROTOBUF_LIBS) $(GSL_LIBS)
 lobSTR_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
-allelotype_LDADD = liballelotype.a libbamtools.a $(LIBS) $(PROTOBUF_LIBS)
+allelotype_LDADD = liballelotype.a libbamtools.a $(LIBS) $(PROTOBUF_LIBS) $(GSL_LIBS)
 allelotype_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 # (Copied from coreutils' tests/local.mk)

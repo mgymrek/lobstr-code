@@ -7,7 +7,7 @@ BWT index
 A file with chromosome sizes
 Table mapping reference regions to which STRs they contain
 
-***Requires lobSTRIndex to be installed in the $PATH.***
+***Requires lobSTRIndex and bedtools to be installed in the $PATH.***
 """
 
 import argparse

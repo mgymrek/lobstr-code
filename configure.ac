@@ -24,9 +24,7 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 
 ## Check for GSL (GNU Scientific Library)
-AC_CHECK_LIB([m],[cos])
-AC_CHECK_LIB([gslcblas],[cblas_dgemm])
-AC_CHECK_LIB([gsl],[gsl_blas_dgemm])
+PKG_CHECK_MODULES([GSL],[gsl])
 
 
 AX_PTHREAD([],[
