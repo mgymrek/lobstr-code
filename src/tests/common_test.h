@@ -30,7 +30,6 @@ public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(CommonTest);
   CPPUNIT_TEST(test_TrimRead);
   CPPUNIT_TEST(test_GenerateAllKmers);
-  CPPUNIT_TEST(test_getMSSeq);
   CPPUNIT_TEST(test_getMinPermutation);
   CPPUNIT_TEST(test_getCanonicalRepeat);
   CPPUNIT_TEST(test_reverseComplement);

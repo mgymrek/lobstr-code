@@ -44,13 +44,6 @@ extern std::string user_defined_arguments;
 // store allelotyper user parameters
 extern std::string user_defined_arguments_allelotyper;
 
-// mapping between a kmer and its smallest cyclic permutation
-extern std::map<std::string, std::string> permutationTable;
-
-// keep track of mappings between a kmer and its
-// canonical MS so we don't have to recompute it all the time
-extern std::map<std::string, std::string> canonicalMSTable;
-
 // enums
 enum INPUT_TYPE {
   INPUT_FASTA = 0,
@@ -92,24 +85,12 @@ extern size_t min_read_length;
 extern size_t max_read_length;
 extern size_t fft_window_size;
 extern size_t fft_window_step;
-extern float fft_lobe_threshold;
-extern float period_energy_threshold;
-extern size_t max_period;
-extern size_t min_period;
-extern size_t max_period_to_try;
 extern size_t min_flank_len;
 extern size_t max_flank_len;
-extern float closeness;
 extern float percent_N_discard;
-extern float tukey_alpha;
-extern bool use_entropy;
 extern float entropy_threshold;
-extern int entropy_k;
-extern size_t extend_flank;
 
 // alignment params
-extern bool adjust;
-extern bool debug_adjust;
 extern int min_sw_score;
 extern int max_mapq;
 extern int allowed_mismatches;
@@ -127,7 +108,6 @@ extern float fpr;
 extern int max_mismatch;
 extern std::string read_group_sample;
 extern std::string read_group_library;
-extern bool include_orig_read_start;
 extern bool allow_multi_mappers;
 
 // genotyping params
@@ -150,18 +130,7 @@ extern int max_matedist;
 extern int maximal_end_match_window;
 
 // debug
-extern bool profile;
-extern bool microsatellite_detection_debug;
-extern bool period_detection_debug;
-extern bool force_noise_y;
-extern int force_noise_y_value;
-extern bool multithread_debug;
-extern bool gst_debug;
 extern bool align_debug;
-extern bool anonymizer_debug;
-extern bool genotyper_debug;
-extern bool why_not_debug;
-extern bool entropy_debug;
 
 // min length of str region
 extern size_t MIN_STR_LENGTH;

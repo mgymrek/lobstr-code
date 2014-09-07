@@ -78,8 +78,8 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
   bool rep_end = false;
   ed_filter.FindStartEnd(&start, &end, &rep_end);
 
-  nuc_start = start * fft_window_step;  // + extend_flank;
-  nuc_end = (end + 2) * fft_window_step;  // - extend_flank;
+  nuc_start = start * fft_window_step;
+  nuc_end = (end + 2) * fft_window_step;
 
   if (nuc_start >= read_length ||
       nuc_start <= 0 ||

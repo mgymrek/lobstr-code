@@ -232,71 +232,6 @@ size_t count(const string& s, const char& c) {
   return num;
 }
 
-
-bool getMSSeq(const string& nucs, int k, string* repeat, string* second_best_repeat, string* err) {
-  if (k < 1 || k > 6) {
-    *err = "k-is-invalid;";
-    return false;
-  }
-  if (static_cast<int>(nucs.size()) < k) {
-    *err = "k-is-greater-than-nucleotides-length;";
-    return false;
-  }
-  map<string, int> countKMers;
-  size_t i;
-  string subseq;
-  string kmer = "";
-  string second_best_kmer = "";
-  int maxkmer = 0;
-  int second_best_maxkmer = 0;
-  subseq.resize(k);
-  for (i = 0; i < nucs.size() - k; i++) {
-    std::string substring = nucs.substr(i, k);
-    if (permutationTable.find(substring) == permutationTable.end()) {
-      continue;
-    }
-    std::string subseq = permutationTable[substring];
-    countKMers[subseq]++;
-    if (countKMers[subseq] > maxkmer) {
-      if (subseq != kmer) {
-        second_best_kmer = kmer;
-        second_best_maxkmer = maxkmer;
-      }
-      kmer = subseq;
-      maxkmer = countKMers[subseq];
-    } else if (countKMers[subseq] > second_best_maxkmer) {
-      second_best_kmer = subseq;
-      second_best_maxkmer = countKMers[subseq];
-    }
-  }
-  
-  // Check that we have enough of the kmer
-  if (maxkmer < 3) {
-    *err = "Not-enough-occurrences-of-kmer-" + kmer + ";";
-    return false;
-  }
-  // If the detected kmer is invalid length, give up
-  if (kmer.size() < 1 || kmer.size() > 6 ) {
-    *err = "Detected-kmer-is-invalid-size;";
-    return false;
-  }
-  // If a homopolymer, we probably misdetected this and it is really a homopolymer, set that as second best
-  if (k != 1 && OneAbundantNucleotide(kmer, 1) != "") {
-    *err = "Setting-next-best-to-mononucleotide;";
-    if (second_best_maxkmer >= 3) {
-      *second_best_repeat = getFirstString(OneAbundantNucleotide(kmer, 1), reverseComplement(OneAbundantNucleotide(kmer, 1)));
-      kmer = second_best_kmer;
-    } else {
-      kmer = OneAbundantNucleotide(kmer, 1);
-    }
-  }
-  if (canonicalMSTable.find(kmer) == canonicalMSTable.end()) {
-    PrintMessageDieOnError("ERROR: could not find canonical repeat. This should not happen", ERROR);
-  }
-  *repeat = canonicalMSTable[kmer];
-  return true;
-}
-
 string getFirstString(const std::string& seq1, const std::string& seq2) {
   for (size_t i = 0; i < seq1.size(); i++) {
     if (nucToNumber(seq1[i]) < nucToNumber(seq2[i])) return seq1;
@@ -479,17 +414,6 @@ void GenerateAllKmers(int size, std::vector<std::string>* kmers) {
     next_kmers.clear();
   }
   *kmers = current_kmers;
-}
-
-void InitializeRepeatTables() {
-  for (size_t i = 1; i <= max_period; i++) {
-    std::vector<std::string> kmers;
-    GenerateAllKmers(i, &kmers);
-    for (size_t j = 0; j < kmers.size(); j++) {
-      permutationTable[kmers[j]] = getMinPermutation(kmers[j]);
-      canonicalMSTable[kmers[j]] = getCanonicalRepeat(kmers[j]);
-    }
-  }
 }
 
 std::string getMinPermutation(const std::string& msnucs){

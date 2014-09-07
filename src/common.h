@@ -97,9 +97,6 @@ void TrimRead(const std::string& input_nucs,
 // count number of occurrences of char in string
 size_t count(const std::string& s, const char& c);
 
-// get the canonicalized form of the repeat
-bool getMSSeq(const std::string& nucs, int k, std::string* repeat, std::string* second_best_repeat, std::string* repseq_error);
-
 // compare seqs lexicographically
 std::string getFirstString(const std::string& seq1, const std::string& seq2);
 
@@ -143,9 +140,6 @@ std::string reverse(const std::string& s);
 
 // get the complement of a nucleotide
 char complement(const char nucleotide);
-
-// Initalize the repeat tables with all possible patterns
-void InitializeRepeatTables();
 
 // Generate all nucleotide kmers of a certain size
 void GenerateAllKmers(int size, std::vector<std::string>* kmers);

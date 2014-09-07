@@ -33,12 +33,6 @@ std::string user_defined_arguments = "# version=lobSTR_"+std::string(_GIT_VERSIO
 std::string user_defined_arguments_allelotyper = "# version=allelotype_"+std::string(_GIT_VERSION) + ";";
 PROGRAM program = LOBSTR;
 
-// mapping betwenen a kmer and its canonicalized form
-std::map<std::string, std::string> canonicalMSTable;
-
-// mapping between a kmer and its smallest cyclic permutation
-std::map<std::string, std::string> permutationTable;
-
 // flags
 bool my_verbose = false;
 bool debug = false;
@@ -67,24 +61,12 @@ size_t min_read_length = 45;
 size_t max_read_length = 1024;
 size_t fft_window_size = 16;
 size_t fft_window_step = 4;
-float fft_lobe_threshold = 3;
-float period_energy_threshold = 300; // 500
-size_t max_period = 6;
-size_t min_period = 2;
-size_t max_period_to_try = 6;
 size_t min_flank_len = 8;
 size_t max_flank_len = 50;
-float closeness = 0.3;
 float percent_N_discard = 0.05;
-float tukey_alpha = 0.5;
-bool use_entropy = true;
 float entropy_threshold = 0.45;
-int entropy_k = 2;
-size_t extend_flank = 6;
 
 // alignment params
-bool adjust = true;
-bool debug_adjust = false;
 int min_sw_score = 60;
 int max_mapq = 100;
 int allowed_mismatches = -1;
@@ -102,7 +84,6 @@ float fpr = -1;
 int max_mismatch = 1;
 std::string read_group_sample = "";
 std::string read_group_library = "";
-bool include_orig_read_start = false;
 bool allow_multi_mappers = false;
 
 // genotyping params
@@ -125,18 +106,7 @@ int min_bp_before_indel = 0;
 int min_read_end_match = 0;
 
 // debugging
-bool profile = false;
-bool microsatellite_detection_debug = false;
-bool period_detection_debug = false;
-bool force_noise_y = false;
-int force_noise_y_value = 2;
-bool multithread_debug = false;
-bool gst_debug = false;
 bool align_debug = false;
-bool anonymizer_debug = false;
-bool genotyper_debug = false;
-bool why_not_debug = false;
-bool entropy_debug = false;
 
 size_t MIN_STR_LENGTH = 6;
 

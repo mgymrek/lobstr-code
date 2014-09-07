@@ -821,9 +821,6 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
       reverse(read_pair->reads.at(1-aligned_read_num).quality_scores) :
       read_pair->reads.at(1-aligned_read_num).quality_scores;
     nw(aseq, rseq, aln_seq, ref_seq, false, &score, &cigar_list);
-    if (debug_adjust) {
-      PrintMessageDieOnError("[BWAReadAligner]: Getting qualities for mate", DEBUG);
-    }
     // update qualities. For read pairs qual is sum of the two ends' mapq
     int edit;
     int mate_mapq = AlignmentUtils::GetMapq(aln_seq, ref_seq,

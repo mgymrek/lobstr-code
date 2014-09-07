@@ -163,7 +163,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_NOWEB,
     OPT_OUTPUT,
     OPT_PRINT_READS,
-    OPT_PROFILE,
     OPT_QUIET,
     OPT_STRINFO,
     OPT_UNIT,
@@ -197,7 +196,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"no-rmdup", 0, 0, OPT_NORMDUP},
     {"noweb", 0, 0, OPT_NOWEB},
     {"out", 1, 0, OPT_OUTPUT},
-    {"profile", 0, 0, OPT_PROFILE},
     {"quiet", 0, 0, OPT_QUIET},
     {"reads", 0, 0, OPT_PRINT_READS},
     {"strinfo", 1, 0, OPT_STRINFO},
@@ -316,9 +314,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_PRINT_READS:
       print_reads++;
       AddOption("print-reads", "", false, &user_defined_arguments_allelotyper);
-      break;
-    case OPT_PROFILE:
-      profile++;
       break;
     case OPT_QUIET:
       quiet++;

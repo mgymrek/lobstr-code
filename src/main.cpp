@@ -138,10 +138,6 @@ void show_help() {
     "                           (default: 12)\n" \
     "--entropy-threshold <FLOAT> threshold score to call a window periodic\n"\
     "                            (defualt: 0.45)\n" \
-    "--minperiod <INT>          minimum period to attempt to detect\n"\
-    "                           must be >= 2 (default: 2)\n" \
-    "--maxperiod <INT>          maximum period to attempt to detect\n"\
-    "                           must be <= 6 (default: 6)\n" \
     "--minflank <INT>           minimum length of flanking region to\n" \
     "                           try to align (default: 10)\n" \
     "--maxflank <INT>           length to trim the ends of flanking\n" \
@@ -215,8 +211,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_FFT_WINDOW_STEP,
     OPT_LOBE_THRESHOLD,
     OPT_EXTEND,
-    OPT_MAX_PERIOD,
-    OPT_MIN_PERIOD,
     OPT_MIN_FLANK_ALLOW_MISMATCH,
     OPT_MAX_HITS_QUIT_ALN,
     OPT_MIN_FLANK_LEN,
@@ -226,18 +220,12 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MIN_READ_LENGTH,
     OPT_MAX_READ_LENGTH,
     OPT_ERROR_RATE,
-    OPT_WHY_NOT,
     OPT_ENTROPY_THRESHOLD,
-    OPT_DEBUG_ENTROPY,
-    OPT_PROFILE,
     OPT_INDEX,
     OPT_GAP_OPEN,
     OPT_GAP_EXTEND,
     OPT_FPR,
-    OPT_EXTEND_FLANK,
     OPT_SW,
-    OPT_DEBUGADJUST,
-    OPT_ORIG_READ,
     OPT_MAPQ,
     OPT_BWAQ,
     OPT_OLDILLUMINA,
@@ -266,8 +254,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"fft-window-step", 1, 0, OPT_FFT_WINDOW_STEP},
     {"lobe-threshold", 1, 0, OPT_LOBE_THRESHOLD},
     {"extend", 1, 0, OPT_EXTEND},
-    {"maxperiod", 1, 0, OPT_MAX_PERIOD},
-    {"minperiod", 1, 0, OPT_MIN_PERIOD},
     {"minflank", 1, 0, OPT_MIN_FLANK_LEN},
     {"maxflank", 1, 0, OPT_MAX_FLANK_LEN},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
@@ -285,17 +271,11 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"min-flank-allow-mismatch", 1, 0, OPT_MIN_FLANK_ALLOW_MISMATCH},
     {"max-hits-quit-aln", 1, 0, OPT_MAX_HITS_QUIT_ALN},
     {"entropy-threshold", 1, 0, OPT_ENTROPY_THRESHOLD},
-    {"entropy-debug", 0, 0, OPT_DEBUG_ENTROPY},
-    {"profile", 0, 0, OPT_PROFILE},
     {"index-prefix", 1, 0, OPT_INDEX},
-    {"extend-flank", 1, 0, OPT_EXTEND_FLANK},
     {"nw-score", 1, 0, OPT_SW},
     {"mapq", 1, 0, OPT_MAPQ},
     {"bwaq", 1, 0, OPT_BWAQ},
     {"oldillumina", 0, 0, OPT_OLDILLUMINA},
-    {"debug-adjust", 0, 0, OPT_DEBUGADJUST},
-    {"why-not", 0, 0, OPT_WHY_NOT},
-    {"orig", 0, 0, OPT_ORIG_READ},
     {"use-s3", 1, 0, OPT_USES3},
     {"s3config", 1, 0, OPT_S3CONFIG},
     {"s3debug", 0, 0, OPT_S3DEBUG},
@@ -313,20 +293,11 @@ void parse_commandline_options(int argc, char* argv[]) {
       unit++;
       AddOption("unit", "", false, &user_defined_arguments);
       break;
-    case OPT_PROFILE:
-      profile++;
-      break;
-    case OPT_WHY_NOT:
-      why_not_debug++;
-      break;
     case OPT_ALIGN_DEBUG:
       align_debug++;
       break;
     case OPT_DEBUG:
       debug++;
-      break;
-    case OPT_DEBUGADJUST:
-      debug_adjust++;
       break;
     case 'v':
     case OPT_VERBOSE:
@@ -417,20 +388,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       }
       AddOption("extend", string(optarg), true, &user_defined_arguments);
       break;
-    case OPT_MIN_PERIOD:
-      min_period = atoi(optarg);
-      if (min_period <= 0) {
-        PrintMessageDieOnError("Invalid min period", ERROR);
-      }
-      AddOption("minperiod", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_MAX_PERIOD:
-      max_period = atoi(optarg);
-      if (max_period <= 0) {
-        PrintMessageDieOnError("Invalid max period", ERROR);
-      }
-      AddOption("maxperiod", string(optarg), true, &user_defined_arguments);
-      break;
     case OPT_MAX_FLANK_LEN:
       max_flank_len = atoi(optarg);
       if (max_flank_len <= 0) {
@@ -472,9 +429,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       entropy_threshold = atof(optarg);
       AddOption("entropy-threshold", string(optarg), true, &user_defined_arguments);
       break;
-    case OPT_DEBUG_ENTROPY:
-      entropy_debug++;
-      break;
     case OPT_INDEX:
       index_prefix = string(optarg);
       AddOption("index-prefix", string(optarg), true, &user_defined_arguments);
@@ -494,10 +448,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       fpr = atof(optarg);
       AddOption("fpr", string(optarg), true, &user_defined_arguments);
       break;
-    case OPT_EXTEND_FLANK:
-      extend_flank = atoi(optarg);
-      AddOption("extend-flank", string(optarg), true, &user_defined_arguments);
-      break;
     case OPT_SW:
       min_sw_score = atoi(optarg);
       AddOption("min-sw-score", string(optarg), true, &user_defined_arguments);
@@ -513,10 +463,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_OLDILLUMINA:
       QUALITY_CONSTANT = 64;
       AddOption("oldillumina", "", false, &user_defined_arguments);
-      break;
-    case OPT_ORIG_READ:
-      include_orig_read_start++;
-      user_defined_arguments += "orig-read-start=True;";
       break;
     case OPT_USES3:
       using_s3++;
@@ -562,14 +508,8 @@ void parse_commandline_options(int argc, char* argv[]) {
   if (fft_window_step > fft_window_size) {
     PrintMessageDieOnError("fft_window_step must be <=fft_window_size", ERROR);
   }
-  if (min_period > max_period) {
-    PrintMessageDieOnError("min_period must be <=max_period", ERROR);
-  }
   if (min_flank_len > max_flank_len) {
     PrintMessageDieOnError("min_flank_len must be <= max_flank_len", ERROR);
-  }
-  if (min_period < 1 || max_period > 6) {
-    PrintMessageDieOnError("lobSTR can currently only profile STRs for periods 1 thorugh 6", ERROR);
   }
   // check that we have the mandatory parameters
   if ((((!paired || bam) && input_files_string.empty()) ||
@@ -1122,10 +1062,6 @@ int main(int argc, char* argv[]) {
   } else {
     boost::split(input_files, input_files_string, boost::is_any_of(","));
   }
-
-  // Initialize repeat maps
-  PrintMessageDieOnError("Initializing repeat tables...", PROGRESS);
-  InitializeRepeatTables();
 
   // run detection/alignment
   PrintMessageDieOnError("Running detection/alignment...", PROGRESS);
