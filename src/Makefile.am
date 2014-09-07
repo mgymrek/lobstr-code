@@ -115,7 +115,6 @@ liblobstr_a_SOURCES = \
 	BamFileReader.cpp BamFileReader.h \
 	BamPairedFileReader.cpp BamPairedFileReader.h \
 	BWAReadAligner.cpp BWAReadAligner.h \
-	CachedWindowGenerator.cpp CachedWindowGenerator.h \
 	common.cpp common.h \
 	EntropyDetection.cpp EntropyDetection.h \
 	FastaFileReader.cpp FastaFileReader.h \
@@ -267,7 +266,6 @@ lobSTRTests_SOURCES = \
 	BamFileReader.cpp \
 	BamPairedFileReader.cpp \
 	BWAReadAligner.cpp \
-	CachedWindowGenerator.cpp \
 	common.cpp \
 	EntropyDetection.cpp \
 	FastaFileReader.cpp \
