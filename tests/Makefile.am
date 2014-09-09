@@ -56,4 +56,10 @@ EXTRA_DIST = \
     ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rbwt \
     ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rsa \
     ./smallref/small_lobstr_ref_v2/lobSTR_mergedref.bed \
-    ./smallref/small_lobstr_ref_v2/lobSTR_ref_map.tab
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref_map.tab \
+    ./smallref_chrY/bad_strinfo_file.tab \
+    ./smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_chrY_ref.fasta \
+    ./smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_chrY_ref_map.tab \
+    ./smallref_chrY/smallref_chrY.strinfo.tab \
+    ./test_chrY.bam \
+    ./test_chrY.bam.bai

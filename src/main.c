@@ -9,7 +9,7 @@ static int usage()
 	fprintf(stderr, "Version: %s\n", _GIT_VERSION);
 	fprintf(stderr, "Contact: Melissa Gymrek <mgymrek@mit.edu>\n\n");
 	fprintf(stderr, "Note: you should not call this program directly. It gets called by lobstr_index.py \n\n");
-	return 0;
+	return 1;
 }
 
 int main(int argc, char *argv[])

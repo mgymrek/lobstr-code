@@ -12,7 +12,7 @@ testcode() {
 echo "### lobSTR index ###"
 echo "Test lobSTRIndex usage..."
 lobSTRIndex >/dev/null 2>&1
-testcode 0
+testcode 1
 
 echo "Testing building small index..."
 cp ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ref.fasta ${OUTDIR}/
@@ -22,6 +22,9 @@ lobSTRIndex index \
 testcode 0
 
 echo "### lobSTR tests ###"
+echo "Testing lobSTR usage..."
+lobSTR >/dev/null 2>&1
+testcode 1
 echo "Testing bam input..."
 lobSTR \
   --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
@@ -173,6 +176,7 @@ allelotype \
   --bam ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
   --noise_model ${OUTDIR}/lobtest \
   --haploid chrY \
+  --out ${OUTDIR}/lobtest \
   --verbose >/dev/null 2>&1
 testcode 1
 echo "Testing training... enough reads"
@@ -183,6 +187,7 @@ allelotype \
   --bam ${LOBSTR_TEST_DIR=.}/test_chrY.bam \
   --noise_model ${OUTDIR}/lobtest \
   --haploid chrY \
+  --out ${OUTDIR}/lobtest \
   --verbose --debug >/dev/null 2>&1
 testcode 0
 echo "Testing training... invalid strinfo"
@@ -193,6 +198,7 @@ allelotype \
   --bam ${LOBSTR_TEST_DIR=.}/test_chrY.bam \
   --noise_model ${OUTDIR}/lobtest2 \
   --haploid chrY \
+  --out ${OUTDIR}/lobtest \
   --verbose --debug >/dev/null 2>&1
 testcode 1
 exit 0
