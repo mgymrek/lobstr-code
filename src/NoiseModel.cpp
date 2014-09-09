@@ -81,12 +81,6 @@ NoiseModel::NoiseModel(const string& strinfofile,
   // Set noise model filenames
   stutter_model_filename = noise_model + ".stuttermodel";
   stepsize_model_filename = noise_model + ".stepmodel";
-  // Determine MIN PERIOD
-  if (command == "classify") {
-    MIN_PERIOD = DetermineMinPeriod(stepsize_model_filename);
-  } else {
-    MIN_PERIOD = 1;
-  }
   // Set haploid chromosomes
   haploid_chroms = haploid_chroms_;
   // initialize pdf
@@ -97,20 +91,6 @@ NoiseModel::NoiseModel(const string& strinfofile,
       v1.push_back(0);
     }
     pdf_model.push_back(v1);
-  }
-}
-
-int NoiseModel::DetermineMinPeriod(const string& stepsize_model_filename) {
-  TextFileReader modelFile(stepsize_model_filename);
-  string line;
-  int numlines = 0;
-  while (modelFile.GetNextLine(&line)) {
-    numlines += 1;
-  }
-  if (numlines == 17) {
-    return 2;
-  } else {
-    return 1;
   }
 }
 
@@ -229,7 +209,9 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
 
 void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) {
   if (reads_for_training.size() < MIN_READS_FOR_TRAINING) {
-    PrintMessageDieOnError("Too few reads for training", ERROR);
+    stringstream msg;
+    msg << "Too few reads for training (" << reads_for_training.size() << ")";
+    PrintMessageDieOnError(msg.str(), ERROR);
   }
   // Set up data for logistic regression
   size_t numreads = reads_for_training.size();

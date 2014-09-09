@@ -11,15 +11,15 @@ testcode() {
 
 echo "### lobSTR index ###"
 echo "Test lobSTRIndex usage..."
-lobSTRIndex
+lobSTRIndex >/dev/null 2>&1
 testcode 0
 
 echo "Testing building small index..."
 cp ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ref.fasta ${OUTDIR}/
 lobSTRIndex index \
   -a is \
-  ${OUTDIR}/lobSTR_ref.fasta
-testcode 0 >/dev/null 2>&1
+  ${OUTDIR}/lobSTR_ref.fasta >/dev/null 2>&1
+testcode 0
 
 echo "### lobSTR tests ###"
 echo "Testing bam input..."
@@ -115,6 +115,16 @@ allelotype \
   --verbose \
   --noise_model ${LOBSTR_TEST_DIR=.}/../models/illumina_v2.0.3 >/dev/null 2>&1
 testcode 0
+echo "Testing good bam input with debug option..."
+allelotype \
+  --command classify \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
+  --bam ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam,${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
+  --out ${OUTDIR}/lobtest \
+  --verbose --debug \
+  --noise_model ${LOBSTR_TEST_DIR=.}/../models/illumina_v2.0.3 >/dev/null 2>&1
+testcode 0
 echo "Testing invalid path to bam input..."
 allelotype \
   --command classify \
@@ -168,12 +178,21 @@ testcode 1
 echo "Testing training... enough reads"
 allelotype \
   --command train \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
-  --strinfo ${LOBSTR_TEST_DIR=.}/smallref/smallref_strinfo.tab \
-  --bam ${LOBSTR_TEST_DIR=.}/test.chrY.aligned.sorted.bam \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_chrY_ \
+  --strinfo ${LOBSTR_TEST_DIR=.}/smallref_chrY/smallref_chrY.strinfo.tab \
+  --bam ${LOBSTR_TEST_DIR=.}/test_chrY.bam \
   --noise_model ${OUTDIR}/lobtest \
   --haploid chrY \
-  --verbose >/dev/null 2>&1
+  --verbose --debug >/dev/null 2>&1
+testcode 0
+echo "Testing training... invalid strinfo"
+allelotype \
+  --command train \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_chrY_ \
+  --strinfo ${LOBSTR_TEST_DIR=.}/smallref_chrY/bad_strinfo_file.tab \
+  --bam ${LOBSTR_TEST_DIR=.}/test_chrY.bam \
+  --noise_model ${OUTDIR}/lobtest2 \
+  --haploid chrY \
+  --verbose --debug >/dev/null 2>&1
 testcode 1
-
 exit 0

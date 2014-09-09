@@ -73,9 +73,6 @@ class NoiseModel {
 
   std::vector<std::string> haploid_chroms;
  private:
-  /* Determine the min period used in the model (either 1 or 2) */
-  int DetermineMinPeriod(const std::string& stepsize_model_filename);
-
   /* Check if a set of reads has a unique mode */
   bool HasUniqueMode(const std::list<AlignedRead>& aligned_reads,
                      float* mode);
