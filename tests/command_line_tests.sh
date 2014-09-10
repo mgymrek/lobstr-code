@@ -22,9 +22,19 @@ lobSTRIndex index \
 testcode 0
 
 echo "### lobSTR tests ###"
-echo "Testing lobSTR usage..."
+echo "Testing lobSTR usage and argument cases..."
+lobSTR -h >/dev/null 2>&1
+testcode 1
+lobSTR -? >/dev/null 2>&1
+testcode 1
+lobSTR --badoption >/dev/null 2>&1
+testcode 1
 lobSTR >/dev/null 2>&1
 testcode 1
+lobSTR badarg >/dev/null 2>&1
+testcode 1
+lobSTR --version >/dev/null 2>&1
+testcode 0
 echo "Testing bam input..."
 lobSTR \
   --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
@@ -33,6 +43,41 @@ lobSTR \
   -f ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
   --rg-lib test --rg-sample test \
   --bam  >/dev/null 2>&1
+testcode 0 
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
+  --rg-lib test --rg-sample test \
+  --bam --gzip >/dev/null 2>&1
+testcode 1
+echo "Testing bam input with debug info..."
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
+  --rg-lib test --rg-sample test \
+  --bam --verbose --align-debug --debug >/dev/null 2>&1
+testcode 0
+echo "Testing bam input with quiet mode and noweb..."
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
+  --rg-lib test --rg-sample test \
+  --bam --quiet --noweb >/dev/null 2>&1
+testcode 0 
+echo "Testing bam input with unit mode..."
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/test.aligned.sorted.bam \
+  --rg-lib test --rg-sample test \
+  --bam -u >/dev/null 2>&1
 testcode 0 
 echo "Testing fastq input single end..."
 lobSTR \
@@ -106,6 +151,121 @@ lobSTR \
   -q \
   --rg-lib test --rg-sample test >/dev/null 2>&1
 testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -p 0 \
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+echo "Testing additional options..."
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -p 2 \
+  -q \
+  -m 1 \
+  --multi \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -r 0.1 --extend 1000\
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -q \
+  --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -q \
+  --fft-window-size 12 --fft-window-step 24 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -q \
+  --minflank 50 --maxflank 10 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -p 2 \
+  -q \
+  -m -1 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -p 2 \
+  -q \
+  --fft-window-size 24 --fft-window-step 12 --entropy-threshold 0.4 \
+  --maxflank 50 --minflank 10 --max-hits-quit-aln 1000 --max-diff-ref 50 \
+  --min-read-length 36 --max-read-length 1000 --mapq 100 --bwaq 15 --oldillumina \
+  -g 1 -e 1 --nw-score 1 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -q \
+  --minflank 0 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -q \
+  --maxflank 0 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -q \
+  --max-diff-ref 0 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  -q \
+  --extend 0 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
 echo "### Allelotype tests ###"
 echo
 echo "Testing good bam input..."

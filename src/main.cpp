@@ -309,7 +309,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     case 'h':
     case OPT_HELP:
       show_help();
-      exit(1);
     case 'q':
     case OPT_FASTQ:
       input_type = INPUT_FASTQ;
@@ -491,11 +490,8 @@ void parse_commandline_options(int argc, char* argv[]) {
       exit(0);
     case '?':
       show_help();
-      exit(1);
-      break;
     default:
       show_help();
-      exit(1);
     }
     ch = getopt_long(argc, argv, "hvqp:f:t:g:o:m:s:d:e:g:r:u?",
                      long_options, &option_index);
