@@ -171,13 +171,6 @@ void show_help() {
     "                           Default: 1000. Use -1 for no limit.\n" \
     "--min-flank-allow-mismatch <int>  Mininum length of flanking region to allow\n" \
     "                           mismatches. Default: 30.\n" \
-    "\n\nAdvanced options - Amazon Web Services:\n" \
-    "--use-s3 <bucket>          Files are read from this s3 bucket\n" \
-    "                           WARNING s3 mode DELETES FILES after processing\n" \
-    "                           DO NOT USE this option unless you are pulling\n" \
-    "                           files from Amazon S3!\n" \
-    "--s3config <file>          s3cmd configuration file (created by\n" \
-    "                           s3cmd --configure)\n" \
     "This program takes in raw reads, detects and aligns reads\n" \
     "containing microsatellites, and genotypes STR locations.\n\n";
   cerr << help;
@@ -229,9 +222,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_MAPQ,
     OPT_BWAQ,
     OPT_OLDILLUMINA,
-    OPT_USES3,
-    OPT_S3CONFIG,
-    OPT_S3DEBUG,
     OPT_RG_SAMPLE,
     OPT_RG_LIB,
     OPT_VERSION,
@@ -276,9 +266,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"mapq", 1, 0, OPT_MAPQ},
     {"bwaq", 1, 0, OPT_BWAQ},
     {"oldillumina", 0, 0, OPT_OLDILLUMINA},
-    {"use-s3", 1, 0, OPT_USES3},
-    {"s3config", 1, 0, OPT_S3CONFIG},
-    {"s3debug", 0, 0, OPT_S3DEBUG},
     {"rg-sample", 1, 0, OPT_RG_SAMPLE},
     {"rg-lib", 1, 0, OPT_RG_LIB},
     {"version", 0, 0, OPT_VERSION},
@@ -463,20 +450,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       QUALITY_CONSTANT = 64;
       AddOption("oldillumina", "", false, &user_defined_arguments);
       break;
-    case OPT_USES3:
-      using_s3++;
-      s3bucket = string(optarg);
-      AddOption("use-s3", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_S3CONFIG:
-      s3cmd_configfile = string(optarg);
-      using_s3++;
-      AddOption("s3cmdconfig", string(optarg), true, &user_defined_arguments);
-      break;
-    case OPT_S3DEBUG:
-      s3debug++;
-      user_defined_arguments += "s3debug;";
-      break;
     case OPT_RG_SAMPLE:
       read_group_sample = string(optarg);
       AddOption("rg-sample", string(optarg), true, &user_defined_arguments);
@@ -516,9 +489,6 @@ void parse_commandline_options(int argc, char* argv[]) {
   }
   if (gzip && bam) {
     PrintMessageDieOnError("Gzip option not compatible with bam input", ERROR);
-  }
-  if (using_s3 && s3cmd_configfile.empty()) {
-    PrintMessageDieOnError("Must supply an s3cmd config file", ERROR);
   }
   if (read_group_sample.empty() || read_group_library.empty()) {
     PrintMessageDieOnError("Must specify --rg-lib and --rg-sample", ERROR);
@@ -646,46 +616,12 @@ void single_thread_process_loop(const vector<string>& files1,
     if (paired && !bam) {
       file2 = files2.at(i);
       PrintMessageDieOnError("Processing files " + file1 + " and " + file2, PROGRESS);
-      if (using_s3) {
-        const std::string s3cmd1 = GenerateS3Command(s3bucket,
-                                                     file1,
-                                                     s3cmd_configfile);
-        const std::string s3cmd2 = GenerateS3Command(s3bucket,
-                                                     file2,
-                                                     s3cmd_configfile);
-        if (s3debug) {
-          PrintMessageDieOnError("S3 debug: " + s3cmd1, PROGRESS);
-          PrintMessageDieOnError("S3 debug: " + s3cmd2, PROGRESS);
-        } else {
-          if (system(s3cmd1.c_str()) != 0) {
-            PrintMessageDieOnError("Problem fetching file1 from S3", ERROR);
-          }
-          if (system(s3cmd2.c_str()) != 0) {
-            PrintMessageDieOnError("Problem fetching file2 from S3", ERROR);
-          }
-        }
-        file1 = "/mnt/lobstr/"+file1;
-        file2 = "/mnt/lobstr/"+file2;
-      }
       if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
         PrintMessageDieOnError("File " + file1 + " or " + file2 + " does not exist", WARNING);
         continue;
       }
     } else {
       PrintMessageDieOnError("Processing file " + file1, PROGRESS);
-      if (using_s3) {
-        const std::string s3cmd = GenerateS3Command(s3bucket,
-                                                    file1,
-                                                    s3cmd_configfile);
-        if (s3debug) {
-          PrintMessageDieOnError("S3 debug: " + s3cmd, PROGRESS);
-        } else {
-          if (system(s3cmd.c_str()) != 0) {
-            PrintMessageDieOnError("Problem fetching file from S3", ERROR);
-          }
-        }
-        file1 = "/mnt/lobstr/"+file1;
-      }
       if (!fexists(file1.c_str())) {
         PrintMessageDieOnError("File " + file1 + " does not exist", WARNING);
         continue;
@@ -745,20 +681,6 @@ void single_thread_process_loop(const vector<string>& files1,
     stringstream msg;
     msg << "Processed " << num_reads_processed << ' ' << unit_name;
     PrintMessageDieOnError(msg.str(), PROGRESS);
-    if (using_s3) {
-      string rmcmd = "rm " + file1;
-      if (paired && !bam) {
-        rmcmd += "; rm ";
-        rmcmd += file2;
-      }
-      if (s3debug) {
-        PrintMessageDieOnError("S3 debug: " + rmcmd, PROGRESS);
-      } else {
-        if (system(rmcmd.c_str()) != 0) {
-          PrintMessageDieOnError("Problem deleting file", ERROR);
-        }
-      }
-    }
   }
   delete pDetector;
   delete pAligner;
@@ -885,47 +807,12 @@ void multi_thread_process_loop(vector<string> files1,
     if (paired && !bam) {
       file2 = files2.at(i);
       PrintMessageDieOnError("Processing files " + file1 + " and " + file2, PROGRESS);
-      if (using_s3) {
-        const std::string s3cmd1 = GenerateS3Command(s3bucket,
-                                                     file1,
-                                                     s3cmd_configfile);
-        const std::string s3cmd2 = GenerateS3Command(s3bucket,
-                                                     file2,
-                                                     s3cmd_configfile);
-        if (s3debug) {
-          PrintMessageDieOnError("S3 debug: " + s3cmd1, PROGRESS);
-          PrintMessageDieOnError("S3 debug: " + s3cmd2, PROGRESS);
-        } else {
-          if (system(s3cmd1.c_str()) != 0) {
-            PrintMessageDieOnError("Problem fetching file1 from S3", ERROR);
-          }
-          if (system(s3cmd2.c_str()) != 0) {
-            PrintMessageDieOnError("Problem fetching file2 from S3", ERROR);
-          }
-        }
-        file1 = "/mnt/lobstr/"+file1;
-        file2 = "/mnt/lobstr/"+file2;
-      }
       if (!(fexists(file1.c_str()) && fexists(file2.c_str()))) {
         PrintMessageDieOnError("File " + file1 + " or " + file2 + " does not exist", WARNING);
         continue;
       }
     } else {
       PrintMessageDieOnError("Processing file " + file1, PROGRESS);
-      if (using_s3) {
-        const std::string s3cmd = GenerateS3Command(s3bucket,
-                                                    file1,
-                                                    s3cmd_configfile);
-        if (s3debug) {
-          PrintMessageDieOnError("S3 debug: " + s3cmd, PROGRESS);
-        } else {
-          if (system(s3cmd.c_str()) != 0) {
-            PrintMessageDieOnError("Problem fetching file from S3", ERROR);
-          }
-        }
-        file1 = "/mnt/lobstr/"+file1;
-        file2 = "/mnt/lobstr/"+file2;
-      }
       if (!fexists(file1.c_str())) {
         PrintMessageDieOnError("File " + file1 + " or " + file2 + " does not exist", WARNING);
         continue;
@@ -948,20 +835,6 @@ void multi_thread_process_loop(vector<string> files1,
       pRecord = NULL;  // the consumers will take it from here, and free it
     } while (1);
     delete pReader;
-    if (using_s3) {
-      string rmcmd = "rm " + file1;
-      if (paired && !bam) {
-        rmcmd += "; rm ";
-        rmcmd += file2;
-      }
-      if (s3debug) {
-        PrintMessageDieOnError("S3 debug: " + rmcmd, PROGRESS);
-      } else {
-        if (system(rmcmd.c_str()) != 0) {
-          PrintMessageDieOnError("Problem deleting file", ERROR);
-        }
-      }
-    }
   }
   run_info.num_processed_units = counter;
 

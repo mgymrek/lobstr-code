@@ -113,9 +113,3 @@ size_t MIN_STR_LENGTH = 6;
 int QUAL_CUTOFF = 10;
 int QUALITY_CONSTANT = 33;
 int CHUNKSIZE = 1000;
-
-// Amazon s3 paramters
-bool using_s3 = false;
-std::string s3bucket = "";
-std::string s3cmd_configfile = "";
-bool s3debug = false;

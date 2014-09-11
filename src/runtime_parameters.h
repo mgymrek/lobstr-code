@@ -142,10 +142,4 @@ extern int QUALITY_CONSTANT;
 // chunk size for allelotyper
 extern int CHUNKSIZE;
 
-// Amazon s3 parameters
-extern bool using_s3;
-extern std::string s3bucket;
-extern std::string s3cmd_configfile;
-extern bool s3debug;
-
 #endif  // SRC_RUNTIME_PARAMETERS_H_

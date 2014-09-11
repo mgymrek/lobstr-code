@@ -160,13 +160,48 @@ lobSTR \
   -q \
   --rg-lib test --rg-sample test >/dev/null 2>&1
 testcode 1
+echo "Testing file does not exist..."
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${OUTDIR}/del_1.fq \
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  --p1 ${OUTDIR}/del_1.fq --p2 ${OUTDIR}/del_2.fq\
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${OUTDIR}/del_1.fq \
+  -q \
+  -p 2 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  --p1 ${OUTDIR}/del_1.fq --p2 ${OUTDIR}/del_2.fq\
+  -q \
+  -p 2 \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
 echo "Testing additional options..."
 lobSTR \
   --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
-  -p 2 \
+  -p 1 \
   -q \
   -m 1 \
   --multi \
@@ -212,7 +247,7 @@ lobSTR \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
-  -p 2 \
+  -p 1 \
   -q \
   -m -1 \
   --rg-lib test --rg-sample test >/dev/null 2>&1
@@ -222,7 +257,7 @@ lobSTR \
   --out ${OUTDIR}/lobtest \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
-  -p 2 \
+  -p 1 \
   -q \
   --fft-window-size 24 --fft-window-step 12 --entropy-threshold 0.4 \
   --maxflank 50 --minflank 10 --max-hits-quit-aln 1000 --max-diff-ref 50 \
