@@ -96,12 +96,6 @@ void TrimRead(const std::string& input_nucs,
               std::string* trimmed_quals,
               int cutoff);
 
-// get the average quality score from a group of quality scores
-float GetAverageQualityScore(const std::vector<std::string>& qualities);
-
-// get the average quality score from single read
-float GetQualityScore(const std::string& quality_score);
-
 // check if a file exists
 bool fexists(const char *filename);
 

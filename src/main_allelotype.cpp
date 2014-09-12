@@ -89,8 +89,7 @@ void show_help() {
     "                                An example is $PATH_TO_LOBSTR/models/illumina2\n" \
     "--index-prefix <STRING>         (REQUIRED) prefix for lobSTR's bwa reference\n" \
     "                                (must be same as for lobSTR alignment)\n" \
-    "--no-rmdup:                     don't remove pcr duplicates before allelotyping\n" \
-    "                                Must use this option if calling multiple samples\n" \
+    "--no-rmdup:                     don't remove pcr duplicates before allelotyping.\n" \
     "--min-het-freq <FLOAT>:         minimum frequency to make a heterozygous call\n" \
     "                                (default: NULL)\n" \
     "--haploid <chrX,[chrY,...]>:    comma-separated list of chromosomes\n" \

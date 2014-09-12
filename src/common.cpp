@@ -232,26 +232,6 @@ void TrimRead(const string& input_nucs,
   *trimmed_quals = input_quals.substr(0, max_x + 1);
 }
 
-float GetAverageQualityScore(const vector<string>& qualities) {
-  if (qualities.size() == 0) { return 0;}
-  float average_quality = 0;
-  for (vector<string>::const_iterator it = qualities.begin();
-       it != qualities.end(); ++it) {
-    average_quality += GetQualityScore(*it);
-  }
-  return average_quality/qualities.size();
-}
-
-float GetQualityScore(const std::string& quality_score) {
-  if (quality_score.length() == 0) return 0;
-  float total_quality = 0;
-  for (size_t i = 0; i < quality_score.length(); ++i) {
-    int qs = quality_score[i];
-    total_quality += qs - 33;
-  }
-  return total_quality/quality_score.size();
-}
-
 bool fexists(const char *filename) {
   ifstream ifile(filename);
   return ifile;
