@@ -359,16 +359,6 @@ IFileReader* create_file_reader(const string& filename1,
   }
 }
 
-string GenerateS3Command(const string& bucket,
-                         const string& filename,
-                         const string& configfile) {
-  stringstream s;
-  s << "s3cmd -c " << configfile << " get --skip-existing "
-    << bucket << "/" << filename << " "
-    << "/mnt/lobstr/" << filename << endl;
-  return s.str();
-}
-
 void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
                           const std::string& nucs,
                           bool* added_s,
