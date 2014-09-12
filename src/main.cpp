@@ -918,7 +918,7 @@ int main(int argc, char* argv[]) {
   if (paired && !bam) {
     boost::split(input_files1, input_files_string_p1, boost::is_any_of(","));
     boost::split(input_files2, input_files_string_p2, boost::is_any_of(","));
-    if (!input_files1.size() == input_files2.size()) {
+    if (input_files1.size() != input_files2.size()) {
       PrintMessageDieOnError("Different number of files for each pair", ERROR);
     }
   } else {

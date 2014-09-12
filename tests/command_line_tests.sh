@@ -301,6 +301,15 @@ lobSTR \
   --extend 0 \
   --rg-lib test --rg-sample test >/dev/null 2>&1
 testcode 1
+echo "Testing different number of input files..."
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  --p1 file1.fq,file2.fq --p2 file2.fq \
+  -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
 echo "### Allelotype tests ###"
 echo
 echo "Testing good bam input..."
