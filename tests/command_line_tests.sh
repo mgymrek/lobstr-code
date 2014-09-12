@@ -86,7 +86,7 @@ lobSTR \
   --verbose \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
   -q \
-  --rg-lib test --rg-sample test >/dev/null 2>&1
+  --rg-lib test --rg-sample test --debug >/dev/null 2>&1
 testcode 0
 echo "Testing fastq input paired end..."
 lobSTR \
@@ -149,6 +149,14 @@ lobSTR \
   -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
   -p 2 \
   -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 0
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  --p1 ${LOBSTR_TEST_DIR=.}/tmp_1.fa --p2 ${LOBSTR_TEST_DIR=.}/tmp_2.fa \
+  -p 2 \
   --rg-lib test --rg-sample test >/dev/null 2>&1
 testcode 0
 lobSTR \
