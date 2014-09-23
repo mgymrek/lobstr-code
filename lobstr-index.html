@@ -9,12 +9,17 @@
       <section>
 	<h2>lobSTR Reference and Index</h2>
 	lobSTR aligns reads specifically to places in the reference genome known to contain short tandem repeats. Based on a reference set of STRs, lobSTR builds a special index data structure to allow it to efficiently align reads to STR-containing regions. The structure of the reference BED file is described on the <a href="http://lobstr.teamerlich.org/usage.html">usage page</a> under "Building a custom index". The sections below describe the structure of the lobSTR index created from a reference set of STRs.
-	<h3>Index Structure: Version 2</h3>
-	This section describes the index structure used for lobSTR v2.0.3+. A new index structure was introduced with lobSTR v3+ (see below).
+	<ul>
+	  <li><a href="#index2">Index Structure: Version 2</a></li>
+	  <li><a href="#index3">Index Structure: Version 3</a></li>
+	  <li><a href="#changelog">Changelog</a></li>
+	</ul>
 	<p>
-	  The lobSTR index consists of a collection of files within a single file with the same prefix ("lobSTR_" by default). It contains the following files:
+	  <a name="index2">
+	<h3>Index Structure: Version 2</h3>
+	This section describes the index structure used for lobSTR v2.0.3+. A new index structure was introduced with lobSTR v3+ (see below). The lobSTR index consists of a collection of files within a single directory with the same prefix ("lobSTR_" by default). It contains the following files:
 	  <ol>
-	    <li>The index contains a separate <a href="http://bio-bwa.sourceforge.net/bwa.shtml">BWA</a>-style index for each class of repeat unit. This is made up of the following files for each repeat unit:
+	    <li>A separate <a href="http://bio-bwa.sourceforge.net/bwa.shtml">BWA</a>-style index for each class of repeat unit. This is made up of the following files for each repeat unit:
 	    <ul>
 	      <li>lobSTR_$repeat.amb</li>
 	      <li>lobSTR_$repeat.ann</li>
@@ -26,7 +31,7 @@
 	      <li>lobSTR_$repeat.sa</li>
 	      <li>lobSTR_$repeat.fa</li>
 	    </ul>
-	    These file types are generated using the BWA index command.
+	    These file types are generated using BWA.
 	    </li>
 	    <li>
 	      <b>lobSTR_ref.fa</b>: This file contains one entry per STR in the reference genome. The sequence for each entry consists of the STR +/- 1kb of flanking region. The header consists of the following fields separated by "$"'s:
@@ -45,7 +50,12 @@
 	    </li>
 	  </ol>
 	  In total, the hg19 reference download consists of 4,115 files: 9 BWA index files for each 457 repeats, plus lobSTR_ref.fasta and lobSTR_strdict.txt.
+	<p>
+	  <a name="index3">
 	<h3>Index Structure: Version 3</h3>
+
+	<p>
+	  <a name="changelog">
 	<h3>Changelog</h3>
       </section>
     </div>
