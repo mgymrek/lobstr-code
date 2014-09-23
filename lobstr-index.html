@@ -33,13 +33,13 @@
 	    These file types are generated using BWA.
 	    </li>
 	    <li>
-	      <b>lobSTR_ref.fa</b>: This file contains one entry per STR in the reference genome. The sequence for each entry consists of the STR +/- 1kb of flanking region. The header consists of the following fields separated by "$"'s:
+	      <b>lobSTR_ref.fa</b>: This file contains one entry per STR in the reference genome. The sequence for each entry consists of the STR +/- 1kb of flanking region. The header consists of the following fields separated by "$"s:
 	      <ul>
 		<li>ID number of the entry</li>
 		<li>Chromosome</li>
-		<li>Start coordinate of the region in the original reference genome</li>
-		<li>End coordinate of the region in the original reference genome</li>
-		<li>Canonicalized repeat motif</li>
+		<li>Start coordinate of the region in the reference genome</li>
+		<li>End coordinate of the region in the reference genome</li>
+		<li>Canonical repeat motif</li>
 		<li>Copy number in the reference genome</li>
 		<li>Repeat motif in the reference genome</li>
 	      </ul>
@@ -52,7 +52,7 @@
 	<p>
 	  <a name="index3"></a>
 	<h3>Index Structure: Version 3</h3>
-	This describes the index structure used in lobSTR v3 and up. Here there is a single BWA reference, rather than a different reference for each repeat unit. Unlike in the version 2 index, where each individual reference STR was treated as a separated entry in the fasta used to build the index, for version 3 we merged multiple STRs that are close to each other in the reference to a single entry to save space. As in version 2, the index consists of a collection of files in a single directory with the same prefix ("lobSTR_" by default).
+	This describes the index structure used in lobSTR v3 and up. Here there is a single BWA reference, rather than a different reference for each repeat unit. Unlike in the version 2 index, where each individual reference STR was treated as a separate entry in the fasta used to build the index, for version 3 we merged multiple STRs that are close to each other in the reference to a single entry to save space. As in version 2, the index consists of a collection of files in a single directory with the same prefix ("lobSTR_" by default).
 	<ol>
 	  <li><b>BWA index</b>:
 	    <ul>
@@ -64,25 +64,25 @@
 	      <li>lobSTR_ref.fasta.rpac</li>
 	      <li>lobSTR_ref.fasta.rsa</li>
 	      <li>lobSTR_ref.fasta.sa</li>
-	      <li>lobSTR_ref.fasta: a fasta file consisting of a different entry for each STR containing region in the genome. Note, each region may contain multiple reference STRs. The ID for each entry consists of the following fields separated by "$"'s: entry ID, chromosome, region start, region end.</li>
+	      <li>lobSTR_ref.fasta: a fasta file consisting of a different entry for each STR containing region in the genome. Note, each region may contain multiple reference STRs. The ID for each entry consists of the following fields separated by "$"s: entry ID, chromosome, region start, region end.</li>
 	    </ul>
 	    </li>
 	  <li><b>lobSTR_mergedref.bed</b>: This file describes the STRs from the original reference STR BED file that were merged to a single reference region. It contains the following columns:
 	    <ul>
-	      <li>Column 1: chromosome</li>
-	      <li>Column 2: region start</li>
-	      <li>Column 3: region end</li>
-	      <li>Column 4: describes each reference STR contained in that entry. For each reference STR, the following fields are separated by "_"'s: start, end, repeat unit in the reference, canonical repeat unit. Multiple reference STRs are separated by ";"'s.</li>
+	      <li>chromosome</li>
+	      <li>region start</li>
+	      <li>reion end</li>
+	      <li>describes each reference STR contained in that entry. For each reference STR, the following fields are separated by "_"s: start, end, repeat unit in the reference, canonical repeat unit. Multiple reference STRs are separated by ";"s.</li>
 	    </ul>
 	  </li>
 	  <li><b>lobSTR_ref_map.tab</b>: This file describes the reference STRs contained in each entry of lobSTR_ref.fasta. It contains the following columns:
 	    <ul>
-	      <li>Column 1: entry ID in the fasta file</li>
-	      <li>Column 2: all repeat units of any STR containd in the region encompassed by that entry. Multiple repeat units are separated by ";"'s.</li>
-	      <li>Column 3: same as Column 4 in lobSTR_mergedref.bed</li>
+	      <li>entry ID in the fasta file</li>
+	      <li>all repeat units of any STR containd in the region encompassed by that entry. Multiple repeat units are separated by ";"s.</li>
+	      <li>same as Column 4 in lobSTR_mergedref.bed</li>
 	    </ul>
 	  </li>
-	  <li><b>lobSTR_chromsizes.tab</b>: contains the size of each chromosome in the original reference genome</li>
+	  <li><b>lobSTR_chromsizes.tab</b>: contains the size of each chromosome in the reference genome</li>
 	</ol>
 	<p>
       </section>
