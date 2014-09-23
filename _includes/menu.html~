@@ -1,13 +1,17 @@
-      <header>
-        <h1>Lobstr-code</h1>
-        <p>lobSTR: a short tandem repeat profiler for next generation sequencing data</p>
-
-        <p class="view"><a href="https://github.com/mgymrek/lobstr-code">View the Project on GitHub <small>mgymrek/lobstr-code</small></a></p>
-
-
-        <ul>
-          <li><a href="https://github.com/mgymrek/lobstr-code/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/mgymrek/lobstr-code/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/mgymrek/lobstr-code">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
+<header>
+  <h1>Lobstr-code</h1>
+  <p>lobSTR: a short tandem repeat profiler for next generation sequencing data</p>
+  
+  <p class="view"><a href="http://github.com/mgymrek/lobstr-code">View the Project on GitHub <small>mgymrek/lobstr-code</small></a></p>
+  
+  <a href="index.html">home</a><br>
+  <a href="download.html">download</a><br>
+  <a href="install.html">install</a><br>
+  <a href="usage.html">usage</a><br>
+  <a href="file-formats.html">formats</a><br>
+  <a href="faq.html">faq</a><br>
+  <a href="changelog.html">changelog</a><br>
+  <a href="ystr-codis.html">genotyping y-str/codis</a><br>
+  <a href="contact-us.html">contact-us</a><br>
+  <a href="documentation.html">docs</a><br>
+</header>
