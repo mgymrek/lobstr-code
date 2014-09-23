@@ -1,0 +1,44 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+	<h2>Stutter Model Files</h2>
+	lobSTR uses a pre-built model of PCR stutter noise during the allelotype step to determine the liklihood of each possible STR genotype. The format of the stutter model files is described below.
+	<ul>
+	  <li><a href="#stutter2">Stutter Model Files: Version 2</a></li>
+	  <li><a href="#stutter3">Stutter Model Files: Version 3</a></li>
+	</ul>
+	<p>
+	  <a name="stutter2"></a>
+	  <h3>Stutter Model Files: Version 2</h3>
+	  This section describes the stutter model files used for lobSTR v2.0.3+. See below for the stutter model format for lobSTR v3+. The stutter model consists of a collection of files with a single prefix ("illumina_v2.0.3" is the prefix for the pre-built stutter model available in the download). The formats for the last two files are based on the logistic regression model functionality of the <a href="http://www.csie.ntu.edu.tw/~cjlin/libsvm/">LIBSVM</a> C++ pacakge.
+	  <ol>
+	    <li><b>illumina_v2.0.3.stepmodel</b>: This file describes the size distribution of stutter mutations. It contains the following lines:
+	      <ul>
+		<li>The first 6 lines contain the average stutter length (in bp) for all stutter mutations that were not a multiple of the repeat unit. There is one line per repeat unit size (1-6bp)</li>
+		<li>The next line gives the probability that a stutter mutation increases the number of repeats.</li>
+		<li>The next 6 lines give the PDF of observed unit step sizes (1-6bp). There are 38 numbers per line, giving the probability of observing a step size of from -18 to +18 bp.</li>
+		<li>The next 6 lines are the same as the previous, but give the observed counts of each step size in the training data.</li>
+	      </ul>
+	    </li>
+	    <li><b>illumina_v2.0.3.stuttermodel</b>: This file is the output of training a logistic regression model using the <a href="http://www.csie.ntu.edu.tw/~cjlin/libsvm/">LIBSVM</a> C++ pacakge.</li>
+	    <li><b>illumina_v2.0.3.stutterproblem</b>: This file is the training data input to the logistic regression model to determine the probability of stutter based on various sequence features. It has one line per read used for training, with four fields giving the values of the intercept, period size, STR length, GC content, and purity score used in the regression model.</li>
+	  </ol>
+	  <p>
+	  <a name="stutter3"></a>
+	  <h3>Stutter Model Files: Version 3</h3>
+	  In lobSTR v3+, we have removed the dependency on LIBSVM. File formats are the same as listed above to keep consistency across versions. However the stutterproblem file is no longer needed. The files are:
+	  <ol>
+	    <li><b>illumina_v3.pcrfree.stepmodel</b>: same format as above</li>
+	    <li><b>illumina_v3.pcrfree.stuttermodel</b>: The noise model trains a logistic regression model to learn the probability of stutter based on different sequence features. the last four lines give the values of the logistic regression coefficients for the intercept, period size, STR length, GC content, and purity score, respectively.</li>
+	  </ol>
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>

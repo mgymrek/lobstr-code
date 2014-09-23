@@ -7,7 +7,13 @@
     <div class="wrapper">
       {% include menu.html %}
       <section>
-	<h2>Changelog</h2>
+	<ul>
+	  <li><a href="#code">Code Changelog</a></li>
+	  <li><a href="#index">Index Changelog</a></li>
+	  <li><a href="#previous">Previous Index Versions</a></li>
+	</ul>
+	<a name="code"></a>
+	<h2>Code Changelog</h2>
 	<h3>New in version 2.0.8 <em>(beta)</em></h3>
 	This version should have big alignment speedups compared to previous versions, up to 5-10x faster than before. This version also fixes a minor bug fix for an off-by-one error in how allele sequences are reported in the REF and ALT fields of the VCF file.<br><br>
 	<h3>New in version 2.0.5</h3>
@@ -58,17 +64,49 @@
 	  <li>(<em>beta</em>) Conversion of allelotype output to VCF format</li>
 	  <li>(<em>beta</em>) Support for running on Amazon Web Services</li>
 	</ul>
+	To download previous lobSTR versions before 2.0.2, see <a href="http://www.broadinstitute.org/~gymrek/archive/">the lobSTR archive</a>. Otherwise, previous versions are available <a href="https://github.com/mgymrek/lobstr-code/releases">on github</a>.
+<p>
+  <a name="index"></a>
+  <h2>Index Changelog</h2>
+  <ul>
+    <li><b>September 23, 2013</b>: changes were made to both indices:
+      <ul>
+	<li><a href="http://files.teamerlich.org/lobstr/v2/ref/lobSTR_v2.0.8_hg19_resource_bundle.tar.gz">lobSTR_v2.0.8_hg19_resource_bundle.tar.gz</a></li>
+	<li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3.0.1_hg19_resource_bundle.tar.gz">lobSTR_v3.0.1_hg19_resource_bundle.tar.gz</a></li>
+      </ul>
+      In both versions of the index, the following Y-STR and CODIS annotation corrections were made:
+      <ul>
+	<li>The motif for DYS590 was changed from "TTTG" to "GTTTT"</li>
+	<li>The start coordinate of PentaE was changed from 97374244 to 97374245.</li>
+	<li>The start coordinate of PentaD was changed from 45056091 to 45056086.</li>
+	<li>The coordinates of D5S818 were changed from chr5:123111246-123111289 to chr5:123111250-123111293.</li>
+	<li>The reference allele of D8S1179 was changed from 11 to 13.</li>
+	<li>The reference allele of D21S11 was changed from 31.75 to 29.</li>
+      </ul>
+      Additionally, the extraneous file "last_reference.bed" was removed from the Version 2 index.
+    </li>
+    <li><b>September 10, 2013</b>: uploaded initial version of the lobSTR v3 index <a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3_hg19_resource_bundle.tar.gz">lobSTR_v3_hg19_resource_bundle.tar.gz</a></li>
+  </ul>
 
-    <h2>Previous versions</h2>
-
-    Old lobSTR indices, compatible with versions 2.0.0 and above:
-    <ul>
-      <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobstr_index_hg18_extend1000.tar.gz">hg18 index</a></li>
-      <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobstr_index_hg19_extend1000.tar.gz">hg19 index</a></li>
-    </ul>
-
-    To download previous lobSTR versions, see <a href="http://www.broadinstitute.org/~gymrek/archive/">the lobSTR archive</a>.
-    </section>
+  <a name="previous"></a>  
+  <h2>Previous versions</h2>
+  Version 2 (2.0.3+)
+  <ul>
+    <li><a href="http://files.teamerlich.org/lobstr/v2/ref/lobSTR_v2.0.8_hg19_resource_bundle.tar.gz">lobSTR_v2.0.8_hg19_resource_bundle.tar.gz</a></li>
+    <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobSTR_hg19_resource_bundle.tar.gz">lobSTR_hg19_resource_bundle.tar.gz (v2.0.3)</a></li>
+  </ul>
+  Version 3
+  <ul>
+    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3.0.1_hg19_resource_bundle.tar.gz">lobSTR_v3.0.1_hg19_resource_bundle.tar.gz</a></li>
+    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3_hg19_resource_bundle.tar.gz">lobSTR_v3_hg19_resource_bundle.tar.gz</a></li>
+  </ul>
+  Old lobSTR indices, compatible with version 2.0.0-2.0.2:
+  <ul>
+    <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobstr_index_hg18_extend1000.tar.gz">hg18 index</a></li>
+    <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobstr_index_hg19_extend1000.tar.gz">hg19 index</a></li>
+  </ul>
+  
+</section>
 </div>
     {% include footer.html %}
   </body>
