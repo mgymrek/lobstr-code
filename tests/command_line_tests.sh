@@ -168,6 +168,28 @@ lobSTR \
   -q \
   --rg-lib test --rg-sample test >/dev/null 2>&1
 testcode 1
+echo "Testing wrong file type specified..."
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fa -q \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
+lobSTR \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \
+  --out ${OUTDIR}/lobtest \
+  --verbose \
+  -f ${LOBSTR_TEST_DIR=.}/tmp_1.fq --bam \
+  --rg-lib test --rg-sample test >/dev/null 2>&1
+testcode 1
 echo "Testing file does not exist..."
 lobSTR \
   --index-prefix ${LOBSTR_TEST_DIR=.}/smallref/small_lobstr_ref_v2/lobSTR_ \

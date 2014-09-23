@@ -31,9 +31,6 @@ class FastaFileReader : public TextFileReader {
   explicit FastaFileReader(const std::string& _filename="");
   virtual bool GetNextRecord(ReadPair* read_pair);
   virtual bool GetNextRead(MSReadRecord* read);
-
-  bool GetNextMultiLineRecord(std::string* ident,
-                              std::string* sequene);
 };
 
 #endif  // SRC_FASTAFILEREADER_H__

@@ -38,59 +38,6 @@ bool FastaFileReader::GetNextRecord(ReadPair* read_pair) {
     return false;
   }
 }
-
-bool FastaFileReader::GetNextMultiLineRecord(string* ident,
-                                             string* sequence) {
-  // Read the identifier
-  string id;
-  current_line++;
-  if (!getline(input_stream, id)) {
-    return false;
-  }
-  *ident = id;
-  if ((*ident).empty()) {
-    stringstream msg;
-    msg << "Found empty ID in FASTA file " << filename << " line " << current_line;
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  if ((*ident).at(0) != '>') {
-        stringstream msg;
-    msg << "Found Invalid FASTA ID in file "
-        << filename << " line " << current_line
-        << " (expected '>' character)";
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  // Read the sequence
-  current_line++;
-  string nuc;
-  // First line had better be valid nucleotides
-  if (!getline(input_stream, nuc)) {
-    stringstream msg;
-    msg << "Problem reading nucleotide line from FASTA file "
-        << filename << " line " << current_line;
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  if (nuc.empty()) {
-        stringstream msg;
-    msg << "Found empty nucleotide line from FASTA file "
-        << filename << " line " << current_line;
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  if (!valid_nucleotides_string(nuc)) {
-        stringstream msg;
-    msg << "Found invalid nucleotide line from FASTA file "
-        << filename << " line " << current_line;
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  int pos = input_stream.tellg();
-  while (!(nuc.empty() || !valid_nucleotides_string(nuc))) {
-    (*sequence).append(string_replace(nuc, "\n", ""));
-    pos = input_stream.tellg();
-    if (!getline(input_stream, nuc)) return true;
-  }
-  input_stream.seekg(pos);
-  return true;
-}
                                              
 bool FastaFileReader::GetNextRead(MSReadRecord* read) {
   string ID;
