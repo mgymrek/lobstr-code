@@ -62,7 +62,7 @@ size_t max_read_length = 1024;
 size_t fft_window_size = 16;
 size_t fft_window_step = 4;
 size_t min_flank_len = 8;
-size_t max_flank_len = 50;
+size_t max_flank_len = 100;
 float percent_N_discard = 0.05;
 float entropy_threshold = 0.45;
 

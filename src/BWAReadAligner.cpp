@@ -578,7 +578,15 @@ void BWAReadAligner::GetSpannedSTRs(const ALIGNMENT& lalign, const ALIGNMENT& ra
     const string& motif = it->first;
     for (size_t i = 0; i < it->second.size(); i++) {
       const ReferenceSTR& ref = it->second.at(i);
+      if (align_debug) {
+	stringstream msg;
+	msg << "[GetSpannedSTRs]: checking " << ref.start << "-" << ref.stop << " " << (mincoord<ref.start) << " " << (maxcoord>ref.stop);
+	PrintMessageDieOnError(msg.str(), DEBUG);
+      }
       if (mincoord < ref.start && maxcoord > ref.stop) {
+	if (align_debug) {
+	  PrintMessageDieOnError("[GetSpannedSTRs]: Found match", DEBUG);
+	}
 	spanned_ref_strs->push_back(ref);
 	repseq->push_back(motif);
       }
