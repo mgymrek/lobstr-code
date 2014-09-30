@@ -1,0 +1,189 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+	<h2>Calling STR genotypes from whole genomes and whole exomes</h2>
+	<ul>
+	  <li><a href="#alignment">Step 1: alignment</a></li>
+	  <ul>
+	    <li><a href="#lobSTR">Run lobSTR</a>
+	      <ul>
+		<li><a href="#singleq">From single-end fastq files</a></li>
+		<li><a href="#pairedq">From paired-end fastq files</a></li>
+		<li><a href="#singlebam">From single-end bam files</a></li>
+		<li><a href="#pairedbam">From paired-end bam files</a></li>
+	    </ul>
+	    </li>
+	    <li><a href="#sortindex">Sorting and indexing the resulting BAM</a></li>
+	    <li><a href="#alnstats">Alignment summary statistics</a></li>
+	  </ul>
+	  <li><a href="#allelotype">Step 2: allelotype</a>
+	    <ul>
+	      <li><a href="#runallelotype">Running allelotype</a></li>
+	      <li><a href="#allstats">Allelotype summary statistics</a></li>
+	    </ul>
+	  </li>
+	  <li><a href="#nextsteps">Next steps</a></li>
+	</ul>
+	<p>
+	  This page has general information on running lobSTR on whole genome and whole exome sequencing. For more specific use cases or advice on setting specific paramters, see the <a href="documentation.html">documentation page</a>.
+	<a name="alignment"></a>
+	<h2>Step 1: alignment</h2>
+	  The first step is to align raw reads to STR-containing regions of the genome. In this step, you will generate a BAM file with reads aligning to STRs. Then you will sort and index that BAM to get ready for the second step, allelotyping.
+	<p>
+	<a name="lobSTR"></a>
+	<h3>Run lobSTR</h3>
+lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, or BAM). Based on the input format your reads are in, follow the appropriate instructions below. Note for any of the file formats shown below, if you have multiple files of reads you would like to align at once, you can pass a comma-separated list of files for any of the input arguments. Before starting the next steps, you will need:
+	<ul>
+	  <li><a href="install.html">to have lobSTR installed</a></li>
+	  <li>A lobSTR index: make sure you have either downloaded the lobSTR resource bundle from the <a href="download.html">downloads page</a> or that you have <a href="best-practices-custom-reference.html">built your own custom index</a>. Instructions below assume you're using the hg19 resource bundle.</li>
+	</ul>
+	In each case the following inputs are required:
+	<ul>
+	  <li>Raw reads (see specific cases below)</li>
+	  <li><code>index-prefix</code>: prefix of the path to files in the lobSTR index</li>
+	  <li><code>rg-sample</code> and <code>rg-lib</code>: these specify information to go into the read group field of the BAM. This is now required in all cases, since the allelotype step downstream uses read groups to determine which reads come from which sample in the case of <a href="best-practices-multi-sample-calling.html">multi-sample calling</a>.</li>
+	  <li><code>out</code>: prefix to name output files. The files $out.aligned.bam and $out.aligned.stats will be generated.</li>
+	</ul>
+	<p>
+	<a name="singleq"></a>
+	<h4>From single-end fastq files</h4>
+	{% highlight bash %}
+	  lobSTR \
+           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           -f my_sample.fq -q \
+           --rg-sample my_sample --rg-lib my_sample \
+           --out my_sample_output
+	{% endhighlight %}
+	<p>
+	<a name="pairedq"></a>
+	<h4>From paired-end fastq files</h4>
+	{% highlight bash %}
+	  lobSTR \
+           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           --p1 my_sample_1.fq --p2 my_sample_2.fq -q \
+           --rg-sample my_sample --rg-lib my_sample \
+           --out my_sample_output
+	{% endhighlight %}
+	<p>
+	<a name="singlebam"></a>
+	<h4>From single-end bam files</h4>
+	{% highlight bash %}
+	  lobSTR \
+           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           -f my_sample.bam --bam \
+           --rg-sample my_sample --rg-lib my_sample \
+           --out my_sample_output
+	{% endhighlight %}
+	<p>
+	<a name="pairedbam"></a>
+	<h4>From paired-end bam files</h4>
+	To run lobSTR in paired-end mode with BAM input, read pairs need to be adjacent to each other in the file so lobSTR knows which reads are paired. You can do this either by:
+	<ul>
+	  <li>
+	    Sorting the file by read name using samtools:<br>
+	    <code>samtools sort -n my_sample.bam my_sample.sorted</code>
+	  </li>
+	  <li>Using the <code>bamcollate2</code> tool from <a href="https://github.com/gt1/biobambam">biobambam</a>.</li>
+	</ul>
+	{% highlight bash %}
+	  lobSTR \
+           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           -f my_sample.bam --bampair \
+           --rg-sample my_sample.sorted.bam --rg-lib my_sample \
+           --out my_sample_output
+	{% endhighlight %}
+	<p>
+
+	<a name="sortindex"></a>
+	<h3>Sorting and indexing the resulting BAM</h3>
+	In the examples above, lobSTR will create the output files <code>my_sample_output.aligned.bam</code> and <code>my_sample_output.aligned.stats</code>. Before moving on to the allelotype step, use <a href="http://samtools.sourceforge.net/">samtools</a> to sort and index the bam file:
+	{% highlight bash %}
+	samtools sort my_sample_output.aligned.bam my_sample_output.sorted
+\	samtools index my_sample_output.sorted.bam
+	{% endhighlight %}
+	
+	<p>
+	<a name="alnstats"></a>
+	<h3>Alignment summary statistics</h3>
+	As mentioned above, the alignment step also produces the file <code>my_sample_output.aligned.stats</code> with various statistics about the alignment results. This file reports:
+	<ul>
+	  <li>Run info: start and end times, Git revision number, and machine type</li>
+	  <li>A string giving the parameters used for alignment</li>
+	  <li>Statistics about the alignment:
+	    <ul>
+	      <li>Reads aligned: number of reads aligned</li>
+	      <li>Perc. stithced: percentage of read pairs that were stitched together. If the two reads of a pair overlap uniquely, lobSTR will attempt to stitch them together, which sometimes results in spanning longer STRs than can be spanned with the single end reads.
+	      <li>Perc. single: percentage of alignments that are single reads</li>
+	      <li>Perc. mate: percentage of alignments that are mate pairs of primary STR alignments </li>
+	      <li>Perc. reverse: percentage of alignments on the reverse strand (should be close to 50%)</li>
+	      <li>Perc. nonunit: percentage of alignments with a repeat allele that is not a multiple of the motif size (usually less than 5%)</li>
+	    </ul>
+	  </li>
+	</ul>
+	If the alignment did not finish and exited with an error, this file will instead contain the error message. <b>To help us learn about issues that users run into with lobSTR and which parameter settings are most used, these stats files are uploaded to Amazon S3 for analysis. To turn off this feature use the <code>--noweb</code> option.</b>
+
+	<p>
+	<a name="allelotype"></a>
+	<h2>Step 2: allelotype</h2>
+	For this step, you will need:
+	<ul>
+	  <li>The sorted and indexed bam file from step 1</li>
+	  <li>A lobSTR index: make sure you have either downloaded the lobSTR resource bundle from the <a href="download.html">downloads page</a> or that you have <a href="best-practices-custom-reference.html">built your own custom index</a>. Instructions below assume you're using the hg19 resource bundle.</li>
+	  <li>An STR info file: this is available either from the lobSTR resource bundle download, or see <a href="best-practices-custom-reference.html">building a custom reference</a> to generate this file if you are using a custom reference.</li>
+	  <li>A lobSTR noise model. You can either use the default noise model in the lobSTR download (installed by default in <code>/usr/local/share/lobSTR/models</code> or in the <code>models/</code> folder of the download) or <a href="best-practices-custom-noise-model.html">build a custom noise model</a>. If you are using a different platform besides Illumina it might be a good idea to create your own model.</li>
+	</ul>
+
+	<a name="runallelotype"></a>
+	<h3>Running allelotype</h3>
+	{% highlight bash %}
+	allelotype \
+           --command classify \
+           --bam my_sample_output.sorted.bam \
+           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+	   --strinfo hg19_v3.0.1/lobstr_v3.0.1_hg19_strinfo.tab \
+           --noise_model models/illumina_v3.pcrfree \
+           --out my_sample_output
+	{% endhighlight %}
+
+	This will create the output files <code>my_sample_output.vcf</code> and <code>my_sample_output.allelotype.stats</code>. The format of the VCF output is descrbed on the <a href="file-formats.html">file formats page</a>.
+	<p>
+	<a name="allstats"></a>
+	<h3>Allelotype summary statistics</h3>
+	The allelotype produces a file <code>my_sample_output.allelotype.stats</code> with various statistics about the allelotype results. It reports:
+	<ul>
+	  <li>Run info: start and end times, Git revision number, and machine type</li>
+	  <li>A string giving the parameters used for alignment</li>
+	  <li>Statistics about the allelotype output for each sample:
+	    <ul>
+	      <li>Sample: the name of the sample</li>
+	      <li>Num calls: number of total calls for that sample</li>
+	      <li>Num calls >=5x: number of calls with at least 5x coverage</li>
+	      <li>Mean coverage: of all calls reported, the mean coverage</li>
+	      <li>Mean perc. agree: mean of the percentage of reads at each locus supporting the called genotype</li>
+	      <li>Call type by period (0/0, 0/1, 1/1, 1/2)</li>
+	      <li>Additional read filter stats describing how many reads were filtered due to certain criteria.</li>
+	    </ul>
+	    </li>
+	</ul>
+	If the allelotype step did not finish and exited with an error, this file will instead contain the error message. <b>To help us learn about issues that users run into with lobSTR and which parameter settings are most used, these stats files are uploaded to Amazon S3 for analysis. To turn off this feature use the <code>--noweb</code> option.</b>
+
+	<p>
+	<a name="nextsteps"></a>
+	<h2>Next steps</h2>
+	Now with a list of STR variant calls, you might be interested in:
+	<ul>
+	  <li><a href="best-practices-filtering.html">filtering variants</li>
+	  <li><a href="mgymrek.github.io/pybamview">visualizing STR sequencing alignments</li>
+	</ul>
+      See the <a href="documentation.html">documentation page</a> for more details.
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>
