@@ -1,0 +1,64 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+	<h2>Building a custom lobSTR reference</h2>
+	<ul>
+	  <li><a href="#overview">Overview</a></li>
+	  <li><a href="#refbed">Reference bed file</a></li>
+	  <li><a href="#build">Build the lobSTR index</a></li>
+	  <li><a href="#strinfo">Generating an STRInfo file</a></li>
+	</ul>
+	<p>
+	  <a name="overview"></a>
+	  <h2>Overview</h2>
+	  lobSTR comes with a pre-built reference and index for humans (hg19). This reference was built using a process described in <a href="http://genome.cshlp.org/content/early/2014/08/18/gr.177774.114.short">Willems et al.</a> by running Tandem Repeat Finder on the hg19 reference genome. Additionally, it contains Y-STR and CODIS markers (described <a href="ystr-codis.html">here</a>). The resource bundle for hg19 is available on the <a href="download.html">download page</a>. However you may want to use a custom set of STR loci in your reference if:
+	  <ul>
+	    <li>You are working with a different species or different reference genome.</li>
+	    <li>You would like to align to STRs with specific annotations that are not in the current reference.</li>
+	  </ul>
+	  To use your own reference, you will need to create a bed file with the loci of interest, build a lobSTR index, and build an STR info file. These steps are described below.
+	<p>
+	  Note, all scripts mentioned below are available in the <code>scripts/</code> directory of the lobSTR download.
+	<p>
+	  <a name="refbed"></a>
+	  <h2>Reference bed file</h2>
+	  The first step is to create a bed file with your custom set of STR loci. One way to do this is by running <a href="http://tandem.bu.edu/trf/trf.unix.help.html">Tandem Repeats Finder scoring scheme</a> on your reference genome of interest. You will need to make a bed file with the following columns present:
+	  <ol>
+	    <li>Column 1: chromosome</li>
+	    <li>Column 2: start coordinate of the STR</li>
+	    <li>Column 3: end coordinate of the STR</li>
+	    <li>Column 4: period of the STR</li>
+	    <li>Column 5: reference copy number</li>
+	    <li>Column 9: STR score. This score measures the purity of the STR sequence and is based on the suggested <a href="http://tandem.bu.edu/trf/trf.unix.help.html">Tandem Repeats Finder scoring scheme</a> with match=2, mismatch=-7 and indel=-7. Therefore the maximum possible score for a perfectly pure STR sequence (e.g. ATATATATATAT) is 2*(length of STR region).
+	    <li>Column 15: STR repeat unit</li>
+	  </ol>
+	  Note some columns are not used. This is because lobSTR was originally designed to take input directly from tandem repeat finder. You can put any value in the non-required columns, just make sure there are at least 15 columns with the required information listed above.
+	<p>
+	  <a name="build"></a>
+	  <h2>Build the lobSTR index</h2>
+	  To build the lobSTR index, create a clean directory where the index will be stored. Then run:
+	  {% highlight bash %}
+	  python scripts/lobstr_index.py \
+             --str str_bed_file \
+             --ref ref_genome.fa \
+             --out output_directory
+	  {% endhighlight %}
+	  This will create an index with the prefix <code>output_directory/lobSTR_</code>.
+	<p>
+	  <a name="strinfo"></a>
+	  <h2>Generating an STRInfo file</h2>
+	  If using a custom index, you will also need to generate a file with information on each STR locus to input to the <code>--strinfo</code> option of the allelotyper.
+	  {% highlight bash %}
+	  python scripts/GetSTRInfo.py str_bed_file ref_genome.fa > strinfo.tab
+	  {% endhighlight %}
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>

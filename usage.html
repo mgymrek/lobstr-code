@@ -10,13 +10,12 @@
 	<h2>You will need</h2>
 	<ul>
 	  <li>Download the <a href="download.html">lobSTR</a> package.</li>
-	  <li>Download the lobSTR resource bundle for the appropriate reference genome (available on the <a href="download.html">downloads</a> page).</li>
+	  <li>Download the lobSTR resource bundle for the appropriate reference genome (available on the <a href="download.html">downloads</a> page). If you'd like to use your own custom set of STR loci, see <a href="best-practices-custom-reference.html">Building a custom reference</a> before proceeding.</li>
 	</ul>
 
 	<h2>On this page</h2>
 	<ul>
 	  <li>Basic usage</li>
-	  <li>Building a custom index</li>
 	  <li>Detailed description of all command line options</li>
 	</ul>
 
@@ -58,28 +57,6 @@
 	  <li>test.allelotype.stats</li>
 	</ul>
 	To see a description of the output file formats, see <a href="file-formats.html">file formats</a>. To see all available parameters, run <tt>lobSTR --help</tt> and <tt>allelotype --help</tt>.<br />
-
-	<h2>Building a custom index<br /></h2>
-	lobSTR provides an index in hg18 or hg19 coordinates available on the <a href="download.html">downloads</a> page. These indices were created using the STR coordinates also available for download there. You may wish to create a custom index with a different set of STR loci. To do so you will need:
-	<ul>
-	  <li>STR_TABLE: A bed file containing a list of STR coordinates, in the format output from the Tandem Repeat Finder. The columns must match those in trf.ucsc.hg18.filtered.bed. In particular, the following columns must be present:
-	    <ol>
-	      <li>Column 1: chromosome</li>
-	      <li>Column 2: start coordinate of the STR</li>
-	      <li>Column 3: end coordinate of the STR</li>
-	      <li>Column 4: period of the STR</li>
-	      <li>Column 5: reference copy number</li>
-	      <li>Column 9: STR score. This score measures the purity of the STR sequence and is based on the suggested <a href="http://tandem.bu.edu/trf/trf.unix.help.html">Tandem Repeats Finder scoring scheme</a> with match=2, mismatch=-7 and indel=-7. Therefore the maximum possible score for a perfectly pure STR sequence (e.g. ATATATATATAT) is 2*(length of STR region).
-	      <li>Column 15: STR repeat unit</li>
-	    </ol>
-	  </li>
-	  <li>REF_GENOME.fa: A reference genome in fasta format for *the same genome build* as the bed file of STR coordinates.</li>
-	  <li>OUT_DIR: the directory to store the index. Note this will overwrite any existing indices in this directory.</li>
-	</ul>
-	To build a new index, run:	    python PATH_TO_LOBSTR/scripts/lobstr_index.py 	    --str STR_TABLE --ref REF_GENOME.fa --out OUT_DIR 	    <br /><br />This will create an index with the prefix OUT_DIR/lobSTR_<br />
-	<br>
-	***If using a custom index, you will also need to generate a file with information on each STR locus to input to the <tt>--strinfo</tt> option of the allelotyper. The lobSTR download provides the script <a href="https://raw.github.com/mgymrek/lobstr-code/master/scripts/GetSTRInfo.py"><tt>GetSTRInfo.py</tt></a> to do so ***.
-	
 	<br><br>
 	General usage:
 	<br>
