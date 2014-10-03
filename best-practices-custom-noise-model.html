@@ -1,0 +1,43 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+	<h2>Building a custom noise model</h2>
+	<ul>
+	  <li><a href="#overview">Overview</a></li>
+	  <li><a href="#input">Input training data</a></li>
+	  <li><a href="#build">Building the model</a></li>
+	</ul>
+	<p>
+	  <a name="overview"></a>
+	  <h2>Overview</h2>
+	  In the allelotype step, we use a model of PCR stutter noise to determine the likelihood of each genotype. This model specifies the probability of observing PCR stutter at a given locus based on sequence properties (motif length, total STR length, GC content, and STR purity) and the expected step size distribution. This model will differ between sequencing technologies (i.e. Illumina vs. IonTorrent) and also between different protocols (PCR free vs. not). In the lobSTR download (see <a href="download.html">download</a>), we provide a model for Illumina PCR free data. This default noise model should work reasonably well in most cases. However, if you are using data from a different platform or protocol, you might want to generate your own noise model.
+	<p>
+	  <a name="input"></a>
+	  <h2>Input training data</h2>
+	  The model is trained using data from haploid chromosomes, usually from the male sex chromosomes. For these, we know there should only be a single allele present and that reads supporting an allele besides the modal allele at each locus are likely due to stutter. Therefore, for training you need to have a reasonably high coverage male genome (or something with haploid chromosomes if you are using another organism) that you have run the lobSTR step on (see <a href="usage.html">usage</a> and <a href="best-practices-wgs-wes.html">wgs best practices</a> pages). With the sorted and indexed bam file in hand, you are ready to build a noise model.
+
+	<p>
+	  <a name="build"></a>
+	  <h2>Building the model</h2>
+	  To build the noise model, use the <code>allelotype</code> command with the parameter <code>--command train</code>. You must specify which chromosomes should be treated as haploid.
+	  {% highlight bash %}
+	  allelotype \
+            --command train \
+            --bam my_male_genome.bam \
+            --haploid chrX,chrY \
+            --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+	    --strinfo hg19_v3.0.1/lobstr_v3.0.1_hg19_strinfo.tab \
+            --noise_model my_noise_model
+	  {% endhighlight %}
+	  This will generate noise model files <code>my_noise_model.stepmodel</code> and <code>my_noise_model.stuttermodel</code> which can then be used as input to <code>allelotype</code> for performing genotyping. The structure of these files is described <a href="stutter-model-files.html">here</a>.
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>
