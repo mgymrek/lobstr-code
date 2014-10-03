@@ -1,0 +1,69 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+	<h2>Recommendations for setting allelotype parameters</h2>
+	<ul>
+	  <li><a href="#overview">Overview</a></li>
+	  <li><a href="#adjust">Adjusting alignments</a></li>
+	  <li><a href="#filter">Filtering alignments</a></li>
+	  <li><a href="#speedup">Speeding up allelotype</a></li>
+	</ul>
+	<p>
+	  <a name="overview"></a>
+	  <h2>Overview</h2>
+	  General usage for running the allelotype step can be found on the <a href="usage.html">usage</a> and <a href="best-practices-wgs-wes.html">best practices for WGS/WES</a> pages. This page gives advice on more specific topics related to the allelotyper.
+
+	<p>
+	  <a name="adjust"></a>
+	  <h2>Adjusting alignments</h2>
+	  By default, the allelotype recalculates the allele supported by each read by adding up all gaps from the entire read, including in the flanking regions. This gives the most concordant results when comparing to STR genotypes made by traditional capillary electrophoresis methods and gives the most reliable genotypes for ~100bp reads.
+	  <p>
+	    There is an option to calculate STR allele supported by each read by only including gaps that allelotype determines to be within the boundary of the STR. You can turn this on using the <code>--dont-include-flank</code> option. While theoretically more accurate than the approach described above, the process of ascertaining the boundary of the STR is still error prone and this option is usually not recommended. However, if you are using very long reads that may span more than a single STR, then it is recommended to set this option.
+
+	<p>
+	  <a name="filter"></a>
+	  <h2>Filtering alignments</h2>
+	  You can use the following parameters to filter which read alignments are used by the allelotyper:
+	  <ul>
+	    <li><code>--min-border INT</code>: Filter reads that do not extend past both ends of the STR region by at least INT bp.</li>
+	    <li><code>--min-bp-before-indel INT</code>: Filter reads with an indel occurring less than INT bp from either end of the read</li>
+	    <li><code>--min-read-end-match INT</code>: Filter reads whose alignments don't exactly match the reference for at least INT bp at both ends.</li>
+	    <li><code>--maximal-end-match INT</code>: Filter reads whose prefix/suffix matches to the reference are less than or equal to those obtaind when shifting the read ends by distances within INT bp.
+	    <li><code>--max-diff-ref INT</code>: don't use reads different in length by more than INT bp from the reference allele. If you are specifically interested in big expansions, you must set this to a number significantly higher than the expansion length you are looking for.</li>
+	    <li><code>--mapq INT</code>: maximum allowed mapq score. This is calculated as the sum of qualities at base mismatches.</li>
+	    <li><code>-u</code>: require length differences to be a multiple of the repeat unit.</li>
+	  </ul>
+	  Setting <code>--min-border 5 --min-bp-before-indel 7 --maximal-end-match 15 --min-read-end-match 5</code> has given good results.
+
+	<p>
+	  <a name="speedup"></a>
+	  <h2>Speeding up allelotype</h2>
+	  To speed up allelotype, it is recommended to run separately on each chromosome using the <code>--chrom</code> option and merging the result VCF files afterwards. For example:
+	  {% highlight bash %}
+	  for chrom in $seq(1 22) X Y
+	  do
+	    allelotype \
+              --command classify \
+              --bam my_sample_output.sorted.bam \
+              --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+	      --strinfo hg19_v3.0.1/lobstr_v3.0.1_hg19_strinfo.tab \
+              --noise_model models/illumina_v3.pcrfree \
+              --out my_sample_output_chr${chrom} \
+              --chrom $chrom
+            bgzip my_sample_output_chr${chrom}.vcf
+	    tabix -p vcf my_sample_output_chr${chrom}.vcf.gz
+	  done
+	  vcf-merge $(ls my_sample_output_chr*.vcf.gz) | bgzip -c > my_sample_output_merged.vcf.gz
+	  tabix -p vcf my_sample_output_merged.vcf.gz
+	  {% endhighlight %}
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>
