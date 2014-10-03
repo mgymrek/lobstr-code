@@ -1,0 +1,88 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+	<h2>Recommendations for setting lobSTR alignment parameters</h2>
+	<ul>
+	  <li><a href="#overview">Overview</a></li>
+	  <li><a href="#readtrim">Read length recommendations</a>
+	    <ul>
+	      <li><a href="#shortreads">Short reads</a></li>
+	      <li><a href="#longreads">Long reads</a></li>
+	    </ul>
+	  </li>
+	  <li><a href="#alnparams">Alignment sensitivity and specificity</a></li>
+	  <li><a href="#filter">Filtering output reads</a></li>
+	  <li><a href="#multi">Multi-mappers</a></li>
+	  <li><a href="#speedup">Speeding up alignment</a></li>
+	</ul>
+	<p>
+	  <a name="overview"></a>
+	  <h2>Overview</h2>
+	  General usage for running the lobSTR alignment step can be found on the <a href="usage.html">usage</a> and <a href="best-practices-wgs-wes.html">best practices for WGS/WES</a> pages. This page gives advice on more specific topics related to alignment.
+
+	<p>
+	  <a name="readtrim"></a>
+	  <h2>Read length recommendations</h2>
+	  Depending on the length and type of your input reads, certain specific parameters might improve lobSTR performance.
+	  <p>
+	    <a name="shortreads"></a>
+	    <h3>Short reads</h3>
+	    If aligning to the standard hg19 reference provided in the resource bundle, we at least 100bp reads for the best quality alignments. However, read lengths as low as 50-70bp can give good results if you are primarily interested in STRs with a total length of ~20bp or less. Be aware that short reads will give very biased results for longer STRs: only short alleles that can be spanned by the read length will be detected, leading to a large bias toward reporting the shorter allele at heterozygous loci. For such short reads, it is recommended to set <code>--fft-window-size 16</code> and <code>--fft-window-step 8</code>.
+	  <p>
+	    <a name="longreads"></a>
+	    <h3>Long reads</h3>
+	    lobSTR can also be used to align longer reads (several hundreds of bp). For very long reads, these parameters can be useful:
+	    <ul>
+	      <li><code>--maxflank INT</code>: this parameter gives how long to trim flanking regions down to before attempting alignment. Setting this value higher results in more specific alignment but longer run time. Setting it lower results in less specific alignments, some of which will be flagged as multi-mappers and discarded, but dramatically speeds up run time. <code>--maxflank 50</code> performs well in most cases, but if you are specifically interested in longer STRs (lengths ~60bp+) you will get higher quality alignments with <code>--maxflank 100</code>.</li>
+	      <li><code>--bwaq INT</code>: this parameters is used to trim read ends based on quality scores before attempting STR detection or alignment. Often, errors tend to accumulate at the ends of reads, which are reflected in the base quality scores. Trimming off these low quality ends results in better alignments. Setting <code>--bwa q 15</code> usually performs well. If you are using sequence files with base quality scores in the old Phred format (where quality scores are given as Phred + 64 rather than as Phred +33), add the <code>--oldillumina</code> flag.</li>
+	      <li>With longer reads, there is a higher chance that the flanking regions will contain some errors. See the alignment parameters below to increase the tolerance to gaps and mismatches in the flanking regions.</li>
+	    </ul>
+
+	    Note that lobSTR aligns each read to a primary STR. If a read spans more than one STR, this will be noted in a flag ("XO"). However the allelotype step will only look at the parimary STR aligned to. We plan to change this in the future.
+
+	  <p>
+	    <a name="alnparams"></a>
+	    <h2>Alignment sensitivity and specificity</h2>
+	    lobSTR offers the following parameters to control alignment specificity and sensitivity:
+	    <ul>
+	      <li><code>--mismatch INT</code>: edit distance allowed during alignment of each flanking region. Set this higher to be more tolerable of alignment errors.</li>
+	      <li><code>-g INT</code>: maximum number of gap opens allowed in each flanking region. This is set to 1 by default. Gap opens in flanking regions are often a signal of low quality alignment to the STR, so it is not recommended to increase this for short reads.</li>
+	      <li><code>-e INT</code>: maximum number of gap extensions allowed in each flanking region. This is also set to 1 by default but can be increased if using very long reads.</li>
+	      <li><code>-r INT</code>: edit distance allowed during alignment of each flanking region as a percentage of the read length. Use this instead of <code>-m</code> to have a max edit distance per read length rather than an absolute cutoff.</li>
+	    </ul>
+
+	  <p>
+	    <a name="filter"></a>
+	    <h2>Filtering output reads</h2>
+	    You can use the following to filter which reads are output:
+	    <ul>
+	      <li><code>--max-diff-ref INT</code>: don't report reads different in length by more than INT bp from the reference allele. If you are specifically interested in big expansions, you must set this to a number significantly higher than the expansion length you are looking for.</li>
+	      <li><code>--mapq INT</code>: maximum allowed mapq score. This is calculated as the sum of qualities at base mismatches.</li>
+	      <li><code>-u</code>: require length differences to be a multiple of the repeat unit.</li>
+	    </ul>
+	    
+	  <p>
+	    <a name="multi"></a>
+	    <h2>Multi-mappers</h2>
+	    By default, lobSTR does not report alignments for reads that did map to a unique best location. To report these reads, use <code>--multi</code>. This will report one primary alignment and list alternative locations in the "XA" tag of the bam file.
+	    
+	  <p>
+	    <a name="speedup"></a>
+	    <h2>Speeding up alignment</h2>
+	    To speed up lobSTR alignment, try:
+	    <ul>
+	      <li>Running in multithread mode by using the <code>-p INT</code> parameter to set the number of processors to use.</li>
+	      <li>As described above, setting <code>--maxflank INT</code> to a smaller number dramatically reduces alignment time, but at the cost of a slight reduction in alignment quality. We have not tested values of <code>--maxflank</code> less than 50.</li>
+	      <li>Don't allow gaps in flanking regions (set <code>-g 0 -e 0</code>).</li>
+	    </ul>
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>
