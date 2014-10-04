@@ -429,9 +429,9 @@ void LoadReference() {
 	     it != refid_to_refstrs[refid].end(); it++) {
 	  it->chrom = chrom; // Set chrom, wasn't set above
 	  pair<string, int> locus = it->GetLocus();
-	  int strlen = it->stop-it->start;
+	  int strlen = it->stop-it->start+1;
 	  // Get STR sequence
-	  ref_nucleotides[locus] = nucs.substr(it->start-start+PAD, strlen);
+	  ref_nucleotides[locus] = nucs.substr(it->start-start+PAD-1, strlen);
 	  // Get extended ref sequence
 	  ref_ext_nucleotides[locus] = nucs.substr(it->start-start+PAD-extend, 2*extend + strlen);
 	  // Add to reference STRs
