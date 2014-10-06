@@ -36,7 +36,7 @@ const float STITCH_DIFF = 0.1;
 // min allowed distance from STR boundary to read ends
 size_t MIN_DIST_FROM_END = 8;
 // more than this is likely bad alignment
-const size_t MAX_CIGAR_SIZE = 5;
+const size_t MAX_CIGAR_SIZE = 10;
 
 namespace AlignmentUtils {
   int GetMapq(const string& aligned_sw_string,
@@ -199,6 +199,9 @@ namespace AlignmentUtils {
   
   bool GetSTRAllele(MSReadRecord* aligned_read,
 		    const CIGAR_LIST& cigar_list) {
+    if (align_debug) {
+      PrintMessageDieOnError("[GetSTRAllele]: starint GetSTRAllele", DEBUG);
+    }
     // index where STR starts in the read
     size_t str_index = aligned_read->msStart-aligned_read->read_start + 1;
     // Length of the total STR region
@@ -213,11 +216,19 @@ namespace AlignmentUtils {
     }
     size_t str_index_end = aligned_read->read_start + span - aligned_read->msEnd;
     if ((str_index < MIN_DIST_FROM_END || str_index_end < MIN_DIST_FROM_END)) {
+      if (align_debug) {
+	PrintMessageDieOnError("[GetSTRAllele]: failed in dist from end check", DEBUG);
+      }
       return false;
     }
 
     // If alignment is too messy, get rid of it
     if (cigar_list.cigars.size() > MAX_CIGAR_SIZE) {
+      if (align_debug) {
+	stringstream msg;
+	msg << "[GetSTRAllele]: failed max cigar size test " << cigar_list.cigar_string;
+	PrintMessageDieOnError(msg.str(), DEBUG);
+      }
       return false;
     }
     
@@ -345,6 +356,9 @@ namespace AlignmentUtils {
 	substr(str_index - 1, ms_length+diff_from_ref);
     }
     if (ms_nuc.length() <= MIN_STR_LENGTH) {
+      if (align_debug) {
+	PrintMessageDieOnError("[GetSTRAllele]: failed min STR length check", DEBUG);
+      }
       return false;
     }
     aligned_read->diffFromRef = diff_from_ref;

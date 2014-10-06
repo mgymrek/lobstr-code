@@ -186,6 +186,7 @@ bool BWAReadAligner::ProcessSingleEndRead(ReadPair* read_pair, string* err, stri
   if (!ProcessRead(&read_pair->reads.at(0), read_pair->read1_passed_detection,
 		   &good_left_alignments_read1,
 		   &good_right_alignments_read1, err, messages)) {
+    *err += "process-read-faile;";
     return false;
   }
   // Get rid of multi mappers
@@ -212,8 +213,10 @@ bool BWAReadAligner::ProcessSingleEndRead(ReadPair* read_pair, string* err, stri
 		      dummy_matealign, alternate_mappings, false)) {
     return true;
   } else {
+    *err += "output-alignment-failed;";
     return false;
   }
+  *err += "end-of-singleend-process-read;";
   return false;
 }
 
@@ -758,6 +761,9 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
           read_pair->reads.at(aligned_read_num).msStart)
          || (read_pair->reads.at(aligned_read_num).rEnd <=
             read_pair->reads.at(aligned_read_num).msEnd))) {
+    if (align_debug) {
+      PrintMessageDieOnError("Checking coords forward strand failed", DEBUG);
+    }
     return false;
   }
   // coords make sense on reverse strand
@@ -766,6 +772,9 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
           read_pair->reads.at(aligned_read_num).msStart)
          || (read_pair->reads.at(aligned_read_num).lEnd <=
       read_pair->reads.at(aligned_read_num).msEnd))) {
+    if (align_debug) {
+      PrintMessageDieOnError("Checking coords rev strand failed", DEBUG);
+    }
     return false;
   }
 
@@ -775,11 +784,17 @@ bool BWAReadAligner::OutputAlignment(ReadPair* read_pair,
       (read_pair->reads.at(aligned_read_num).rEnd <0) ||
       (read_pair->reads.at(aligned_read_num).lEnd < 0) ||
       (read_pair->reads.at(aligned_read_num).msStart < 0)) {
+    if (align_debug) {
+      PrintMessageDieOnError("Checking flank coords failed", DEBUG);
+    }
     return false;
   }
 
   // Adjust alignment and STR call
   if (!AdjustAlignment(&read_pair->reads.at(aligned_read_num))) {
+    if (align_debug) {
+      PrintMessageDieOnError("Adjust alignment failed", DEBUG);
+    }
     return false;
   }
   // Make sure alignment meets requirements
@@ -875,6 +890,9 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   try {
     rseq = refseq.sequence.substr(start_pos - refseq.start-REFEXTEND/2 + PAD, reglen+REFEXTEND);
   } catch(std::out_of_range & exception) { 
+    if (align_debug) {
+      PrintMessageDieOnError("[AdjustAlignment]: Failed to get refseq", DEBUG);
+    }
     return false;
   }
   const string& aligned_seq = !aligned_read->reverse ?
@@ -934,6 +952,11 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
 
   // Check if alignment is reasonably good
   if (sw_score < min_sw_score) {
+    if (align_debug) {
+      stringstream msg;
+      msg << "[AdjustAlignment]: SW score " << sw_score << " greater than max " << min_sw_score;
+      PrintMessageDieOnError(msg.str(), DEBUG);
+    }
     return false;
   }
 
@@ -941,7 +964,13 @@ bool BWAReadAligner::AdjustAlignment(MSReadRecord* aligned_read) {
   try {
     return AlignmentUtils::GetSTRAllele(aligned_read, cigar_list);
   } catch(std::out_of_range & exception) {
+    if (align_debug) {
+      PrintMessageDieOnError("[AdjustAlignment]: GetSTRAllele failed", DEBUG);
+    }
     return false;
+  }
+  if (align_debug) {
+    PrintMessageDieOnError("[AdjustAlignment]: Got to end of adjust alignment", DEBUG);
   }
   return false;
 }
