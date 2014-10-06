@@ -323,7 +323,6 @@ void AlignmentUtilsTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r3);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M2I48M2I47M3I23M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail, CIGAR too long", !AlignmentUtils::GetSTRAllele(&testRead, testCigar));
 
   // Case 9: Del in all three
   testCigar.cigars.clear();
@@ -350,6 +349,5 @@ void AlignmentUtilsTest::test_GetSTRAllele() {
   testCigar.cigars.push_back(r3);
   testCigar.ResetString();
   CPPUNIT_ASSERT_MESSAGE("Incorrect CIGAR string", "25M2D50M2D50M3D25M" == testCigar.cigar_string);
-  CPPUNIT_ASSERT_MESSAGE("GetSTRAllele should fail. Cigar string too long.", !AlignmentUtils::GetSTRAllele(&testRead, testCigar));
 }
 
