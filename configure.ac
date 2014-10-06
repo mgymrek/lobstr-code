@@ -18,6 +18,9 @@ AC_CONFIG_HEADER(config.h)
 AC_CONFIG_SRCDIR([src/main.cpp])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
+# Detect host (used later for Darwin/Mac-OS detection)
+AC_CANONICAL_HOST
+
 LT_INIT([static])
 AC_PROG_CC
 AC_PROG_CXX
@@ -31,6 +34,16 @@ AX_PTHREAD([],[
    AC_MSG_ERROR([Pthread support is required for LobSTR])
 ])
 AX_CHECK_ZLIB()
+
+# Detect Mac-OS-X systems, and set USE_MACOS_DISPATCH in 'config.h'
+# This value is used in './src/xsemaphore.h' .
+AS_CASE([$host],
+       [*-*-darwin*], [MT_USE_DISTACH=yes]
+       [MT_USE_DISPATCH=""]
+     )
+if test "x$MT_USE_DISTACH" = "xyes" ; then
+  AC_DEFINE([USE_MACOS_DISPTACH], 1, [True if compiling on Mac-OS-X, need to use dispatch/semaphore.h])
+fi
 
 AX_BOOST_BASE([1.38.0])
 PKG_CHECK_MODULES([CPPUNIT],[cppunit])
