@@ -56,10 +56,10 @@
               --noise_model models/illumina_v3.pcrfree \
               --out my_sample_output_chr${chrom} \
               --chrom $chrom
-            bgzip my_sample_output_chr${chrom}.vcf
-	    tabix -p vcf my_sample_output_chr${chrom}.vcf.gz
+	    cat my_sample_output_chr${chrom}.vcf | vcf-sort | bgzip -c > my_sample_output_chr${chrom}.sorted.vcf.gz
+	    tabix -p vcf my_sample_output_chr${chrom}.sorted.vcf.gz
 	  done
-	  vcf-merge $(ls my_sample_output_chr*.vcf.gz) | bgzip -c > my_sample_output_merged.vcf.gz
+	  vcf-concat $(ls my_sample_output_chr*.sorted.vcf.gz) | bgzip -c > my_sample_output_merged.vcf.gz
 	  tabix -p vcf my_sample_output_merged.vcf.gz
 	  {% endhighlight %}
       </section>

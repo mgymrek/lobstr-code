@@ -16,6 +16,7 @@
 	      <li><a href="#longreads">Long reads</a></li>
 	    </ul>
 	  </li>
+	  <li><a href="#app">Specific applications</a></li>
 	  <li><a href="#alnparams">Alignment sensitivity and specificity</a></li>
 	  <li><a href="#filter">Filtering output reads</a></li>
 	  <li><a href="#multi">Multi-mappers</a></li>
@@ -45,6 +46,17 @@
 	    </ul>
 
 	    Note that lobSTR aligns each read to a primary STR. If a read spans more than one STR, this will be noted in a flag ("XO"). However the allelotype step will only look at the parimary STR aligned to. We plan to change this in the future.
+
+	  <p>
+	    <a name="app"></a>
+	    <h2>Specific applications</h2>
+	    Based on the characteristics of the STRs you're interested in genotyping, it might be helpful to set some special flags:
+	    <ul>
+	      <li><b>Genotyping Y-STR/CODIS/Marhsfield markers in long reads</b>. During alignment, lobSTR assigns each read to a single STR location. When using long reads (100bp+ or so), a single read might span more than 1 STR. By default it will choose the region with the best entropy score within a 16bp window. This tends to bias the algorithm toward choosing short homopolymers as the primary STR spanned by each read, even if a longer tetranucleotide exists elsewhere in the read. To bias it toward choosing longer and more complex STRs, you can set <code>--fft-window-size 24 --fft-window-step 12</code>. 
+		</li>
+	      <li><b>Genotyping long expansions</b>. By default lobSTR trims flanking regions before attempting to align reads to STRs. Additionally, it doesn't return reads with more than 50bp length difference from the reference. For genotyping large expansions (e.g. Fragile X or Huntington's), this is not desirable. Setting <code>--maxflank 1000 --max-diff-ref 1000</code> will allow you to pick up many more of these events.
+		</li>
+	    </ul>
 
 	  <p>
 	    <a name="alnparams"></a>
