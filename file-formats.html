@@ -7,7 +7,7 @@
     <div class="wrapper">
       {% include menu.html %}
       <section>
-	<h2>Output file formats (v2.0.4)<br /></h2>
+	<h2>Output file formats (as of v3.0.2)<br /></h2>
 
 	<h3>$prefix.aligned.bam</h3>
 	A bam file containing all aligned
@@ -26,6 +26,8 @@
 	  <li>XG: The extracted STR region</li>
 	  <li>XQ: map quality score of the aligned read</li>
 	  <li>RG: (only if given) read group</li>
+	  <li>XA: alternate alignments for multimappers</li>
+	  <li>XO: other STRs spanned by this read</li>
 	</ul>
 	Note the bam output is not sorted.<br /><br />
 	
