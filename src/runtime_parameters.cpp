@@ -100,10 +100,10 @@ bool include_gl = false;
 bool print_reads = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
-int maximal_end_match_window = 0;
-int min_border   = 0;
-int min_bp_before_indel = 0;
-int min_read_end_match = 0;
+int maximal_end_match_window = 15;
+int min_border   = 5;
+int min_bp_before_indel = 7;
+int min_read_end_match = 5;
 
 // debugging
 bool align_debug = false;
