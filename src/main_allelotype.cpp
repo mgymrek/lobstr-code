@@ -108,24 +108,24 @@ void show_help() {
     "--include-gl                    Include the GL field in the VCF file (default = false)\n\n" \
     "Default options for filtering reads:\n"
     "--min-border   <INT>:           Filter reads that do not extend past both ends of the STR region\n"\
-    "                                by at least <INT> bp. By default, reads must merely reach the STR borders.\n"
+    "                                by at least <INT> bp. Default: 5. \n"
     "                                To include partially spanning reads, specify a large negative number.\n\n"
     "Optional arguments for filtering reads:\n" \
     "If not specified, no filters applied\n" \
     "--chrom <STRING>:               only look at reads from this chromosome\n" \
     "--max-diff-ref <INT>:           filter reads differing from the\n" \
-    "                                reference allele by more than <INT> bp.\n" \
+    "                                reference allele by more than <INT> bp. Default: 50\n" \
     "--unit:                         filter reads differing by a non-integer\n" \
     "                                number of repeat copies from reference\n" \
     "--mapq <INT>:                   filter reads with mapq scores of more than\n" \
-    "                                <INT>.\n" \
-    "--max-matedist <INT>:           Filter reads with a mate distance larger than <INT> bp.\n"
-    "--min-bp-before-indel <INT>:    Filter reads with an indel occurring less than <INT> bases \n"\
+    "                                <INT>. Default: 100\n" \
+    "--max-matedist <INT>:           Filter reads with a mate distance larger than <INT> bp. Default: 100000.\n"
+    "--min-bp-before-indel <INT>:    Filter reads with an indel occurring less than <INT> bases. Default: 7\n"\
     "                                from either end of the read.\n"
     "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"\
-    "                                <INT> bp at both ends. \n"
+    "                                <INT> bp at both ends. Default: 15\n"
     "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
-    "                                obtained when shifting the read ends by distances within <INT> bp\n"
+    "                                obtained when shifting the read ends by distances within <INT> bp. Default: 5\n"
     "Additional options\n" \
     "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n\n" \
     "--noweb                         Do not report any user information and parameters to Amazon S3.\n";

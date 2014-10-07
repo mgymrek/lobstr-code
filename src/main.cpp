@@ -133,13 +133,13 @@ void show_help() {
     "--max-read-length <INT>    maximum number of nucleotides for a\n" \
     "                           read to be processed. (default: 1024)\n" \
     "\n\nAdvanced options - detection:\n"                               \
-    "--fft-window-size <INT>    size of fft window (default: 24)\n" \
+    "--fft-window-size <INT>    size of fft window (default: 16)\n" \
     "--fft-window-step <INT>    step size of sliding window\n" \
-    "                           (default: 12)\n" \
+    "                           (default: 4)\n" \
     "--entropy-threshold <FLOAT> threshold score to call a window periodic\n"\
     "                            (defualt: 0.45)\n" \
     "--minflank <INT>           minimum length of flanking region to\n" \
-    "                           try to align (default: 10)\n" \
+    "                           try to align (default: 8)\n" \
     "--maxflank <INT>           length to trim the ends of flanking\n" \
     "                           regions to if they exceed that length\n" \
     "                           (default: 100)\n" \
@@ -166,7 +166,7 @@ void show_help() {
     "                           (default: 1)\n" \
     "-r <float>                 edit distance allowed during alignment\n" \
     "                           of each flanking region (ignored if -m\n" \
-    "                           is set) (default: 0.01)\n" \
+    "                           is set) (default: -1)\n" \
     "--max-hits-quit-aln <int>  Stop alignment search after int hits found.\n" \
     "                           Default: 1000. Use -1 for no limit.\n" \
     "--min-flank-allow-mismatch <int>  Mininum length of flanking region to allow\n" \
