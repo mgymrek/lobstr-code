@@ -1,0 +1,606 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+	<h2>Genotypeing Y-STRs and CODIS markers</h2>
+	<ul>
+	  <li><a href="#overview">Overview</a></li>
+	  <li><a href="#prelim">Preliminaries</a></li>
+	  <li><a href="#lobstr">Running lobSTR and allelotype</a></li>
+	  <li><a href="#extract">Extracting Y-STRs and CODIS markers and converting to standard nomenclature</a>
+	  <ul>
+	    <li><a href="#multi">Markers with multiple forms</a></li>
+	    <li><a href="#tricky">Markers with known issues</a></li>
+	    <li><a href="#venter">Example output from the Venter genome</a></li>
+	  </ul></li>
+	</ul>
+
+	<p>
+	  <a name="overview"></a>
+	  <h2>Overview</h2>
+	  One of the most common questions we receive is about how to use lobSTR to genotype Y-STRs and the CODIS set from sequencing data. Both are useful for identification in forensics settings, and Y-STRs are also used both in the genetic genealogy community and population
+	  genetics. Here we give a short tutorial on how to go from the lobSTR
+	  VCF output to a list of Y-STR and CODIS genotypes in standard
+	  nomenclature. As an example we will use the Venter genome. 
+
+	<p>
+	  <a name="prelim"></a>
+	  <h2>Preliminaries</h2>
+	  Before starting this tutorial, you should have:
+	  <ul>
+	    <li>installed lobSTR (see <a href="download.html">download</a> and <a href="install.html">install</a> pages)</li>
+	    <li>downloaded the <a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3.0.2_hg19_resource_bundle.tar.gz">hg19 lobSTR index</a></li>
+	    <li>downloaded the <a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_ystr_hg19.bed">Y-STR</a> and/or <a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_codis_hg19.bed">CODIS</a> marker tables.
+	    <li>installed <a href="https://github.com/arq5x/bedtools">bedtools</a></li>
+	  </ul>
+	  <p>
+	    The examples below use reads from the Venter Genome. These can be downloaded from <a href="http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&size=14637892&val=CENTER_NAME+%3D+%22JCVI%22+and+SPECIES_CODE+%3D+%22HOMO+SAPIENS%22+and+center_project+%3D+%22GENOMIC-SEQUENCING-DIPLOID-HUMAN-REFERENCE-GENOME%22&file=trace&fasta=on&dopt=info&dispmax=50&page=100000">TraceDB</a>. For the example below, we combined all traces to a single file and trimmed the first 50bp of each read due to the high error rate at the beginning of Sanger reads.
+
+	<p>
+	  <a name="lobstr"></a>
+	  <h2>Running lobSTR and allelotype</h2>
+	  The first step is to use lobSTR to generate a VCF file. The full steps
+	  for running lobSTR are available on the <a href="usage.html">usage</a> and <a href="best-practices-wgs-wes.html">best practices for WGS/WES</a> pages. Follow those steps to generate a lobSTR VCF file. The steps for doing this on the Venter genome are below. Note that we use the parameters <code>--fft-window-size 24 --fft-window-step 12</code> as described in <a href="best-practices-alignment.html">Best practices for alignment</a> to bias lobSTR toward focusing on the longer, more complex Y-STRs rather than on shorter repeats such as homopolymers. Also note that we used the noise model for Illumina PCR free data, even though this is Sanger data. With such low coverage it won't make a big difference, and we didn't have a high enough coverage male Sanger sequencing dataset to train with.
+
+	  {% highlight bash %}
+	  lobSTR \
+             --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+             -f venter_reads_19621.fa \
+             --rg-sample venter --rg-lib venter \
+             --fft-window-size 24 --fft-window-step 12 \
+             --out venter
+
+          samtools sort venter.aligned.bam venter.sorted
+          samtools index venter.sorted.bam
+
+          /san/melissa/workspace/lobstr-code-production/src/allelotype \
+             --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+             --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
+             --command classify \
+             --noise_model models/illumina_v3.pcrfree \
+             --bam venter.sorted.bam \
+             --min-border 5 --min-bp-before-indel 7 --maximal-end-match 15 --min-read-end-match 5 \
+             --out venter
+	  {% endhighlight %}
+
+	  This will output a file <code>venter.vcf</code> with STR genotype calls.
+	<p>
+	  <a name="extract"></a>
+	  <h2>Extracting Y-STRs and CODIS markers and converting to standard nomenclature</h2>
+	  <p>
+	  The sources of Y-STR nomenclature are described in <a href="http://www.sciencemag.org/content/339/6117/321.full">Gymrek et al 2013</a>. CODIS nomenclature follows that on the NIST <a href="http://www.cstl.nist.gov/strbase/str_fact.htm">STR fact sheets</a>. Marker nomenclature is also described in a table on the <a href="ystr-codis.html">Y-STR/CODIS</a> page.
+	  </p>
+	<p>
+	  lobSTR reports alleles as the number of base pairs length difference from reference (GB field of the VCF). However standardized nomenclature for these markers is given in the number of repeat units. Therefore, it is necessary to convert lobSTR results to standard nomenclature before comparing to external datasets. <a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_ystr_hg19.bed">Y-STR</a> and <a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_codis_hg19.bed">CODIS</a> markers are included in the lobSTR reference bed file and were extracted to separate files for convenience.
+	</p>
+	<p>
+	  You can use the <code>intersectBed</code> tool from bedtools to extract these markers from your VCF and convert to standard notation:
+	  {% highlight bash %}
+	  intersectBed -a venter.vcf -b lobSTR_ystr_hg19.bed -wa -wb | \
+	     cut -f 1,2,10,14- | sed 's/:/\t/g' | cut -f 1,2,4,7,11- | sed 's/\//\t/' | \
+	     cut -f 4 --complement | awk '{print $0 "\t" $6+$4/$5}'
+	  {% endhighlight %}
+	  This is a bit of a long command. Here's what it does:
+	  <ul>
+	    <li>Intersect the lobSTR VCF with the list of Y-STR markers</li>
+	    <li>Pull out the columns containing the genotype and read information for each</li>
+	    <li>Convert each genotype to number of repeats using the simple formula: ref_allele + lobstr_allele/period</li>
+	  </ul>
+
+	  Similarly for the CODIS markers, but looking at both alleles reported:
+	  {% highlight bash %}
+          intersectBed -a venter.vcf -b lobSTR_codis_markers_hg19.bed -wa -wb | \
+             cut -f 1,2,10,14- | sed 's/:/\t/g' | cut -f 1,2,4,7,11- | sed 's/\//\t/' | \
+             awk '{print $0 "\t" $7+$4/$6 "\t" $7+$5/$6}'
+	  {% endhighlight %}
+	<p>
+	  <a name="multi"></a>
+	  <h3>Markers with multiple forms</h3>
+	  <p>
+	  Several Y-STR markers, such as DYS464, DYS385, DYS459, and others, are present at multiple locations on the Y chromosome. That means that more than one allele can be present for these markers. Alleles are always reported from shortest to longest. For example, if at DYS385 the alleles 11 and 14 are present, then you would set DYS385a=11 and DYS385b=14.
+	  </p>
+	  <p>
+	    These markers are especially tricky to type from sequencing data. If only a single allele is called, you cannot be sure that there is only a single allele present, as the other allele might be missed. Therefore, we standardly discard markers with multiple forms unless we see two alleles with good support (high coverage). Generally we discard DYS464, which can have 6+ alleles, altogether. Often these markers require manual inspection.
+	  </p>
+	<p>
+	  <a name="tricky"></a>
+	  <h3>Markers with known issues</h3>
+	  <ul>
+	    <li>DYS640 is annotated as having a reference allele as 9. However, some standards may use a reference allele of 11. The full sequence of the STR in hg19 is TAAAAAATAAAAATAAATAAATAAATAAATAAATAAATAAATAAATAAA, and it is unclear whether the first two repeats with extra "A"'s count in some cases. Due to ambiguity, we usually discard this marker.</li>
+	    <li>DYS425 actually has multiple locations on chrY, and should generally be ignored when using lobSTR.</li>
+	    <li>The CODIS markers FGA and D21S11 are usually unreliable with 100bp reads since most alleles are too long to be completely spanned.</li>
+	    <li>Some long markers (e.g. DYS449 and DYS448) have multiple repeat stretches broken up by non repeat regions. These have been broken up into two STRs (e.g. DYS449.1 and DYS449.2). To genotype these, both of those sub-markers need to be called and added together.</li>
+	    <li>DYS389B.1 and DYS389B.2 are misannotated in the reference bed, and should have reference alleles listed as 17 and 12, repsectively.</li>
+	    <li>DYS511 is misannotated in the reference bed and should have a reference allele of 9.</li>
+	    <li>DYS442 has had changes in its nomenclature 
+(http://www.hprg.com/hapest5/page2.html). FamilyTreeDNA reports a value 5 units shorter than NIST.</li>
+	  </ul>
+	<p>
+	  <a name="venter"></a>
+	  <h3>Example output from the Venter genome</h3>
+	  The table below shows the results of running the above commands for both the Y-STR and CODIS loci on the Venter genome. The table gives the resulting allele for each marker that was genotyped, along with notes for some tricky markers. Note that the syntax for supporting reads is "lobSTR allele | read count".
+	  <table class="box-table-a">
+	    <tr><th>Marker</th><th>Supporting reads</th><th>Ref allele</th><th>Genotype</th><th><a href="http://www.ysearch.org/lastname_view.asp?uid=&letter=&lastname=Venter&viewuid=VPBT4&p=0">Ysearch Genotype</a></th><th>Notes</th></tr>
+	    <tr>
+	      <td>DYS640</td>
+	      <td>0|2</td>
+	      <td>9</td>
+	      <td>9</td>
+	      <td>11</td>
+	      <td>See known issues</td>
+	    </tr>
+	    <tr>
+	      <td>DYS570</td>
+	      <td>0|3</td>
+	      <td>17</td>
+	      <td>17</td>
+	      <td>17</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS455</td>
+	      <td>0|1</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS520</td>
+	      <td>4|1</td>
+	      <td>20</td>
+	      <td>21</td>
+	      <td>20</td>
+	      <td>This marker does not match Ysearch. It could be due to stutter, an annotation difference, or mismatch with the Venter entry on Ysearch.</td>
+	    </tr>
+	    <tr>
+	      <td>DYS458</td>
+	      <td>4|3</td>
+	      <td>16</td>
+	      <td>17</td>
+	      <td>17</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS450</td>
+	      <td>0|3</td>
+	      <td>8</td>
+	      <td>8</td>
+	      <td>8</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS449.1</td>
+	      <td>4|2</td>
+	      <td>13</td>
+	      <td>14</td>
+	      <td>30 (DYS449.1 + DYS449.2)</td>
+	      <td>Discard, since we can only make a call by adding DYS449.1 + DYS449.2</td>
+	    </tr>
+	    <tr>
+	      <td>DYS454</td>
+	      <td>0|4</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS481</td>
+	      <td>0|3</td>
+	      <td>22</td>
+	      <td>22</td>
+	      <td>22</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS531</td>
+	      <td>3|1;4|1</td>
+	      <td>11</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS590</td>
+	      <td>5|2</td>
+	      <td>8</td>
+	      <td>9</td>
+	      <td>9</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS568</td>
+	      <td>0|3</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS391</td>
+	      <td>-4|1</td>
+	      <td>11</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS635</td>
+	      <td>0|1</td>
+	      <td>23</td>
+	      <td>23</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS439</td>
+	      <td>-4|1</td>
+	      <td>13</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS389B.2</td>
+	      <td>4|1</td>
+	      <td>12</td>
+	      <td>13</td>
+	      <td>29 (DYS389B.1 + DYS389B.2)</td>
+	      <td>Discard, since we can only make a call by adding DYS389B.1 + DYS389B.2</td>
+	    </tr>
+	    <tr>
+	      <td>DYS389I</td>
+	      <td>4|1</td>
+	      <td>12</td>
+	      <td>13</td>
+	      <td>13</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS388</td>
+	      <td>0|2</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS442</td>
+	      <td>0|1</td>
+	      <td>17</td>
+	      <td>17</td>
+	      <td>12</td>
+	      <td>See known issues</td>
+	    </tr>
+	    <tr>
+	      <td>DYS438</td>
+	      <td>10|1</td>
+	      <td>10</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS495</td>
+	      <td>3|1</td>
+	      <td>15</td>
+	      <td>16</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS436</td>
+	      <td>0|3</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS413a/b</td>
+	      <td>0|3</td>
+	      <td>23</td>
+	      <td>23</td>
+	      <td>23,23</td>
+	      <td>There are three reads mapped to this locus supporting that there 
+are 23 copies. It could be that DYS413a and DYS413b are both “23” but we don’t 
+have enough information to know that, so we’ll only report DYS413a as 23.</td>
+	    </tr>
+	    <tr>
+	      <td>DYS641</td>
+	      <td>0|1</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS472</td>
+	      <td>-1|1;0|3</td>
+	      <td>8</td>
+	      <td>8</td>
+	      <td>8</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS565</td>
+	      <td>0|2</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS390</td>
+	      <td>-4|1</td>
+	      <td>24</td>
+	      <td>23</td>
+	      <td>23</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS511</td>
+	      <td>4|1</td>
+	      <td>9</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>See known issues</td>
+	    </tr>
+	    <tr>
+	      <td>DYS492</td>
+	      <td>3|2</td>
+	      <td>12</td>
+	      <td>13</td>
+	      <td>13</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS638</td>
+	      <td>0|1</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS534</td>
+	      <td>4|1</td>
+	      <td>15</td>
+	      <td>16</td>
+	      <td>16</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS617</td>
+	      <td>0|2</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS426</td>
+	      <td>0|1</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS537</td>
+	      <td>0|1</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>YCAIIa/b</td>
+	      <td>-8|3;0|4</td>
+	      <td>23</td>
+	      <td>19,23</td>
+	      <td>19,23</td>
+	      <td>There are three reads supporting the allele 19 and 4 reads supporting the allele 23. Therefore we can report YCAIIa=19 and YCAIIb=23.</td>
+	    </tr>
+	    <tr>
+	      <td>DYS425</td>
+	      <td>6|2;12|1</td>
+	      <td>12</td>
+	      <td>14</td>
+	      <td>12</td>
+	      <td>See known issue.</td>
+	    </tr>
+	    <tr>
+	      <td>DYS395S1a/b</td>
+	      <td>0|2;3|1</td>
+	      <td>15</td>
+	      <td>15,16</td>
+	      <td>15,16</td>
+	      <td> There are two reads supporting the allele 15 and one supporting 
+the allele 16. So we report DYS395S1a=15 and DYS395S1b=16.</td>
+	    </tr>
+	    <tr>
+	      <td>DYS385a/b</td>
+	      <td>-12|1;-11|1;0|1</td>
+	      <td>14</td>
+	      <td>11,14</td>
+	      <td>11,14</td>
+	      <td>There are two unit-alleles supported: -12 (11) and 0 (14). So we report DYS385a=11, DYS385b=14</td>
+	    </tr>
+	    <tr>
+	      <td>DYS461</td>
+	      <td>0|1</td>
+	      <td>12</td>
+	      <td>12</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS462</td>
+	      <td>0|1</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS494</td>
+	      <td>-3|2</td>
+	      <td>10</td>
+	      <td>9</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS549</td>
+	      <td>-4|1</td>
+	      <td>13</td>
+	      <td>12</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS594</td>
+	      <td>0|1</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>10</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS485</td>
+	      <td>0|2</td>
+	      <td>16</td>
+	      <td>16</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS714</td>
+	      <td>-10|1</td>
+	      <td>27</td>
+	      <td>25</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS578</td>
+	      <td>0|2</td>
+	      <td>9</td>
+	      <td>9</td>
+	      <td>9</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS556</td>
+	      <td>0|2</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>-</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS392</td>
+	      <td>0|2</td>
+	      <td>13</td>
+	      <td>13</td>
+	      <td>13</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS557</td>
+	      <td>0|1</td>
+	      <td>16</td>
+	      <td>16</td>
+	      <td>16</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>DYS459a/b</td>
+	      <td>-4|1</td>
+	      <td>10</td>
+	      <td>9</td>
+	      <td>9,10</td>
+	      <td>There is only one read mapped to this locus supporting that there 
+are 9 copies. Since we only have one read, we can’t tell if there are multiple 
+alleles.</td>
+	    </tr>
+	  </table>
+	  Below are the results for the CODIS markers in Venter. Note, unlike the Y-STRs these can be heterozygous. We list below which alleles have evidence in the Venter reads. These will be much less accurate than the Y-STR markers since they require higher coverage to get right. Additionally, we have fewer ground truth datasets for these so there are likely to be some annotation discrepancies with standard nomenclature. If a non-unit and a unit allele were both reported and are close together, only the unit allele is kept.
+	  <table class="box-table-a">
+	    <tr><th>Marker</th><th>Supporting reads</th><th>Ref allele</th><th>Alleles with evidence</th><th>Notes</th></tr>
+	    <tr>
+	      <td>D13S317</td>
+	      <td>0|1</td>
+	      <td>11</td>
+	      <td>11</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>PentaE</td>
+	      <td>35|1;37|1</td>
+	      <td>5</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>D18S51</td>
+	      <td>-16|2</td>
+	      <td>18</td>
+	      <td>14</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>TPOX</td>
+	      <td>0|4</td>
+	      <td>8</td>
+	      <td>8</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>D3S1358</td>
+	      <td>-1|1</td>
+	      <td>16</td>
+	      <td>15.75</td>
+	      <td>This is likely to be 16, rather than the non-unit allele 15.75.</td>
+	    </tr>
+	    <tr>
+	      <td>FGA</td>
+	      <td>-4|1;16|1</td>
+	      <td>22</td>
+	      <td>21,26</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>CSF1PO</td>
+	      <td>-8|5;-7|1</td>
+	      <td>13</td>
+	      <td>11</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>D7S820</td>
+	      <td>-12|2</td>
+	      <td>13</td>
+	      <td>10</td>
+	      <td>-</td>
+	    </tr>
+	    <tr>
+	      <td>D8S1179</td>
+	      <td>-4|1</td>
+	      <td>13</td>
+	      <td>12</td>
+	      <td>-</td>
+	    </tr>
+	  </table>
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>
