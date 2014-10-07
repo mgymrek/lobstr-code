@@ -22,10 +22,12 @@
 	<p>
 	  <a name="adjust"></a>
 	  <h2>Adjusting alignments</h2>
+	  <p>
 	  By default, the allelotype recalculates the allele supported by each read by adding up all gaps from the entire read, including in the flanking regions. This gives the most concordant results when comparing to STR genotypes made by traditional capillary electrophoresis methods and gives the most reliable genotypes for ~100bp reads.
+	  </p>
 	  <p>
 	    There is an option to calculate STR allele supported by each read by only including gaps that allelotype determines to be within the boundary of the STR. You can turn this on using the <code>--dont-include-flank</code> option. While theoretically more accurate than the approach described above, the process of ascertaining the boundary of the STR is still error prone and this option is usually not recommended. However, if you are using very long reads that may span more than a single STR, then it is recommended to set this option.
-
+	  </p>
 	<p>
 	  <a name="filter"></a>
 	  <h2>Filtering alignments</h2>
