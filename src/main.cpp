@@ -350,6 +350,10 @@ void parse_commandline_options(int argc, char* argv[]) {
       output_prefix = string(optarg);
       AddOption("out", string(optarg), true, &user_defined_arguments);
       break;
+    case OPT_MIN_FLANK_ALLOW_MISMATCH:
+      min_length_to_allow_mismatches = atoi(optarg);
+      AddOption("min-flank-allow-mismatch", string(optarg), true, &user_defined_arguments);
+      break;
     case 'm':
     case OPT_MISMATCH:
       allowed_mismatches = atoi(optarg);

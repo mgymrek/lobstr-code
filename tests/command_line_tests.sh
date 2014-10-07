@@ -422,6 +422,7 @@ allelotype \
   --noise_model ${OUTDIR}/lobtest \
   --haploid chrY \
   --out ${OUTDIR}/lobtest \
+  --min-bp-before-indel 0 --min-read-end-match 0 --maximal-end-match 0 --min-border 0 \
   --verbose --debug >/dev/null 2>&1
 testcode 0
 echo "Testing training... invalid strinfo"

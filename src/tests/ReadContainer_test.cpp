@@ -48,7 +48,10 @@ void ReadContainerTest::setUp() {
   _read_container = new ReadContainer(filenames);
 
   // Don't check whether reads span STR
-  min_border = -100000;
+  min_border = -10000;
+  maximal_end_match_window = 0;
+  min_bp_before_indel = 0;
+  min_read_end_match = 0;
 }
 
 void ReadContainerTest::tearDown() {
