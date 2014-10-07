@@ -34,18 +34,18 @@
 	  <p>
 	    <a name="shortreads"></a>
 	    <h3>Short reads</h3>
-	    If aligning to the standard hg19 reference provided in the resource bundle, we at least 100bp reads for the best quality alignments. However, read lengths as low as 50-70bp can give good results if you are primarily interested in STRs with a total length of ~20bp or less. Be aware that short reads will give very biased results for longer STRs: only short alleles that can be spanned by the read length will be detected, leading to a large bias toward reporting the shorter allele at heterozygous loci. For such short reads, it is recommended to set <code>--fft-window-size 16</code> and <code>--fft-window-step 8</code>.
+	    If aligning to the standard hg19 reference provided in the resource bundle, we recommend at least 100bp reads for the best quality alignments. However, read lengths as low as 50-70bp can give good results if you are primarily interested in STRs with a total length of ~20bp or less. Be aware that short reads will give very biased results for longer STRs: only short alleles that can be spanned by the read length will be detected, leading to a large bias toward reporting the shorter allele at heterozygous loci.
 	  <p>
 	    <a name="longreads"></a>
 	    <h3>Long reads</h3>
 	    lobSTR can also be used to align longer reads (several hundreds of bp). For very long reads, these parameters can be useful:
 	    <ul>
 	      <li><code>--maxflank INT</code>: this parameter gives how long to trim flanking regions down to before attempting alignment. Setting this value higher results in more specific alignment but longer run time. Setting it lower results in less specific alignments, some of which will be flagged as multi-mappers and discarded, but dramatically speeds up run time. <code>--maxflank 50</code> performs well in most cases, but if you are specifically interested in longer STRs (lengths ~60bp+) you will get higher quality alignments with <code>--maxflank 100</code>.</li>
-	      <li><code>--bwaq INT</code>: this parameters is used to trim read ends based on quality scores before attempting STR detection or alignment. Often, errors tend to accumulate at the ends of reads, which are reflected in the base quality scores. Trimming off these low quality ends results in better alignments. Setting <code>--bwa q 15</code> usually performs well. If you are using sequence files with base quality scores in the old Phred format (where quality scores are given as Phred + 64 rather than as Phred +33), add the <code>--oldillumina</code> flag.</li>
+	      <li><code>--bwaq INT</code>: this parameters is used to trim read ends based on quality scores before attempting STR detection or alignment. Often, errors tend to accumulate at the ends of reads, which are reflected in the base quality scores. Trimming off these low quality ends results in better alignments. Setting <code>--bwaq 15</code> usually performs well. If you are using sequence files with base quality scores in the old Phred format (where quality scores are given as Phred + 64 rather than as Phred +33), add the <code>--oldillumina</code> flag.</li>
 	      <li>With longer reads, there is a higher chance that the flanking regions will contain some errors. See the alignment parameters below to increase the tolerance to gaps and mismatches in the flanking regions.</li>
 	    </ul>
 
-	    Note that lobSTR aligns each read to a primary STR. If a read spans more than one STR, this will be noted in a flag ("XO"). However the allelotype step will only look at the parimary STR aligned to. We plan to change this in the future.
+	    Note that lobSTR aligns each read to a primary STR. If a read spans more than one STR, this will be noted in a flag ("XO"). However the allelotype step will only look at the primary STR aligned to (see specific applications below for how to bias lobSTR toward choosing certain types of STRs as the primary STR). We plan to change this in the future.
 
 	  <p>
 	    <a name="app"></a>
@@ -54,7 +54,7 @@
 	    <ul>
 	      <li><b>Genotyping Y-STR/CODIS/Marhsfield markers in long reads</b>. During alignment, lobSTR assigns each read to a single STR location. When using long reads (100bp+ or so), a single read might span more than 1 STR. By default it will choose the region with the best entropy score within a 16bp window. This tends to bias the algorithm toward choosing short homopolymers as the primary STR spanned by each read, even if a longer tetranucleotide exists elsewhere in the read. To bias it toward choosing longer and more complex STRs, you can set <code>--fft-window-size 24 --fft-window-step 12</code>. 
 		</li>
-	      <li><b>Genotyping long expansions</b>. By default lobSTR trims flanking regions before attempting to align reads to STRs. Additionally, it doesn't return reads with more than 50bp length difference from the reference. For genotyping large expansions (e.g. Fragile X or Huntington's), this is not desirable. Setting <code>--maxflank 1000 --max-diff-ref 1000</code> will allow you to pick up many more of these events.
+	      <li><b>Genotyping long expansions</b>. By default lobSTR trims flanking regions before attempting to align reads to STRs. Additionally, it doesn't return reads with more than 50bp length difference from the reference. For genotyping large expansions (e.g. Fragile X or Huntington's), this is not desirable. Setting <code>--maxflank 100 --max-diff-ref 1000</code> will allow you to pick up many more of these events.
 		</li>
 	    </ul>
 
