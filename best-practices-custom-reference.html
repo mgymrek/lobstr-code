@@ -17,18 +17,21 @@
 	<p>
 	  <a name="overview"></a>
 	  <h2>Overview</h2>
+	  <p>
 	  lobSTR comes with a pre-built reference and index for humans (hg19). This reference was built using a process described in <a href="http://genome.cshlp.org/content/early/2014/08/18/gr.177774.114.short">Willems et al.</a> by running Tandem Repeat Finder on the hg19 reference genome. Additionally, it contains Y-STR and CODIS markers (described <a href="ystr-codis.html">here</a>). The resource bundle for hg19 is available on the <a href="download.html">download page</a>. However you may want to use a custom set of STR loci in your reference if:
 	  <ul>
 	    <li>You are working with a different species or different reference genome.</li>
 	    <li>You would like to align to STRs with specific annotations that are not in the current reference.</li>
 	  </ul>
 	  To use your own reference, you will need to create a bed file with the loci of interest, build a lobSTR index, and build an STR info file. These steps are described below.
+	  </p>
 	<p>
 	  Note, all scripts mentioned below are available in the <code>scripts/</code> directory of the lobSTR download.
+	</p>
 	<p>
 	  <a name="refbed"></a>
 	  <h2>Reference bed file</h2>
-	  The first step is to create a bed file with your custom set of STR loci. One way to do this is by running <a href="http://tandem.bu.edu/trf/trf.unix.help.html">Tandem Repeats Finder scoring scheme</a> on your reference genome of interest. You will need to make a bed file with the following columns present:
+	  The first step is to create a bed file with your custom set of STR loci. One way to do this is by running <a href="http://tandem.bu.edu/trf/trf.unix.help.html">Tandem Repeats Finder</a> on your reference genome of interest. You will need to make a bed file with the following columns present:
 	  <ol>
 	    <li>Column 1: chromosome</li>
 	    <li>Column 2: start coordinate of the STR</li>
