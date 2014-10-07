@@ -38,7 +38,7 @@
 	<p>
 	<a name="lobSTR"></a>
 	<h3>Run lobSTR</h3>
-lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, or BAM). Based on the input format your reads are in, follow the appropriate instructions below. Note for any of the file formats shown below, if you have multiple files of reads you would like to align at once, you can pass a comma-separated list of files for any of the input arguments. Before starting the next steps, you will need:
+lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, or BAM). Based on the input format your reads are in, follow the appropriate instructions. Note for any of the file formats shown below, if you have multiple files of reads you would like to align at once, you can pass a comma-separated list of files for any of the input arguments. Before starting the next steps, you will need:
 	<ul>
 	  <li><a href="install.html">to have lobSTR installed</a></li>
 	  <li>A lobSTR index: make sure you have either downloaded the lobSTR resource bundle from the <a href="download.html">downloads page</a> or that you have <a href="best-practices-custom-reference.html">built your own custom index</a>. Instructions below assume you're using the hg19 resource bundle.</li>
@@ -55,7 +55,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	<h4>From single-end fastq files</h4>
 	{% highlight bash %}
 	  lobSTR \
-           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
            -f my_sample.fq -q \
            --rg-sample my_sample --rg-lib my_sample \
            --out my_sample_output
@@ -65,7 +65,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	<h4>From paired-end fastq files</h4>
 	{% highlight bash %}
 	  lobSTR \
-           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
            --p1 my_sample_1.fq --p2 my_sample_2.fq -q \
            --rg-sample my_sample --rg-lib my_sample \
            --out my_sample_output
@@ -75,7 +75,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	<h4>From single-end bam files</h4>
 	{% highlight bash %}
 	  lobSTR \
-           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
            -f my_sample.bam --bam \
            --rg-sample my_sample --rg-lib my_sample \
            --out my_sample_output
@@ -93,7 +93,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	</ul>
 	{% highlight bash %}
 	  lobSTR \
-           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
+           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
            -f my_sample.bam --bampair \
            --rg-sample my_sample.sorted.bam --rg-lib my_sample \
            --out my_sample_output
@@ -105,7 +105,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	In the examples above, lobSTR will create the output files <code>my_sample_output.aligned.bam</code> and <code>my_sample_output.aligned.stats</code>. Before moving on to the allelotype step, use <a href="http://samtools.sourceforge.net/">samtools</a> to sort and index the bam file:
 	{% highlight bash %}
 	samtools sort my_sample_output.aligned.bam my_sample_output.sorted
-\	samtools index my_sample_output.sorted.bam
+	samtools index my_sample_output.sorted.bam
 	{% endhighlight %}
 	
 	<p>
@@ -118,7 +118,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	  <li>Statistics about the alignment:
 	    <ul>
 	      <li>Reads aligned: number of reads aligned</li>
-	      <li>Perc. stithced: percentage of read pairs that were stitched together. If the two reads of a pair overlap uniquely, lobSTR will attempt to stitch them together, which sometimes results in spanning longer STRs than can be spanned with the single end reads.
+	      <li>Perc. stitched: percentage of read pairs that were stitched together. If the two reads of a pair overlap uniquely, lobSTR will attempt to stitch them together, which sometimes results in spanning longer STRs than can be spanned with the single end reads.
 	      <li>Perc. single: percentage of alignments that are single reads</li>
 	      <li>Perc. mate: percentage of alignments that are mate pairs of primary STR alignments </li>
 	      <li>Perc. reverse: percentage of alignments on the reverse strand (should be close to 50%)</li>
@@ -145,8 +145,8 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	allelotype \
            --command classify \
            --bam my_sample_output.sorted.bam \
-           --index-prefix hg19_v3.0.1/lobstr_v3.0.1_hg19_ref/lobSTR_ \
-	   --strinfo hg19_v3.0.1/lobstr_v3.0.1_hg19_strinfo.tab \
+           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+	   --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
            --noise_model models/illumina_v3.pcrfree \
            --out my_sample_output
 	{% endhighlight %}
@@ -179,7 +179,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	Now with a list of STR variant calls, you might be interested in:
 	<ul>
 	  <li><a href="best-practices-filtering.html">filtering variants</li>
-	  <li><a href="mgymrek.github.io/pybamview">visualizing STR sequencing alignments</li>
+	  <li><a href="http://mgymrek.github.io/pybamview">visualizing STR sequencing alignments</li>
 	</ul>
       See the <a href="documentation.html">documentation page</a> for more details.
       </section>
