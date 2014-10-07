@@ -10,9 +10,17 @@
 	<h2>Stutter Model Files</h2>
 	lobSTR uses a pre-built model of PCR stutter noise during the allelotype step to determine the likelihood of each possible STR genotype. The format of the stutter model files is described below.
 	<ul>
-	  <li><a href="#stutter2">Stutter Model Files: Version 2</a></li>
 	  <li><a href="#stutter3">Stutter Model Files: Version 3</a></li>
+	  <li><a href="#stutter2">Stutter Model Files: Version 2</a></li>
 	</ul>
+	  <p>
+	  <a name="stutter3"></a>
+	  <h3>Stutter Model Files: Version 3</h3>
+	  In lobSTR v3+, we have removed the dependency on LIBSVM. File formats are the same as listed above to keep consistency across versions. However the stutterproblem file is no longer needed. The files are:
+	  <ol>
+	    <li><b>illumina_v3.pcrfree.stepmodel</b>: same format as above</li>
+	    <li><b>illumina_v3.pcrfree.stuttermodel</b>: The noise model trains a logistic regression model to learn the probability of stutter based on different sequence features. The last four lines give the values of the logistic regression coefficients for the intercept, period size, STR length, GC content, and purity score, respectively.</li>
+	  </ol>
 	<p>
 	  <a name="stutter2"></a>
 	  <h3>Stutter Model Files: Version 2</h3>
@@ -28,14 +36,6 @@
 	    </li>
 	    <li><b>illumina_v2.0.3.stuttermodel</b>: This file is the output of training a logistic regression model using the <a href="http://www.csie.ntu.edu.tw/~cjlin/libsvm/">LIBSVM</a> C++ pacakge.</li>
 	    <li><b>illumina_v2.0.3.stutterproblem</b>: This file is the training data input to the logistic regression model to determine the probability of stutter based on various sequence features. It has one line per read used for training, with four fields giving the values of the intercept, period size, STR length, GC content, and purity score used in the regression model.</li>
-	  </ol>
-	  <p>
-	  <a name="stutter3"></a>
-	  <h3>Stutter Model Files: Version 3</h3>
-	  In lobSTR v3+, we have removed the dependency on LIBSVM. File formats are the same as listed above to keep consistency across versions. However the stutterproblem file is no longer needed. The files are:
-	  <ol>
-	    <li><b>illumina_v3.pcrfree.stepmodel</b>: same format as above</li>
-	    <li><b>illumina_v3.pcrfree.stuttermodel</b>: The noise model trains a logistic regression model to learn the probability of stutter based on different sequence features. The last four lines give the values of the logistic regression coefficients for the intercept, period size, STR length, GC content, and purity score, respectively.</li>
 	  </ol>
       </section>
     </div>
