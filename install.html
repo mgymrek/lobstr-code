@@ -9,10 +9,12 @@
       <section>
 	<h2>Overview</h2>
 	<ul>
-	  <li>Installation from precompiled binaries</li>
-	  <li>Installation from source</li>
-	  <li>Requirements</li>
+	  <li><a href="#binary">Installation from precompiled binaries</a></li>
+	  <li><a href="#mac">Mac-specific installation</a></li>
+	  <li><a href="#source">Installation from source</a></li>
+	  <li><a href="#req">Requirements</a></li>
 	</ul>
+	<a name="binary"></a>
 	<h2>Installation from precompiled binaries</h2>
 	<ol>
 	  <li>Download the <a href="download.html">lobSTR</a> package.</li>
@@ -20,33 +22,46 @@
 	  <li>Change to the $PATH_TO_LOBSTR directory.</li>
 	  <li>Copy the three executable binary files to a place in your $PATH. e.g.</li>
 	  <ul>
-	    <tt>cp bin/lobSTR /usr/bin</tt><br>
-	    <tt>cp bin/allelotype /usr/bin</tt><br>
-	    <tt>cp bin/lobSTRIndex /usr/bin</tt>
+	    <code>cp bin/lobSTR /usr/bin</code><br>
+	    <code>cp bin/allelotype /usr/bin</code><br>
+	    <code>cp bin/lobSTRIndex /usr/bin</code>
 	  </ul>
 	</ol>
-	Scripts will be available in <tt>share/lobSTR/scripts/</tt>. Noise model files will be available in <tt>share/lobSTR/models/</tt>. For usage instructions see <a href="usage.html">usage</a>.
-	<h2>Installation from source</h2>
-	lobSTR source code can be obtained from our github repository <a href="https://github.com/mgymrek/lobstr-code.git">https://github.com/mgymrek/lobstr-code.git</a> or from the <a href="download.html">downloads page</a>.
+	Scripts will be available in <code>share/lobSTR/scripts/</code>. Noise model files will be available in <code>share/lobSTR/models/</code>. For usage instructions see <a href="usage.html">usage</a>.
+	<p>
+	<a name="mac"></a>
+	  <h2>Mac-specific installation</h2>
+	  TODO coming soon
+	<p>
+	  <a name="source"></a>
+	  <h2>Installation from source</h2>
+	lobSTR source code can be obtained from our github repository <a href="https://github.com/mgymrek/lobstr-code.git">https://github.com/mgymrek/lobstr-code.git</a> or from the <a href="download.html">downloads page</a>. It should compile on most Linux and Mac systems as long as the required packages are installed (see below).
 	<ol>
 	  <li>Make sure all required packages are installed and in the user's $PATH (see below for a list of requirements).</li>
 	  <li>Download the lobSTR source code</li>
 	  <li>Change to the $PATH_TO_LOBSTR directory.</li>
 	  <li>Type the following commands:
 	    <ul>
-	      <li><tt>./configure</tt></li>
-	      <li><tt>make</tt></li>
-	      <li><tt>make install</tt></li>
+	      <li><code>./configure</code></li>
+	      <li><code>make</code></li>
+	      <li><code>make install</code></li>
 	    </ul>
 	  </li>
 	</ol>
-	If this returned no error messages then lobSTR was properly installed.
 	<p>
-	  Scripts will be available in <tt>$PREFIX/share/lobSTR/scripts</tt> and noise model files in <tt>$PREFIX/share/lobSTR/models</tt>. $PREFIX is by default <tt>/usr/local</tt> on Linux systems unless you specified a different prefix during the installation.
+	If this returned no error messages then lobSTR was properly installed.
+	</p?
+	<p>
+	  Scripts will be available in <code>$PREFIX/share/lobSTR/scripts</code> and noise model files in <code>$PREFIX/share/lobSTR/models</code>. $PREFIX is by default <code>/usr/local</code> on Linux systems unless you specified a different prefix during the installation.
+	</p>
 	<p>
 	For usage instructions see&nbsp;<a href="usage.html">usage</a>.
+	</p>
+	<a name="req"></a>
 	<h2>Requirements</h2>
+	<p>
 	The packages below are required for building lobSTR from source. If you are using the precompiled binaries, these are not required.
+	</p>
 	<strong><font color="#660000" size="3">External libraries</font></strong>
 	<table cellspacing="15">
 	  <tr><td class="table_hdr">Program</td><td class="table_hdr">Tested on </td><td class="table_hdr">Debian/Ubuntu package</td></tr>
@@ -63,13 +78,11 @@
 	  <tr><td class="table_entry">gfortran</td><td class="table_entry">4.4.3</td><td class="table_entry">gfortran</td></tr>
 	</table>
 	<font color="#660000" size="3"><strong>Python
-	    libraries</strong></font><br />Note: the python libraries listed below are only required for certain optional steps. The step where each library is required is given in the last column. All Python scripts were tested using Python 2.6.
+	    libraries</strong></font><br />Note: the python libraries listed below are only required for certain optional steps. All Python scripts were tested using Python 2.7.
 	<table cellspacing="15">
 	  <tr><td class="table_hdr">Program</td><td class="table_hdr">Tested on</td><td class="table_hdr">Download link</td><td class="table_hdr">easy_install package</td><td class="table_hdr">lobSTR steps where required</td></tr>
-	  <tr><td class="table_entry">Biopython</td><td class="table_entry">1.5.6</td><td class="table_entry"><a href="http://biopython.org/wiki/Download">download</a></td><td>biopython</td><td>Building a custom index and building an strinfo file required for allelotyping from a custom index.</td></tr>
-	  <tr><td class="table_entry">Numpy</td><td class="table_entry">1.6.1</td><td class="table_entry"><a href="http://numpy.scipy.org/">download</a></td><td>numpy</td><td>Allelotyping in version 1.0.5 or below <br>Generating diagnostic plots in version 2.0.0 through version 2.0.2</td></tr>
-	  <tr><td class="table_entry">Matplotlib</td><td class="table_entry">0.99.1.1</td><td class="table_entry"><a href="http://matplotlib.sourceforge.net/">download</a></td><td>matplotlib</td><td>Generating diagnostic plots in version 2.0.0 through version 2.0.2.</td></tr>
-	  <tr><td class="table_entry">PyVCF</td><td class="table_entry">0.4.2</td><td class="table_entry"><a href="http://pypi.python.org/pypi/PyVCF/0.6.0">download</a></td><td>PyVCF</td><td>Converting lobSTR output to VCF format in version 2.0.2 or below</td></tr>
+	  <tr><td class="table_entry">Biopython</td><td class="table_entry">1.5.6</td><td class="table_entry"><a href="http://biopython.org/wiki/Download">download</a></td><td>biopython</td><td>Building a custom index and building an strinfo file required for allelotyping from a custom index for v2.*.</td></tr>
+	  <tr><td class="table_entry">pyfasta</td><td class="table_entry">0.5.1</td><td class="table_entry"><a href="https://pypi.python.org/pypi/pyfasta/">download</a></td><td>pyfasta</td><td>Building a custom index and building an strinfo file required for allelotyping from a custom index for v3.*.</td></tr>
 	</table>
       </section>
     </div>

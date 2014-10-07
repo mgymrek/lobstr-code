@@ -15,59 +15,90 @@
 
 	<h2>On this page</h2>
 	<ul>
-	  <li>Basic usage</li>
-	  <li>Detailed description of all command line options</li>
+	  <li><a href="#basic">Basic usage</a></li>
+	  <li><a href="#detailed">Detailed description of all command line options</a>
+	    <ul>
+	      <li><a href="#lobstr">lobSTR</a></li>
+	      <li><a href="#allelotype">allelotype</a></li>
+	      <li><a href="#index">index</a></li>
+	    </ul>
+	  </li>
 	</ul>
-	Note more usage details can be found on the <a href="documentation.html">documenation</a> page.
-
-	<h2>Basic usage (v2.0.4)</h2>
-	<strong>To run lobSTR using default parameters</strong>:
-	<br>Single-end reads:
-	<br /><tt><verbatim>&nbsp;lobSTR -f FILE1,FILE2,.. --index-prefix PATH_TO_INDEX/lobSTR_   -o OUTPUT_PREFIX   </tt></verbatim><br>
-	<br>Paired-end reads:
-	<br /><tt> lobSTR --p1 FILE1,FILE2,.. --p2 FILE1,FILE2,...	  --index-prefix PATH_TO_INDEX/lobSTR_ 	    -o OUTPUT_PREFIX  	    </tt><br>
-	<br>
-	<tt>samtools sort OUTPUT_PREFIX.aligned.bam OUTPUT_PREFIX.sorted</tt><br>
-	<tt>samtools index OUTPUT_PREFIX.sorted.bam</tt><br>
-	<tt>allelotype 	    --command [train|classify|both|simple] 	    --bam OUTPUT_PREFIX.sorted.bam 	    [--noise_model NOISEMODELPREFIX] 	    --out OUTPUT_PREFIX 	--strinfo STRINFOFILE --index-prefix PATH_TO_INDEX/lobSTR_ </tt> <br />
-	<br />
-	<b>To run an example using files available in the download</b>:
-	<br /> <tt>lobSTR 	    --p1 PATH_TO_LOBSTR/tests/tmp_1.fq --p2
-	  PATH_TO_LOBSTR/tests/tmp_2.fq -q 	    --index-prefix
-	hg19/lobstr_v2.0.3_hg19_ref/lobSTR_ 	    -o test
-	--rg-sample mysample --rg-lib mylibrary	    </tt>
-	<br><br>
-	<tt>samtools sort test.aligned.bam test.sorted</tt><br>
-	<tt>samtools index test.sorted.bam</tt>
-	<br><br>
-	<tt>allelotype 	    --command classify 	    --bam test.sorted.bam 	    --noise_model 	      PATH_TO_LOBSTR/models/illumina_v2.0.3 	    --out test --strinfo hg19/lobstr_v2.0.3_hg19_strinfo.tab	--index-prefix hg19/lobstr_v2.0.3_hg19_ref/lobSTR_	</tt>    <br /><br />
-
-	The index and str info files are available in the resource bundle. 
+	Note more usage details can be found on the <a href="documentation.html">documentation</a> page.
 	<p>
-	  Note that the arguments <tt>--rg-sample</tt>
-	  and <tt>--rg-lib</tt> are now required to run lobSTR. These
+	  <a name="basic"></a>
+	<h2>Basic usage (as of v3.0.2)</h2>
+	<strong>To run lobSTR using default parameters</strong>:
+	<p>
+	Single-end reads:
+	{% highlight bash %}
+	lobSTR -f FILE1,FILE2,.. --index-prefix PATH_TO_INDEX/lobSTR_   -o OUTPUT_PREFIX
+	{% endhighlight %}
+	Paired-end reads:
+	{% highlight bash %}
+	lobSTR --p1 FILE1,FILE2,.. --p2 FILE1,FILE2,...	\
+	   --index-prefix PATH_TO_INDEX/lobSTR_ \
+ 	   -o OUTPUT_PREFIX
+	{% endhighlight %}
+	Sort and index:
+	{% highlight bash %}
+	samtools sort OUTPUT_PREFIX.aligned.bam OUTPUT_PREFIX.sorted
+	samtools index OUTPUT_PREFIX.sorted.bam
+	{% endhighlight %}
+	Run allelotype:
+	{% highlight bash %}
+	allelotype \
+	  --command [train|classify] \
+	  --bam OUTPUT_PREFIX.sorted.bam \
+          --noise_model NOISEMODELPREFIX \
+          --out OUTPUT_PREFIX \
+          --strinfo STRINFOFILE \
+          --index-prefix PATH_TO_INDEX/lobSTR_
+	{% endhighlight %}
+	<b>To run an example using files available in the download</b>:
+	{% highlight bash %}
+	lobSTR \
+          --p1 PATH_TO_LOBSTR/tests/tmp_1.fq \
+          --p2 PATH_TO_LOBSTR/tests/tmp_2.fq \
+          -q \
+	  --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+	  -o test \
+	  --rg-sample mysample --rg-lib mylibrary
+
+	samtools sort test.aligned.bam test.sorted
+	samtools index test.sorted.bam
+
+	allelotype \
+          --command classify \
+          --bam test.sorted.bam \
+          --noise_model PATH_TO_LOBSTR/models/illumina_v2.0.3 \
+          --out test \
+          --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
+          --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_
+	{% endhighlight %}
+
+	<p>
+	The index and str info files are available in the resource bundle. 
+	</p>
+	<p>
+	  Note that the arguments <code>--rg-sample</code>
+	  and <code>--rg-lib</code> are now required to run lobSTR. These
 	  flags add the appropriate read group information to the
 	  output bam file. For more information on these, see
 	  the <a href="faq.html">faq page</a>.
-	<p>
+	</p>
 	This will create the example output files:
 	<ul>
-	  <li>test.aligned.bam</li>
-	  <li>test.aligned.stats</li>
-	  <li>test.vcf</li>
-	  <li>test.allelotype.stats</li>
+	  <li><code>test.aligned.bam</code></li>
+	  <li><code>test.aligned.stats</code></li>
+	  <li><code>test.vcf</code></li>
+	  <li><code>test.allelotype.stats</code></li>
 	</ul>
-	To see a description of the output file formats, see <a href="file-formats.html">file formats</a>. To see all available parameters, run <tt>lobSTR --help</tt> and <tt>allelotype --help</tt>.<br />
+	To see a description of the output file formats, see <a href="file-formats.html">file formats</a>. To see all available parameters, run <code>lobSTR --help</code> and <code>allelotype --help</code>.<br />
 	<br><br>
-	General usage:
-	<br>
-	<tt>python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py $STR_TABLE $REF.fa > $STRINFOFILE</tt>
-	<br><br>
-	where $STR_TABLE as described above, $REF.fa is the reference genome in fasta format, and $STRINFOFILE is where you would like to write the strinfo file.<br><br>
-	Example:
-	<tt>python $PATH_TO_LOBSTR/scripts/GetSTRInfo.py reference.bed hg19.fa > strinfo.reference.tab</tt>
-	
+	<a name="detailed"></a>
 	<h2>Detailed description of command line options</h2>
+	<a name="lobstr"></a>
 	<h3>lobSTR</h3>
 	<h4>General</h4>
 	<ul>
@@ -167,6 +198,7 @@
                            s3cmd --configure)</li>
 </ul>
 
+<a name="allelotype"></a>
 <h3>allelotype</h3>
 <h4>General</h4>
 <ul><li>--command: (required) one of the following:
@@ -221,21 +253,25 @@ Note, the commands "simple" and "both" have been removed.
 <h4>Examples of allelotype usage</h4>
 <br>
 To train the genotyping noise model from a set of aligned reads:
-<br><tt>
-allelotype --command train [OPTIONS] --bam input.bam
-    --noise_model noisemodelprefix --haploid chrX,chrY
-    --strinfo strinfofile
-</tt>
-<br><br>
+{% highlight bash %}
+allelotype \
+  --command train [OPTIONS] \
+  --bam input.bam \
+  --noise_model noisemodelprefix \
+  --haploid chrX,chrY \
+  --strinfo strinfofile
+{% endhighlight %}
 To run str profiling on a set of aligned reads:
-<br><tt>
-allelotype --command classify [OPTIONS] --bam input.bam
-      --noise_model noisemodelprefix [--no-rmdup]
-	--out output_prefix --strinfo strinfofile --index-prefix PATH_TO_INDEX/lobSTR_
-</tt>
-<br><br>
-
-
+{% highlight bash %}
+allelotype \
+  --command classify [OPTIONS] \
+  --bam input.bam \
+  --noise_model noisemodelprefix \
+  --out output_prefix \
+  --strinfo strinfofile \
+  --index-prefix PATH_TO_INDEX/lobSTR_
+{% endhighlight %}
+<a name="index"></a>
 <h3>lobstr_index.py</h3>
 <ul>
 <li>--str FILE: A bed file containing a list of STR loci
