@@ -127,6 +127,7 @@ liblobstr_a_SOURCES = \
 	ReadPair.h \
 	ReadPair.cpp \
 	MultithreadData.cpp MultithreadData.h \
+	xsemaphore.h \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \
@@ -276,6 +277,7 @@ lobSTRTests_SOURCES = \
 	gzstream.cpp \
 	logistic_regression.cpp \
 	MultithreadData.cpp \
+	xsemaphore.h \
 	nw.cpp nw.h \
 	NWNoRefEndPenalty.cpp NWNoRefEndPenalty.h \
 	cigar.h \

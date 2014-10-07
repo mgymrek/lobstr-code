@@ -22,7 +22,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <err.h>
 #include <pthread.h>
-#include <semaphore.h>
+#include "xsemaphore.h"
 
 #include <list>
 #include <string>
@@ -34,45 +34,50 @@ class ProtectedList {
  private:
   std::list <ITEM> items;
   pthread_mutex_t list_access;
-  sem_t empty_slots;
-  sem_t full_slots;
+  XSemaphore empty_slots;
+  XSemaphore full_slots;
   size_t num_items;
   int slots;
 
  public:
   explicit ProtectedList(int _slots) :
+  empty_slots(_slots),
+  full_slots(0),
   num_items(0),
     slots(_slots) {
-      pthread_mutex_init(&list_access, NULL);
-      sem_init(&empty_slots, 0, _slots);
-      sem_init(&full_slots, 0, 0);
+      if (pthread_mutex_init(&list_access, NULL)!=0)
+	err(1,"ProtectedList::ctor(): pthread_mutex_init() failed");
+
       num_items = 0;
     }
 
   void put(ITEM item) {
-    sem_wait(&empty_slots);
+    empty_slots.wait();
 
     // Lock the list access
-    pthread_mutex_lock(&list_access);
+    if (pthread_mutex_lock(&list_access)!=0)
+	err(1,"ProtectedList::ctor(): pthread_mutex_lock() failed");
 
     // Add this record to the list
     items.push_back(item);
 
     // Release the lock
-    pthread_mutex_unlock(&list_access);
+    if (pthread_mutex_unlock(&list_access)!=0)
+	err(1,"ProtectedList::ctor(): pthread_mutex_unlock() failed");
 
     num_items++;
 
     // Flag consumer threads
-    sem_post(&full_slots);
+    full_slots.post();
   }
 
   ITEM get() {
     // Wait for a semaphore to be avialble
-    sem_wait(&full_slots);
+    full_slots.wait();
 
     // Lock the list access
-    pthread_mutex_lock(&list_access);
+    if (pthread_mutex_lock(&list_access)!=0)
+	err(1,"ProtectedList::ctor(): pthread_mutex_lock() failed");
 
     // Get an element from the list, and remove it
 
@@ -86,24 +91,25 @@ class ProtectedList {
     num_items--;
 
     // Release the lock
-    pthread_mutex_unlock(&list_access);
-    sem_post(&empty_slots);
+    if (pthread_mutex_unlock(&list_access)!=0)
+	err(1,"ProtectedList::ctor(): pthread_mutex_unlock() failed");
+    empty_slots.post();
     return item;
   }
 
   void wait_for_all_slots() {
     for (int i = 0; i < slots; ++i) {
-      sem_wait(&empty_slots);
+      empty_slots.wait();
     }
   }
 };
 
 class MultithreadData {
  private:
+  int slots;
   ProtectedList<ReadPair*> items_to_process;
   ProtectedList<ReadPair*> items_to_output;
 
-  int slots;
   pthread_mutex_t counter_mutex;
   size_t input_count;
   size_t output_count;

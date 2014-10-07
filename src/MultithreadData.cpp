@@ -27,30 +27,37 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 MultithreadData::MultithreadData(int _slots)
 : slots(_slots), items_to_process(_slots), items_to_output(_slots),
   input_count(0), output_count(0) {
-  pthread_mutex_init(&counter_mutex, NULL);
+  if (pthread_mutex_init(&counter_mutex, NULL)!=0)
+	err(1,"MTData::ctor(): pthread_mutex_init() failed");
 }
 
 void MultithreadData::increment_input_counter() {
-  pthread_mutex_lock(&counter_mutex);
+  if (pthread_mutex_lock(&counter_mutex)!=0)
+	err(1,"MTData::incr_input_cnt(): pthread_mutex_lock() failed");
   input_count++;
-  pthread_mutex_unlock(&counter_mutex);
+  if (pthread_mutex_unlock(&counter_mutex)!=0)
+	err(1,"MTData::incr_input_cnt(): pthread_mutex_unlock() failed");
 }
 
 void MultithreadData::increment_output_counter() {
-  pthread_mutex_lock(&counter_mutex);
+  if (pthread_mutex_lock(&counter_mutex)!=0)
+	err(1,"MTData::incr_output_cnt(): pthread_mutex_lock() failed");
   output_count++;
-  pthread_mutex_unlock(&counter_mutex);
+  if (pthread_mutex_unlock(&counter_mutex)!=0)
+	err(1,"MTData::incr_output_cnt(): pthread_mutex_unlock() failed");
 }
 
 bool MultithreadData::input_output_counters_equal() {
   bool equal;
-  pthread_mutex_lock(&counter_mutex);
+  if (pthread_mutex_lock(&counter_mutex)!=0)
+	err(1,"MTData::cnt-eq(): pthread_mutex_lock() failed");
   std::stringstream msg;
   msg << "input_count = " << input_count
       << " output_count = " << output_count;
   PrintMessageDieOnError(msg.str(), PROGRESS);
   equal = (output_count == input_count);
-  pthread_mutex_unlock(&counter_mutex);
+  if (pthread_mutex_unlock(&counter_mutex)!=0)
+	err(1,"MTData::cnt-eq(): pthread_mutex_unlock() failed");
   return equal;
 }
 
