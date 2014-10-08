@@ -264,9 +264,7 @@ int nw_align_ag(std::vector<int> * M,
   int maxRowScore = 0;
   int maxColScore = 0;
   bool MatchBestRow = false;
-  bool GapBestRow = false;
   bool MatchBestCol = false;
-  bool GapBestCol = false;
   int bestI = 0;
   int bestJ = 0;
   // get max M and max I right col
@@ -274,12 +272,10 @@ int nw_align_ag(std::vector<int> * M,
     if ((*M)[i*(L1+1)+L1] >= maxRowScore) {
       maxRowScore = (*M)[i*(L1+1)+L1];
       MatchBestRow = true;
-      GapBestRow = false;
       bestI = i;
     }
     if ((*I)[i*(L1+1)+L1] >= maxRowScore) {
       maxRowScore = (*I)[i*(L1+1)+L1];
-      GapBestRow = true;
       MatchBestRow = false;
       bestI = i;
     }
@@ -290,12 +286,10 @@ int nw_align_ag(std::vector<int> * M,
     if ((*M)[L2*(L1+1)+j] >= maxColScore) {
       maxColScore = (*M)[L2*(L1+1)+j];
       MatchBestCol = true;
-      GapBestCol = false;
       bestJ = j;
     }
     if ((*I)[L2*(L1+1)+j] >= maxColScore) {
       maxColScore = (*I)[L2*(L1+1)+j];
-      GapBestCol = true;
       MatchBestCol = false;
       bestJ = j;
     }
