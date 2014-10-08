@@ -33,7 +33,7 @@ using namespace std;
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(NWNoRefEndPenaltyTest);
-
+const double NWNoRefEndPenaltyTest::MIN_FRAC_CORRECT = 0.9;
 
 void NWNoRefEndPenaltyTest::setUp() {} 
 void NWNoRefEndPenaltyTest::tearDown() {}
