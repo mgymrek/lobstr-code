@@ -33,7 +33,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace BamTools {
   class BamWriter;
-  class BamAlignment;
+  struct BamAlignment;
 }
 
 class SamFileWriter {

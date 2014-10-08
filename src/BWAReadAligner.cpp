@@ -262,10 +262,10 @@ bool BWAReadAligner::ProcessRead(MSReadRecord* read, bool passed_detection,
   vector<ALIGNMENT> left_alignments, right_alignments;
   bool one_flank_aligned = false;
   if (GetAlignmentCoordinates(seq_left, &left_alignments)) {
-    one_flank_aligned++;
+    one_flank_aligned = true;
   }
   if (GetAlignmentCoordinates(seq_right, &right_alignments)) {
-    one_flank_aligned++;
+    one_flank_aligned = true;
   }
   // don't need seqs anymore
   bwa_free_read_seq(2, seqs);

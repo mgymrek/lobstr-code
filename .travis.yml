@@ -6,7 +6,7 @@ before_install:
   - sudo apt-get install g++ libtool pkg-config libfftw3-dev libboost-dev libcppunit-dev libz-dev lcov libgsl0-dev
 script:
   - ./reconf
-  - ./configure
+  - ./configure --enable-werror
   - make
   - make check
   - make dist

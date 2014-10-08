@@ -39,7 +39,7 @@ public CppUnit::TestFixture {
   static const size_t REF_LEN=150, READ_LEN=50; 
   static const int RAND_SEED=21312278;
   static const int NUM_TRIALS=1000;
-  static const double MIN_FRAC_CORRECT=0.9;
+  static const double MIN_FRAC_CORRECT;
 
   void setUp();
   void tearDown();
