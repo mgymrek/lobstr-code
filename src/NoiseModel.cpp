@@ -177,7 +177,6 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
   int top_copy_count = 0;
   float top_copy = 0;
   int second_copy_count = 0;
-  float second_copy = 0;
   map<float, int> copy_to_count;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
@@ -190,11 +189,9 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
     float copy = it->first;
     if (count > top_copy_count) {
       second_copy_count = top_copy_count;
-      second_copy = top_copy;
       top_copy_count = count;
       top_copy = copy;
     } else if (count > second_copy_count) {
-      second_copy = copy;
       second_copy_count = count;
     }
   }
