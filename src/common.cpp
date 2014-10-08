@@ -216,7 +216,7 @@ void TrimRead(const string& input_nucs,
   // else find the best place to chop
   // done according to bwa manual -q option
   // don't let read length go below minimum
-  size_t max_x;
+  size_t max_x = min_read_length;
   int max_score = 0;
   for (size_t x = min_read_length; x <= l; x++) {
     int score = 0;

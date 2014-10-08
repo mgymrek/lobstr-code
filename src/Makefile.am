@@ -1,4 +1,3 @@
-
 # Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
 #  
 # This file is free software; as a special exception the author gives
@@ -109,6 +108,9 @@ libbamtools_a_SOURCES = \
 	utils/bamtools_variant.h \
 	utils/utils_global.h
 
+liblobstr_a_CFLAGS = $(AM_CFLAGS) $(WERROR_CFLAGS)
+liblobstr_a_CXXFLAGS = $(AM_CXXFLAGS) $(WERROR_CFLAGS)
+liblobstr_a_CPPFLAGS = $(AM_CPPFLAGS)
 liblobstr_a_SOURCES = \
 	Alignment.h \
 	AlignmentUtils.h AlignmentUtils.cpp \
@@ -133,18 +135,14 @@ liblobstr_a_SOURCES = \
 	cigar.h \
 	runtime_parameters.cpp runtime_parameters.h \
 	IFileReader.h RunInfo.h \
-	IFileWriter.h ISatellite.h MSReadRecord.h \
+	IFileWriter.h MSReadRecord.h \
 	SamFileWriter.cpp SamFileWriter.h \
 	STRDetector.cpp STRDetector.h \
 	TextFileReader.cpp TextFileReader.h \
 	TextFileWriter.cpp TextFileWriter.h \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
-	ZippedTextFileReader.cpp ZippedTextFileReader.h \
-	api/BamReader.h api/BamMultiReader.h \
-	api/BamAlignment.h api/BamWriter.h \
-	api/SamHeader.h api/SamReadGroup.h \
-	api/SamReadGroupDictionary.h
+	ZippedTextFileReader.cpp ZippedTextFileReader.h
 
 libindex_a_SOURCES = \
 	bwtaln.c bwtaln.h \
@@ -154,7 +152,6 @@ libindex_a_SOURCES = \
 	stdaln.c stdaln.h \
 	bwtgap.c bwtgap.h \
 	bwaseqio.c \
-	bwaseqio.h \
 	bwtindex.c \
 	bwtio.c \
 	utils.c \
@@ -178,6 +175,9 @@ libindex_a_SOURCES = \
 	is.c \
 	cs2nt.c
 
+liballelotype_a_CFLAGS = $(AM_CFLAGS) $(WERROR_CFLAGS)
+liballelotype_a_CXXFLAGS = $(AM_CXXFLAGS) $(WERROR_CFLAGS)
+liballelotype_a_CPPFLAGS = $(AM_CPPFLAGS)
 liballelotype_a_SOURCES = \
 	AlignedRead.h \
 	AlignmentFilters.h AlignmentFilters.cpp \
@@ -201,18 +201,14 @@ liballelotype_a_SOURCES = \
 	STRRecord.h \
 	runtime_parameters.cpp runtime_parameters.h \
 	IFileReader.h RunInfo.h \
-	IFileWriter.h ISatellite.h MSReadRecord.h \
+	IFileWriter.h MSReadRecord.h \
 	TextFileReader.cpp TextFileReader.h \
 	TextFileWriter.cpp TextFileWriter.h \
 	VCFWriter.cpp VCFWriter.h \
 	ZAlgorithm.cpp ZAlgorithm.h \
 	ZippedFastaFileReader.cpp ZippedFastaFileReader.h \
 	ZippedFastqFileReader.cpp ZippedFastqFileReader.h \
-	ZippedTextFileReader.cpp ZippedTextFileReader.h \
-	api/BamReader.h api/BamMultiReader.h \
-	api/BamAlignment.h api/BamWriter.h \
-	api/SamHeader.h api/SamReadGroup.h \
-	api/SamReadGroupDictionary.h
+	ZippedTextFileReader.cpp ZippedTextFileReader.h
 
 lobSTRIndex_SOURCES = main.c main.h
 lobSTRIndex_CPPFLAGS = $(AM_CPPFLAGS)
@@ -220,11 +216,15 @@ lobSTRIndex_LDADD = $(AM_LDADD) libindex.a libbamtools.a $(GSL_LIBS)
 lobSTRIndex_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 lobSTR_SOURCES = main.cpp
+lobSTR_CFLAGS = $(AM_CFLAGS) $(WERROR_CFLAGS)
+lobSTR_CXXFLAGS = $(AM_CXXFLAGS) $(WERROR_CFLAGS)
 lobSTR_CPPFLAGS = $(AM_CPPFLAGS)
 lobSTR_LDADD = liblobstr.a libbamtools.a libindex.a $(PROTOBUF_LIBS) $(GSL_LIBS)
 lobSTR_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
 
 allelotype_SOURCES = main_allelotype.cpp
+allelotype_CFLAGS = $(AM_CFLAGS) $(WERROR_CFLAGS)
+allelotype_CXXFLAGS = $(AM_CXXFLAGS) $(WERROR_CFLAGS)
 allelotype_CPPFLAGS = $(AM_CPPFLAGS)
 allelotype_LDADD = liballelotype.a libbamtools.a $(LIBS) $(PROTOBUF_LIBS) $(GSL_LIBS)
 allelotype_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)
@@ -295,12 +295,10 @@ lobSTRTests_SOURCES = \
 	ZAlgorithm.cpp \
 	ZippedFastaFileReader.cpp \
 	ZippedFastqFileReader.cpp \
-	ZippedTextFileReader.cpp \
-	api/BamReader.h api/BamMultiReader.h \
-	api/BamAlignment.h api/BamWriter.h \
-	api/SamHeader.h api/SamReadGroup.h \
-	api/SamReadGroupDictionary.h
+	ZippedTextFileReader.cpp
 
-lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS)
+lobSTRTests_CPPFLAGS = $(CPPUNIT_CFLAGS) $(lobSTR_CPPFLAGS) $(AM_CPPFLAGS)
+lobSTRTests_CFLAGS = $(AM_CFLAGS) $(WERROR_CFLAGS)
+lobSTRTests_CXXFLAGS = $(AM_CXXFLAGS) $(WERROR_CFLAGS)
 lobSTRTests_LDADD = libbamtools.a libindex.a $(CPPUNIT_LIBS) -ldl
 lobSTRTests_LDFLAGS = $(AM_LDFLAGS) $(LT_LDFLAGS)

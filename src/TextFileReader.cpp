@@ -24,6 +24,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <string>
 
+#include "src/common.h"
 #include "src/IFileReader.h"
 #include "src/TextFileReader.h"
 
@@ -60,9 +61,20 @@ bool TextFileReader::GetNextLine(string* line) {
   return true;
 }
 
+// Does not apply to TextFileReader
 bool TextFileReader::GetNextRecord(ReadPair* read_pair) {
-  return false;  // do nothing
+  stringstream msg;
+  msg << "[FastqPairedFileReader]: processing " << read_pair->reads.at(0).ID
+      << ". This should not happen";
+  PrintMessageDieOnError(msg.str(), ERROR);
+  return false;
 }
+
+// Does not apply to TextFileReader
 bool TextFileReader::GetNextRead(MSReadRecord* read) {
-  return false;  // do nothing
+  stringstream msg;
+  msg << "[FastqPairedFileReader]: processing " << read->ID
+      << ". This should not happen";
+  PrintMessageDieOnError(msg.str(), ERROR);
+  return false;
 }

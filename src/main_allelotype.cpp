@@ -514,7 +514,7 @@ int main(int argc, char* argv[]) {
     // Read one chunk of refs at a time
     vector<ReferenceSTR> ref_str_chunk;
     string chrom; int begin, end;
-    string prev_chrom; int prev_begin; // Keep track to avoid processing loci with duplicate entries
+    string prev_chrom = "NA"; int prev_begin = -1; // Keep track to avoid processing loci with duplicate entries
     while (ref_str_container.GetNextChunk(&ref_str_chunk, &chrom, &begin, &end)) {
       ReferenceSTR ref_region;
       ref_region.chrom = chrom;

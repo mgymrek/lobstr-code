@@ -251,7 +251,7 @@ namespace NWNoRefEndPenalty {
   }
 
   /* Trace back alignment using the string alingnments and the respective score matrices. */
-  void traceAlignment(int L1, int L2, std::string ref_al, std::string read_al, 
+  void traceAlignment(int L1, std::string ref_al, std::string read_al, 
 		      std::vector<float>& M, std::vector<float>& Iref, std::vector<float>& Iread){
     std::cout << "Beginning trace..." 
 	      << ref_al  << std::endl

@@ -21,6 +21,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <err.h>
 #include <string>
 
+#include "src/common.h"
 #include "src/FastaPairedFileReader.h"
 #include "src/runtime_parameters.h"
 #include "src/ZippedFastaFileReader.h"
@@ -57,7 +58,11 @@ bool FastaPairedFileReader::GetNextRecord(ReadPair* read_pair) {
   return true;
 }
 
-// Does not apply for paired reads reader
+// Does not apply to paired read readers
 bool FastaPairedFileReader::GetNextRead(MSReadRecord* read) {
+  stringstream msg;
+  msg << "[FastqPairedFileReader]: processing " << read->ID
+      << ". This should not happen";
+  PrintMessageDieOnError(msg.str(), ERROR);
   return false;
 }

@@ -119,6 +119,25 @@ AC_SUBST(GIT_VERSION)
 MACHTYPE=`uname -m`
 AC_SUBST(MACHTYPE)
 
+## Add --enable-werror option to ./configure,
+## To enable/disable treating compiler warnings as errors.
+## If not specified AND we're compiling from .git repository,
+## enable this automatically.
+AC_ARG_ENABLE([werror],
+  [AS_HELP_STRING([--enable-werror],
+     [treat compiler warnings as errors (for developers)])],
+  [case $enableval in
+     yes|no) ;;
+     *)      AC_MSG_ERROR([bad value $enableval for werror option]) ;;
+   esac
+   werror=$enableval],
+   []
+)
+if test "$werror" = yes; then
+  WERROR_CFLAGS="-Werror"
+  AC_SUBST([WERROR_CFLAGS])
+fi
+
 # Add pThread related settings,
 #  see http://www.gnu.org/software/autoconf-archive/ax_pthread.html
 # NOTE: CFLAGS/CXXFLAGS are also updated below.

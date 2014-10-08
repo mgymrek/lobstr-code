@@ -37,16 +37,16 @@ void ZAlgorithmTest::tearDown(){}
 void ZAlgorithmTest::test_Prefix(){
   vector<int> num_matches;
   string s1, s2;
-  int s2_start, s2_stop;
+  size_t s2_start, s2_stop;
   for (int i = 0; i < NUM_TRIALS; i++){
     s1       = DNATools::RandDNA(1+rand()%(LENGTH-1));
     s2       = DNATools::RandDNA(1+rand()%(LENGTH-1));
     s2_start = rand()%s2.size();
     s2_stop  = s2_start + (rand()%(s2.size()-s2_start));
     ZAlgorithm::GetPrefixMatchCounts(s1, s2, s2_start, s2_stop, num_matches);
-    for (int j = s2_start; j <= s2_stop; j++){
-      bool match  = (s1.substr(0, num_matches[j-s2_start]).compare(s2.substr(j, num_matches[j-s2_start])) == 0);
-      bool longer = (s1.size() > num_matches[j-s2_start] && s2.size() > (j + num_matches[j-s2_start]) && s2[j+num_matches[j-s2_start]] == s1[num_matches[j-s2_start]]);
+    for (size_t j = s2_start; j <= s2_stop; j++){
+      bool match  = (s1.substr(0, (size_t)num_matches[j-s2_start]).compare(s2.substr(j, (size_t)num_matches[j-s2_start])) == 0);
+      bool longer = (s1.size() > (size_t)num_matches[j-s2_start] && s2.size() > (j + (size_t)num_matches[j-s2_start]) && s2[j+(size_t)num_matches[j-s2_start]] == s1[(size_t)num_matches[j-s2_start]]);
       CPPUNIT_ASSERT_MESSAGE("ZAlgorithm prefix error", !(!match || (match && longer)));
     }
   }
@@ -55,18 +55,18 @@ void ZAlgorithmTest::test_Prefix(){
 void ZAlgorithmTest::test_Suffix(){
   vector<int> num_matches;
   string s1, s2;
-  int s2_start, s2_stop;
+  size_t s2_start, s2_stop;
   for (int i = 0; i < NUM_TRIALS; i++){
     s1       = DNATools::RandDNA(1+rand()%(LENGTH-1));
     s2       = DNATools::RandDNA(1+rand()%(LENGTH-1));
     s2_start = rand()%s2.size();
     s2_stop  = s2_start + (rand()%(s2.size()-s2_start));
     ZAlgorithm::GetSuffixMatchCounts(s1, s2, s2_start, s2_stop, num_matches);
-    for (int j = s2_start; j <= s2_stop; j++){
-      string sub_1 = s1.substr(s1.size()-num_matches[j-s2_start], num_matches[j-s2_start]);
-      string sub_2 = s2.substr(j-num_matches[j-s2_start]+1, num_matches[j-s2_start]);
+    for (size_t j = s2_start; j <= s2_stop; j++){
+      string sub_1 = s1.substr(s1.size()-(size_t)num_matches[j-s2_start], (size_t)num_matches[j-s2_start]);
+      string sub_2 = s2.substr(j-(size_t)num_matches[j-s2_start]+1, (size_t)num_matches[j-s2_start]);
       bool match   = (sub_1.compare(sub_2) == 0);
-      bool longer  = ((j-num_matches[j-s2_start]) > 0 && (s1.size()-num_matches[j-s2_start]) > 0 && s1[s1.size()-num_matches[j-s2_start]-1] == s2[j-num_matches[j-s2_start]]);
+      bool longer  = ((j-(size_t)num_matches[j-s2_start]) > 0 && (s1.size()-(size_t)num_matches[j-s2_start]) > 0 && s1[s1.size()-(size_t)num_matches[j-s2_start]-1] == s2[j-(size_t)num_matches[j-s2_start]]);
       CPPUNIT_ASSERT_MESSAGE("ZAlgorithm suffix error", !(!match || (match && longer)));
     }
   }

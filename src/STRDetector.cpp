@@ -20,13 +20,12 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/common.h"
 #include "src/EntropyDetection.h"
-#include "src/ISatellite.h"
 #include "src/runtime_parameters.h"
 #include "src/STRDetector.h"
 
 using namespace std;
 
-const int EXTEND_FLANK = 6;
+const size_t EXTEND_FLANK = 6;
 
 STRDetector::STRDetector() {}
 
@@ -35,12 +34,12 @@ bool STRDetector::ProcessReadPair(ReadPair* read_pair, string* err, string* mess
   *messages = "Detection-notes-here:";
   read_pair->read1_passed_detection = false;
   read_pair->read2_passed_detection = false;
-  if (ProcessRead(&read_pair->reads.at(0), err, messages)) {
+  if (ProcessRead(&read_pair->reads.at(0), err)) {
     read_pair->read1_passed_detection = true;
   }
   // Returns true if at least one read in the pair is detected
   if (read_pair->reads.at(0).paired) {
-    if (ProcessRead(&read_pair->reads.at(1), err, messages)) {
+    if (ProcessRead(&read_pair->reads.at(1), err)) {
       read_pair->read2_passed_detection = true;
     }
     return (read_pair->read1_passed_detection ||
@@ -50,7 +49,7 @@ bool STRDetector::ProcessReadPair(ReadPair* read_pair, string* err, string* mess
   }
 }
 
-bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages) {
+bool STRDetector::ProcessRead(MSReadRecord* read, string* err) {
   // Get the size of the read so we don't keep computing
   size_t read_length = read->nucleotides.size();
   // Preprocessing checks
@@ -111,7 +110,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
   }
 
   // allow more nucleotides in detection step
-  if ((nuc_start-EXTEND_FLANK >= 0) &&
+  if ((EXTEND_FLANK <= nuc_start) &&
       (nuc_start-EXTEND_FLANK < read_length) &&
       (nuc_end + EXTEND_FLANK + 1 < read_length)) {
     detected_microsatellite_nucleotides =
@@ -147,9 +146,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err, string* messages)
                     read->right_flank_index_from_end -
                     read->left_flank_index_from_start);
 
-  if (((read->left_flank_index_from_start+nuc_len) <=
-       read_length) &
-      ((read->left_flank_index_from_start+nuc_len) >= 0)) {
+  if (((read->left_flank_index_from_start+nuc_len) <= read_length)) {
     read->nucleotides = read->
       orig_nucleotides.substr(read->left_flank_index_from_start, nuc_len);
     read_length = read->nucleotides.size();

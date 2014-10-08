@@ -21,15 +21,14 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SRC_STRDETECTOR_H__
 #define SRC_STRDETECTOR_H__
 
-#include "src/ISatellite.h"
 #include "src/MSReadRecord.h"
 
-class STRDetector : public ISatellite {
+class STRDetector {
  public:
   STRDetector();
   bool ProcessReadPair(ReadPair* read_pair, std::string* err, std::string* messages);
  private:
-  bool ProcessRead(MSReadRecord* read, std::string* err, std::string* messages);
+  bool ProcessRead(MSReadRecord* read, std::string* err);
 };
 
 #endif  // SRC_STRDETECTOR_H__

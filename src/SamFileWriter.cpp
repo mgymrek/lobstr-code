@@ -145,7 +145,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   }
 
   // rname (ref id)
-  int ref_id;
+  int ref_id = -1;
   size_t i = 0;
   for (map<string, int>::const_iterator it = chrom_sizes.begin();
        it != chrom_sizes.end(); ++it) {
@@ -153,6 +153,9 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
       ref_id = i;
     }
     ++i;
+  }
+  if (ref_id == -1) {
+    PrintMessageDieOnError("[SamFileWriter.cpp]: problem setting refid", ERROR);
   }
   bam_alignment.RefID = ref_id;
   if (read_pair.treat_as_paired) {

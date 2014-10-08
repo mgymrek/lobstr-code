@@ -175,9 +175,9 @@ bool NoiseModel::HasUniqueMode(const list<AlignedRead>&
   }
   
   int top_copy_count = 0;
-  float top_copy;
+  float top_copy = 0;
   int second_copy_count = 0;
-  float second_copy;
+  float second_copy = 0;
   map<float, int> copy_to_count;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
@@ -247,7 +247,7 @@ void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) 
   ss << "nr_feature 4" << endl;
   ss << "bias 0" << endl;
   ss << "w" << endl;
-  for (int i=0; i<coeffs.size(); i++) {
+  for (size_t i=0; i<coeffs.size(); i++) {
     ss << coeffs.at(i) << endl;
   }
   nWriter.Write(ss.str());
@@ -450,7 +450,7 @@ bool NoiseModel::ReadNoiseModelFromFile() {
     nFile.GetNextLine(&line);
     vector<string> items;
     split(line, ' ', items);
-    if (items.size() < 3*MAX_PERIOD*2+1) return false;
+    if (items.size() < 3*static_cast<size_t>(MAX_PERIOD)*2+1) return false;
     for (size_t i = 1; i < items.size(); i++) {
       pdf_model.at(period-MIN_PERIOD).at(i-1) = atof(items[i].c_str());
     }

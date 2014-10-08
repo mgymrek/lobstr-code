@@ -46,7 +46,7 @@ int NWNoRefEndPenaltyTest::GenAlignments(int num_trials, double mut_prob, double
     string ref_seq = DNATools::RandDNA(REF_LEN);
 
     // Choose the read region
-    int read_start  = rand()%(ref_seq.size()-READ_LEN+1);
+    size_t read_start  = rand()%(ref_seq.size()-READ_LEN+1);
     string read_seq = ref_seq.substr(read_start, READ_LEN);
 
     // Randomly mutate read region 
@@ -79,18 +79,18 @@ int NWNoRefEndPenaltyTest::GenAlignments(int num_trials, double mut_prob, double
       PrintMessageDieOnError("Alignment lengths must match", ERROR);
 
     // Determine alignment start index
-    unsigned int align_start = 0;
+    size_t align_start = 0;
     while (align_start < read_seq_al.size() && read_seq_al[align_start] == '-')
       align_start++;
     if (align_start == read_seq_al.size()) PrintMessageDieOnError("Alignment only consists of - characters", ERROR);
 
     // Determine alignment end index
-    int align_end = read_seq_al.size()-1;
-    while (align_end >= 0 && read_seq_al[align_end] == '-')
+    size_t align_end = read_seq_al.size()-1;
+    while (align_end >= 1 && read_seq_al[align_end] == '-')
       align_end--;
     
-    int num_ins = 0;
-    for (int coord = align_start; coord <= align_end; coord++)
+    size_t num_ins = 0;
+    for (size_t coord = align_start; coord <= align_end; coord++)
       if (ref_seq_al[coord] == '-')
 	num_ins++;
     

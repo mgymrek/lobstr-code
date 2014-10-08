@@ -35,7 +35,7 @@ Rolf Muertter,  rolf@dslextreme.com
 
 int nw(const std::string& seq_1, const std::string& seq_2,
        std::string& seq_1_al, std::string& seq_2_al,
-       bool prm, int* score , CIGAR_LIST* cigar_list);
+       int* score , CIGAR_LIST* cigar_list);
 
 int nw_align(std::vector<int>* F, std::vector<char>* traceback,
              const std::string& seq_1, const std::string& seq_2,
@@ -48,7 +48,7 @@ int nw_align_ag(std::vector<int>* M, std::vector<int>* I,
                 std::vector<char>* tracebackI,
                 const std::string& seq_1, const std::string& seq_2,
                 std::string& seq_1_al, std::string& seq_2_al,
-                int d, int* score, CIGAR_LIST* cigar_list);
+                int* score, CIGAR_LIST* cigar_list);
 
 void  dpm_init(std::vector<int>* F, std::vector<char>* traceback,
                int L1, int L2, int d);

@@ -109,7 +109,7 @@ void EntropyDetection::FindStartEnd(size_t* start, size_t* end,
     *repetitive_end = true;
   }
   // Go forwards (to the right)
-  int endi;
+  size_t endi;
   for (endi = index_of_max ; endi < entropy_window.size(); endi++)  {
     if (entropy_window[endi] < 0.8*max_entropy)
       break;

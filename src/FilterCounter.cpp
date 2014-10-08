@@ -34,7 +34,7 @@ void FilterCounter::increment(const int type){
 }
  
 std::string FilterCounter::GetFilterType(const int type){
-  switch(type){
+  switch(type) {
   case NOT_UNIT:
     return "NOT_UNIT";
   case DIFF_FROM_REF:
@@ -57,6 +57,7 @@ std::string FilterCounter::GetFilterType(const int type){
     return "UNFILTERED";
   default:
     PrintMessageDieOnError("Invalid filter type", ERROR);
+    return "ERROR"; // this should never be reached
   }
 }
 

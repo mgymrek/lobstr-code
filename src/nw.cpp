@@ -43,7 +43,6 @@ int nw(const string& seq_1,
        const string& seq_2,
        string& seq_1_al,
        string& seq_2_al,
-       bool prm,
        int* score,
        CIGAR_LIST* cigar_list) {
   int L1 = seq_1.length();
@@ -63,7 +62,7 @@ int nw(const string& seq_1,
 
   // Create alignment
   nw_align_ag(&M, &I, &tracebackM, &tracebackI,
-              seq_1, seq_2, seq_1_al, seq_2_al, d, score, cigar_list);
+              seq_1, seq_2, seq_1_al, seq_2_al, score, cigar_list);
   return 0;
 }
 
@@ -115,6 +114,8 @@ int nw_align(std::vector<int > *    F,
       case 'T':
         x = 3;
         break;
+      default:
+	x = -1; // This should never happen
       }
       nuc = seq_2[i-1];
       switch (nuc) {
@@ -130,6 +131,8 @@ int nw_align(std::vector<int > *    F,
       case 'T':
         y = 3;
         break;
+      default:
+	y = -1; // This should never happen
       }
       fU = (*F)[(i-1)*(L1)+j]-d;  // gap
       fD = (*F)[(i-1)*(L1)+(j-1)]+ s[x][y];  // mismatch
@@ -159,6 +162,8 @@ int nw_align(std::vector<int > *    F,
       seq_1_al += seq_1[j-1];
       seq_2_al += '-';
       j--;
+    default:
+      continue; // Should never happen
     }
     k++;
   }
@@ -193,7 +198,6 @@ int nw_align_ag(std::vector<int> * M,
                 const string& seq_2,
                 string& seq_1_al,
                 string& seq_2_al,
-                int d,         //  Gap penalty
                 int* score,  //  SW score
                 CIGAR_LIST* cigar_list) {
   int k = 0, x = 0, y = 0;
@@ -219,6 +223,8 @@ int nw_align_ag(std::vector<int> * M,
       case 'T':
         x = 3;
         break;
+      default:
+	x = -1; // should never happen
       }
       nuc = seq_2[i-1];
       switch (nuc) {
@@ -234,6 +240,8 @@ int nw_align_ag(std::vector<int> * M,
       case 'T':
         y = 3;
         break;
+      default:
+	y = -1; // should never happen
       }
       mD1 = (*M)[(i-1)*(L1+1)+(j-1)]+s[x][y];  // match from match matrix
       mD2 = (*I)[(i-1)*(L1+1)+(j-1)]+s[x][y];  // match from gap matrix
@@ -381,6 +389,8 @@ int nw_align_ag(std::vector<int> * M,
       i = 0;
       j = 0;
       break;
+    default:
+      continue; // should never happen
     }
 
     k++;
@@ -388,9 +398,9 @@ int nw_align_ag(std::vector<int> * M,
   // simplify cigars core
   reverse(raw_cigar.begin(), raw_cigar.end() );
   char cigar_char = raw_cigar[0];
-  char new_cigar_char;
+  char new_cigar_char = raw_cigar[0];
   int num = 0;
-  for (int i = 1; i < raw_cigar.length() ; i++) {
+  for (size_t i = 1; i < raw_cigar.length() ; i++) {
     new_cigar_char = raw_cigar[i];
     if (new_cigar_char != cigar_char) {
       CIGAR new_cigar;

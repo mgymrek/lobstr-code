@@ -30,7 +30,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/tests/VCFWriter_test.h"
 #include "src/tests/ZAlgorithm_test.h"
 
-int main( int argc, char **argv) {
+int main() {
   // Adds the test to the list of tests to run
   CppUnit::TextUi::TestRunner runner;
   runner.addTest(AlignmentFiltersTest::suite());

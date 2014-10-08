@@ -22,6 +22,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
+#include "src/common.h"
 #include "src/IFileReader.h"
 #include "src/ZippedTextFileReader.h"
 
@@ -57,9 +58,20 @@ bool ZippedTextFileReader::GetNextLine(string* line) {
   return true;
 }
 
+
+// Does not apply to ZippedTextFileReader
 bool ZippedTextFileReader::GetNextRecord(ReadPair* read_pair) {
-  return false;  // do nothing
+  stringstream msg;
+  msg << "[FastqPairedFileReader]: processing " << read_pair->reads.at(0).ID
+      << ". This should not happen";
+  PrintMessageDieOnError(msg.str(), ERROR);
+  return false;
 }
+// Does not apply to ZippedTextFileReader
 bool ZippedTextFileReader::GetNextRead(MSReadRecord* read) {
-  return false;  // do nothing
+  stringstream msg;
+  msg << "[FastqPairedFileReader]: processing " << read->ID
+      << ". This should not happen";
+  PrintMessageDieOnError(msg.str(), ERROR);
+  return false;
 }
