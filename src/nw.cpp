@@ -37,7 +37,7 @@ const int s[4][4] = {{ a, b, b, b },
                       { b, b, b, a }};
 const int d = 6;  // gap penalty
 const int GAPOPEN = 6;
-const int GAPEXTEND = 0.1;
+const int GAPEXTEND = 0;
 
 int nw(const string& seq_1,
        const string& seq_2,

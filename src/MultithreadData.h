@@ -106,7 +106,6 @@ class ProtectedList {
 
 class MultithreadData {
  private:
-  int slots;
   ProtectedList<ReadPair*> items_to_process;
   ProtectedList<ReadPair*> items_to_output;
 

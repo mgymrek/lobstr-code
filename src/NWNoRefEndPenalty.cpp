@@ -56,7 +56,7 @@ namespace NWNoRefEndPenalty {
     case 'N':
       return 4;
     default:
-      PrintMessageDieOnError("Invalid character in read " + c, ERROR);
+      PrintMessageDieOnError("Invalid character in read.", ERROR);
     }
     return -1;
   }

@@ -25,7 +25,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/MultithreadData.h"
 
 MultithreadData::MultithreadData(int _slots)
-: slots(_slots), items_to_process(_slots), items_to_output(_slots),
+: items_to_process(_slots), items_to_output(_slots),
   input_count(0), output_count(0) {
   if (pthread_mutex_init(&counter_mutex, NULL)!=0)
 	err(1,"MTData::ctor(): pthread_mutex_init() failed");

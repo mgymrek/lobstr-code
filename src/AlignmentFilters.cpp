@@ -45,8 +45,11 @@ namespace AlignmentFilters {
 	return dist;
       else if (type == 'S' || type == 'H')
 	return -1;
-      else 
-	PrintMessageDieOnError("Invalid CIGAR char " + type, ERROR);
+      else {
+	string msg = "Invalid CIGAR char";
+	msg += type;
+	PrintMessageDieOnError(msg, ERROR);
+      }
       iter++;
     }
     return -1;
@@ -113,8 +116,11 @@ namespace AlignmentFilters {
       }
       else if (cigar_iter->Type == 'S' || cigar_iter->Type == 'H')
 	break;
-      else 
-	PrintMessageDieOnError("Invalid CIGAR char "+cigar_iter->Type, ERROR);
+      else {
+	string msg = "Invalid CIGAR char";
+	msg += cigar_iter->Type;
+	PrintMessageDieOnError(msg, ERROR);
+      }
       cigar_iter++;
     }
 
@@ -179,7 +185,9 @@ namespace AlignmentFilters {
 	begin      = false;
 	break;
       default:
-	PrintMessageDieOnError("Invalid CIGAR char " + cigar_iter->Type, ERROR);
+	string msg = "Invalid CIGAR char ";
+	msg += cigar_iter->Type;
+	PrintMessageDieOnError(msg, ERROR);
 	break;
       }
     }

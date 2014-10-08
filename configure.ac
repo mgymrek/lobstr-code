@@ -146,6 +146,22 @@ LIBS="$PTHREAD_LIBS $LIBS"
 # Compiler warnings to add
 COMPILER_WARNINGS="-Wall -Wextra -Wswitch-default -Wno-strict-aliasing"
 
+# Add an additional flag if using CLANG
+AC_MSG_CHECKING([if compiling with clang])
+
+AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([], [[
+#ifndef __clang__
+       not clang
+#endif
+]])],
+[CLANG=yes], [CLANG=no])
+AC_MSG_RESULT([$CLANG])
+
+if test "x$CLANG" = "xyes"; then
+   COMPILER_WARNINGS="$COMPILER_WARNINGS -Wno-error=unused-command-line-argument"
+fi
+
 # Custom Flags to add to CFLAGS/CXXFLAGS
 LOBSTR_CFLAGS="-D_GIT_VERSION=\"\\\"${GIT_VERSION}\\\"\" -D_MACHTYPE=\"\\\"${MACHTYPE}\\\"\""
 

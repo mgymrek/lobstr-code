@@ -277,21 +277,21 @@ void parse_commandline_options(int argc, char* argv[]) {
   while (ch != -1) {
     switch (ch) {
     case 'u':
-      unit++;
+      unit = true;
       AddOption("unit", "", false, &user_defined_arguments);
       break;
     case OPT_ALIGN_DEBUG:
-      align_debug++;
+      align_debug = true;
       break;
     case OPT_DEBUG:
-      debug++;
+      debug = true;
       break;
     case 'v':
     case OPT_VERBOSE:
-      my_verbose++;
+      my_verbose = true;
     break;
     case OPT_QUIET:
-      quiet++;
+      quiet = true;
       break;
     case 'h':
     case OPT_HELP:
@@ -299,18 +299,18 @@ void parse_commandline_options(int argc, char* argv[]) {
     case 'q':
     case OPT_FASTQ:
       input_type = INPUT_FASTQ;
-      fastq++;
+      fastq = true;
       AddOption("fastq", "", false, &user_defined_arguments);
       break;
     case OPT_BAM:
       input_type = INPUT_BAM;
-      bam++;
+      bam = true;
       AddOption("bam", "", false, &user_defined_arguments);
       break;
     case OPT_BAMPAIR:
       paired = true;
       input_type = INPUT_BAM;
-      bam++;
+      bam = true;
       AddOption("bampair", "", false, &user_defined_arguments);
       break;
     case 'p':
@@ -322,7 +322,7 @@ void parse_commandline_options(int argc, char* argv[]) {
       }
       break;
     case OPT_NOWEB:
-      noweb++;
+      noweb = true;
       AddOption("noweb", "", false, &user_defined_arguments);
       break;
     case 'f':
@@ -342,7 +342,7 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_GZIP:
       user_defined_arguments += "input_gzipped;";
-      gzip++;
+      gzip = true;
       AddOption("gzip", "", false, &user_defined_arguments);
       break;
     case 'o':
@@ -404,7 +404,7 @@ void parse_commandline_options(int argc, char* argv[]) {
       AddOption("max-diff-ref", string(optarg), true, &user_defined_arguments);
       break;
     case OPT_MULTI:
-      allow_multi_mappers++;
+      allow_multi_mappers = true;
       AddOption("multi", "", false, &user_defined_arguments);
       break;
     case OPT_MIN_READ_LENGTH:

@@ -33,8 +33,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 const float NEGATIVE_INFINITY = -1000;
-const float POSITIVE_INFINITY = 1000;
-const float NOQUAL = -1;
 
 static const std::string GetReference() {
   vector<string> items;

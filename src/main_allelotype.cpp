@@ -303,7 +303,7 @@ void parse_commandline_options(int argc, char* argv[]) {
       AddOption("normdup", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_NOWEB:
-      noweb++;
+      noweb = true;
       AddOption("noweb", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_OUTPUT:
@@ -311,11 +311,11 @@ void parse_commandline_options(int argc, char* argv[]) {
       AddOption("out", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_PRINT_READS:
-      print_reads++;
+      print_reads = true;
       AddOption("print-reads", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_QUIET:
-      quiet++;
+      quiet = true;
       break;
     case OPT_STRINFO:
       strinfofile = string(optarg);
@@ -327,7 +327,7 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case 'v':
     case OPT_VERBOSE:
-      my_verbose++;
+      my_verbose = true;
       break;
     case OPT_VERSION:
       cerr << _GIT_VERSION << endl;
