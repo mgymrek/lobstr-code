@@ -615,6 +615,8 @@ void single_thread_process_loop(const vector<string>& files1,
   std::string file1;
   std::string file2;
   size_t num_reads_processed = 0;
+  size_t num_passing_alignment = 0;
+  size_t num_passing_detection = 0;
   for (size_t i = 0; i < files1.size(); i++) {
     file1 = files1.at(i);
     if (paired && !bam) {
@@ -636,12 +638,14 @@ void single_thread_process_loop(const vector<string>& files1,
     std::string repseq = "";
     while (pReader->GetNextRecord(&read_pair)) {
       aligned = false;
-      num_reads_processed += 1;
-      if (num_reads_processed % READPROGRESS == 0) {
-        stringstream msg;
-        msg << "Processed " << num_reads_processed << ' ' << unit_name;
-        PrintMessageDieOnError(msg.str(), PROGRESS);
+      if (num_reads_processed % READPROGRESS == 0 && num_reads_processed > 0) {
+	stringstream msg;
+	msg << "Processed " << num_reads_processed << " " << unit_name
+	    << " " << static_cast<float>(num_passing_detection)/static_cast<float>(num_reads_processed) << " passed detection. "
+	    << static_cast<float>(num_passing_alignment)/static_cast<float>(num_reads_processed) << " passed alignment.";
+	PrintMessageDieOnError(msg.str(), PROGRESS);
       }
+      num_reads_processed += 1;
       read_pair.read_count = num_reads_processed;
       // Check read length
       if (!(read_pair.reads.at(0).nucleotides.length() >= min_read_length) &&
@@ -665,6 +669,7 @@ void single_thread_process_loop(const vector<string>& files1,
         }
         continue;
       }
+      num_passing_detection += 1;
       // STEP 2: Alignment
       string aln_err, aln_messages;
       if (pAligner->ProcessReadPair(&read_pair, &aln_err, &aln_messages)) {
@@ -675,6 +680,7 @@ void single_thread_process_loop(const vector<string>& files1,
       }
       if (aligned) {
         samWriter.WriteRecord(read_pair);
+	num_passing_alignment += 1;
       } else {
         if (debug) { // if didn't align, print this
           PrintMessageDieOnError(GetReadDebug(read_pair, det_err, det_messages, aln_err, aln_messages)+ " (not-aligned)", DEBUG);
@@ -828,7 +834,7 @@ void multi_thread_process_loop(vector<string> files1,
       pRecord->read_count = counter;
       if (counter % READPROGRESS == 0) {
         stringstream msg;
-        msg << "Processed " << counter << ' ' << unit_name;
+        msg << "Processed " << counter << " " << unit_name;
         PrintMessageDieOnError(msg.str(), PROGRESS);
       }
       if (!pReader->GetNextRecord(pRecord))

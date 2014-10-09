@@ -173,9 +173,12 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
 		<< "MOTIF=" << str_record.repseq << ";"
 		<< "REF=" << str_record.refcopy << ";"
 		<< "RL=" << str_record.stop - str_record.start + 1 << ";"
-		<< "RPA=" << repeats_per_allele.str() << ";"
 		<< "RU=" << str_record.repseq_in_ref << ";"
-		<< "VT=STR" << "\t";
+		<< "VT=STR";
+  if (repeats_per_allele.str() != ".") {
+    output_stream << ";RPA=" << repeats_per_allele.str();
+  }
+  output_stream << "\t";
   // FORMAT
   if (include_gl)
     output_stream << "GT:ALLREADS:AML:DP:GB:GL:PL:Q:STITCH";
