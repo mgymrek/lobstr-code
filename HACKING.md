@@ -18,7 +18,14 @@ See: [lobSTR Website](http://erlichlab.wi.mit.edu/lobSTR/),  [lobSTR Code on Git
 
 ### On Mac OS X
 
-    $ [TODO]
+    $ brew install automake
+    $ brew install libtool
+    $ brew install pkg-config
+    $ brew install boost
+    $ brew install cppunit
+    $ brew install g++
+    $ brew install gcc
+    $ brew install gsl
 
 ## Compiling Examples
 
