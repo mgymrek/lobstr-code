@@ -38,7 +38,7 @@ public CppUnit::TestFixture {
   void tearDown();
  private:
   void test_TrimRead();
-  void test_getMSSeq();
+  void test_CheckRepeatCount();
   void test_reverseComplement();
   void test_reverse();
 };

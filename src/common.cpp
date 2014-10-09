@@ -293,6 +293,38 @@ int nucToNumber(const char& nuc) {
   }
 }
 
+bool CheckRepeatCount(const std::string& nucs, const size_t& k, const size_t& minlen, std::string* bestkmer) {
+  if (k < 1 || k > 6) {
+    PrintMessageDieOnError("Invalid kmer size for CheckRepeatCount", ERROR);
+  }
+  if (nucs.size() < minlen) {
+    PrintMessageDieOnError("Nucs smaller than kmer*count size", ERROR);
+  }
+  // Get most common kmer
+  map<string, int> countKMers;
+  std::string subseq;
+  subseq.resize(k);
+  std::string kmer = "";
+  int maxkmer = 0;
+  for (size_t i = 0; i < nucs.size() - k; i=i+k) {
+    subseq = nucs.substr(i, k);
+    countKMers[subseq]++;
+    if (countKMers[subseq] > maxkmer) {
+      kmer = subseq;
+      maxkmer = countKMers[subseq];
+    }
+  }
+  *bestkmer = kmer;
+  // Check that we have enough consecutive occurrences of the kmer
+  stringstream kmerrep;
+  size_t s = 0;
+  while (s < minlen) {
+    kmerrep << kmer;
+    s += kmer.size();
+  }
+  return nucs.find(kmerrep.str().substr(0, minlen)) != std::string::npos;
+}
+
 std::string reverse(const std::string& s) {
   string rev;
   size_t size = s.size();

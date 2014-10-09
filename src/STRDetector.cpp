@@ -18,6 +18,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <algorithm>
+
 #include "src/common.h"
 #include "src/EntropyDetection.h"
 #include "src/runtime_parameters.h"
@@ -26,6 +28,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 const size_t EXTEND_FLANK = 6;
+const size_t MIN_REP_LENGTH[] = {8, 8, 8, 10, 10, 10};
 
 STRDetector::STRDetector() {}
 
@@ -94,7 +97,23 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err) {
     return false;
   }
 
-  // Step 2 - Store values in the Read Record
+  // Step 2 - Check if evidence of repeats
+  bool passed_repeat_check = false;
+  for (size_t i = 1; i <= 6; i++) {
+    std::string bestkmer;
+    if (CheckRepeatCount(read->nucleotides, i, MIN_REP_LENGTH[i-MIN_PERIOD], &bestkmer)) {
+      passed_repeat_check = true;
+      break;
+    }
+  }
+  if (!passed_repeat_check) {
+    if (debug) {
+      *err += "failed-repeat-check";
+    }
+    return false;
+  }
+
+  // Step 3 - Store values in the Read Record
   read->ms_start = nuc_start;
   read->ms_end   = nuc_end;
 
@@ -126,7 +145,7 @@ bool STRDetector::ProcessRead(MSReadRecord* read, string* err) {
   read->right_flank_nuc = read->nucleotides.substr(read->ms_end+1);
   read->detected_ms_region_nuc = detected_microsatellite_nucleotides;
 
-  // adjust for max flank region lengths,if repetitive end, don't trim
+  // adjust for max flank region lengths, if repetitive end, don't trim
   read->left_flank_index_from_start = 0;
   read->right_flank_index_from_end = 0;
   if ((read->left_flank_nuc.size() > max_flank_len)) {

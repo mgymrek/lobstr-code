@@ -45,6 +45,22 @@ void CommonTest::test_TrimRead() {
   CPPUNIT_ASSERT_MESSAGE("wrong trimmed quals", trimmed_quals == "eeeeeeeeeeeeeffffffffffffffffffffffffffffffffffffffff");
 }
 
+void CommonTest::test_CheckRepeatCount() {
+  std::string bestkmer;
+  bool check;
+  check = CheckRepeatCount("ACTAGCTACTACGTACGTAGCTGA", 1, 10, &bestkmer);
+  CPPUNIT_ASSERT_MESSAGE("CheckRepeatCount failed", bestkmer == "A");
+  CPPUNIT_ASSERT_MESSAGE("CheckRepeatCount failed", !check);
+  check = CheckRepeatCount("ACACACACACACACAC", 2, 10, &bestkmer);
+  CPPUNIT_ASSERT_MESSAGE("CheckRepeatCount failed", bestkmer == "AC");
+  CPPUNIT_ASSERT_MESSAGE("CheckRepeatCount failed", check);
+  check = CheckRepeatCount("ACACACACACACACAC", 7, 10, &bestkmer);
+  CPPUNIT_ASSERT_MESSAGE("CheckRepeatCount failed", !check);
+  check = CheckRepeatCount("ACACACACACACACACA", 1, 10, &bestkmer);
+  CPPUNIT_ASSERT_MESSAGE("CheckRepeatCount failed", bestkmer == "A");
+  CPPUNIT_ASSERT_MESSAGE("CheckRepeatCount failed", !check);
+}
+
 void CommonTest::test_reverseComplement() {
   // Case 1: upper case
   std::string nucs = "ACGATCGTGTCATGCNNACCACG";

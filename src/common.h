@@ -108,6 +108,9 @@ double calculate_N_percentage(const std::string& nucleotides);
 // convert nucleotide to number
 int nucToNumber(const char& nuc);
 
+// check for number of repeats of most common kmer
+bool CheckRepeatCount(const std::string& nucs, const size_t& k, const size_t& minlen, std::string* bestkmer);
+
 // get the reverse complement of a nucleotide string
 std::string reverseComplement(const std::string& nucs);
 
