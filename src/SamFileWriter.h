@@ -43,6 +43,7 @@ class SamFileWriter {
   void WriteRecord(const ReadPair& read_pair);
   virtual ~SamFileWriter();
  private:
+  std::string StandardizeReadID(const std::string& readid, bool paired);
   std::map<std::string, int> chrom_sizes;
   BamTools::BamWriter writer;
 };
