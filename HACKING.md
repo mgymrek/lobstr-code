@@ -12,8 +12,8 @@ See: [lobSTR Website](http://erlichlab.wi.mit.edu/lobSTR/),  [lobSTR Code on Git
     $ sudo apt-get install gcc g++ gfortran \
                 make automake autoconf \
                 libtool pkg-config git \
-                libfftw3-dev libboost-dev libcppunit-dev \
-                libz-dev libblas-dev
+                libboost-dev libcppunit-dev \
+                libz-dev libgsl0-dev
 
 
 ### On Mac OS X
