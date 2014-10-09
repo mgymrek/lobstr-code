@@ -18,6 +18,8 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <boost/algorithm/string.hpp>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -96,7 +98,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   BamAlignment bam_alignment;
   BamAlignment mate_alignment;
   bool str_alignment_is_first = false; // Does the STR alignment have a smaller start coord than mate
-  bam_alignment.Name = read_pair.reads.at(aligned_read_num).ID;
+  bam_alignment.Name = StandardizeReadID(read_pair.reads.at(aligned_read_num).ID, read_pair.treat_as_paired);
 
   // Flags
   bam_alignment.SetIsDuplicate(false);
@@ -219,79 +221,79 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
 
   // Write mate pair
   if (read_pair.treat_as_paired) {
-      mate_alignment.Name = read_pair.reads.at(1-aligned_read_num).ID;
-      mate_alignment.SetIsPaired(true);
-      mate_alignment.SetIsDuplicate(false);
-      mate_alignment.SetIsFailedQC(false);
-      mate_alignment.SetIsFirstMate(false);
-      mate_alignment.SetIsSecondMate(true);
-      mate_alignment.SetIsMateReverseStrand(read_pair.reads.
-                                            at(aligned_read_num).reverse);
-      mate_alignment.SetIsProperPair(true);
-      mate_alignment.SetIsMapped(true);
-      mate_alignment.SetIsMateMapped(true);
-      mate_alignment.SetIsPrimaryAlignment(true);
-      mate_alignment.SetIsReverseStrand(read_pair.reads.
-                                        at(1-aligned_read_num).reverse);
-      mate_alignment.Position =
-        read_pair.reads.at(1-aligned_read_num).read_start;
-      if (read_pair.alternate_mappings.empty()) {
-	mate_alignment.MapQuality = 255;
-      } else {
-	mate_alignment.MapQuality = 0;
-      }
-      mate_alignment.Qualities =
-        read_pair.reads.at(1-aligned_read_num).quality_scores;
-      if (read_pair.reads.at(1-aligned_read_num).reverse) {
-        mate_alignment.QueryBases =
-          reverseComplement(read_pair.reads.at(1-aligned_read_num).nucleotides);
-      } else {
-        mate_alignment.QueryBases =
-          read_pair.reads.at(1-aligned_read_num).nucleotides;
-      }
-      mate_alignment.RefID = ref_id;
-      mate_alignment.MateRefID = ref_id;
-      mate_alignment.MatePosition = read_pair.reads.at(aligned_read_num).read_start;
-      // cigar
-      vector<BamTools::CigarOp> cigar_data;
-      for (i = 0; i < read_pair.reads.at(1-aligned_read_num).cigar.size();
-           i++) {
-        char cigar_type = read_pair.reads.
-          at(1-aligned_read_num).cigar.at(i).cigar_type;
-        int num = read_pair.reads.at(1-aligned_read_num).cigar.at(i).num;
-        BamTools::CigarOp cigar_op(cigar_type, num);
-        cigar_data.push_back(cigar_op);
-      }
-      mate_alignment.CigarData = cigar_data;
-
-      // write user flags giving repeat information
-      // XS: start pos of matching STR
-      mate_alignment.AddTag("XS", "i", read_pair.reads.
-                           at(aligned_read_num).msStart);
-      // XE: end pos of matching STR
-      mate_alignment.AddTag("XE", "i", read_pair.reads.
-                           at(aligned_read_num).msEnd);
-      // XR: STR repeat
-      mate_alignment.AddTag("XR", "Z", read_pair.reads.
-                           at(aligned_read_num).repseq);
-      // XC: ref copy number
-      mate_alignment.AddTag("XC", "f", read_pair.reads.
-                           at(aligned_read_num).refCopyNum);
-      // XN: name of STR repeat
-      if (!read_pair.reads.at(aligned_read_num).name.empty()) {
-        mate_alignment.AddTag("XN", "Z", read_pair.reads.
-                              at(aligned_read_num).name);
-      }
-      // XQ: alignment quality score
-      mate_alignment.AddTag("XQ", "f", read_pair.reads.at(aligned_read_num).mapq);
-      // RG: read group
-      mate_alignment.AddTag("RG", "Z", GetReadGroup());
-      // NM: edit distance to reference
-      mate_alignment.AddTag("NM", "i", read_pair.reads.at(1-aligned_read_num).edit_dist);
-      // XA: Alternate alignment info
-      if (!read_pair.alternate_mappings.empty()) {
-	mate_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
-      }
+    mate_alignment.Name = StandardizeReadID(read_pair.reads.at(1-aligned_read_num).ID, read_pair.treat_as_paired);
+    mate_alignment.SetIsPaired(true);
+    mate_alignment.SetIsDuplicate(false);
+    mate_alignment.SetIsFailedQC(false);
+    mate_alignment.SetIsFirstMate(false);
+    mate_alignment.SetIsSecondMate(true);
+    mate_alignment.SetIsMateReverseStrand(read_pair.reads.
+					  at(aligned_read_num).reverse);
+    mate_alignment.SetIsProperPair(true);
+    mate_alignment.SetIsMapped(true);
+    mate_alignment.SetIsMateMapped(true);
+    mate_alignment.SetIsPrimaryAlignment(true);
+    mate_alignment.SetIsReverseStrand(read_pair.reads.
+				      at(1-aligned_read_num).reverse);
+    mate_alignment.Position =
+      read_pair.reads.at(1-aligned_read_num).read_start;
+    if (read_pair.alternate_mappings.empty()) {
+      mate_alignment.MapQuality = 255;
+    } else {
+      mate_alignment.MapQuality = 0;
+    }
+    mate_alignment.Qualities =
+      read_pair.reads.at(1-aligned_read_num).quality_scores;
+    if (read_pair.reads.at(1-aligned_read_num).reverse) {
+      mate_alignment.QueryBases =
+	reverseComplement(read_pair.reads.at(1-aligned_read_num).nucleotides);
+    } else {
+      mate_alignment.QueryBases =
+	read_pair.reads.at(1-aligned_read_num).nucleotides;
+    }
+    mate_alignment.RefID = ref_id;
+    mate_alignment.MateRefID = ref_id;
+    mate_alignment.MatePosition = read_pair.reads.at(aligned_read_num).read_start;
+    // cigar
+    vector<BamTools::CigarOp> cigar_data;
+    for (i = 0; i < read_pair.reads.at(1-aligned_read_num).cigar.size();
+	 i++) {
+      char cigar_type = read_pair.reads.
+	at(1-aligned_read_num).cigar.at(i).cigar_type;
+      int num = read_pair.reads.at(1-aligned_read_num).cigar.at(i).num;
+      BamTools::CigarOp cigar_op(cigar_type, num);
+      cigar_data.push_back(cigar_op);
+    }
+    mate_alignment.CigarData = cigar_data;
+    
+    // write user flags giving repeat information
+    // XS: start pos of matching STR
+    mate_alignment.AddTag("XS", "i", read_pair.reads.
+			  at(aligned_read_num).msStart);
+    // XE: end pos of matching STR
+    mate_alignment.AddTag("XE", "i", read_pair.reads.
+			  at(aligned_read_num).msEnd);
+    // XR: STR repeat
+    mate_alignment.AddTag("XR", "Z", read_pair.reads.
+			  at(aligned_read_num).repseq);
+    // XC: ref copy number
+    mate_alignment.AddTag("XC", "f", read_pair.reads.
+			  at(aligned_read_num).refCopyNum);
+    // XN: name of STR repeat
+    if (!read_pair.reads.at(aligned_read_num).name.empty()) {
+      mate_alignment.AddTag("XN", "Z", read_pair.reads.
+			    at(aligned_read_num).name);
+    }
+    // XQ: alignment quality score
+    mate_alignment.AddTag("XQ", "f", read_pair.reads.at(aligned_read_num).mapq);
+    // RG: read group
+    mate_alignment.AddTag("RG", "Z", GetReadGroup());
+    // NM: edit distance to reference
+    mate_alignment.AddTag("NM", "i", read_pair.reads.at(1-aligned_read_num).edit_dist);
+    // XA: Alternate alignment info
+    if (!read_pair.alternate_mappings.empty()) {
+      mate_alignment.AddTag("XA", "Z", read_pair.alternate_mappings);
+    }
   }
   if (read_pair.treat_as_paired) {
     if (str_alignment_is_first) {
@@ -307,6 +309,25 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
     }
     writer.SaveAlignment(bam_alignment);
   }
+}
+
+std::string SamFileWriter::StandardizeReadID(const std::string& readid, bool paired) {
+  vector<std::string> strs;
+  boost::split(strs, readid, boost::is_any_of("\t "));
+  if (strs.size() == 0) {
+    PrintMessageDieOnError("[SamFileWriter]: Error parsing read id", ERROR);
+  }
+  std::string newid = strs.at(0);
+  std::string sub;
+  if (paired) {
+    if (newid.size() >= 2) {
+      sub = newid.substr(newid.size()-2, 2);
+      if (sub == "/1" || sub == "/2") {
+	newid = newid.substr(0, newid.size() - 2);
+      }
+    }
+  }
+  return newid;
 }
 
 SamFileWriter::~SamFileWriter() {
