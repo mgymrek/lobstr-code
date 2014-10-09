@@ -55,7 +55,7 @@ class RunInfo {
   int num_reverse;
   int total_insert;
   int num_nonunit;
-  size_t num_processed_units; //reads or pairs
+  size_t num_processed_units; // reads or pairs
 
   // Allelotype stats
   std::vector<std::string> samples;
