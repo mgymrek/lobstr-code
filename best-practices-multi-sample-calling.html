@@ -24,7 +24,7 @@
 	<p>
 	  <a name="overview"></a>
 	  <h2>Overview</h2>
-	  The figure below gives an overview of the steps required to run lobSTR on multiple samples. The alignment step (lobSTR) is run separately on each sample. Then the resulting sorted and indexed bams are all used as input to a single run of allelotype, which generates a single VCF file containing STR calls across all samples.
+	  The figure below gives an overview of the steps required to run lobSTR on multiple samples. The alignment step (lobSTR) is run separately on each sample. Then the resulting sorted and indexed BAMs are all used as input to a single run of allelotype, which generates a single VCF file containing STR calls across all samples.
 	  <img src="lobstr_website_multisample.png" width="500">
 	  
 	<p>
@@ -62,7 +62,7 @@
 	  <p>
 	  <a name="allelotype"></a>
 	  <h2>Allelotype</h2>
-	  The allelotype step takes in bams from one or more samples generated in the alignment step. It calls STR genotypes across all samples at once to improve calling accuracy (see how it works below). The output is a single VCF file with STR genotypes across all samples.
+	  The allelotype step takes in BAMs from one or more samples generated in the alignment step. It calls STR genotypes across all samples at once to improve calling accuracy (see how it works below). The output is a single VCF file with STR genotypes across all samples.
 
 	  <p>
 	  <a name="runallelotype"></a>

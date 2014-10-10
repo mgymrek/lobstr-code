@@ -9,29 +9,28 @@
       <section>
 	<h2>Output file formats (as of v3.0.2)<br /></h2>
 
-	<h3>$prefix.aligned.bam</h3>
-	A bam file containing all aligned
-	reads. This file contains the same information as the aligned.tab
-	file. This is in the standard bam format, with the following added
-	fields:
+	<h3><em>PREFIX</em>.aligned.bam</h3>
+	A BAM file containing all aligned
+	reads. This is in the standard BAM format, with the following added
+	tags:
 	<ul>
-	  <li>XS: start position of matching STR</li>
-	  <li>XE: end position of matching STR</li>
-	  <li>XR: STR repeat</li>
-	  <li>XC: reference copy number</li>
-	  <li>XD: nucleotide length difference compared to reference</li>
-	  <li>XX: 0/1 flag to indicate stitching of paired end reads</li>
-	  <li>XM: distance between mate pairs.</li>
-	  <li>XN: (only if given) name of the STR repeat</li>
-	  <li>XG: The extracted STR region</li>
-	  <li>XQ: map quality score of the aligned read</li>
-	  <li>RG: (only if given) read group</li>
-	  <li>XA: alternate alignments for multimappers</li>
-	  <li>XO: other STRs spanned by this read</li>
+	  <li>XS: start position of matching STR. Tag type: i</li>
+	  <li>XE: end position of matching STR. Tag type: i</li>
+	  <li>XR: STR repeat. Tag type: Z</li>
+	  <li>XC: reference copy number. Tag type: f</li>
+	  <li>XD: nucleotide length difference compared to reference. Tag type: i</li>
+	  <li>XX: 0/1 flag to indicate stitching of paired end reads. Tag type: i</li>
+	  <li>XM: distance between mate pairs. Tag type: i</li>
+	  <li>XN: (only if given) name of the STR repeat. Tag type: Z</li>
+	  <li>XG: The extracted STR region. Tag type: z</li>
+	  <li>XQ: map quality score of the aligned read. Tag type: i</li>
+	  <li>RG: read group. Tag type: Z</li>
+	  <li>XA: alternate alignments for multimappers. Tag type: Z</li>
+	  <li>XO: other STRs spanned by this read. Tag type: Z</li>
 	</ul>
-	Note the bam output is not sorted.<br /><br />
+	Note the BAM output is not sorted.<br /><br />
 	
-	<h3>$prefix.vcf</h3>
+	<h3><em>PREFIX</em>.vcf</h3>
 	<h4>Required fields</h4>
 	<ul>
 	  <li> CHROM: chromosome of the STR</li>
