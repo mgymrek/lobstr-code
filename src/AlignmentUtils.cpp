@@ -29,7 +29,7 @@ using namespace std;
 // Minimum number of bp for stitch overlap
 const size_t MIN_STITCH_OVERLAP = 16;
 // Percent identity required to stitch
-const float STITCH_REQUIRED_SCORE = 0.9;
+const float STITCH_REQUIRED_SCORE = 1.0;
 // Allowed difference in score between returned stitch
 // and next best stitch
 const float STITCH_DIFF = 0.1;
