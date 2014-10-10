@@ -165,7 +165,7 @@ void CheckIndexVersion() {
   if (fexists((index_prefix+"strdict.txt").c_str())) {
     PrintMessageDieOnError("It appears you are using an outdated lobSTR index. Please " \
 			   "use the index for version 3.0.0 or above. You can find the hg19 " \
-			   "index at http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3_hg19_resource_bundle.tar.gz", ERROR);
+			   "index at lobstr.teamerlich.org/download.html", ERROR);
   }
 }
 
