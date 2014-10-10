@@ -84,7 +84,7 @@
 	  Note that the arguments <code>--rg-sample</code>
 	  and <code>--rg-lib</code> are now required to run lobSTR. These
 	  flags add the appropriate read group information to the
-	  output bam file. For more information on these, see
+	  output bam file which is important for <a href="best-practices-multi-sample-calling.html">multi-sample calling</a>. For more information on these, see
 	  the <a href="faq.html">faq page</a>.
 	</p>
 	This will create the example output files:
@@ -104,8 +104,8 @@
 	  <tr><th>Parameter</th><th>Description</th><th>Type</th><th>Default</th></tr>
 	  <tr>
 	    <td><code>-f<br>--files</code></td>
-	    <td>file or comma-separated list of single ends in fasta, fastq, or bam files to align. Also use this parameter to specify
-	    paired-end bam files to align.</td>
+	    <td>file or comma-separated list of single ends in fasta, fastq, or BAM files to align. Also use this parameter to specify
+	    paired-end BAM files to align.</td>
 	    <td>string</td>
 	    <td>-</td>
 	  </tr>
@@ -181,7 +181,7 @@
 	  </tr>
 	  <tr>
 	    <td><code>--bam</code></td>
-	    <td>reads are in single-end bam format</td>
+	    <td>reads are in single-end BAM format</td>
 	    <td>bool</td>
 	    <td>-</td>
 	  </tr>
@@ -193,7 +193,7 @@
 	  </tr>
 	  <tr>
 	    <td><code>--bampair</code></td>
-	    <td>Reads are in bam format and are paired-end. NOTE: bam file MUST be sorted or collated by read name. (e.g. samtools sort -n file.bam prefix)</td>
+	    <td>Reads are in BAM format and are paired-end. NOTE: BAM file MUST be sorted or collated by read name. (e.g. samtools sort -n file.bam prefix)</td>
 	    <td>bool</td>
 	    <td>-</td>
 	  </tr>
@@ -348,7 +348,7 @@
     <td><code>--command</code></td>
     <td>(REQUIRED). One of:
       <ul>
-	<li>train: train the noise model based on the provided bam
+	<li>train: train the noise model based on the provided BAM
 	  alignment. This only works on male samples with a large number of
 	  reads aligned to sex chromosome STRs. It is currently recommended
 	  that you use the provided stutter model file. 
@@ -375,7 +375,7 @@
   </tr>
   <tr>
     <td><code>--bam</code></td>
-    <td>(REQUIRED) comma-separated list of bam files to analyze. Each should have a unique read group and be sorted and indexed</td>
+    <td>(REQUIRED) comma-separated list of BAM files to analyze. Each should have a unique read group and be sorted and indexed</td>
     <td>string</td>
     <td>-</td>
   </tr>

@@ -48,7 +48,7 @@
 	  <h2>Speeding up allelotype</h2>
 	  To speed up allelotype, it is recommended to run separately on each chromosome using the <code>--chrom</code> option and merging the result VCF files afterwards. For example:
 	  {% highlight bash %}
-	  for chrom in $seq(1 22) X Y
+	  for chrom in $(seq 1 22) X Y
 	  do
 	    allelotype \
               --command classify \

@@ -15,8 +15,8 @@
 	      <ul>
 		<li><a href="#singleq">From single-end fastq files</a></li>
 		<li><a href="#pairedq">From paired-end fastq files</a></li>
-		<li><a href="#singlebam">From single-end bam files</a></li>
-		<li><a href="#pairedbam">From paired-end bam files</a></li>
+		<li><a href="#singlebam">From single-end BAM files</a></li>
+		<li><a href="#pairedbam">From paired-end BAM files</a></li>
 	    </ul>
 	    </li>
 	    <li><a href="#sortindex">Sorting and indexing the resulting BAM</a></li>
@@ -102,7 +102,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 
 	<a name="sortindex"></a>
 	<h3>Sorting and indexing the resulting BAM</h3>
-	In the examples above, lobSTR will create the output files <code>my_sample_output.aligned.bam</code> and <code>my_sample_output.aligned.stats</code>. Before moving on to the allelotype step, use <a href="http://samtools.sourceforge.net/">samtools</a> to sort and index the bam file:
+	In the examples above, lobSTR will create the output files <code>my_sample_output.aligned.bam</code> and <code>my_sample_output.aligned.stats</code>. Before moving on to the allelotype step, use <a href="http://samtools.sourceforge.net/">samtools</a> to sort and index the BAM file:
 	{% highlight bash %}
 	samtools sort my_sample_output.aligned.bam my_sample_output.sorted
 	samtools index my_sample_output.sorted.bam
@@ -133,7 +133,7 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	<h2>Step 2: allelotype</h2>
 	For this step, you will need:
 	<ul>
-	  <li>The sorted and indexed bam file from step 1</li>
+	  <li>The sorted and indexed BAM file from step 1</li>
 	  <li>A lobSTR index: make sure you have either downloaded the lobSTR resource bundle from the <a href="download.html">downloads page</a> or that you have <a href="best-practices-custom-reference.html">built your own custom index</a>. Instructions below assume you're using the hg19 resource bundle.</li>
 	  <li>An STR info file: this is available either from the lobSTR resource bundle download, or see <a href="best-practices-custom-reference.html">building a custom reference</a> to generate this file if you are using a custom reference.</li>
 	  <li>A lobSTR noise model. You can either use the default noise model in the lobSTR download (installed by default in <code>/usr/local/share/lobSTR/models</code> or in the <code>models/</code> folder of the download) or <a href="best-practices-custom-noise-model.html">build a custom noise model</a>. If you are using a different platform besides Illumina it might be a good idea to create your own model.</li>

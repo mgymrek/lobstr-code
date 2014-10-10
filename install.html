@@ -11,67 +11,38 @@
 	<ul>
 	  <li><a href="#binary">Installation from precompiled binaries</a></li>
 	  <li><a href="#source">Installation from source</a></li>
-	  <li><a href="#mac">Mac-specific installation</a></li>
 	  <li><a href="#req">Requirements</a></li>
 	</ul>
 	<a name="binary"></a>
 	<h2>Installation from precompiled binaries</h2>
-	<ol>
-	  <li>Download the <a href="download.html">lobSTR</a> package.</li>
-	  <li>Unzip the package to $PATH_TO_LOBSTR.</li>
-	  <li>Change to the $PATH_TO_LOBSTR directory.</li>
-	  <li>Copy the three executable binary files to a place in your $PATH. e.g.</li>
-	  <ul>
-	    <code>cp bin/lobSTR /usr/bin</code><br>
-	    <code>cp bin/allelotype /usr/bin</code><br>
-	    <code>cp bin/lobSTRIndex /usr/bin</code>
-	  </ul>
-	</ol>
-	Scripts will be available in <code>share/lobSTR/scripts/</code>. Noise model files will be available in <code>share/lobSTR/models/</code>. For usage instructions see <a href="usage.html">usage</a>.
+	{% highlight bash %}
+	wget http://erlichlab.wi.mit.edu/lobSTR/lobSTR-bin-Linux-x86_64-3.0.2.tar.gz
+	tar -xzf lobSTR-bin-Linux-x86_64-3.0.2.tar.gz
+	cd lobSTR-bin-Linux-x86_64-3.0.2
+	sudo cp bin/lobSTR bin/allelotype bin/lobSTRIndex /usr/local/bin
+	{% endhighlight %}
 	<p>
 	  <a name="source"></a>
 	  <h2>Installation from source</h2>
-	lobSTR source code can be obtained from our github repository <a href="https://github.com/mgymrek/lobstr-code.git">https://github.com/mgymrek/lobstr-code.git</a> or from the <a href="download.html">downloads page</a>. It should compile on most Linux and Mac systems as long as the required packages are installed (see below).
-	<ol>
-	  <li>Make sure all required packages are installed and in the user's $PATH (see below for a list of requirements).</li>
-	  <li>Download the lobSTR source code</li>
-	  <li>Change to the $PATH_TO_LOBSTR directory.</li>
-	  <li>Type the following commands:
-	    <ul>
-	      <li><code>./configure</code></li>
-	      <li><code>make</code></li>
-	      <li><code>make install</code></li>
-	    </ul>
-	  </li>
-	</ol>
-	<p>
-	If this returned no error messages then lobSTR was properly installed.
-	</p>
+	  Before installing from source, make sure all required packages are installed and in the user's $PATH (see below for a list of requirements). lobSTR should compile on most Linux and Mac systems.
+	  {% highlight bash %}
+	  wget http://erlichlab.wi.mit.edu/lobSTR/lobSTR-3.0.2.tar.gz
+	  tar -xzf lobSTR-3.0.2.tar.gz
+	  cd lobSTR-3.0.2/
+	  ./configure
+	  make
+	  make check
+	  sudo make install	  
+	  {% endhighlight %}
+	  <p>
+	  You can find the latest version of the source code on the <a href="https://github.com/mgymrek/lobstr-code">git repository</a>.
+	  </p>
 	<p>
 	  Scripts will be available in <code>$PREFIX/share/lobSTR/scripts</code> and noise model files in <code>$PREFIX/share/lobSTR/models</code>. $PREFIX is by default <code>/usr/local</code> on Linux systems unless you specified a different prefix during the installation.
 	</p>
 	<p>
 	For usage instructions see&nbsp;<a href="usage.html">usage</a>.
 	</p>
-	<a name="mac"></a>
-	  <h2>Mac-specific installation</h2>
-	  To compile from source on Mac:
-	  <ul>
-	    <li>Install dependencies using <a href="http://brew.sh/">homebrew</a>:
-	      {% highlight bash %}
-	      brew install automake
-	      brew install libtool
-	      brew install pkg-config
-	      brew install boost
-	      brew install cppunit
-	      brew install g++
-	      brew install gcc
-	      brew install gsl
-	      {% endhighlight %}
-	      </li>
-	    <li>Follow the instructions above for compiling from source.</li>
-	  </ul>
-	<p>
 	<a name="req"></a>
 	<h2>Requirements</h2>
 	<p>
