@@ -15,7 +15,18 @@
 	</ul>
 	<a name="code"></a>
 	<h2>Code Changelog</h2>
-	<h3>New in version 2.0.8 <em>(beta)</em></h3>
+	<h3>New in version 3.0.2</h3>
+	<p>
+	This version has major algorithmic changes: we have removed the FFT period detection step and attempt to align STR-containing reads to all STRs at once, rather than only those with a specified motif. As a result, we have changed the <a href="lobstr-index.html">index structure</a>, and you will need to download a new index from the <a href="download.html">downloads</a> page to use lobSTR 3. This new version significantly increases our alignment sensitivity.
+	</p>
+	lobSTR 3 usage remains largely the same. However we have made some significant additional improvements:
+	<ul>
+	  <li>greatly expanded <a href="documentation.html">documentation pages</a> with best practice recommendations, including a tutorial on calling Y-STRs using lobSTR.</li>
+	  <li>removed blas and fftw library dependencies</li>
+	  <li>lobSTR should now compile and run cleanly on most modern Mac OSX computers.</li>
+	  <li>added many options for filtering potentially problematic reads before allelotyping.</li>
+	</ul>
+	<h3>New in version 2.0.8</h3>
 	This version should have big alignment speedups compared to previous versions (up to 5-10x faster than before). This version also fixes a minor bug for an off-by-one error in how allele sequences are reported in the REF and ALT fields of the VCF file.<br><br>
 	<h3>New in version 2.0.5</h3>
 	This version contains minor changes. Most notably we changed the way we package binaries, and the binaries should hopefully run smoothly on most systems.<br><br>
@@ -100,16 +111,16 @@
 
   <a name="previous"></a>  
   <h2>Previous versions</h2>
-  Version 2 (2.0.3+)
-  <ul>
-    <li><a href="http://files.teamerlich.org/lobstr/v2/ref/lobSTR_v2.0.8_hg19_resource_bundle.tar.gz">lobSTR_v2.0.8_hg19_resource_bundle.tar.gz</a></li>
-    <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobSTR_hg19_resource_bundle.tar.gz">lobSTR_hg19_resource_bundle.tar.gz (v2.0.3)</a></li>
-  </ul>
   Version 3
   <ul>
-    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3.0.2_hg19_resource_bundle.tar.gz">lobSTR_v3.0.2_hg19_resource_bundle.tar.gz</a></li>
-    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3.0.1_hg19_resource_bundle.tar.gz">lobSTR_v3.0.1_hg19_resource_bundle.tar.gz</a></li>
-    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3_hg19_resource_bundle.tar.gz">lobSTR_v3_hg19_resource_bundle.tar.gz</a></li>
+    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3.0.2_hg19_resource_bundle.tar.gz">lobSTR_v3.0.2_hg19_resource_bundle.tar.gz (2.9G)</a></li>
+    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3.0.1_hg19_resource_bundle.tar.gz">lobSTR_v3.0.1_hg19_resource_bundle.tar.gz (2.9G)</a></li>
+    <li><a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3_hg19_resource_bundle.tar.gz">lobSTR_v3_hg19_resource_bundle.tar.gz (2.9G)</a></li>
+  </ul>
+  Version 2 (2.0.3+)
+  <ul>
+    <li><a href="http://files.teamerlich.org/lobstr/v2/ref/lobSTR_v2.0.8_hg19_resource_bundle.tar.gz">lobSTR_v2.0.8_hg19_resource_bundle.tar.gz (5.8G)</a></li>
+    <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobSTR_hg19_resource_bundle.tar.gz">lobSTR_hg19_resource_bundle.tar.gz (v2.0.3) (5.8G)</a></li>
   </ul>
   Old lobSTR indices, compatible with version 2.0.0-2.0.2:
   <ul>

@@ -71,7 +71,7 @@
 	allelotype \
           --command classify \
           --bam test.sorted.bam \
-          --noise_model PATH_TO_LOBSTR/models/illumina_v2.0.3 \
+          --noise_model PATH_TO_LOBSTR/models/illumina_v3.pcrfree \
           --out test \
           --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_
@@ -100,195 +100,483 @@
 	<h2>Detailed description of command line options</h2>
 	<a name="lobstr"></a>
 	<h3>lobSTR</h3>
-	<h4>General</h4>
-	<ul>
-	  <li>-f, --files FILES: file or comma-separated list of single
-	    ends in fasta, fastq, or bam
-	    files to align (default: fasta). Also use this parameter to specify
-	    paired-end bam files to align. Note, paired end bam files must be
-	    sorted by read identifier before running lobSTR</li>
-	  <li>--p1 FILES: file or comma-separated list of files
+	<table class="box-table-a">
+	  <tr><th>Parameter</th><th>Description</th><th>Type</th><th>Default</th></tr>
+	  <tr>
+	    <td><code>-f<br>--files</code></td>
+	    <td>file or comma-separated list of single ends in fasta, fastq, or bam files to align. Also use this parameter to specify
+	    paired-end bam files to align.</td>
+	    <td>string</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--p1</code></td>
+	    <td>file or comma-separated list of files
 	    containing the first end of paired end reads in fasta
-	    or fastq format (default: fasta)</li>
-	  <li>--p2 FILES: file or comma-separated list of files
+	    or fastq format</td>
+	    <td>string</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--p2</code></td>
+	    <td>file or comma-separated list of files
 	    containing the second end of paired end reads in fasta
-	    or fastq format (default: fasta)</li>
-	  <li>-o STRING: prefix to name output files with (required)</li>
-	  <li>--index-prefix STRING: prefix of the path to the lobSTR
-	    index. If the index is stored in DIR, then this should
-	    be set to DIR/lobSTR_ (required)</li>
-	  <li>-q: the input files are in fastq
-	    format</li>
-	  <li>--bam: the input files are in bam format</li>
-	  <li>--bampair: the input bam files are paired-end. Note: bam
-	    files MUST have read pairs next to each other. This can be achieved by sorting the file by read name with "samtools sort -n file.bam". This can also be achieved using the bamcollate2 utility of <a href="https://github.com/gt1/biobambam">biobambam</a></li>
-	  <li>--gzip: the input files are gzipped (only works for fasta
-	    or fastq input)</li>
-	  <li>--bwaq INT: trim reads based on quality score. Same as
-	    the -q parameter in BWA.</li>
-	  <li>--oldillumina: specifies that base pair quality scores
+	    or fastq format</td>
+	    <td>string</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>-o<br>--out</code></td>
+	    <td>(REQUIRED) prefix for output files. will output <code>prefix.aligned.bam</code> and <code>prefix.aligned.stats</code>.</td>
+	    <td>string</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--index-prefix</code></td>
+	    <td>(REQUIRED) prefix for lobSTR's bwa reference (must run lobstr_index.py to create index or download from lobSTR website). If the index is in PATH_TO_INDEX, this argument is PATH_TO_INDEX/lobSTR_.</td>
+	    <td>string</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--rg-sample</code></td>
+	    <td>(REQUIRED) Use this in the read group SM tag</td>
+	    <td>string</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--rg-lib</code></td>
+	    <td>(REQUIRED) Use this in the read group LB tag</td>
+	    <td>string</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>-h<br>--help</code></td>
+	    <td>display help screen</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>-v<br>--verbose</code></td>
+	    <td>print out useful progress messages</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--quiet</code></td>
+	    <td>don't print anything to stderr or stdout</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--version</code></td>
+	    <td>print out lobSTR program version</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>-q<br>--fastq</code></td>
+	    <td>reads are in fastq format</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--bam</code></td>
+	    <td>reads are in single-end bam format</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--gzip</code></td>
+	    <td>the input files are gzipped (fastq or fasta input)</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--bampair</code></td>
+	    <td>Reads are in bam format and are paired-end. NOTE: bam file MUST be sorted or collated by read name. (e.g. samtools sort -n file.bam prefix)</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--bwaq</code></td>
+	    <td>trim reads based on quality score. Same as
+	    the -q parameter in BWA</td>
+	    <td>int</td>
+	    <td>10</td>
+	  </tr>
+	  <tr>
+	    <td><code>--oldillumina</code></td>
+	    <td>specifies that base pair quality scores
 	    are reported in the old Phred format (Illumina 1.3+,
 	    Illumina 1.5+) where quality scores are given as Phred
-	    + 64 rather than Phred + 33</li>
-	  <li>--rg-sample STRING: (required) Use this in the read group SM
-	  tag. <b>Allelotype will assume all reads with the same
-	  sample should be processed as a single individual.</b></li>
-	  <li>--rg-lib STRING: (required) Use this in the read group LB tag</li>
-	  <li>-h, --help: display a helpful usage message</li>
-	  <li>-v, --verbose: verbose mode. Display descriptive messages</li>
-	  <li>--version: print out lobSTR program version</li>
-	  <li>--noweb: Do not report any user information to Amazon S3.</li>
-	</ul>
-</ul>
-<h4>Advanced options - general</h4>
-<ul>
-  <li>-p INT: number of threads to
-    use</li>
-  <li>--min-read-length INT: the minimum read length
-    to attempt to align (default: 45)</li>
-  <li>--max-read-length INT:
-    the maximum read length to attempt to align (default: 1024)</li>
-</ul>
-<h4>Advanced options - detection</h4>
-<ul>
-  <li>--fft-window-size INT: the size of the sliding window to
-    detect repetitive regions of a read (default: 16)</li>
-  <li>--fft-window-step INT: the step
-    size of the sliding window (default: 4)</li>
-  <li>--entropy-threshold FLOAT: the percentage of the maximum
-    entropy score required for detection (default:
-    0.45)</li>
-  <li>--minperiod INT: The minimum period to detect (default: 1)</li>
-  <li>--maxperiod INT: The maximum period to detect (default: 6)</li>
-  <li>--minflank INT: The minimum flanking region length for alignment (default: 8)</li>
-  <li>--maxflank INT: Trim flanking regions to this length
-	     before alignment. This is useful when aligning long
-	     reads more than 100-200bp (default: 50)</li>
-</ul>
-<h4>Advanced options - alignment</h4>
-<ul>
-<li>--max-diff-ref INT: Only report reads differing by at
-	     most this number of bp from the reference allele
-	     (default: 50)</li>
-<li>--extend INT: Number of bp the reference was extended
-                           when building the index (default: 1000bp).
+	    + 64 rather than Phred + 33</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--multi</code></td>
+	    <td>Report reads mapping to multiple genomic locations</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>--noweb</code></td>
+	    <td>Do not report any user information to Amazon S3</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>-p</code></td>
+	    <td>number of threads to use</td>
+	    <td>int</td>
+	    <td>1</td>
+	  </tr>
+	  <tr>
+	    <td><code>--min-read-length</code></td>
+	    <td>don't process reads shorter than this</td>
+	    <td>int</td>
+	    <td>45</td>
+	  </tr>
+	  <tr>
+	    <td><code>--max-read-length</code></td>
+	    <td>don't process reads longer than this</td>
+	    <td>int</td>
+	    <td>1024</td>
+	  </tr>
+	  <tr>
+	    <td><code>--fft-window-size</code></td>
+	    <td>size of sliding entropy window</td>
+	    <td>int</td>
+	    <td>16</td>
+	  </tr>
+	  <tr>
+	    <td><code>--fft-window-step</code></td>
+	    <td>step size of the sliding window</td>
+	    <td>int</td>
+	    <td>4</td>
+	  </tr>
+	  <tr>
+	    <td><code>--entropy-threshold</code></td>
+	    <td>threshold score to call a window periodic</td>
+	    <td>float</td>
+	    <td>0.45</td>
+	  </tr>
+	  <tr>
+	    <td><code>--minflank</code></td>
+	    <td>minimum length of flanking region to try to align</td>
+	    <td>int</td>
+	    <td>8</td>
+	  </tr>
+	  <tr>
+	    <td><code>--maxflank</code></td>
+	    <td>length to trim flanking regions to before aligning</td>
+	    <td>int</td>
+	    <td>100</td>
+	  </tr>
+	  <tr>
+	    <td><code>--max-diff-ref</code></td>
+	    <td>only report reads differing by at most this number of bp from the reference allele</td>
+	    <td>int</td>
+	    <td>50</td>
+	  </tr>
+	  <tr>
+	    <td><code>--extend</code></td>
+	    <td>Number of bp the reference was extended
+                           when building the index.
                            Must be same as --extend parameter used
-                           to run lobstr_index.py </li>
-<li>--mapq INT    maximum allowed mapq score (default: 75)
+                           to run lobstr_index.py</td>
+	    <td>int</td>
+	    <td>1000</td>
+	  </tr>
+	  <tr>
+	    <td><code>--mapq</code></td>
+	    <td>maximum allowed mapq score
                            calculated as the sum of qualities at base
-                           mismatches. </li>
-<li>-u: only report reads different by an integer number of
-  copy numbers from the reference allele</li>
-<li>-m INT: allowed edit distance in either flanking region
-  (default: -1)</li>
-<li>-r FLOAT: the fraction of missing alignments given 2%
-  uniform base error rate. Ignored if -m is set (default:
-  0.01)</li><li>-g INT: the number of gap opens allowed
-  (default: 1)</li>
-<li>-e INT: the number of gap extends allowed (default:
-  1)</li>
-</ul>
-<h4>Advanced options - Amazon Web Services</h4>
-<ul>
-<li>--use-s3 BUCKET:        Files are read from this s3 bucket.
-                           WARNING s3 mode DELETES FILES after processing
-                           DO NOT USE this option unless you are pulling
-                           files from Amazon S3! </li>
-<li>--s3config FILE:   s3cmd configuration file (created by
-                           s3cmd --configure)</li>
-</ul>
+                           mismatches</td>
+	    <td>int</td>
+	    <td>100</td>
+	  </tr>
+	  <tr>
+	    <td><code>-u</code></td>
+	    <td>only report reads different by an integer number of copy numbers from the reference allele</td>
+	    <td>bool</td>
+	    <td>-</td>
+	  </tr>
+	  <tr>
+	    <td><code>-m<br>--mismatch</code></td>
+	    <td>allowed edit distance in either flanking region</td>
+	    <td>int</td>
+	    <td>1</td>
+	  </tr>
+	  <tr>
+	    <td><code>-g</code></td>
+	    <td>Maximum number of gap opens allowed in each flanking region</td>
+	    <td>int</td>
+	    <td>1</td>
+	  </tr>
+	  <tr>
+	    <td><code>-e</code></td>
+	    <td>Maximum number of gap extends allowed in each flanking region</td>
+	    <td>int</td>
+	    <td>1</td>
+	  </tr>
+	  <tr>
+	    <td><code>-r</code></td>
+	    <td>fraction of missing alignments given 2% uniform base error rate. Ignored if -m is set</td>
+	    <td>float</td>
+	    <td>-1</td>
+	  </tr>
+	  <tr>
+	    <td><code>--max-hits-quit-aln</code></td>
+	    <td>Stop alignment search after this many hits found. Use -1 for no limit.</td>
+	    <td>int</td>
+	    <td>1000</td>
+	  </tr>
+	  <tr>
+	    <td><code>--min-flank-allow-mismatch</code></td>
+	    <td>don't allow mismatches if aligning flanking regions shorter than this</td>
+	    <td>int</td>
+	    <td>30</td>
+	  </tr>
+	</table>
 
 <a name="allelotype"></a>
 <h3>allelotype</h3>
-<h4>General</h4>
-<ul><li>--command: (required) one of the following:
-<ul>
-<li>train: train the noise model based on the provided bam
-  alignment. This only works on male samples with a large number of
-  reads aligned to sex chromosome STRs. It is currently recommended
-  that you use the provided stutter model file. 
-  Training outputs the files:
-  <ul>
-    <li>$noisemodelprefix.stepmodel</li>
-    <li>$noisemodelprefix.stuttermodel</li>
-    <li>$noisemodelprefix.stutterproblem</li>
-    </ul>
-</li>
-<li>classify:
-  generate allelotypes from the provided alignment file and using the
-  provided noise model.
-  Classifying outputs the files:
-  <ul>
-    <li>$output_prefix.vcf</li>
-    <li>$output_prefix.genotypes.tab</li>
-    </ul>
-</li>
-</ul>
-Note, the commands "simple" and "both" have been removed. 
-</li>
-<li>--bam FILE: (REQUIRED) path to the bam file containing alignments,
-	     or a comma separated list of multiple lobSTR bam alignments (required). </li>
-<li>--noise_model STRING: (REQUIRED) prefix of files to write (--command train) or read (--command classify) noise model parameters to.</li>
-<li>--out STRING: (REQUIRED) prefix to name output files with (required)</li>
-<li>--strinfo STRING: (REQUIRED) path to the file containing statistics for each STR, available in the lobSTR resource bundle.
-<li>--index-prefix STRING: (REQUIRED for --command classify) prefix for lobSTR's bwa reference (must run lobstr_index.py)
-<li>--haploid LIST: comma separated list of chromosomes to treat as haploid (e.g. --haploid chrX,chrY) for a human male sample. If all chromosomes are haploid, you can specifiy --haploid all.</li>
-<li>--annotation VCFFILE: annotate a set of STRs. Annotation sets are available in the resource bundle. This is useful for comparing to capillary callsets such as those from the Marshfield panel. More documentation on this option is coming soon.</li>
-<li>--min-het-freq FLOAT: minimum alternate allele read frequency to make a heterozygous call
-<li>--dont-include-flank: don't include indels in the flanking regions of an STR when determining the length of the STR allele. See the <a href="faq.html">faq page</a> for more information about this option.</li>
-<li>--no-rmdup: do not remove PCR duplicates. <b>Note for multi-sample calling, use this option. lobSTR does not yet implement removing duplicates in a sample-aware way.</b></li>
-<li>--help, -h: print a helpful usage message</li>
-<li>-v, --verbose: verbose mode, print out descriptive messages</li>
-<li>--version: print out allelotype program version number</li>
-<li>--noweb: do not report any user information and parameters to Amazon S3.</li>
-</ul>
-<h4>Advanced options - filtering reads</h4>
-<ul>
-<li>--chrom STRING: only look at reads from this chromosome.
-<li>--max-diff-ref INT: filter reads differing from the reference allele by more than INT bp</li>
-<li>--unit: filter reads differing from the reference by a non-integer number of repeat copies</li>
-<li>--mapq INT: filter reads with mapq scores of more than INT</li>
-<li>--max-matedist INT: filter reads with a mate distance larger than INT bp</li>
-</ul>
-<h4>Examples of allelotype usage</h4>
-<br>
-To train the genotyping noise model from a set of aligned reads:
-{% highlight bash %}
-allelotype \
-  --command train [OPTIONS] \
-  --bam input.bam \
-  --noise_model noisemodelprefix \
-  --haploid chrX,chrY \
-  --strinfo strinfofile
-{% endhighlight %}
-To run str profiling on a set of aligned reads:
-{% highlight bash %}
-allelotype \
-  --command classify [OPTIONS] \
-  --bam input.bam \
-  --noise_model noisemodelprefix \
-  --out output_prefix \
-  --strinfo strinfofile \
-  --index-prefix PATH_TO_INDEX/lobSTR_
-{% endhighlight %}
+<table class="box-table-a">
+  <tr><th>Parameter</th><th>Description</th><th>Type</th><th>Default</th></tr>
+  <tr>
+    <td><code>--command</code></td>
+    <td>(REQUIRED). One of:
+      <ul>
+	<li>train: train the noise model based on the provided bam
+	  alignment. This only works on male samples with a large number of
+	  reads aligned to sex chromosome STRs. It is currently recommended
+	  that you use the provided stutter model file. 
+	  Training outputs the files:
+	  <ul>
+	    <li>$noisemodelprefix.stepmodel</li>
+	    <li>$noisemodelprefix.stuttermodel</li>
+	    <li>$noisemodelprefix.stutterproblem</li>
+	  </ul>
+	</li>
+	<li>classify:
+	  generate allelotypes from the provided alignment file and using the
+	  provided noise model.
+	  Classifying outputs the files:
+	  <ul>
+	    <li>$output_prefix.vcf</li>
+	    <li>$output_prefix.genotypes.tab</li>
+	  </ul>
+	</li>
+      </ul>
+    </td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--bam</code></td>
+    <td>(REQUIRED) comma-separated list of bam files to analyze. Each should have a unique read group and be sorted and indexed</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--out</code></td>
+    <td>(REQUIRED) Prefix to name output files</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--strinfo</code></td>
+    <td>(REQUIRED) File containing statistics for each STR. Available in the resource bundle download.</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--noise_model</code></td>
+    <td>(REQUIRED) Prefix of files to write (--command train) or read (--command classify) noise model parameters to.</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--index-prefix</code></td>
+    <td>(REQUIRED) prefix for lobSTR's bwa reference (must run lobstr_index.py to create index of download from lobSTR website). If the index is in PATH_TO_INDEX, this argument is PATH_TO_INDEX/lobSTR_.</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--no-rmdup</code></td>
+    <td>Don't remove PCR duplicates before allelotyping.</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--min-het-freq</code></td>
+    <td>minimum frequency to make a heterozygous call</td>
+    <td>float</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td><code>--haploid</code></td>
+    <td>comma-separated list of chromosomes to force homozygous calls.</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--dont-include-flank</code></td>
+    <td>don't include indels in flanking regions when determining length of the STR allele</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>-h<br>--help</code></td>
+    <td>display help screen</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>-v<br>--verbose</code></td>
+    <td>print out useful progress messages</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--quiet</code></td>
+    <td>don't print anything to stderr or stdout</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--version</code></td>
+    <td>print out lobSTR program version</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--include-gl</code></td>
+    <td>Include GL field in the VCF</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--min-border</code></td>
+    <td>Filter reads that do not extend past both ends of the STR region by this many bp.</td>
+    <td>int</td>
+    <td>5</td>
+  </tr>
+  <tr>
+    <td><code>--chrom</code></td>
+    <td>only processs loci on this chromosome.</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--max-diff-ref</code></td>
+    <td>only report reads differing by at most this number of bp from the reference allele</td>
+    <td>int</td>
+    <td>50</td>
+  </tr>
+  <tr>
+    <td><code>--unit</code></td>
+    <td>only report reads different by an integer number of copy numbers from the reference allele</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--mapq</code></td>
+    <td>maximum allowed mapq score
+      calculated as the sum of qualities at base
+      mismatches</td>
+    <td>int</td>
+    <td>100</td>
+  </tr>
+  <tr>
+    <td><code>--max-matedist</code></td>
+    <td>Filter reads with a mate distance larger than this many bp.</td>
+    <td>int</td>
+    <td>100000</td>
+  </tr>
+  <tr>
+    <td><code>--min-bp-before-indel</code></td>
+    <td>Filter reads with an indel occurreing less than this many bp from eithe rend of the read</td>
+    <td>int</td>
+    <td>7</td>
+  </tr>
+  <tr>
+    <td><code>--min-read-end-match</code></td>
+    <td>Filter reads whose alignments don't exactly match the reference for at least this many bp at both ends</td>
+    <td>int</td>
+    <td>15</td>
+  </tr>
+  <tr>
+    <td><code>--maximal-end-match</code></td>
+    <td>Filter reads whose prefix/suffix matches to reference are less than or equal to those obtained when shifting the read ends by distances within this many bp.</td>
+    <td>int</td>
+    <td>5</td>
+  </tr>
+  <tr>
+    <td><code>--chunksize</code></td>
+    <td>Number of loci to read into memory at a time</td>
+    <td>int</td>
+    <td>1000</td>
+  </tr>
+  <tr>
+    <td><code>--noweb</code></td>
+    <td>Do not report any user information to Amazon S3</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+</table>
+
 <a name="index"></a>
 <h3>lobstr_index.py</h3>
-<ul>
-<li>--str FILE: A bed file containing a list of STR loci
+<table class="box-table-a">
+  <tr><th>Parameter</th><th>Description</th><th>Type</th><th>Default</th></tr>
+  <tr>
+    <td><code>--str</code></td>
+    <td>(REQUIRED) A bed file containing a list of STR loci
 	     output from Tandem Repeat Finder. This file does not
 	     necessarily need to be created by TRF. The necessary
-	     columns are described above</li>
-<li>--ref FILE: A fasta file containing the reference genome</li>
-<li>--out_dir DIR: the directory to store the index created</li>
-<li>-h, --help: display a helpful usage message</li>
-<li>-v, --verbose: verbose mode, display descriptive output</li>
-<li>--extend INT: The number of base pairs to include
-	     flanking either region of the STR. This should be at
-	     least as long as the read length you intend to
-	     align. IMPORTANT: if you change the extend parameter
-	     here, you MUST remember to set the --extend paramter to
-  the same value when you call lobSTR to ensure that the output
-  coordinates are accurate (default 1000bp).</li></ul>
+	     columns are described above</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--ref</code></td>
+    <td>(REQUIRED) A fasta file containing the reference genome</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--out_dir</code></td>
+    <td>(REQUIRED) the directory to store the index created</td>
+    <td>string</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>-h<br>--help</code></td>
+    <td>Display a helpful usage message</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>-v<br>--verbose</code></td>
+    <td>Display helpful progress messages</td>
+    <td>bool</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td><code>--extend</code></td>
+    <td>The number of base pairs to include
+      flanking either region of the STR. This should be at
+      least as long as the read length you intend to
+      align. IMPORTANT: if you change the extend parameter
+      here, you MUST remember to set the --extend paramter to
+      the same value when you call lobSTR to ensure that the output
+      coordinates are accurate</td>
+    <td>int</td>
+    <td>1000</td>
+  </tr>
+</table>
       </section>
     </div>
     {% include footer.html %}

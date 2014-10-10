@@ -10,8 +10,8 @@
 	<h2>Overview</h2>
 	<ul>
 	  <li><a href="#binary">Installation from precompiled binaries</a></li>
-	  <li><a href="#mac">Mac-specific installation</a></li>
 	  <li><a href="#source">Installation from source</a></li>
+	  <li><a href="#mac">Mac-specific installation</a></li>
 	  <li><a href="#req">Requirements</a></li>
 	</ul>
 	<a name="binary"></a>
@@ -28,10 +28,6 @@
 	  </ul>
 	</ol>
 	Scripts will be available in <code>share/lobSTR/scripts/</code>. Noise model files will be available in <code>share/lobSTR/models/</code>. For usage instructions see <a href="usage.html">usage</a>.
-	<p>
-	<a name="mac"></a>
-	  <h2>Mac-specific installation</h2>
-	  TODO coming soon
 	<p>
 	  <a name="source"></a>
 	  <h2>Installation from source</h2>
@@ -50,13 +46,32 @@
 	</ol>
 	<p>
 	If this returned no error messages then lobSTR was properly installed.
-	</p?
+	</p>
 	<p>
 	  Scripts will be available in <code>$PREFIX/share/lobSTR/scripts</code> and noise model files in <code>$PREFIX/share/lobSTR/models</code>. $PREFIX is by default <code>/usr/local</code> on Linux systems unless you specified a different prefix during the installation.
 	</p>
 	<p>
 	For usage instructions see&nbsp;<a href="usage.html">usage</a>.
 	</p>
+	<a name="mac"></a>
+	  <h2>Mac-specific installation</h2>
+	  To compile from source on Mac:
+	  <ul>
+	    <li>Install dependencies using <a href="http://brew.sh/">homebrew</a>:
+	      {% highlight bash %}
+	      brew install automake
+	      brew install libtool
+	      brew install pkg-config
+	      brew install boost
+	      brew install cppunit
+	      brew install g++
+	      brew install gcc
+	      brew install gsl
+	      {% endhighlight %}
+	      </li>
+	    <li>Follow the instructions above for compiling from source.</li>
+	  </ul>
+	<p>
 	<a name="req"></a>
 	<h2>Requirements</h2>
 	<p>
@@ -64,25 +79,23 @@
 	</p>
 	<strong><font color="#660000" size="3">External libraries</font></strong>
 	<table cellspacing="15">
-	  <tr><td class="table_hdr">Program</td><td class="table_hdr">Tested on </td><td class="table_hdr">Debian/Ubuntu package</td></tr>
-	  <tr><td class="table_entry">gcc</td><td  class="table_entry">4.4.3</td><td  class="table_entry">gcc</td></tr>
-	  <tr><td class="table_entry">g++</td><td  class="table_entry">4.4.3</td><td  class="table_entry">g++</td></tr>
-	  <tr><td class="table_entry">automake</td><td  class="table_entry">1.11.1</td><td  class="table_entry">automake</td></tr>
-	  <tr><td class="table_entry">libtool</td><td  class="table_entry">2.2.6</td><td  class="table_entry">libtool</td></tr>
-	  <tr><td class="table_entry">pkg-config</td><td  class="table_entry">0.22</td><td  class="table_entry">pkg-config</td></tr>
-	  <tr><td class="table_entry">FFTW</td><td  class="table_entry">3.2.2</td><td  class="table_entry">fftw3-dev</td></tr>
-	  <tr><td class="table_entry">boost</td><td  class="table_entry">1.46.1</td><td  class="table_entry">libboost-dev</td></tr>
-	  <tr><td class="table_entry">zlib</td><td class="table_entry">1.2.3.3 </td><td class="table_entry">zlib1g-dev</td></tr>
-	  <tr><td class="table_entry">blas</td><td class="table_entry">1.2 </td><td class="table_entry">libblas-dev</td></tr>
-	  <tr><td class="table_entry">cppunit</td><td class="table_entry">1.12.1</td><td class="table_entry">libcppunit-dev</td></tr>
-	  <tr><td class="table_entry">gfortran</td><td class="table_entry">4.4.3</td><td class="table_entry">gfortran</td></tr>
+	  <tr><td class="table_hdr">Program</td><td class="table_hdr">Tested on </td><td class="table_hdr">Debian/Ubuntu package</td><td>Homebrew package</td></tr>
+	  <tr><td class="table_entry">gcc</td><td  class="table_entry">4.4.3</td><td  class="table_entry">gcc</td><td  class="table_entry">gcc</td></tr>
+	  <tr><td class="table_entry">g++</td><td  class="table_entry">4.4.3</td><td  class="table_entry">g++</td><td  class="table_entry">g++</td></tr>
+	  <tr><td class="table_entry">automake</td><td  class="table_entry">1.11.1</td><td  class="table_entry">automake</td><td  class="table_entry">automake</td></tr>
+	  <tr><td class="table_entry">libtool</td><td  class="table_entry">2.2.6</td><td  class="table_entry">libtool</td><td  class="table_entry">libtool</td></tr>
+	  <tr><td class="table_entry">pkg-config</td><td  class="table_entry">0.22</td><td  class="table_entry">pkg-config</td><td  class="table_entry">pkg-config</td></tr>
+	  <tr><td class="table_entry">boost</td><td  class="table_entry">1.46.1</td><td  class="table_entry">libboost-dev</td><td  class="table_entry">boost</td></tr>
+	  <tr><td class="table_entry">zlib</td><td class="table_entry">1.2.3.3 </td><td class="table_entry">zlib1g-dev</td><td  class="table_entry">-</td></tr>
+	  <tr><td class="table_entry">cppunit</td><td class="table_entry">1.12.1</td><td class="table_entry">libcppunit-dev</td><td  class="table_entry">cppunit</td></tr>
+	  <tr><td class="table_entry">gsl</td><td class="table_entry">1.16</td><td class="table_entry">libgsl10-dev</td><td  class="table_entry">gsl</td></tr>
 	</table>
 	<font color="#660000" size="3"><strong>Python
 	    libraries</strong></font><br />Note: the python libraries listed below are only required for certain optional steps. All Python scripts were tested using Python 2.7.
 	<table cellspacing="15">
 	  <tr><td class="table_hdr">Program</td><td class="table_hdr">Tested on</td><td class="table_hdr">Download link</td><td class="table_hdr">easy_install package</td><td class="table_hdr">lobSTR steps where required</td></tr>
-	  <tr><td class="table_entry">Biopython</td><td class="table_entry">1.5.6</td><td class="table_entry"><a href="http://biopython.org/wiki/Download">download</a></td><td>biopython</td><td>Building a custom index and building an strinfo file required for allelotyping from a custom index for v2.*.</td></tr>
 	  <tr><td class="table_entry">pyfasta</td><td class="table_entry">0.5.1</td><td class="table_entry"><a href="https://pypi.python.org/pypi/pyfasta/">download</a></td><td>pyfasta</td><td>Building a custom index and building an strinfo file required for allelotyping from a custom index for v3.*.</td></tr>
+	  <tr><td class="table_entry">Biopython</td><td class="table_entry">1.5.6</td><td class="table_entry"><a href="http://biopython.org/wiki/Download">download</a></td><td>biopython</td><td>Building a custom index and building an strinfo file required for allelotyping from a custom index for v2.*.</td></tr>
 	</table>
       </section>
     </div>
