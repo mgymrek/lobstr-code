@@ -46,7 +46,7 @@ void AlignmentUtilsTest::test_StitchReads() {
   read1.orig_nucleotides = "AACCTACAGAAAATATTTCAGTATTTTGGTACATGAAGATCCATGTTGAGAGAGAAAGAAACAGAGAGTGAGAGAGAGACAGAGAGAGAGAGAGAGATTTG";
   read1.orig_qual = "ffffefffffee``ceeedeeeeeeeeeeaeeeeeee`eeeeeeeedeeedadeeeeeeedde`deeededaaedededadeaecdad`d_dadaba\\Y^`";
   MSReadRecord read2;
-  read2.orig_nucleotides = "NAAGNACATTGGAAGTTTCTNTTCCNAATCTCTCTCTCTCTCTCTGTCTCTCTCTCACTCTCTGTTTCTTTCTCTCTCAACATGGATCTTCATGTACCAAA";
+  read2.orig_nucleotides = "NAAGNACATTGGAAGTTTCTNTTCCAAATCTCTCTCTCTCTCTCTGTCTCTCTCTCACTCTCTGTTTCTTTCTCTCTCAACATGGATCTTCATGTACCAAA";
   read2.orig_qual = "BQQIBIIGJJ_``__BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
   read1.right_flank_index_from_end = 0;
   read1.left_flank_index_from_start = 0;
@@ -58,12 +58,6 @@ void AlignmentUtilsTest::test_StitchReads() {
   CPPUNIT_ASSERT_MESSAGE("Stitching failed", AlignmentUtils::StitchReads(&read_pair, &left_alignment, &right_alignment));
   CPPUNIT_ASSERT_MESSAGE("Incorrect stitching returned - nucs", read_pair.reads.at(0).nucleotides == "AACCTACAGAAAATATTTCAGTATTTTGGTACATGAAGATCCATGTTGAGAGAGAAAGAAACAGAGAGTGAGAGAGAGACAGAGAGAGAGAGAGAGATTTGGAANAGAAACTTCCAATGTNCTTN");
   CPPUNIT_ASSERT_MESSAGE("Incorrect stitching returned - qual", read_pair.reads.at(0).quality_scores == "ffffefffffee``ceeedeeeeeeeeeeaeeeeeee`eeeeeeeedeeedadeeeeeeedde`deeededaaedededadeaecdad`d_dadaba\\Y^`BBBBBBBBB__``_JJGIIBIQQB");
-  read_pair.reads.at(0).orig_nucleotides = "ACGTAATTAATAATAATAATAATAATAATAATAATAATAATAATAAAGTAGCCAGGTATGGAGGCACAGGTCTGTAGTACCAGCTG";
-  read_pair.reads.at(1).orig_nucleotides = "TGAGCTCAAGTTGTCCTTCTGCTTCAGCTTCCCAAGTAGCTGGGACTACAGACCTGTGCCTCCATACCTGGCTACTTTATTATTATTATTATTATTATTAT";
-  read_pair.reads.at(0).orig_qual = "26:=67;>:;?>:?><>>=<A=>9<<>=?>><;2996;98<<>:B>?<>A>:44?;=?;<;=;8585:8:73578:3461222010";
-  read_pair.reads.at(1).orig_qual = ".4339638<4=7;==;@>=@?<B@?@><?=::;;>::?;8=<?A>:==:=?:=7<:<>96767997456=:55516886:7474685356174443/5031";
-  CPPUNIT_ASSERT_MESSAGE("Stitching failed", AlignmentUtils::StitchReads(&read_pair, &left_alignment, &right_alignment));
-  CPPUNIT_ASSERT_MESSAGE("Incorrect stitching returned - nucs", read_pair.reads.at(0).nucleotides == "ACGTAATTAATAATAATAATAATAATAATAATAATAATAATAATAAAGTAGCCAGGTATGGAGGCACAGGTCTGTAGTCCCAGCTACTTGGGAAGCTGAAGCAGAAGGACAACTTGAGCTCA");
 
   // Case 1.5 reads stitch nicely from other direction
   read_pair.reads.at(0).orig_nucleotides = "TGTATTTCATGTGTACATTCGTATCTATCTATCTATCTATCTATCTATCCATCTATCTATCTATTCCCCACAGTGAAAATAATCTACAGGATAGGTAAATA";
