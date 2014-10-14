@@ -27,13 +27,13 @@
 	  <h2>Building the model</h2>
 	  To build the noise model, use the <code>allelotype</code> command with the parameter <code>--command train</code>. You must specify which chromosomes should be treated as haploid.
 	  {% highlight bash %}
-	  allelotype \
-            --command train \
-            --bam my_male_genome.bam \
-            --haploid chrX,chrY \
-            --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-	    --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
-            --noise_model my_noise_model
+allelotype \
+  --command train \
+  --bam my_male_genome.bam \
+  --haploid chrX,chrY \
+  --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+  --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
+  --noise_model my_noise_model
 	  {% endhighlight %}
 	  This will generate noise model files <code>my_noise_model.stepmodel</code> and <code>my_noise_model.stuttermodel</code> which can then be used as input to <code>allelotype</code> for performing genotyping. The structure of these files is described <a href="stutter-model-files.html">here</a>.
       </section>

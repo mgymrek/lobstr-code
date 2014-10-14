@@ -34,29 +34,29 @@
 	  <p>
 	    The following are example alignment commands assuming you are genotyping 3 samples.
 	    {% highlight bash %}
-	    lobSTR \
-              --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-              -f my_first_sample.fq -q \
-              --rg-sample my_first_sample --rg-lib my_first_sample \
-              --out my_first_sample_output
-            samtools sort my_first_sample_output.aligned.bam my_first_sample_output.sorted
-	    samtools index my_first_sample_output.sorted.bam
+lobSTR \
+    --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+    -f my_first_sample.fq -q \
+    --rg-sample my_first_sample --rg-lib my_first_sample \
+    --out my_first_sample_output
+samtools sort my_first_sample_output.aligned.bam my_first_sample_output.sorted
+samtools index my_first_sample_output.sorted.bam
 
-	    lobSTR \
-              --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-              -f my_second_sample.fq -q \
-              --rg-sample my_second_sample --rg-lib my_second_sample \
-              --out my_second_sample_output
-            samtools sort my_second_sample_output.aligned.bam my_second_sample_output.sorted
-	    samtools index my_second_sample_output.sorted.bam
+lobSTR \
+    --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+    -f my_second_sample.fq -q \
+    --rg-sample my_second_sample --rg-lib my_second_sample \
+    --out my_second_sample_output
+samtools sort my_second_sample_output.aligned.bam my_second_sample_output.sorted
+samtools index my_second_sample_output.sorted.bam
 
-	    lobSTR \
-              --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-              -f my_third_sample.fq -q \
-              --rg-sample my_third_sample --rg-lib my_third_sample \
-              --out my_third_sample_output
-            samtools sort my_third_sample_output.aligned.bam my_third_sample_output.sorted
-	    samtools index my_third_sample_output.sorted.bam
+lobSTR \
+    --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+    -f my_third_sample.fq -q \
+    --rg-sample my_third_sample --rg-lib my_third_sample \
+    --out my_third_sample_output
+samtools sort my_third_sample_output.aligned.bam my_third_sample_output.sorted
+samtools index my_third_sample_output.sorted.bam
 	    {% endhighlight %}
 
 	  <p>
@@ -68,13 +68,13 @@
 	  <a name="runallelotype"></a>
 	  <h3>Running allelotype on multiple samples</h3>
 	  {% highlight bash %}
-	  allelotype \
-            --command classify \
-            --bam my_first_sample_output.sorted.bam,my_second_sample_output.sorted.bam,my_third_sample_output.sorted.bam \
-            --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-            --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
-            --noise_model models/illumina_v3.pcrfree \
-            --out my_output
+allelotype \
+    --command classify \
+    --bam my_first_sample_output.sorted.bam,my_second_sample_output.sorted.bam,my_third_sample_output.sorted.bam \
+    --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+    --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
+    --noise_model models/illumina_v3.pcrfree \
+    --out my_output
 	  {% endhighlight %}
 	  This will create the output <code>my_output.vcf</code> and <code>my_output.allelotype.stats</code> The format of the VCF output is described on the <a href="file-formats.html">file formats page</a>. The output of the stats file is described <a href="best-practices-wgs-wes.html#allstats">here</a>.
 

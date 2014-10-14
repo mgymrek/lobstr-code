@@ -48,24 +48,24 @@
 	  for running lobSTR are available on the <a href="usage.html">usage</a> and <a href="best-practices-wgs-wes.html">best practices for WGS/WES</a> pages. Follow those steps to generate a lobSTR VCF file. The steps for doing this on the Venter genome are below. Note that we use the parameters <code>--fft-window-size 24 --fft-window-step 12</code> as described in <a href="best-practices-alignment.html">Best practices for alignment</a> to bias lobSTR toward focusing on the longer, more complex Y-STRs rather than on shorter repeats such as homopolymers. Also note that we used the noise model for Illumina PCR free data, even though this is Sanger data. With such low coverage it won't make a big difference, and we didn't have a high enough coverage male Sanger sequencing dataset to train with.
 
 	  {% highlight bash %}
-	  lobSTR \
-             --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-             -f venter_reads_19621.fa \
-             --rg-sample venter --rg-lib venter \
-             --fft-window-size 24 --fft-window-step 12 \
-             --out venter
+lobSTR \
+  --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+  -f venter_reads_19621.fa \
+  --rg-sample venter --rg-lib venter \
+  --fft-window-size 24 --fft-window-step 12 \
+  --out venter
 
-          samtools sort venter.aligned.bam venter.sorted
-          samtools index venter.sorted.bam
+samtools sort venter.aligned.bam venter.sorted
+samtools index venter.sorted.bam
 
-          /san/melissa/workspace/lobstr-code-production/src/allelotype \
-             --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-             --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
-             --command classify \
-             --noise_model models/illumina_v3.pcrfree \
-             --bam venter.sorted.bam \
-             --min-border 5 --min-bp-before-indel 7 --maximal-end-match 15 --min-read-end-match 5 \
-             --out venter
+/san/melissa/workspace/lobstr-code-production/src/allelotype \
+  --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+  --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
+  --command classify \
+  --noise_model models/illumina_v3.pcrfree \
+  --bam venter.sorted.bam \
+  --min-border 5 --min-bp-before-indel 7 --maximal-end-match 15 --min-read-end-match 5 \
+  --out venter
 	  {% endhighlight %}
 
 	  This will output a file <code>venter.vcf</code> with STR genotype calls.
@@ -81,9 +81,9 @@
 	<p>
 	  You can use the <code>intersectBed</code> tool from bedtools to extract these markers from your VCF and convert to standard notation:
 	  {% highlight bash %}
-	  intersectBed -a venter.vcf -b lobSTR_ystr_hg19.bed -wa -wb | \
-	     cut -f 1,2,10,14- | sed 's/:/\t/g' | cut -f 1,2,4,7,11- | sed 's/\//\t/' | \
-	     cut -f 4 --complement | awk '{print $0 "\t" $6+$4/$5}'
+intersectBed -a venter.vcf -b lobSTR_ystr_hg19.bed -wa -wb | \
+   cut -f 1,2,10,14- | sed 's/:/\t/g' | cut -f 1,2,4,7,11- | sed 's/\//\t/' | \
+   cut -f 4 --complement | awk '{print $0 "\t" $6+$4/$5}'
 	  {% endhighlight %}
 	  This is a bit of a long command. Here's what it does:
 	  <ul>
@@ -94,9 +94,9 @@
 
 	  Similarly for the CODIS markers, but looking at both alleles reported:
 	  {% highlight bash %}
-          intersectBed -a venter.vcf -b lobSTR_codis_markers_hg19.bed -wa -wb | \
-             cut -f 1,2,10,14- | sed 's/:/\t/g' | cut -f 1,2,4,7,11- | sed 's/\//\t/' | \
-             awk '{print $0 "\t" $7+$4/$6 "\t" $7+$5/$6}'
+intersectBed -a venter.vcf -b lobSTR_codis_markers_hg19.bed -wa -wb | \
+   cut -f 1,2,10,14- | sed 's/:/\t/g' | cut -f 1,2,4,7,11- | sed 's/\//\t/' | \
+   awk '{print $0 "\t" $7+$4/$6 "\t" $7+$5/$6}'
 	  {% endhighlight %}
 	<p>
 	  <a name="multi"></a>

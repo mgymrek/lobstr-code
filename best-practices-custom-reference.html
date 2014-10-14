@@ -47,10 +47,10 @@
 	  <h2>Build the lobSTR index</h2>
 	  To build the lobSTR index, create a clean directory where the index will be stored. Then run:
 	  {% highlight bash %}
-	  python scripts/lobstr_index.py \
-             --str str_bed_file \
-             --ref ref_genome.fa \
-             --out output_directory
+python scripts/lobstr_index.py \
+  --str str_bed_file \
+  --ref ref_genome.fa \
+  --out output_directory
 	  {% endhighlight %}
 	  This will create an index with the prefix <code>output_directory/lobSTR_</code>.
 	<p>
@@ -58,7 +58,7 @@
 	  <h2>Generating an STRInfo file</h2>
 	  If using a custom index, you will also need to generate a file with information on each STR locus to input to the <code>--strinfo</code> option of the allelotyper.
 	  {% highlight bash %}
-	  python scripts/GetSTRInfo.py str_bed_file ref_genome.fa > strinfo.tab
+python scripts/GetSTRInfo.py str_bed_file ref_genome.fa > strinfo.tab
 	  {% endhighlight %}
       </section>
     </div>

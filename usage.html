@@ -32,49 +32,49 @@
 	<p>
 	Single-end reads:
 	{% highlight bash %}
-	lobSTR -f FILE1,FILE2,.. --index-prefix PATH_TO_INDEX/lobSTR_   -o OUTPUT_PREFIX
+lobSTR -f FILE1,FILE2,.. --index-prefix PATH_TO_INDEX/lobSTR_   -o OUTPUT_PREFIX
 	{% endhighlight %}
 	Paired-end reads:
 	{% highlight bash %}
-	lobSTR --p1 FILE1,FILE2,.. --p2 FILE1,FILE2,...	\
-	   --index-prefix PATH_TO_INDEX/lobSTR_ \
- 	   -o OUTPUT_PREFIX
+lobSTR --p1 FILE1,FILE2,.. --p2 FILE1,FILE2,...	\
+   --index-prefix PATH_TO_INDEX/lobSTR_ \
+   -o OUTPUT_PREFIX
 	{% endhighlight %}
 	Sort and index:
 	{% highlight bash %}
-	samtools sort OUTPUT_PREFIX.aligned.bam OUTPUT_PREFIX.sorted
-	samtools index OUTPUT_PREFIX.sorted.bam
+samtools sort OUTPUT_PREFIX.aligned.bam OUTPUT_PREFIX.sorted
+samtools index OUTPUT_PREFIX.sorted.bam
 	{% endhighlight %}
 	Run allelotype:
 	{% highlight bash %}
-	allelotype \
-	  --command [train|classify] \
-	  --bam OUTPUT_PREFIX.sorted.bam \
-          --noise_model NOISEMODELPREFIX \
-          --out OUTPUT_PREFIX \
-          --strinfo STRINFOFILE \
-          --index-prefix PATH_TO_INDEX/lobSTR_
+allelotype \
+  --command [train|classify] \
+  --bam OUTPUT_PREFIX.sorted.bam \
+  --noise_model NOISEMODELPREFIX \
+  --out OUTPUT_PREFIX \
+  --strinfo STRINFOFILE \
+  --index-prefix PATH_TO_INDEX/lobSTR_
 	{% endhighlight %}
 	<b>To run an example using files available in the download</b>:
 	{% highlight bash %}
-	lobSTR \
-          --p1 PATH_TO_LOBSTR/tests/tmp_1.fq \
-          --p2 PATH_TO_LOBSTR/tests/tmp_2.fq \
-          -q \
-	  --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-	  -o test \
-	  --rg-sample mysample --rg-lib mylibrary
+lobSTR \
+  --p1 PATH_TO_LOBSTR/tests/tmp_1.fq \
+  --p2 PATH_TO_LOBSTR/tests/tmp_2.fq \
+  -q \
+  --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+  -o test \
+  --rg-sample mysample --rg-lib mylibrary
 
-	samtools sort test.aligned.bam test.sorted
-	samtools index test.sorted.bam
+samtools sort test.aligned.bam test.sorted
+samtools index test.sorted.bam
 
-	allelotype \
-          --command classify \
-          --bam test.sorted.bam \
-          --noise_model PATH_TO_LOBSTR/models/illumina_v3.pcrfree \
-          --out test \
-          --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
-          --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_
+allelotype \
+  --command classify \
+  --bam test.sorted.bam \
+  --noise_model PATH_TO_LOBSTR/models/illumina_v3.pcrfree \
+  --out test \
+  --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
+  --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_
 	{% endhighlight %}
 
 	<p>

@@ -54,31 +54,31 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	<a name="singleq"></a>
 	<h4>From single-end fastq files</h4>
 	{% highlight bash %}
-	  lobSTR \
-           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-           -f my_sample.fq -q \
-           --rg-sample my_sample --rg-lib my_sample \
-           --out my_sample_output
+lobSTR \
+   --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+   -f my_sample.fq -q \
+   --rg-sample my_sample --rg-lib my_sample \
+   --out my_sample_output
 	{% endhighlight %}
 	<p>
 	<a name="pairedq"></a>
 	<h4>From paired-end fastq files</h4>
 	{% highlight bash %}
-	  lobSTR \
-           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-           --p1 my_sample_1.fq --p2 my_sample_2.fq -q \
-           --rg-sample my_sample --rg-lib my_sample \
-           --out my_sample_output
+lobSTR \
+   --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+   --p1 my_sample_1.fq --p2 my_sample_2.fq -q \
+   --rg-sample my_sample --rg-lib my_sample \
+   --out my_sample_output
 	{% endhighlight %}
 	<p>
 	<a name="singlebam"></a>
 	<h4>From single-end bam files</h4>
 	{% highlight bash %}
-	  lobSTR \
-           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-           -f my_sample.bam --bam \
-           --rg-sample my_sample --rg-lib my_sample \
-           --out my_sample_output
+lobSTR \
+   --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+   -f my_sample.bam --bam \
+   --rg-sample my_sample --rg-lib my_sample \
+   --out my_sample_output
 	{% endhighlight %}
 	<p>
 	<a name="pairedbam"></a>
@@ -92,11 +92,11 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	  <li>Using the <code>bamcollate2</code> tool from <a href="https://github.com/gt1/biobambam">biobambam</a>.</li>
 	</ul>
 	{% highlight bash %}
-	  lobSTR \
-           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-           -f my_sample.bam --bampair \
-           --rg-sample my_sample.sorted.bam --rg-lib my_sample \
-           --out my_sample_output
+lobSTR \
+   --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+   -f my_sample.bam --bampair \
+   --rg-sample my_sample.sorted.bam --rg-lib my_sample \
+   --out my_sample_output
 	{% endhighlight %}
 	<p>
 
@@ -104,8 +104,8 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	<h3>Sorting and indexing the resulting BAM</h3>
 	In the examples above, lobSTR will create the output files <code>my_sample_output.aligned.bam</code> and <code>my_sample_output.aligned.stats</code>. Before moving on to the allelotype step, use <a href="http://samtools.sourceforge.net/">samtools</a> to sort and index the BAM file:
 	{% highlight bash %}
-	samtools sort my_sample_output.aligned.bam my_sample_output.sorted
-	samtools index my_sample_output.sorted.bam
+samtools sort my_sample_output.aligned.bam my_sample_output.sorted
+samtools index my_sample_output.sorted.bam
 	{% endhighlight %}
 	
 	<p>
@@ -142,13 +142,13 @@ lobSTR accepts a variety of input formats (paired or single end, fastq, fasta, o
 	<a name="runallelotype"></a>
 	<h3>Running allelotype</h3>
 	{% highlight bash %}
-	allelotype \
-           --command classify \
-           --bam my_sample_output.sorted.bam \
-           --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
-	   --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
-           --noise_model models/illumina_v3.pcrfree \
-           --out my_sample_output
+allelotype \
+   --command classify \
+   --bam my_sample_output.sorted.bam \
+   --index-prefix hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_ \
+   --strinfo hg19_v3.0.2/lobstr_v3.0.2_hg19_strinfo.tab \
+   --noise_model models/illumina_v3.pcrfree \
+   --out my_sample_output
 	{% endhighlight %}
 
 	This will create the output files <code>my_sample_output.vcf</code> and <code>my_sample_output.allelotype.stats</code>. The format of the VCF output is descrbed on the <a href="file-formats.html">file formats page</a>.
