@@ -234,7 +234,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
       }
       // if haploid and a != b, don't include as a possibility
       bool include_score = true;
-      if ((allelotype.first != allelotype.second) & haploid) {
+      if ((allelotype.first != allelotype.second) && haploid) {
         include_score = false;
       }
       // But, include its score in the denominator
