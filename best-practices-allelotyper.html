@@ -11,6 +11,7 @@
 	<ul>
 	  <li><a href="#overview">Overview</a></li>
 	  <li><a href="#adjust">Adjusting alignments</a></li>
+	  <li><a href="#adjust">Improving call accuracy</a></li>
 	  <li><a href="#filter">Filtering alignments</a></li>
 	  <li><a href="#speedup">Speeding up allelotype</a></li>
 	</ul>
@@ -29,6 +30,14 @@
 	    There is an option to calculate STR allele supported by each read by only including gaps that allelotype determines to be within the boundary of the STR. You can turn this on using the <code>--dont-include-flank</code> option. While theoretically more accurate than the approach described above, the process of ascertaining the boundary of the STR is still error prone and this option is usually not recommended. However, if you are using very long reads that may span more than a single STR, then it is recommended to set this option.
 	  </p>
 	<p>
+	  <a name="adjust"></a>
+	  <h2>Adjusting alignments</h2>
+	  The following parameters are often helpful in improving call accuracy:
+	  <ul>
+	    <li><code>--min-het-freq INT</code>: Refuse to call something a heterozygote unless the minor allele meets a frequency threshold for supporting reads. Setting this to 0.1 gives good results.</li>
+	    <li><code>--unit</code>: require length differences to be a multiple of the repeat unit. Reads supporting a non-unit allele are much likely to be due to errors.</li>
+	  </ul>
+	  <p>
 	  <a name="filter"></a>
 	  <h2>Filtering alignments</h2>
 	  You can use the following parameters to filter which read alignments are used by the allelotyper:
@@ -39,7 +48,7 @@
 	    <li><code>--maximal-end-match INT</code>: Filter reads whose prefix/suffix matches to the reference are less than or equal to those obtaind when shifting the read ends by distances within INT bp.
 	    <li><code>--max-diff-ref INT</code>: don't use reads different in length by more than INT bp from the reference allele. If you are specifically interested in big expansions, you must set this to a number significantly higher than the expansion length you are looking for.</li>
 	    <li><code>--mapq INT</code>: maximum allowed mapq score. This is calculated as the sum of qualities at base mismatches.</li>
-	    <li><code>-u</code>: require length differences to be a multiple of the repeat unit.</li>
+	    <li><code>--unit</code>: require length differences to be a multiple of the repeat unit.</li>
 	  </ul>
 	  Setting <code>--min-border 5 --min-bp-before-indel 7 --maximal-end-match 15 --min-read-end-match 5</code> has given good results.
 
