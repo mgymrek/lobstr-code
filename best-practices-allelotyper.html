@@ -11,7 +11,7 @@
 	<ul>
 	  <li><a href="#overview">Overview</a></li>
 	  <li><a href="#adjust">Adjusting alignments</a></li>
-	  <li><a href="#adjust">Improving call accuracy</a></li>
+	  <li><a href="#acc">Improving call accuracy</a></li>
 	  <li><a href="#filter">Filtering alignments</a></li>
 	  <li><a href="#speedup">Speeding up allelotype</a></li>
 	</ul>
@@ -30,8 +30,8 @@
 	    There is an option to calculate STR allele supported by each read by only including gaps that allelotype determines to be within the boundary of the STR. You can turn this on using the <code>--dont-include-flank</code> option. While theoretically more accurate than the approach described above, the process of ascertaining the boundary of the STR is still error prone and this option is usually not recommended. However, if you are using very long reads that may span more than a single STR, then it is recommended to set this option.
 	  </p>
 	<p>
-	  <a name="adjust"></a>
-	  <h2>Adjusting alignments</h2>
+	  <a name="acc"></a>
+	  <h2>Improving call accuracy</h2>
 	  The following parameters are often helpful in improving call accuracy:
 	  <ul>
 	    <li><code>--min-het-freq INT</code>: Refuse to call something a heterozygote unless the minor allele meets a frequency threshold for supporting reads. Setting this to 0.1 gives good results.</li>
