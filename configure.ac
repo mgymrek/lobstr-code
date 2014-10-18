@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+# Copyright (C) 2011-2014 Melissa Gymrek <mgymrek@mit.edu>
 #  
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without 
