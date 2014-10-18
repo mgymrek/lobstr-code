@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011 Melissa Gymrek <mgymrek@mit.edu>
+Copyright (C) 2011-2014 Melissa Gymrek <mgymrek@mit.edu>
 
 This file is part of lobSTR.
 
@@ -62,7 +62,7 @@ void PrintLobSTR() {
   msg << " {_}{\\{\\{\\{|         \\=@____/          from high-throughput sequencing data" << endl;
   msg << "<{_{-{-{-{-| ====---- >>>" << endl;
   msg << " { }{/{/{/{|______  _/=@_____" << endl;
-  msg << " {/               { }        \\         Copyright (C) 2011 Melissa Gymrek" << endl;
+  msg << " {/               { }        \\         Copyright (C) 2011-2014 Melissa Gymrek" << endl;
   msg << "            ||||  \\ \\______  \\         <mgymrek@mit.edu>" << endl;
   msg << "             // \\\\  \\    _^_\\  |" << endl;
   msg << "                     \\______/" << endl << endl;
