@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-def usage():
-    print """
-python lobSTR_allelotype_checks.py -f <genotypes.tab file>  [--plot] [--mincov <INT>]
+"""python lobSTR_allelotype_checks.py -f <genotypes.tab file>  [--plot] [--mincov <INT>]
 
 Note: this script only works on files generated with lobSTR v2.0.0 or later.
 
@@ -47,13 +45,13 @@ try:
     opts, args = getopt.getopt(sys.argv[1:], "hvf:", ["help","verbose","mincov=","plot","debug"])
 except getopt.GetoptError, err:
     print str(err)
-    usage()
+    print __doc__
     sys.exit(2)
 
 args = [item[0] for item in opts]
 
 if ((not "-f" in args)):
-    usage()
+    print __doc__
     sys.exit(2)
 
 # initialize variables
@@ -70,7 +68,7 @@ for o,a in opts:
     if o == "--debug": debug = True
     if o == "-v" or o == "--verbose": verbose = True
     if o == "--help" or o == "-h":
-        usage()
+        print __doc__
         sys.exit(0)
 
 ###########################

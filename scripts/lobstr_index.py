@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-DESCRIPTION = """
-Create lobSTR index
+"""Create lobSTR index
 
 In $out_dir, creates:
 A bed file with merged reference regions
@@ -149,7 +148,7 @@ def bwaIndex(str_ref_fasta):
 
 ##########################
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--str", help="Bed file containing STR information.", required=True, type=str)
     parser.add_argument("--ref", help="Reference genome in fasta format", required=True, type=str)
     parser.add_argument("--out_dir", help="Path to write results to", required=True, type=str)

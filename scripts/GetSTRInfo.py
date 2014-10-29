@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-
-def usage():
-    print """
-python GetSTRInfo.py <STR table> <ref.fa>
+"""python GetSTRInfo.py <STR table> <ref.fa>
 
 Prints output to stdout
 
@@ -93,7 +90,7 @@ def main():
         genomeFile = sys.argv[2]
         if genomeFile == "-": genomeFile = "/dev/stdin"
     except:
-        usage()
+        print __doc__
         sys.exit(1)
     sys.stderr.write("loading genome...\n")
     genome = loadGenome(genomeFile)

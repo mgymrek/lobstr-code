@@ -1,4 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+"""
+This script is run on output of the
+allelotype tool run with --command train. It generates an HTML file providing
+visualization of PCR stutter noise at STRs.
+"""
 import matplotlib
 matplotlib.use('Agg')
 import argparse
@@ -10,12 +15,6 @@ import pandas as pd
 import urllib, base64
 from scipy.stats.mstats import mquantiles
 pd.options.mode.chained_assignment = None
-
-DESC = """
-This script is run on output of the
-allelotype tool run with --command train. It generates an HTML file providing
-visualization of PCR stutter noise at STRs.
-"""
 
 NOISE_MODEL_PREFIX = None
 OUT_FILE = None
@@ -110,7 +109,7 @@ class StutterProblem(object):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=DESC)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--noise_model", help="Prefix to noise model output from allelotype.", type=str, required=True)
     parser.add_argument("--out", help="Name of output html file", type=str, required=True)
     args = parser.parse_args()
@@ -152,7 +151,7 @@ if __name__ == "__main__":
         pltdata = stutterproblem.PlotVariable(feature, featureBins[feature])
         uri = "data:image/png;base64," + pltdata
         f.write("<img src=\"%s\"/>\n"%uri)
-        
+
 
     f.write("</body>\n")
     f.close()
