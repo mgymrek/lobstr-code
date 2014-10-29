@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 def usage():
     print """
 python lobSTR_alignment_checks.py -f <aligned.tab file> [--plot]
@@ -102,7 +104,7 @@ def GetReadTypeNumbers(filename):
     # num stitched
     cmd = "grep -v version %s | grep -v Period | awk -F'\\t' '($%s == 1)' | wc -l"%(filename, STITCH_COL)
     num_stitched = ExecuteCmd(cmd, debug)
-    
+
     # num single ends
     cmd = "grep -v version %s | grep -v Period | awk -F'\\t' '($%s == 0)' | wc -l"%(filename, STITCH_COL)
     num_single_ends = ExecuteCmd(cmd, debug)

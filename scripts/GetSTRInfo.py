@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 def usage():
     print """
@@ -8,7 +8,7 @@ Prints output to stdout
 
 For each locus, get:
 TRF score
-GC content 
+GC content
 Entropy of 50bp up/downstream
 """
 

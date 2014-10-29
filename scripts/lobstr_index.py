@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 DESCRIPTION = """
 Create lobSTR index
 
@@ -68,12 +69,12 @@ def compareString(seq1,seq2):
     """ Compare two strings alphabetically """
     size = len(seq1)
     for i in range(size):
-        if nucToNumber[seq1[i]] < nucToNumber[seq2[i]]: 
+        if nucToNumber[seq1[i]] < nucToNumber[seq2[i]]:
             return seq1
         if nucToNumber[seq1[i]] > nucToNumber[seq2[i]]:
             return seq2
     return seq1
-        
+
 def reverseComplement(seq):
     """ Get the reverse complement of a nucleotide string """
     newseq = ""
