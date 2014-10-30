@@ -1,6 +1,5 @@
-def usage():
-    print """
-python lobSTR_allelotype_checks.py -f <genotypes.tab file>  [--plot] [--mincov <INT>]
+#!/usr/bin/env python
+"""python lobSTR_allelotype_checks.py -f <genotypes.tab file>  [--plot] [--mincov <INT>]
 
 Note: this script only works on files generated with lobSTR v2.0.0 or later.
 
@@ -46,13 +45,13 @@ try:
     opts, args = getopt.getopt(sys.argv[1:], "hvf:", ["help","verbose","mincov=","plot","debug"])
 except getopt.GetoptError, err:
     print str(err)
-    usage()
+    print __doc__
     sys.exit(2)
 
 args = [item[0] for item in opts]
 
 if ((not "-f" in args)):
-    usage()
+    print __doc__
     sys.exit(2)
 
 # initialize variables
@@ -69,7 +68,7 @@ for o,a in opts:
     if o == "--debug": debug = True
     if o == "-v" or o == "--verbose": verbose = True
     if o == "--help" or o == "-h":
-        usage()
+        print __doc__
         sys.exit(0)
 
 ###########################
@@ -194,11 +193,11 @@ def GetMeanCoverage(filename, zipped=False):
     if zipped:
         cmd = "zcat %s | grep -v version | awk '($8 > 0)'|"\
             "  awk \'{matesum += $(8)}END"\
-            "{print matesum/NR}\'"%filename 
+            "{print matesum/NR}\'"%filename
     else:
         cmd = "cat %s | grep -v version | awk '($8 > 0)' |"\
             "  awk \'{matesum += $(8)}END"\
-            "{print matesum/NR}\'"%filename 
+            "{print matesum/NR}\'"%filename
     return ExecuteCmd(cmd, debug)
 
 def GetCoverages(filename):
@@ -339,7 +338,7 @@ def main():
         plt.ylabel("# STRs")
         plt.title("")
         plt.savefig("%s.allelotypescores.pdf"%lobstr_genotype_file)
-        
+
         # 5. Distribution of diff from ref of alleles
         plt.clf()
         diffs = GetDiffFromRef(lobstr_genotype_file)
@@ -420,7 +419,7 @@ def main():
         plt.title("")
         if (len(all_stutter) >0):
             plt.savefig("%s.stutter_lengths.pdf"%lobstr_genotype_file)
-        
+
         # 7d. Heatmap of stutter by length for each period
         for period in xrange(2,7):
             # generate matrix of (true allele, allele seen)

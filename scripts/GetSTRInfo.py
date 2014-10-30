@@ -1,14 +1,11 @@
-#!/usr/bin/python
-
-def usage():
-    print """
-python GetSTRInfo.py <STR table> <ref.fa>
+#!/usr/bin/env python
+"""python GetSTRInfo.py <STR table> <ref.fa>
 
 Prints output to stdout
 
 For each locus, get:
 TRF score
-GC content 
+GC content
 Entropy of 50bp up/downstream
 """
 
@@ -93,7 +90,7 @@ def main():
         genomeFile = sys.argv[2]
         if genomeFile == "-": genomeFile = "/dev/stdin"
     except:
-        usage()
+        print __doc__
         sys.exit(1)
     sys.stderr.write("loading genome...\n")
     genome = loadGenome(genomeFile)
