@@ -373,6 +373,13 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   // Get STR properties
   if (read_list.size() == 0) return;
   str_record.period = read_list.front().period;
+  if (str_record.period < 1 || str_record.period > 6) {
+    stringstream msg;
+    msg <<"Skipping locus " << chrom << ":" << read_list.front().msStart
+	<< ". Invalid period size (" << str_record.period << ")";
+    PrintMessageDieOnError(msg.str(), WARNING);
+    return;
+  }
   str_record.chrom = chrom;
   if (!(use_chrom.empty() ||
 	(!use_chrom.empty() && use_chrom == read_list.front().chrom))) {return;}
