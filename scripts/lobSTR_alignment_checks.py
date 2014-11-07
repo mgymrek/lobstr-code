@@ -1,6 +1,5 @@
-def usage():
-    print """
-python lobSTR_alignment_checks.py -f <aligned.tab file> [--plot]
+#!/usr/bin/env python
+"""python lobSTR_alignment_checks.py -f <aligned.tab file> [--plot]
 
 e.g.
 python lobSTR_alignment_checks.py test.aligned.tab
@@ -21,7 +20,6 @@ If the --plot option is specified, the following plots are generated:
 3. Difference from reference distribution (separated by period)
 
 Prints all results to stdout
-
 """
 
 ###########################
@@ -43,13 +41,13 @@ try:
     opts, args = getopt.getopt(sys.argv[1:], "hvf:", ["help","verbose","plot","debug"])
 except getopt.GetoptError, err:
     print str(err)
-    usage()
+    print __doc__
     sys.exit(2)
 
 args = [item[0] for item in opts]
 
 if ((not "-f" in args)):
-    usage()
+    print __doc__
     sys.exit(2)
 
 # initialize variables
@@ -65,7 +63,7 @@ for o,a in opts:
     if o == "--debug": debug = True
     if o == "-v" or o == "--verbose": verbose = True
     if o == "--help" or o == "-h":
-        usage()
+        print __doc__
         sys.exit(0)
 
 ###########################
@@ -102,7 +100,7 @@ def GetReadTypeNumbers(filename):
     # num stitched
     cmd = "grep -v version %s | grep -v Period | awk -F'\\t' '($%s == 1)' | wc -l"%(filename, STITCH_COL)
     num_stitched = ExecuteCmd(cmd, debug)
-    
+
     # num single ends
     cmd = "grep -v version %s | grep -v Period | awk -F'\\t' '($%s == 0)' | wc -l"%(filename, STITCH_COL)
     num_single_ends = ExecuteCmd(cmd, debug)

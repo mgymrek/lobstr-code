@@ -1,5 +1,5 @@
-DESCRIPTION = """
-Create lobSTR index
+#!/usr/bin/env python
+"""Create lobSTR index
 
 In $out_dir, creates:
 A bed file with merged reference regions
@@ -68,12 +68,12 @@ def compareString(seq1,seq2):
     """ Compare two strings alphabetically """
     size = len(seq1)
     for i in range(size):
-        if nucToNumber[seq1[i]] < nucToNumber[seq2[i]]: 
+        if nucToNumber[seq1[i]] < nucToNumber[seq2[i]]:
             return seq1
         if nucToNumber[seq1[i]] > nucToNumber[seq2[i]]:
             return seq2
     return seq1
-        
+
 def reverseComplement(seq):
     """ Get the reverse complement of a nucleotide string """
     newseq = ""
@@ -148,7 +148,7 @@ def bwaIndex(str_ref_fasta):
 
 ##########################
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--str", help="Bed file containing STR information.", required=True, type=str)
     parser.add_argument("--ref", help="Reference genome in fasta format", required=True, type=str)
     parser.add_argument("--out_dir", help="Path to write results to", required=True, type=str)
