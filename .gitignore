@@ -1,0 +1,7 @@
+*~
+.Rhistory
+.RData
+_site
+Gemfile.lock
+.bundle
+*#
