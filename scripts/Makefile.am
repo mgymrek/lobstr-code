@@ -25,7 +25,8 @@ scriptdir = $(pkgdatadir)/scripts
 
 script_SCRIPTS = \
 	GetSTRInfo.py \
-	lobstr_index.py
+	lobstr_index.py \
+	lobSTR_test_run.sh
 
 EXTRA_DIST = $(script_SCRIPTS) \
 	$(bin_SCRIPTS)
