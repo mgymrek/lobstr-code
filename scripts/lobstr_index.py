@@ -81,8 +81,8 @@ def reverseComplement(seq):
     for i in range(len(seq)):
         char = seq[len(seq)-i-1]
         if char == "A": newseq += "T"
-        if char == "G": newseq +="C"
-        if char == "C": newseq +="G"
+        if char == "G": newseq += "C"
+        if char == "C": newseq += "G"
         if char == "T": newseq += "A"
     return newseq
 
@@ -102,8 +102,8 @@ def GenerateMergedReferenceBed(str_ref_file, annotated_ref):
     sorted_ref_withflank = os.path.join(tmpdir, "lobSTR_ref_plusflank_sorted.bed")
     merged_ref = os.path.join(tmpdir, "lobSTR_ref_merged.bed")
     # Generate reference file
-    cmd_sort = """cat %s | awk '{print $1 "\\t" $2-1000 "\\t" $3+1000 "\\t" $0}' | cut -f 4 --complement | \
-awk '($2>0)' | cut -f 1-5,17 | sortBed -i stdin > %s """%(str_ref_file, sorted_ref_withflank)
+    cmd_sort = """cat %s | awk '{print $1 "\\t" $2-%s "\\t" $3+%s "\\t" $0}' | cut -f 4 --complement | \
+awk '($2>0)' | cut -f 1-5,17 | sortBed -i stdin > %s """%(str_ref_file, EXTEND, EXTEND, sorted_ref_withflank)
     RunCommand(cmd_sort)
     cmd_merge = """mergeBed -i %s > %s"""%(sorted_ref_withflank, merged_ref)
     RunCommand(cmd_merge)
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--str", help="Bed file containing STR information.", required=True, type=str)
     parser.add_argument("--ref", help="Reference genome in fasta format", required=True, type=str)
     parser.add_argument("--out_dir", help="Path to write results to", required=True, type=str)
-    parser.add_argument("--extend", help="Length of flanking region to include on either side of the STR. (default 1000)", required=False, type=int)
+    parser.add_argument("--extend", help="Length of flanking region to include on either side of the STR. (default 1000)", required=False, type=int, default=1000)
     parser.add_argument("--verbose", help="Print out useful messages", required=False, action="store_true")
     parser.add_argument("--debug", help="Don't run commands, just pring them", required=False, action="store_true")
 
@@ -160,6 +160,7 @@ if __name__ == "__main__":
     STRREFFILE = args.str
     REFFILE = args.ref
     OUTDIR = args.out_dir
+    EXTEND = args.extend
     if not os.path.exists(OUTDIR): os.mkdir(OUTDIR)
     if args.verbose: VERBOSE = True
     if args.debug: DEBUG = True
