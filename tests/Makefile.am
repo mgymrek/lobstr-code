@@ -63,3 +63,26 @@ EXTRA_DIST = \
     ./smallref_chrY/smallref_chrY.strinfo.tab \
     ./test_chrY.bam \
     ./test_chrY.bam.bai
+
+##
+## These files will be installed in the "/usr/share/APPNAME/test-ref" directory.
+##
+testrefdir = $(pkgdatadir)/test-ref
+dist_testref_DATA = \
+    ./smallref/small_lobstr_ref_v2/lobSTR_chromsizes.tab \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.ann \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.pac \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rpac \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.sa \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.amb \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.bwt \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rbwt \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref.fasta.rsa \
+    ./smallref/small_lobstr_ref_v2/lobSTR_mergedref.bed \
+    ./smallref/small_lobstr_ref_v2/lobSTR_ref_map.tab
+
+sampledir = $(pkgdatadir)/sample
+dist_sample_DATA = \
+    ./tiny.fq
+
