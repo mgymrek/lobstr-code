@@ -104,11 +104,11 @@ echo "
 ** lobSTR reference download completed
 **
 
-Reference stored in $DESTDIR/lobstr_v3.0.2_hg19_ref
+Reference stored in $DESTDIR/hg19_v3.0.2/lobstr_v3.0.2_hg19_ref
 
 To use the reference with lobSTR:
 
-   lobSTR --index-prefix '$DESTDIR/lobstr_v3.0.2_hg19_ref/lobSTR_' [...]
+   lobSTR --index-prefix '$DESTDIR/hg19_v3.0.2/lobstr_v3.0.2_hg19_ref/lobSTR_' [...]
 
 For more information visit $HOMEPAGE
 
