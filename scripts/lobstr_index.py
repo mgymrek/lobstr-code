@@ -57,7 +57,7 @@ def CheckBin(binname):
     for path in os.environ["PATH"].split(os.pathsep):
         path = path.strip('"')
         exe_file = os.path.join(path, binname)
-        if is_exe(exe_file):
+        if IsExec(exe_file):
             return True
     return False
 
