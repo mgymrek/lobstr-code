@@ -15,6 +15,17 @@
 	</ul>
 	<a name="code"></a>
 	<h2>Code Changelog</h2>
+  <h3>New in version 3.0.3</h3>
+  <p>
+    This version had minor changes.
+  </p>
+  <ul>
+    <li>Updated copyright dates</li>
+    <li>Cleaned up python scripts</li>
+    <li>Added check to allelotyper to test whether period is in range</li>
+    <li>Scripts to install test reference and lobSTR hg19 reference</li>
+    <li>Checks in lobstr_index.py to make sure required binaries are installed</li>
+  </ul>
 	<h3>New in version 3.0.2</h3>
 	<p>
 	This version has major algorithmic changes: we have removed the FFT period detection step and attempt to align STR-containing reads to all STRs at once, rather than only those with a specified motif. As a result, we have changed the <a href="lobstr-index.html">index structure</a>, and you will need to download a new index from the <a href="download.html">downloads</a> page to use lobSTR 3. This new version significantly increases our alignment sensitivity.
@@ -58,7 +69,7 @@
 	  <li> Changed --sex option to --haploid, which allows users to determine which chromosomes should be treated as haploid or hemizygous. This allows for training on organisms for which the hemizygous chromosomes are not necessarily chrX and chrY.</li>
 	  <li> Added the option to exclude information on partially spanning reads from the allelotype output file.
 	</ul>
-	
+
 	<h3>New in version 2.0</h4>
 	<ul>
 	  <li>Support for paired end reads. lobSTR uses mate pair information to
@@ -109,7 +120,7 @@
     <li><b>September 10, 2013</b>: uploaded initial version of the lobSTR v3 index <a href="http://files.teamerlich.org/lobstr/v3/ref/lobSTR_v3_hg19_resource_bundle.tar.gz">lobSTR_v3_hg19_resource_bundle.tar.gz</a></li>
   </ul>
 
-  <a name="previous"></a>  
+  <a name="previous"></a>
   <h2>Previous versions</h2>
   Version 3
   <ul>
@@ -127,7 +138,7 @@
     <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobstr_index_hg18_extend1000.tar.gz">hg18 index</a></li>
     <li><a href="http://erlichlab.wi.mit.edu/lobSTR/lobstr_index_hg19_extend1000.tar.gz">hg19 index</a></li>
   </ul>
-  
+
 </section>
 </div>
     {% include footer.html %}
