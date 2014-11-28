@@ -33,6 +33,10 @@ nucToNumber={"A":0,"C":1,"G":2,"T":3}
 def PROGRESS(msg):
     sys.stderr.write(msg.strip() + "\n")
 
+def ERROR(msg):
+    sys.stderr.write(msg.strip() + "\n")
+    sys.exit(1)
+
 def RunCommand(cmd):
     if DEBUG:
         PROGRESS("CMD: %s"%cmd)
@@ -43,6 +47,20 @@ def RunCommand(cmd):
     if ex != 0:
         PROGRESS("ERROR: command '%s' failed"%cmd)
         sys.exit(1)
+
+def IsExec(binname):
+    """ Check if a file is executable """
+    return os.path.isfile(binname) and os.access(binname, os.X_OK)
+
+def CheckBin(binname):
+    """ Check if a binary exists on the PATH """
+    for path in os.environ["PATH"].split(os.pathsep):
+        path = path.strip('"')
+        exe_file = os.path.join(path, binname)
+        if IsExec(exe_file):
+            return True
+    return False
+
 
 def GetRepseq(repseq):
     """ Get canonical STR sequence, considering both strands """
@@ -164,6 +182,12 @@ if __name__ == "__main__":
     if not os.path.exists(OUTDIR): os.mkdir(OUTDIR)
     if args.verbose: VERBOSE = True
     if args.debug: DEBUG = True
+
+    if not CheckBin("lobSTRIndex"): ERROR("Could not find lobSTRIndex on the $PATH. Please install lobSTR")
+    if not CheckBin("sortBed"): ERROR("Could not find sortBed on the $PATH. Please install bedtools")
+    if not CheckBin("mergeBed"): ERROR("Could not find mergeBed on the $PATH. Please install bedtools")
+    if not CheckBin("intersectBed"): ERROR("Could not find intersectBed on the $PATH. Please install bedtools")
+    if not CheckBin("bedtools"): ERROR("Could not find bedtools on the $PATH. Please install bedtools")
 
     if VERBOSE: PROGRESS("Loading genome...")
     genome = pyfasta.Fasta(REFFILE)
