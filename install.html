@@ -16,9 +16,9 @@
 	<a name="binary"></a>
 	<h2>Installation from precompiled binaries</h2>
 	{% highlight bash %}
-wget http://erlichlab.wi.mit.edu/lobSTR/lobSTR-bin-Linux-x86_64-3.0.2.tar.gz
-tar -xzf lobSTR-bin-Linux-x86_64-3.0.2.tar.gz
-cd lobSTR-bin-Linux-x86_64-3.0.2
+wget http://erlichlab.wi.mit.edu/lobSTR/lobSTR-bin-Linux-x86_64-X.X.X.tar.gz
+tar -xzf lobSTR-bin-Linux-x86_64-X.X.X.tar.gz
+cd lobSTR-bin-Linux-x86_64-X.X.X
 sudo cp bin/lobSTR bin/allelotype bin/lobSTRIndex /usr/local/bin
 	{% endhighlight %}
 	<p>
@@ -26,13 +26,13 @@ sudo cp bin/lobSTR bin/allelotype bin/lobSTRIndex /usr/local/bin
 	  <h2>Installation from source</h2>
 	  Before installing from source, make sure all required packages are installed and in the user's $PATH (see below for a list of requirements). lobSTR should compile on most Linux and Mac systems.
 	  {% highlight bash %}
-wget http://erlichlab.wi.mit.edu/lobSTR/lobSTR-3.0.2.tar.gz
-tar -xzf lobSTR-3.0.2.tar.gz
-cd lobSTR-3.0.2/
+wget http://erlichlab.wi.mit.edu/lobSTR/lobSTR-X.X.X.tar.gz
+tar -xzf lobSTR-X.X.X.tar.gz
+cd lobSTR-X.X.X/
 ./configure
 make
 make check
-sudo make install	  
+sudo make install
 	  {% endhighlight %}
 	  <p>
 	  You can find the latest version of the source code on the <a href="https://github.com/mgymrek/lobstr-code">git repository</a>.
