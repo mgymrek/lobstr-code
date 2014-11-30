@@ -54,7 +54,8 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides, const vector<string>& chroms_to_include);
+  void AddReadsFromFile(const ReferenceSTR& ref_str, const vector<ReferenceSTR>& ref_str_chunk,
+			map<pair<string,int>, string>& ref_ext_nucleotides, const vector<string>& chroms_to_include);
 
   /* Clear reads from container */
   void ClearReads();
@@ -77,7 +78,8 @@ class ReadContainer {
  protected:
   /* Parse BamAlignment into AlignedRead */
   bool ParseRead(const BamTools::BamAlignment& aln,
-		 AlignedRead* aligned_read, 
+		 AlignedRead* aligned_read,
+		 const vector<ReferenceSTR>& ref_str_chunk,
 		 map<pair<string,int>, string>& ref_ext_nucleotides);
  private:
 

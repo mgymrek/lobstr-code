@@ -70,4 +70,18 @@ bool ReferenceSTRContainer::GetNextChunk(vector<ReferenceSTR>* ref_str_chunk,
   return true;
 }
 
+bool ReferenceSTRContainer::GetChromChunk(vector<ReferenceSTR>* chrom_chunk,
+					  const std::string& chrom) {
+  size_t orig_size = chrom_chunk->size();
+  for (vector<ReferenceSTR>::const_iterator it = ref_strs.begin();
+       it != ref_strs.end(); it++) {
+    if (it->chrom == chrom) {
+      chrom_chunk->push_back(*it);
+    }
+  }
+  size_t new_size = chrom_chunk->size();
+  return (new_size > orig_size);
+}
+
+
 ReferenceSTRContainer::~ReferenceSTRContainer() {}

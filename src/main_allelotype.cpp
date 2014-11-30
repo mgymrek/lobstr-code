@@ -127,6 +127,7 @@ void show_help() {
     "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
     "                                obtained when shifting the read ends by distances within <INT> bp. Default: 5\n"
     "Additional options\n" \
+    "--foreignbam                    Run allelotype on a BAM file not created by lobSTR\n"
     "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n\n" \
     "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
   cerr << help;
@@ -145,6 +146,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_COMMAND,
     OPT_DEBUG,
     OPT_DONT_INCLUDE_FLANK,
+    OPT_FOREIGNBAM,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_GL,
@@ -179,6 +181,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
+    {"foreign", 0, 0, OPT_FOREIGNBAM},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
     {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
@@ -236,9 +239,13 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_DEBUG:
       debug = true;
       break;
+    case OPT_FOREIGNBAM:
+      foreignbam = true;
+      AddOption("foreignbam", "", false, &user_defined_arguments_allelotyper);
+      break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);
-      AddOption("haploid",string(optarg), true, &user_defined_arguments_allelotyper);
+      AddOption("haploid", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case 'h':
     case OPT_HELP:
@@ -480,11 +487,24 @@ int main(int argc, char* argv[]) {
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
 
   /* Train/classify */
+  ReferenceSTRContainer ref_str_container(reference_strs);
   if (command == "train") {
     ReadContainer read_container(bam_files);
     ReferenceSTR dummy_ref_str;
+    vector<ReferenceSTR> haploid_str_chunk;
+    for (size_t i = 0; i < haploid_chroms.size(); i++) {
+      if (!ref_str_container.GetChromChunk(&haploid_str_chunk, haploid_chroms.at(i))) {
+	stringstream msg;
+	msg << "No reference STRs found for haploid chromosome " << haploid_chroms.at(i);
+	PrintMessageDieOnError(msg.str(), WARNING);
+      }
+    }
+    if (haploid_str_chunk.size() == 0) {
+      PrintMessageDieOnError("No haploid loci found for training", ERROR);
+    }
     dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
-    read_container.AddReadsFromFile(dummy_ref_str, ref_ext_nucleotides, haploid_chroms);
+    read_container.AddReadsFromFile(dummy_ref_str, haploid_str_chunk,
+				    ref_ext_nucleotides, haploid_chroms);
     if (my_verbose) PrintMessageDieOnError("Training noise model", PROGRESS);
     nm.Train(&read_container);
   } 
@@ -510,7 +530,6 @@ int main(int argc, char* argv[]) {
     // Classify allelotypes
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
     std::string current_chrom;
-    ReferenceSTRContainer ref_str_container(reference_strs);
     // Read one chunk of refs at a time
     vector<ReferenceSTR> ref_str_chunk;
     string chrom; int begin, end;
@@ -521,7 +540,8 @@ int main(int argc, char* argv[]) {
       ref_region.start = begin;
       ref_region.stop = end;
       if (use_chrom.empty() || (use_chrom == chrom)) {
-	str_container.AddReadsFromFile(ref_region, ref_ext_nucleotides, vector<string>(0));
+	str_container.AddReadsFromFile(ref_region, ref_str_chunk,
+				       ref_ext_nucleotides, vector<string>(0));
 	for (size_t i = 0; i < ref_str_chunk.size(); i++) {
 	  // Check that we don't process the same locus twice
 	  if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {

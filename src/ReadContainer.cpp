@@ -89,7 +89,8 @@ void ReadContainer::GetSampleInfo() {
   }
 }
 
-void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides,
+void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<ReferenceSTR>& ref_str_chunk,
+				     map<pair<string,int>, string>& ref_ext_nucleotides,
 				     const vector<string>& chroms_to_include) {
   if (ref_str.chrom != "NA") {
     int refid = -1;
@@ -108,7 +109,7 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<strin
   BamTools::BamAlignment aln;
   while (reader.GetNextAlignment(aln)) {
     AlignedRead aligned_read;
-    if (ParseRead(aln, &aligned_read, ref_ext_nucleotides)) {
+    if (ParseRead(aln, &aligned_read, ref_str_chunk, ref_ext_nucleotides)) {
       if (chroms_to_include.size() > 0 && find(chroms_to_include.begin(), chroms_to_include.end(), aligned_read.chrom) == chroms_to_include.end()) {
 	continue;
       }
@@ -129,8 +130,10 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<strin
 }
 
 bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
-			      AlignedRead* aligned_read, 
+			      AlignedRead* aligned_read,
+			      const vector<ReferenceSTR>& ref_str_chunk,
 			      map<pair<string,int>, string>& ref_ext_nucleotides) {
+  // *** Get read properties (common to all BAMs) *** //
   // get read ID
   aligned_read->ID = aln.Name;
   // get nucleotides
@@ -145,68 +148,123 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   aligned_read->read_start = aln.Position;
   // get cigar
   aligned_read->cigar_ops = aln.CigarData;
-  // get if mate pair
-  if (aln.IsSecondMate()) {
-    aligned_read->mate = 1;
-  } else {
-    aligned_read->mate = 0;
-  }
-  // Only process if it is the primary alignment
-  if (aligned_read->mate) {
-    return false;
-  }
-  // Get all the tag data
-  // don't process if partially spanning (from old lobSTR)
-  int partial = 0;
-  if (GetIntBamTag(aln, "XP", &partial)) {
-    if (partial == 1) return false;
-  }
   // get read group
   if (!GetStringBamTag(aln, "RG", &aligned_read->read_group)) {
     stringstream msg;
     msg << aln.Name << " Could not get read group.";
     PrintMessageDieOnError(msg.str(), ERROR);
   }
-  // get msStart
-  if (!GetIntBamTag(aln, "XS", &aligned_read->msStart)) {
-    stringstream msg;
-    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get STR start coordinate. Did this bam file come from lobSTR?";
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  // get msEnd
-  if (!GetIntBamTag(aln, "XE", &aligned_read->msEnd)) {
-    stringstream msg;
-    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get STR end coordinate. Did this bam file come from lobSTR?";
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  // get mapq. Try unsigned/signed
-  if (!GetIntBamTag(aln, "XQ", &aligned_read->mapq)) {
-    stringstream msg;
-    aligned_read->mapq = 0;
-  }
-  // get diff
-  if (!GetIntBamTag(aln, "XD", &aligned_read->diffFromRef)) {
-    return false;
-  }
-  // get mate dist
-  if (!GetIntBamTag(aln, "XM", &aligned_read->matedist)) {
-    aligned_read->matedist = 0;
-  }
-  // get STR seq
-  if (!GetStringBamTag(aln, "XR", &aligned_read->repseq)) {
-    stringstream msg;
-    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get repseq.";
-    PrintMessageDieOnError(msg.str(), ERROR);
-  }
-  // get if stitched
-  if (!GetIntBamTag(aln, "XX", &aligned_read->stitched)) {
-    aligned_read->stitched = 0;
-  }
-  // get ref copy num
-  if (!GetFloatBamTag(aln, "XC", &aligned_read->refCopyNum)) {
-    stringstream msg;
-    msg << aln.Name << " from group " << aligned_read->read_group << " Could not get reference copy number.";
-    PrintMessageDieOnError(msg.str(), ERROR);
+  // *** lobSTR BAM specific fields *** //
+  if (foreignbam) {
+    // Determine region spanned by this read
+    int read_start = aligned_read->read_start;
+    CIGAR_LIST cigar_list;
+    for (vector<BamTools::CigarOp>::const_iterator
+	   it = aligned_read->cigar_ops.begin();
+	 it != aligned_read->cigar_ops.end(); it++) {
+      CIGAR cig;
+      cig.num = (*it).Length;
+      cig.cigar_type = (*it).Type;
+      cigar_list.cigars.push_back(cig);
+    }
+    bool added_s, cigar_had_s;
+    cigar_list.ResetString();
+    GenerateCorrectCigar(&cigar_list, aln.QueryBases, &added_s, &cigar_had_s);
+    int read_end = aligned_read->read_start + static_cast<int>(aligned_read->nucleotides.size()) + GetSTRAllele(cigar_list);
+    // Determine which reference STRs overlapped by this read
+    bool found_str = false;
+    for (size_t i = 0; i < ref_str_chunk.size(); i++) {
+      const ReferenceSTR ref_str = ref_str_chunk.at(i);
+      if (ref_str.start > read_start && ref_str.start < read_end &&
+	  ref_str.stop > read_start && ref_str.stop > read_end) {
+	// get msStart
+	aligned_read->msStart = ref_str.start;
+	// get msEnd
+	aligned_read->msEnd = ref_str.stop;
+	// get STR seq
+	aligned_read->repseq = ref_str.motif;
+	// get ref copy num
+	aligned_read->refCopyNum = static_cast<float>(ref_str.stop - ref_str.start + 1)/static_cast<float>(ref_str.motif.size());
+	// get allele - TODO do this in a better way, especially if dealing with mulitple STRs in the read
+	aligned_read->diffFromRef = GetSTRAllele(cigar_list);
+	found_str = true;
+	break;
+      }
+    }
+    if (!found_str) {
+      return false;
+    }
+    // Ignore pair information
+    aligned_read->mate = 0;
+    // get mapq
+    if (!GetIntBamTag(aln, "XQ", &aligned_read->mapq)) {
+      aligned_read->mapq = 0;
+    }
+    // get mate dist
+    if (!GetIntBamTag(aln, "XM", &aligned_read->matedist)) {
+      aligned_read->matedist = 0;
+    }
+    // Ignore stitch information
+    if (!GetIntBamTag(aln, "XX", &aligned_read->stitched)) {
+      aligned_read->stitched = 0;
+    }
+  } else {
+  // get if mate pair
+    if (aln.IsSecondMate()) {
+      aligned_read->mate = 1;
+    } else {
+      aligned_read->mate = 0;
+    }
+    // Only process if it is the primary alignment
+    if (aligned_read->mate) {
+      return false;
+    }
+    // Get all the tag data
+    // don't process if partially spanning (from old lobSTR)
+    int partial = 0;
+    if (GetIntBamTag(aln, "XP", &partial)) {
+      if (partial == 1) return false;
+    }
+    // get msStart
+    if (!GetIntBamTag(aln, "XS", &aligned_read->msStart)) {
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read->read_group << " Could not get STR start coordinate. Did this bam file come from lobSTR?";
+      PrintMessageDieOnError(msg.str(), ERROR);
+    }
+    // get msEnd
+    if (!GetIntBamTag(aln, "XE", &aligned_read->msEnd)) {
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read->read_group << " Could not get STR end coordinate. Did this bam file come from lobSTR?";
+      PrintMessageDieOnError(msg.str(), ERROR);
+    }
+    // get mapq. Try unsigned/signed
+    if (!GetIntBamTag(aln, "XQ", &aligned_read->mapq)) {
+      aligned_read->mapq = 0;
+    }
+    // get diff
+    if (!GetIntBamTag(aln, "XD", &aligned_read->diffFromRef)) {
+      return false;
+    }
+    // get mate dist
+    if (!GetIntBamTag(aln, "XM", &aligned_read->matedist)) {
+      aligned_read->matedist = 0;
+    }
+    // get STR seq
+    if (!GetStringBamTag(aln, "XR", &aligned_read->repseq)) {
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read->read_group << " Could not get repseq.";
+      PrintMessageDieOnError(msg.str(), ERROR);
+    }
+    // get if stitched
+    if (!GetIntBamTag(aln, "XX", &aligned_read->stitched)) {
+      aligned_read->stitched = 0;
+    }
+    // get ref copy num
+    if (!GetFloatBamTag(aln, "XC", &aligned_read->refCopyNum)) {
+      stringstream msg;
+      msg << aln.Name << " from group " << aligned_read->read_group << " Could not get reference copy number.";
+      PrintMessageDieOnError(msg.str(), ERROR);
+    }
   }
   // get period
   aligned_read->period = aligned_read->repseq.length();
