@@ -45,6 +45,8 @@ std::string FilterCounter::GetFilterType(const int type){
     return "MATE_DIST";
   case ALLELE_SIZE:
     return "ALLELE_SIZE";
+  case CONTAINS_N_BASE:
+    return "CONTAINS_N_BASE";
   case SPANNING_AMOUNT:
     return "SPANNING_AMOUNT";
   case NUM_END_MATCHES:
@@ -53,8 +55,6 @@ std::string FilterCounter::GetFilterType(const int type){
     return "NOT_MAXIMAL_END";
   case BP_BEFORE_INDEL:
     return "BP_BEFORE_INDEL";
-  case CONTAINS_N_BASE:
-    return "CONTAINS_N_BASE";
   case UNFILTERED:
     return "UNFILTERED";
   default:

@@ -39,11 +39,11 @@ class FilterCounter {
   const static int MAPPING_QUALITY = 2;
   const static int MATE_DIST       = 3;
   const static int ALLELE_SIZE     = 4;
-  const static int SPANNING_AMOUNT = 5;
-  const static int NUM_END_MATCHES = 6;
-  const static int NOT_MAXIMAL_END = 7;
-  const static int BP_BEFORE_INDEL = 8;
-  const static int CONTAINS_N_BASE = 9;
+  const static int CONTAINS_N_BASE = 5;
+  const static int SPANNING_AMOUNT = 6;
+  const static int NUM_END_MATCHES = 7;
+  const static int NOT_MAXIMAL_END = 8;
+  const static int BP_BEFORE_INDEL = 9;
   const static int UNFILTERED      = 10;
 
   FilterCounter();

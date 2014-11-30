@@ -232,12 +232,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (aligned_read->diffFromRef % aligned_read->period != 0){ 
       filter_counter.increment(FilterCounter::NOT_UNIT);
       return false;
-    }
-  }
-  if (filter_reads_with_n && aligned_read->nucleotides.find('N') != std::string::npos){
-    filter_counter.increment(FilterCounter::CONTAINS_N_BASE);
-    return false;
-  }
+    }}
   if (abs(aligned_read->diffFromRef) > max_diff_ref) {
     filter_counter.increment(FilterCounter::DIFF_FROM_REF);
     return false;
@@ -253,6 +248,11 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   // Check if the allele length is valid
   if (aligned_read->diffFromRef + (aligned_read->refCopyNum*aligned_read->period) < MIN_ALLELE_SIZE) {
     filter_counter.increment(FilterCounter::ALLELE_SIZE);
+    return false;
+  }
+
+  if (filter_reads_with_n && aligned_read->nucleotides.find('N') != std::string::npos){
+    filter_counter.increment(FilterCounter::CONTAINS_N_BASE);
     return false;
   }
 
