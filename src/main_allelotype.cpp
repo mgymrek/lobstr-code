@@ -146,6 +146,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_COMMAND,
     OPT_DEBUG,
     OPT_DONT_INCLUDE_FLANK,
+    OPT_FILTER_READS_WITH_N,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_GL,
@@ -180,6 +181,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
+    {"filter-reads-with-n", 0, 0, OPT_FILTER_READS_WITH_N},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
     {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
@@ -236,6 +238,9 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_DEBUG:
       debug = true;
+      break;
+    case OPT_FILTER_READS_WITH_N:
+      filter_reads_with_n = true;
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);
