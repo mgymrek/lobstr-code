@@ -416,7 +416,7 @@ testcode 1
 echo "Testing training... enough reads"
 allelotype \
   --command train \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_chrY_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_ \
   --strinfo ${LOBSTR_TEST_DIR=.}/smallref_chrY/smallref_chrY.strinfo.tab \
   --bam ${LOBSTR_TEST_DIR=.}/test_chrY.bam \
   --noise_model ${OUTDIR}/lobtest \
@@ -428,7 +428,7 @@ testcode 0
 echo "Testing training... invalid strinfo"
 allelotype \
   --command train \
-  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_chrY_ \
+  --index-prefix ${LOBSTR_TEST_DIR=.}/smallref_chrY/small_lobstr_ref_v2_chrY/lobSTR_ \
   --strinfo ${LOBSTR_TEST_DIR=.}/smallref_chrY/bad_strinfo_file.tab \
   --bam ${LOBSTR_TEST_DIR=.}/test_chrY.bam \
   --noise_model ${OUTDIR}/lobtest2 \
