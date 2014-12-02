@@ -171,7 +171,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     cigar_list.ResetString();
     GenerateCorrectCigar(&cigar_list, aln.QueryBases, &added_s, &cigar_had_s);
     int read_end = aligned_read->read_start + static_cast<int>(aligned_read->nucleotides.size()) + GetSTRAllele(cigar_list);
-    // Determine which reference STRs overlapped by this read
+    // Determine which reference STRs overlapped by this read - TODO return list of these, rather than the first one we find
     bool found_str = false;
     for (size_t i = 0; i < ref_str_chunk.size(); i++) {
       const ReferenceSTR ref_str = ref_str_chunk.at(i);

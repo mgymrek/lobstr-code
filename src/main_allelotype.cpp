@@ -181,7 +181,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
-    {"foreign", 0, 0, OPT_FOREIGNBAM},
+    {"foreignbam", 0, 0, OPT_FOREIGNBAM},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
     {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
