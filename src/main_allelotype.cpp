@@ -127,7 +127,6 @@ void show_help() {
     "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
     "                                obtained when shifting the read ends by distances within <INT> bp. Default: 5\n"
     "Additional options\n" \
-    "--foreignbam                    Run allelotype on a BAM file not created by lobSTR\n"
     "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n\n" \
     "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
   cerr << help;
@@ -146,7 +145,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_COMMAND,
     OPT_DEBUG,
     OPT_DONT_INCLUDE_FLANK,
-    OPT_FOREIGNBAM,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_GL,
@@ -181,7 +179,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
-    {"foreignbam", 0, 0, OPT_FOREIGNBAM},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
     {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
@@ -238,10 +235,6 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_DEBUG:
       debug = true;
-      break;
-    case OPT_FOREIGNBAM:
-      foreignbam = true;
-      AddOption("foreignbam", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);

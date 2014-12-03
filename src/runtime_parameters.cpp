@@ -98,7 +98,6 @@ bool rmdup = true;
 bool include_flank = true;
 bool include_gl = false;
 bool print_reads = false;
-bool foreignbam = false;
 float min_het_freq = 0;
 int max_matedist = 100000;
 int maximal_end_match_window = 15;

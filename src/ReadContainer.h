@@ -78,7 +78,7 @@ class ReadContainer {
  protected:
   /* Parse BamAlignment into AlignedRead */
   bool ParseRead(const BamTools::BamAlignment& aln,
-		 AlignedRead* aligned_read,
+		 vector<AlignedRead>* aligned_reads,
 		 const vector<ReferenceSTR>& ref_str_chunk,
 		 map<pair<string,int>, string>& ref_ext_nucleotides);
  private:
@@ -90,6 +90,10 @@ class ReadContainer {
 		       const std::string& tag_name, std::string* destination);
   bool GetFloatBamTag(const BamTools::BamAlignment& aln,
 		      const std::string& tag_name, float* destination);
+
+  /* Get CIGAR list for a read */
+  bool GetCigarList(const AlignedRead& aligned_read,
+		    CIGAR_LIST* cigar_list);
 
   /* Adjust diff from ref based on cigar */
   int GetSTRAllele(const CIGAR_LIST& cigar_list);

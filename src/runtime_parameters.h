@@ -122,7 +122,6 @@ extern bool rmdup;
 extern bool include_flank;
 extern bool include_gl;
 extern bool print_reads;
-extern bool foreignbam;
 extern float min_het_freq;
 extern int min_border;
 extern int min_bp_before_indel;
