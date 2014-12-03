@@ -25,6 +25,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <list>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -114,7 +115,7 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
     vector<AlignedRead> aligned_reads;
     ParseRead(aln, &aligned_reads, ref_str_chunk, ref_ext_nucleotides);
     for (vector<AlignedRead>::const_iterator it = aligned_reads.begin();
-	 it != aligned_reads.end(); it ++) {
+	 it != aligned_reads.end(); it++) {
       const AlignedRead& aligned_read = *it;
       // Add to map
       pair<string, int> coord
@@ -138,6 +139,8 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
 			      map<pair<string,int>, string>& ref_ext_nucleotides) {
   // Dummy aligned read to set fields common to all
   AlignedRead dummy_aligned_read;
+  // Keep track of STRs already covered so don't add twice (for annotated markers with two listings
+  set<int> str_starts;
   // *** First check bam flags *** //
   if (!aln.IsMapped()) {
     return false;
@@ -206,11 +209,6 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   }
   int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) + GetSTRAllele(cigar_list);
   // *** Determine which reference STRs overlapped by this read *** //
-  // TODO here:
-  //  * More correct way to GetSTRAllele (right now gets all differences for the whole read. Obviously not correct for long reads)
-  //  * Figure out best way to deal with filters, since now could have multiple per read?
-  //  * More efficient way to iterate over possible spanned STRs
-  //  * Update unit tests to reflect new function calls
   for (size_t i = 0; i < ref_str_chunk.size(); i++) {
     const ReferenceSTR ref_str = ref_str_chunk.at(i);
     if (ref_str.start > read_start && ref_str.start < read_end &&
@@ -225,7 +223,11 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       // get ref copy num
       aligned_read.refCopyNum = static_cast<float>(ref_str.stop - ref_str.start + 1)/static_cast<float>(ref_str.motif.size());
       // get allele
-      aligned_read.diffFromRef = GetSTRAllele(cigar_list);
+      CIGAR_LIST str_cigar_list;
+      if (!ExtractCigar(cigar_list, aln.Position, ref_str.start, ref_str.stop, &str_cigar_list)) {
+	continue;
+      }
+      aligned_read.diffFromRef = GetSTRAllele(str_cigar_list);
       // get period
       aligned_read.period = aligned_read.repseq.length(); 
       // apply filters
@@ -251,7 +253,10 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
 	filter_counter.increment(FilterCounter::SPANNING_AMOUNT);
 	continue;
       }
-      aligned_reads->push_back(aligned_read);
+      if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
+	aligned_reads->push_back(aligned_read);
+	str_starts.insert(aligned_read.msStart);
+      }
     }
   }
   if (aligned_reads->size() == 0) {
@@ -285,7 +290,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (loc_iter == ref_ext_nucleotides.end()) {
       stringstream msg;
       msg << "No extended reference sequence found for locus " << aligned_reads->at(0).chrom << ":"
-	  <<aligned_reads->at(0).msStart << " read " << aligned_reads->at(0).ID;
+	  << aligned_reads->at(0).msStart << " read " << aligned_reads->at(0).ID;
       PrintMessageDieOnError(msg.str(), WARNING);
       return false;
     }
@@ -296,8 +301,10 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       return false;
     }
   }
-
-  filter_counter.increment(FilterCounter::UNFILTERED);
+  
+  if (aligned_reads->size() > 0) {
+    filter_counter.increment(FilterCounter::UNFILTERED);
+  }
   return true;
 }
 

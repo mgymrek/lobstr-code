@@ -37,7 +37,6 @@ public CppUnit::TestFixture {
   void setUp();
   void tearDown();
   void test_AddReadsFromFile();
-  void test_ParseRead();
   void test_GetBamTags();
   void test_GetReadsAtCoord();
   void test_GetSTRAllele();

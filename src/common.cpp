@@ -403,6 +403,83 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
   }
 }
 
+bool ExtractCigar(const CIGAR_LIST& cigar_list, const int& cigar_start,
+		  const int& region_start, const int& region_end,
+		  CIGAR_LIST* cigar_subset) {
+  int pos = cigar_start; // beginning position of current cigar item
+  size_t cigar_start_index = 0; // position in cigar string where region starts
+  size_t last_match_index = 0; // position of last 'M' cigar
+  int bp = 0;
+  char cigar_type; // type of the cigar item
+
+  // *** Determine cigar end *** //
+  int cigar_region_length = 0;
+  for (size_t i = 0; i < cigar_list.cigars.size(); i++) {
+    bp = cigar_list.cigars.at(i).num;
+    cigar_type = cigar_list.cigars.at(i).cigar_type;
+    if (cigar_type == 'M' || cigar_type == '=' || cigar_type == 'X' || cigar_type == 'D') {
+      cigar_region_length += bp;
+    }
+  }
+
+  // *** Checks for boundaries *** //
+  if (cigar_start < 0) { return false; }
+  if (region_start < cigar_start || region_start >= cigar_start+cigar_region_length) { return false; }
+  if (region_end < cigar_start || region_end >= cigar_start+cigar_region_length) { return false; }
+  if (region_end < region_start) { return false; }
+
+  // *** Set start index *** //
+  while (pos < region_start && cigar_start_index < cigar_list.cigars.size()) {
+    bp = cigar_list.cigars.at(cigar_start_index).num;
+    cigar_type = cigar_list.cigars.at(cigar_start_index).cigar_type;
+    // If match or del, increment position. All other CIGAR strings (I, P, H, S, N) don't increment
+    if (cigar_type == 'M' || cigar_type == '=' || cigar_type == 'X' || cigar_type == 'D') {
+      pos += bp;
+    }
+    if (cigar_type == 'M' || cigar_type == '=' || cigar_type == 'X') {
+      last_match_index = cigar_start_index;
+    }
+    cigar_start_index += 1;
+  }
+  cigar_start_index = last_match_index;
+  if (cigar_start_index == 0 && !(cigar_list.cigars.at(cigar_start_index).cigar_type == 'M' ||
+				  cigar_list.cigars.at(cigar_start_index).cigar_type == '=' ||
+				  cigar_list.cigars.at(cigar_start_index).cigar_type == 'X')) {
+    // No match at the left enpd
+    return false;
+  }
+  // *** Set end index *** //
+  size_t cigar_end_index = cigar_list.cigars.size() - 1;
+  last_match_index = cigar_list.cigars.size() - 1;
+  pos = cigar_start + cigar_region_length;
+  while (pos > region_end) {
+    bp = cigar_list.cigars.at(cigar_end_index).num;
+    cigar_type = cigar_list.cigars.at(cigar_end_index).cigar_type;
+    // If match or del, decrement position. All other CIGAR strings (I, P, H, S, N) don't decrement
+    if (cigar_type == 'M' || cigar_type == '=' || cigar_type == 'X' || cigar_type == 'D') {
+      pos -= bp;
+    }
+    if (cigar_type == 'M' || cigar_type == '=' || cigar_type == 'X') {
+      last_match_index = cigar_end_index;
+    }
+    if (cigar_end_index == 0) { break;}
+    cigar_end_index -= 1;
+  }
+  cigar_end_index = last_match_index;
+  if (cigar_end_index == cigar_list.cigars.size()-1 && !(cigar_list.cigars.at(cigar_end_index).cigar_type == 'M' ||
+							 cigar_list.cigars.at(cigar_end_index).cigar_type == '=' ||
+							 cigar_list.cigars.at(cigar_end_index).cigar_type == 'X')) {
+    // No match at the right end
+    return false;
+  }
+  cigar_subset->cigars.clear();
+  for (size_t i = cigar_start_index; i <= cigar_end_index; i++) {
+    cigar_subset->cigars.push_back(cigar_list.cigars.at(i));
+  }
+  cigar_subset->ResetString();
+  return true;
+}
+
 std::string currentDateTime() {
   time_t now = time(0);
   struct tm tstruct;

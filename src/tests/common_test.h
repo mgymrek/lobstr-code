@@ -31,6 +31,7 @@ public CppUnit::TestFixture {
   CPPUNIT_TEST(test_TrimRead);
   CPPUNIT_TEST(test_reverseComplement);
   CPPUNIT_TEST(test_reverse);
+  CPPUNIT_TEST(test_ExtractCigar);
   CPPUNIT_TEST_SUITE_END();
 
  public:
@@ -41,6 +42,7 @@ public CppUnit::TestFixture {
   void test_CheckRepeatCount();
   void test_reverseComplement();
   void test_reverse();
+  void test_ExtractCigar();
 };
 
 #endif //  SRC_TESTS_COMMON_TEST_H__

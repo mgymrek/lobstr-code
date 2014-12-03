@@ -196,7 +196,7 @@ namespace AlignmentUtils {
     }
     return true;
   }
-  
+
   bool GetSTRAllele(MSReadRecord* aligned_read,
 		    const CIGAR_LIST& cigar_list) {
     if (align_debug) {
