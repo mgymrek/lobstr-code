@@ -183,6 +183,12 @@ float Genotyper::CalcLogLik(int a, int b,
       GetTransitionProb(a, diff, period, length, gc, score);
     float y = noise_model->
       GetTransitionProb(b, diff, period, length, gc, score);
+    if (debug) {
+      stringstream msg;
+      msg << it->ID << ": " << it->diffFromRef << " x,y: " << x << "," << y << "("
+	  << a << "/" << b << ")";
+      PrintMessageDieOnError(msg.str(), DEBUG);
+    }
     float toadd = (1-err)*(x*(s)+y*(1-s)) + err;
     loglik += log10(toadd + SMALL_CONST);
   }

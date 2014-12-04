@@ -41,6 +41,7 @@ const float MIN_TRAIN_AGREE = 0.5;
 const float SMALL_CONST = 1e-4;
 const size_t MIN_READS_FOR_TRAINING = 1000;
 const size_t NUM_PARAMS = 5;
+const float MAX_MUT_PROB = 0.25;
 
 using namespace std;
 
@@ -399,6 +400,9 @@ float NoiseModel::GetTransitionProb(int a, int b,
   x.at(2) = gc;
   x.at(3) = score;
   float mutProb = logistic_regression_predict(x, stutter_prob_model);
+  if (mutProb > MAX_MUT_PROB) {
+    mutProb = MAX_MUT_PROB;
+  }
   float lik;
   if (a == b) {
     lik = (1-mutProb);

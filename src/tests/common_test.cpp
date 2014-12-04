@@ -179,4 +179,19 @@ void CommonTest::test_ExtractCigar() {
   CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, 0, 100, 250, &str_cigar_list))); // invalid region end
   CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, -1, 100, 250, &str_cigar_list))); // invalid cigar start
   CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, 0, 100, 50, &str_cigar_list))); // start < end
+
+  // Additional test cases 222M4I70M
+  cigar_list.cigars.clear();
+  cig.num = 222;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 4;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 70;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  expected_cigar_string = "222M4I70M";
+  ExtractCigar(cigar_list, 18392754, 18392976, 18393035, &str_cigar_list);
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
 }

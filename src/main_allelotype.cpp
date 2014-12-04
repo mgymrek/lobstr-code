@@ -539,6 +539,11 @@ int main(int argc, char* argv[]) {
 	  // Check that we don't process the same locus twice
 	  if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {
 	    pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
+	    if (debug) {
+	      stringstream msg;
+	      msg << "Processing " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
+	      PrintMessageDieOnError(msg.str(), DEBUG);
+	    }
 	    list<AlignedRead> aligned_reads;
 	    str_container.GetReadsAtCoord(coord, &aligned_reads);
 	    if (aligned_reads.size() > 0) {

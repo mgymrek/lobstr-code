@@ -38,6 +38,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 const int MIN_ALLELE_SIZE = 0;
+const int CIGAR_BUFFER = 5;
 
 ReadContainer::ReadContainer(vector<std::string> filenames) {
   string bamfile;
@@ -224,7 +225,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       aligned_read.refCopyNum = static_cast<float>(ref_str.stop - ref_str.start + 1)/static_cast<float>(ref_str.motif.size());
       // get allele
       CIGAR_LIST str_cigar_list;
-      if (!ExtractCigar(cigar_list, aln.Position, ref_str.start, ref_str.stop, &str_cigar_list)) {
+      if (!ExtractCigar(cigar_list, aln.Position+1, ref_str.start-CIGAR_BUFFER, ref_str.stop+CIGAR_BUFFER, &str_cigar_list)) {
 	continue;
       }
       aligned_read.diffFromRef = GetSTRAllele(str_cigar_list);
