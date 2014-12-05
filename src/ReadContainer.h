@@ -30,6 +30,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/AlignedRead.h"
 #include "src/cigar.h"
+#include "src/STRIntervalTree.h"
 #include "src/ReferenceSTR.h"
 #include "src/api/BamReader.h"
 #include "src/api/BamMultiReader.h"
@@ -102,6 +103,9 @@ class ReadContainer {
   BamTools::BamMultiReader reader;
   BamTools::RefVector references;
   map<std::string, int> chrom_to_refid;
+
+  /* IntervalTree */
+  STRIntervalTree itree;
 };
 
 #endif  // SRC_READCONTAINER_H_

@@ -120,15 +120,15 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
       const AlignedRead& aligned_read = *it;
       // Add to map
       pair<string, int> coord
-	(aligned_read.chrom, aligned_read.msStart);
+        (aligned_read.chrom, aligned_read.msStart);
       if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
-	aligned_str_map_.at(coord).push_back(aligned_read);
+        aligned_str_map_.at(coord).push_back(aligned_read);
       } 
       else {
-	list<AlignedRead> aligned_read_list;
-	aligned_read_list.push_back(aligned_read);
-	aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
-				(coord, aligned_read_list));
+        list<AlignedRead> aligned_read_list;
+        aligned_read_list.push_back(aligned_read);
+        aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
+                                (coord, aligned_read_list));
       } 
     }
   }
@@ -210,56 +210,57 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   }
   int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) + GetSTRAllele(cigar_list);
   // *** Determine which reference STRs overlapped by this read *** //
-  for (size_t i = 0; i < ref_str_chunk.size(); i++) {
-    const ReferenceSTR ref_str = ref_str_chunk.at(i);
-    if (ref_str.start > read_start && ref_str.start < read_end &&
-	ref_str.stop > read_start && ref_str.stop < read_end) {
-      AlignedRead aligned_read = dummy_aligned_read; // copy what's in dummy_aligned_read
-      // get msStart
-      aligned_read.msStart = ref_str.start;
-      // get msEndpp
-      aligned_read.msEnd = ref_str.stop;
-      // get STR seq
-      aligned_read.repseq = ref_str.motif;
-      // get ref copy num
-      aligned_read.refCopyNum = static_cast<float>(ref_str.stop - ref_str.start + 1)/static_cast<float>(ref_str.motif.size());
-      // get allele
-      CIGAR_LIST str_cigar_list;
-      if (!ExtractCigar(cigar_list, aln.Position+1, ref_str.start-CIGAR_BUFFER, ref_str.stop+CIGAR_BUFFER, &str_cigar_list)) {
-	continue;
-      }
-      aligned_read.diffFromRef = GetSTRAllele(str_cigar_list);
-      // get period
-      aligned_read.period = aligned_read.repseq.length(); 
-      // apply filters
-      if (unit) {
-	if (aligned_read.diffFromRef % aligned_read.period != 0){ 
-	  filter_counter.increment(FilterCounter::NOT_UNIT);
-	  continue;
-	}
-      }
-      if (abs(aligned_read.diffFromRef) > max_diff_ref) {
-	filter_counter.increment(FilterCounter::DIFF_FROM_REF);
-	continue;
-      }
-      // Check if the allele length is valid
-      if (aligned_read.diffFromRef + (aligned_read.refCopyNum*aligned_read.period) < MIN_ALLELE_SIZE) {
-	filter_counter.increment(FilterCounter::ALLELE_SIZE);
-	continue;
-      }
-      // check that read sufficiently spans STR
-      int max_read_start = aligned_read.msStart - min_border;
-      int min_read_stop  = aligned_read.msEnd   + min_border;
-      if (aln.Position > max_read_start || aln.GetEndPosition() < min_read_stop){
-	filter_counter.increment(FilterCounter::SPANNING_AMOUNT);
-	continue;
-      }
-      if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
-	aligned_reads->push_back(aligned_read);
-	str_starts.insert(aligned_read.msStart);
+  vector<ReferenceSTR> spanned_strs;
+  itree.LoadIntervals(ref_str_chunk);
+  itree.GetSpannedIntervals(read_start, read_end, &spanned_strs);
+  for (size_t i = 0; i < spanned_strs.size(); i++) {
+    const ReferenceSTR ref_str = spanned_strs.at(i);
+    AlignedRead aligned_read = dummy_aligned_read; // copy what's in dummy_aligned_read
+    // get msStart
+    aligned_read.msStart = ref_str.start;
+    // get msEndpp
+    aligned_read.msEnd = ref_str.stop;
+    // get STR seq
+    aligned_read.repseq = ref_str.motif;
+    // get ref copy num
+    aligned_read.refCopyNum = static_cast<float>(ref_str.stop - ref_str.start + 1)/static_cast<float>(ref_str.motif.size());
+    // get allele
+    CIGAR_LIST str_cigar_list;
+    if (!ExtractCigar(cigar_list, aln.Position+1, ref_str.start-CIGAR_BUFFER, ref_str.stop+CIGAR_BUFFER, &str_cigar_list)) {
+      continue;
+    }
+    aligned_read.diffFromRef = GetSTRAllele(str_cigar_list);
+    // get period
+    aligned_read.period = aligned_read.repseq.length(); 
+    // apply filters
+    if (unit) {
+      if (aligned_read.diffFromRef % aligned_read.period != 0){ 
+        filter_counter.increment(FilterCounter::NOT_UNIT);
+        continue;
       }
     }
+    if (abs(aligned_read.diffFromRef) > max_diff_ref) {
+      filter_counter.increment(FilterCounter::DIFF_FROM_REF);
+      continue;
+    }
+    // Check if the allele length is valid
+    if (aligned_read.diffFromRef + (aligned_read.refCopyNum*aligned_read.period) < MIN_ALLELE_SIZE) {
+      filter_counter.increment(FilterCounter::ALLELE_SIZE);
+      continue;
+    }
+    // check that read sufficiently spans STR
+    int max_read_start = aligned_read.msStart - min_border;
+    int min_read_stop  = aligned_read.msEnd   + min_border;
+    if (aln.Position > max_read_start || aln.GetEndPosition() < min_read_stop){
+      filter_counter.increment(FilterCounter::SPANNING_AMOUNT);
+      continue;
+    }
+    if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
+      aligned_reads->push_back(aligned_read);
+      str_starts.insert(aligned_read.msStart);
+    }
   }
+
   if (aligned_reads->size() == 0) {
     return false;
   }

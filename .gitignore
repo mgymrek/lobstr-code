@@ -89,3 +89,6 @@ lobstr-cov/*
 # Jekyll files
 Gemfile.lock
 _site/*
+
+# Special readmes for specific setups
+readme_broad.txt
