@@ -211,6 +211,11 @@ void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) 
     msg << "Too few reads for training (" << reads_for_training.size() << ")";
     PrintMessageDieOnError(msg.str(), ERROR);
   }
+  if (debug) {
+    stringstream msg;
+    msg << "Training on " << reads_for_training.size() << " reads";
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   // Set up data for logistic regression
   size_t numreads = reads_for_training.size();
   vector<bool> y;
@@ -228,12 +233,17 @@ void NoiseModel::FitMutationProb(const vector<AlignedRead>& reads_for_training) 
     xx.at(2) = strInfo.at(coord).gc;
     xx.at(3) = strInfo.at(coord).score;
     x.at(i) = xx;
+    if (debug) {
+      stringstream msg;
+      msg << "Adding training point " << xx.at(0) << " " << xx.at(1) << " " << xx.at(2) << " " << xx.at(3) << " " << y.at(i);
+      PrintMessageDieOnError(msg.str(), DEBUG);
+    }
   }
   // Run logistic regression
   vector<double> coeffs;
   coeffs.resize(NUM_PARAMS);
   if (logistic_regression(y, x, y.size(), 4,
-			  0.001, 1e-5, 1e-5, 1000, &coeffs) != 0) {
+			  0.001, 1e-5, 1e-5, 10000, &coeffs) != 0) {
     PrintMessageDieOnError("Logistic regression failed", ERROR);
   }
   // Write output file (for now match old format to keep compatbility)

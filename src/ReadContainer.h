@@ -80,6 +80,7 @@ class ReadContainer {
   /* Parse BamAlignment into AlignedRead */
   bool ParseRead(const BamTools::BamAlignment& aln,
 		 vector<AlignedRead>* aligned_reads,
+		 STRIntervalTree& itree,
 		 const vector<ReferenceSTR>& ref_str_chunk,
 		 map<pair<string,int>, string>& ref_ext_nucleotides);
  private:
@@ -103,9 +104,6 @@ class ReadContainer {
   BamTools::BamMultiReader reader;
   BamTools::RefVector references;
   map<std::string, int> chrom_to_refid;
-
-  /* IntervalTree */
-  STRIntervalTree itree;
 };
 
 #endif  // SRC_READCONTAINER_H_

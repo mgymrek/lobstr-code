@@ -109,12 +109,14 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
     }
   }
   BamTools::BamAlignment aln;
+  STRIntervalTree itree;
+  itree.LoadIntervals(ref_str_chunk);
   while (reader.GetNextAlignment(aln)) {
     if (chroms_to_include.size() > 0 && find(chroms_to_include.begin(), chroms_to_include.end(), references.at(aln.RefID).RefName) == chroms_to_include.end()) {
       continue;
     }
     vector<AlignedRead> aligned_reads;
-    ParseRead(aln, &aligned_reads, ref_str_chunk, ref_ext_nucleotides);
+    ParseRead(aln, &aligned_reads, itree, ref_str_chunk, ref_ext_nucleotides);
     for (vector<AlignedRead>::const_iterator it = aligned_reads.begin();
 	 it != aligned_reads.end(); it++) {
       const AlignedRead& aligned_read = *it;
@@ -136,6 +138,7 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
 
 bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
 			      vector<AlignedRead>* aligned_reads,
+			      STRIntervalTree& itree,
 			      const vector<ReferenceSTR>& ref_str_chunk,
 			      map<pair<string,int>, string>& ref_ext_nucleotides) {
   // Dummy aligned read to set fields common to all
@@ -208,17 +211,16 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   if (!GetCigarList(dummy_aligned_read, &cigar_list)) {
     return false;
   }
-  int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) + GetSTRAllele(cigar_list);
+  int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) - GetSTRAllele(cigar_list);
   // *** Determine which reference STRs overlapped by this read *** //
   vector<ReferenceSTR> spanned_strs;
-  itree.LoadIntervals(ref_str_chunk);
   itree.GetSpannedIntervals(read_start, read_end, &spanned_strs);
   for (size_t i = 0; i < spanned_strs.size(); i++) {
     const ReferenceSTR ref_str = spanned_strs.at(i);
     AlignedRead aligned_read = dummy_aligned_read; // copy what's in dummy_aligned_read
     // get msStart
     aligned_read.msStart = ref_str.start;
-    // get msEndpp
+    // get msEnd
     aligned_read.msEnd = ref_str.stop;
     // get STR seq
     aligned_read.repseq = ref_str.motif;
@@ -260,7 +262,6 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       str_starts.insert(aligned_read.msStart);
     }
   }
-
   if (aligned_reads->size() == 0) {
     return false;
   }

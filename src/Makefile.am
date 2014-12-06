@@ -276,6 +276,7 @@ lobSTRTests_SOURCES = \
 	FastqPairedFileReader.cpp \
 	FilterCounter.h FilterCounter.cpp \
 	gzstream.cpp \
+	STRIntervalTree.cpp STRIntervalTree.h IntervalTreeCore.h \
 	logistic_regression.cpp \
 	MultithreadData.cpp \
 	xsemaphore.h \
