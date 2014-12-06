@@ -11,6 +11,8 @@
 	<ul>
 	  <li><a href="#binary">Installation from precompiled binaries</a></li>
 	  <li><a href="#source">Installation from source</a></li>
+	  <li><a href="#osx">Installation on Mac OSX</a></li>
+	  <li><a href="#testinstall">Testing that lobSTR was installed correctly</a></li>
 	  <li><a href="#req">Requirements</a></li>
 	</ul>
 	<a name="binary"></a>
@@ -42,6 +44,20 @@ sudo make install
 	</p>
 	<p>
 	For usage instructions see&nbsp;<a href="usage.html">usage</a>.
+	</p>
+	<a name="osx"></a>
+	<h2>Installation on Mac OSX</h2>
+	<p>
+	You can install the latest lobSTR release using <a href="http://brew.sh/">Homebrew</a>. First make sure homebrew is installed, then run:
+	{% highlight bash %}
+brew tap homebrew/science
+brew install lobstr
+	{% endhighlight %}
+	</p>
+	<a name="testinstall"></a>
+	<h2>Testing that lobSTR was installed correctly</h2>
+	<p>
+	To test that your lobSTR installation is working, you can run the provided test script installed to <code>$PREFIX/share/lobSTR/scripts/lobSTR_test_run.sh</code>. $PREFIX is by default <code>/usr/local/</code>. If this runs without errors, lobSTR was installed successfully.
 	</p>
 	<a name="req"></a>
 	<h2>Requirements</h2>
