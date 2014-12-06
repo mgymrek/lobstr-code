@@ -116,7 +116,7 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
       continue;
     }
     vector<AlignedRead> aligned_reads;
-    ParseRead(aln, &aligned_reads, itree, ref_str_chunk, ref_ext_nucleotides);
+    ParseRead(aln, &aligned_reads, itree, ref_ext_nucleotides);
     for (vector<AlignedRead>::const_iterator it = aligned_reads.begin();
 	 it != aligned_reads.end(); it++) {
       const AlignedRead& aligned_read = *it;
@@ -139,7 +139,6 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
 bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
 			      vector<AlignedRead>* aligned_reads,
 			      STRIntervalTree& itree,
-			      const vector<ReferenceSTR>& ref_str_chunk,
 			      map<pair<string,int>, string>& ref_ext_nucleotides) {
   // Dummy aligned read to set fields common to all
   AlignedRead dummy_aligned_read;

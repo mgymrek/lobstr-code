@@ -81,7 +81,6 @@ class ReadContainer {
   bool ParseRead(const BamTools::BamAlignment& aln,
 		 vector<AlignedRead>* aligned_reads,
 		 STRIntervalTree& itree,
-		 const vector<ReferenceSTR>& ref_str_chunk,
 		 map<pair<string,int>, string>& ref_ext_nucleotides);
  private:
 
