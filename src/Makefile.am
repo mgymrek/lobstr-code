@@ -191,6 +191,7 @@ liballelotype_a_SOURCES = \
 	FilterCounter.cpp FilterCounter.h \
 	Genotyper.cpp Genotyper.h \
 	gzstream.cpp gzstream.h \
+	STRIntervalTree.cpp STRIntervalTree.h IntervalTreeCore.h \
 	logistic_regression.cpp logistic_regression.h \
 	NoiseModel.cpp NoiseModel.h \
 	ReadContainer.cpp ReadContainer.h \
@@ -275,6 +276,7 @@ lobSTRTests_SOURCES = \
 	FastqPairedFileReader.cpp \
 	FilterCounter.h FilterCounter.cpp \
 	gzstream.cpp \
+	STRIntervalTree.cpp STRIntervalTree.h IntervalTreeCore.h \
 	logistic_regression.cpp \
 	MultithreadData.cpp \
 	xsemaphore.h \

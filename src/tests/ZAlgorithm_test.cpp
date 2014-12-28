@@ -47,7 +47,9 @@ void ZAlgorithmTest::test_Prefix(){
     for (size_t j = s2_start; j <= s2_stop; j++){
       bool match  = (s1.substr(0, (size_t)num_matches[j-s2_start]).compare(s2.substr(j, (size_t)num_matches[j-s2_start])) == 0);
       bool longer = (s1.size() > (size_t)num_matches[j-s2_start] && s2.size() > (j + (size_t)num_matches[j-s2_start]) && s2[j+(size_t)num_matches[j-s2_start]] == s1[(size_t)num_matches[j-s2_start]]);
-      CPPUNIT_ASSERT_MESSAGE("ZAlgorithm prefix error", !(!match || (match && longer)));
+      stringstream msg;
+      msg << "ZAlgorithm suffix error: s1 " << s1 << " s2 " << s2 << " num_matches " << num_matches[j] << " j " << j;
+      CPPUNIT_ASSERT_MESSAGE(msg.str(), !(!match || (match && longer)));
     }
   }
 }
@@ -67,7 +69,9 @@ void ZAlgorithmTest::test_Suffix(){
       string sub_2 = s2.substr(j-(size_t)num_matches[j-s2_start]+1, (size_t)num_matches[j-s2_start]);
       bool match   = (sub_1.compare(sub_2) == 0);
       bool longer  = ((j-(size_t)num_matches[j-s2_start]) > 0 && (s1.size()-(size_t)num_matches[j-s2_start]) > 0 && s1[s1.size()-(size_t)num_matches[j-s2_start]-1] == s2[j-(size_t)num_matches[j-s2_start]]);
-      CPPUNIT_ASSERT_MESSAGE("ZAlgorithm suffix error", !(!match || (match && longer)));
+      stringstream msg;
+      msg << "ZAlgorithm suffix error: s1 " << s1 << " s2 " << s2 << " num_matches " << num_matches[j] << " j " << j;
+      CPPUNIT_ASSERT_MESSAGE(msg.str(), !(!match || (match && longer)));
     }
   }
 }

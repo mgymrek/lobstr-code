@@ -130,6 +130,11 @@ void GenerateCorrectCigar(CIGAR_LIST* cigar_list,
                           bool* added_s,
                           bool* cigar_had_s);
 
+// Extract portion of CIGAR corresponding to a certain region
+bool ExtractCigar(const CIGAR_LIST& cigar_list, const int& cigar_start,
+		  const int& region_start, const int& region_end,
+		  CIGAR_LIST* cigar_subset);
+
 // Generate the date in YYMMDD
 std::string currentDateTime();
 

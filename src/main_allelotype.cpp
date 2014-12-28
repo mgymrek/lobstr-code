@@ -96,8 +96,6 @@ void show_help() {
     "                                that should be forced to have homozygous\n" \
     "                                calls. Specify --haploid all if the organism\n" \
     "                                is haploid. Will be applied to all samples.\n" \
-    "--dont-include-flank:           Dont include indels in flanking regions when\n" \
-    "                                determining length of the STR allele.\n" \
     "-h,--help:                      display this message\n" \
     "-v,--verbose:                   print out helpful progress messages\n" \
     "--quiet                         don't print anything to stderr or stdout\n" \
@@ -144,7 +142,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHUNKSIZE,
     OPT_COMMAND,
     OPT_DEBUG,
-    OPT_DONT_INCLUDE_FLANK,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_GL,
@@ -181,7 +178,6 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"debug", 0, 0, OPT_DEBUG},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 1, 0, OPT_HELP},
-    {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
     {"index-prefix", 1, 0, OPT_INDEX},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
@@ -238,16 +234,12 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);
-      AddOption("haploid",string(optarg), true, &user_defined_arguments_allelotyper);
+      AddOption("haploid", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case 'h':
     case OPT_HELP:
       show_help();
       exit(1);
-      break;
-    case OPT_DONT_INCLUDE_FLANK:
-      include_flank = false;
-      AddOption("dont-include-flank", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_INCLUDE_GL:
       include_gl = true;
@@ -480,11 +472,24 @@ int main(int argc, char* argv[]) {
   boost::split(bam_files, bam_files_string, boost::is_any_of(","));
 
   /* Train/classify */
+  ReferenceSTRContainer ref_str_container(reference_strs);
   if (command == "train") {
     ReadContainer read_container(bam_files);
     ReferenceSTR dummy_ref_str;
+    vector<ReferenceSTR> haploid_str_chunk;
+    for (size_t i = 0; i < haploid_chroms.size(); i++) {
+      if (!ref_str_container.GetChromChunk(&haploid_str_chunk, haploid_chroms.at(i))) {
+	stringstream msg;
+	msg << "No reference STRs found for haploid chromosome " << haploid_chroms.at(i);
+	PrintMessageDieOnError(msg.str(), WARNING);
+      }
+    }
+    if (haploid_str_chunk.size() == 0) {
+      PrintMessageDieOnError("No haploid loci found for training", ERROR);
+    }
     dummy_ref_str.chrom = "NA"; dummy_ref_str.start = -1; dummy_ref_str.stop = -1;
-    read_container.AddReadsFromFile(dummy_ref_str, ref_ext_nucleotides, haploid_chroms);
+    read_container.AddReadsFromFile(dummy_ref_str, haploid_str_chunk,
+				    ref_ext_nucleotides, haploid_chroms);
     if (my_verbose) PrintMessageDieOnError("Training noise model", PROGRESS);
     nm.Train(&read_container);
   } 
@@ -510,7 +515,6 @@ int main(int argc, char* argv[]) {
     // Classify allelotypes
     if (my_verbose) PrintMessageDieOnError("Classifying allelotypes", PROGRESS);
     std::string current_chrom;
-    ReferenceSTRContainer ref_str_container(reference_strs);
     // Read one chunk of refs at a time
     vector<ReferenceSTR> ref_str_chunk;
     string chrom; int begin, end;
@@ -521,11 +525,17 @@ int main(int argc, char* argv[]) {
       ref_region.start = begin;
       ref_region.stop = end;
       if (use_chrom.empty() || (use_chrom == chrom)) {
-	str_container.AddReadsFromFile(ref_region, ref_ext_nucleotides, vector<string>(0));
+	str_container.AddReadsFromFile(ref_region, ref_str_chunk,
+				       ref_ext_nucleotides, vector<string>(0));
 	for (size_t i = 0; i < ref_str_chunk.size(); i++) {
 	  // Check that we don't process the same locus twice
 	  if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {
 	    pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
+	    if (debug) {
+	      stringstream msg;
+	      msg << "Processing " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
+	      PrintMessageDieOnError(msg.str(), DEBUG);
+	    }
 	    list<AlignedRead> aligned_reads;
 	    str_container.GetReadsAtCoord(coord, &aligned_reads);
 	    if (aligned_reads.size() > 0) {

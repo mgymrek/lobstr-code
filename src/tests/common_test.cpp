@@ -78,3 +78,120 @@ void CommonTest::test_reverse() {
   std::string rev = reverse(quals);
   CPPUNIT_ASSERT_MESSAGE("Incorrect reverse", rev == "cffeadaddaddffdfcffdcdfecbff");
 }
+
+void CommonTest::test_ExtractCigar() {
+  // Simple cigar: 50M5D50M. Test STR overlapping the deletion, on one end, or ending at boundary
+  CIGAR_LIST cigar_list, str_cigar_list;
+  cigar_list.cigars.clear();
+  CIGAR cig;
+  cig.num = 50;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 5;
+  cig.cigar_type = 'D';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 50;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cigar_list.ResetString();
+  ExtractCigar(cigar_list, 0, 40, 60, &str_cigar_list); // overlapping deletion
+  std::string expected_cigar_string = "50M5D50M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 10, 20, &str_cigar_list);
+  expected_cigar_string = "50M"; // left flank
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 70, 80, &str_cigar_list);
+  expected_cigar_string = "50M"; // right flank
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 50, 60, &str_cigar_list); // boundary
+  expected_cigar_string = "50M5D50M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 100, 150, 160, &str_cigar_list); // non-zero start coord
+  expected_cigar_string = "50M5D50M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  
+  // Two different indels: 50M2I60M5I90M
+  cigar_list.cigars.clear();
+  cig.num = 50;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 2;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 60;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 5;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 90;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cigar_list.ResetString();
+  ExtractCigar(cigar_list, 0, 30, 60, &str_cigar_list); // overlapping first insertion
+  expected_cigar_string = "50M2I60M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 100, 130, &str_cigar_list); // overlapping second insertion
+  expected_cigar_string = "60M5I90M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 150, 190, &str_cigar_list); // all in right flank
+  expected_cigar_string = "90M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 30, 190, &str_cigar_list); // overlapping both
+  expected_cigar_string = "50M2I60M5I90M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 110, 190, &str_cigar_list); // boundary
+  expected_cigar_string = "60M5I90M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+  ExtractCigar(cigar_list, 0, 30, 50, &str_cigar_list); // other boundary
+  expected_cigar_string = "50M2I60M";
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+
+  // Two different indels with indels at the ends 2I50M2I60M5I90M2I
+  cigar_list.cigars.clear();
+  cig.num = 2;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 50;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 2;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 60;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 5;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 90;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cigar_list.ResetString();
+  cig.num = 2;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, 0, 80, 200, &str_cigar_list))); // boundary with indel at end
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, 0, 0, 50, &str_cigar_list))); // boundary with indel at end
+
+  // Test invalid entries
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, 0, -1, 200, &str_cigar_list))); // invalid region start
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, 0, 100, 250, &str_cigar_list))); // invalid region end
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, -1, 100, 250, &str_cigar_list))); // invalid cigar start
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", !(ExtractCigar(cigar_list, 0, 100, 50, &str_cigar_list))); // start < end
+
+  // Additional test cases 222M4I70M
+  cigar_list.cigars.clear();
+  cig.num = 222;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 4;
+  cig.cigar_type = 'I';
+  cigar_list.cigars.push_back(cig);
+  cig.num = 70;
+  cig.cigar_type = 'M';
+  cigar_list.cigars.push_back(cig);
+  expected_cigar_string = "222M4I70M";
+  ExtractCigar(cigar_list, 18392754, 18392976, 18393035, &str_cigar_list);
+  CPPUNIT_ASSERT_MESSAGE("ExtractCigar failed", str_cigar_list.cigar_string == expected_cigar_string);
+}

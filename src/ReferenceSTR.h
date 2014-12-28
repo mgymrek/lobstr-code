@@ -44,6 +44,9 @@ class ReferenceSTRContainer {
   /* Get a chunk of reference STRs to process and the range they span */
   bool GetNextChunk(vector<ReferenceSTR>* ref_str_chunk, std::string* chrom, int* begin, int* end);
 
+  /* Add all reference STRs from a certain chromosome to a vector */
+  bool GetChromChunk(vector<ReferenceSTR>* chrom_chunk, const std::string& chrom);
+
   vector<ReferenceSTR> ref_strs;
   size_t counter;
   size_t num_refs;

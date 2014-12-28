@@ -30,6 +30,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/AlignedRead.h"
 #include "src/cigar.h"
+#include "src/STRIntervalTree.h"
 #include "src/ReferenceSTR.h"
 #include "src/api/BamReader.h"
 #include "src/api/BamMultiReader.h"
@@ -54,7 +55,8 @@ class ReadContainer {
   ~ReadContainer();
 
   /* Add reads from a bam file */
-  void AddReadsFromFile(const ReferenceSTR& ref_str, map<pair<string,int>, string>& ref_ext_nucleotides, const vector<string>& chroms_to_include);
+  void AddReadsFromFile(const ReferenceSTR& ref_str, const vector<ReferenceSTR>& ref_str_chunk,
+			map<pair<string,int>, string>& ref_ext_nucleotides, const vector<string>& chroms_to_include);
 
   /* Clear reads from container */
   void ClearReads();
@@ -77,7 +79,8 @@ class ReadContainer {
  protected:
   /* Parse BamAlignment into AlignedRead */
   bool ParseRead(const BamTools::BamAlignment& aln,
-		 AlignedRead* aligned_read, 
+		 vector<AlignedRead>* aligned_reads,
+		 STRIntervalTree& itree,
 		 map<pair<string,int>, string>& ref_ext_nucleotides);
  private:
 
@@ -88,6 +91,10 @@ class ReadContainer {
 		       const std::string& tag_name, std::string* destination);
   bool GetFloatBamTag(const BamTools::BamAlignment& aln,
 		      const std::string& tag_name, float* destination);
+
+  /* Get CIGAR list for a read */
+  bool GetCigarList(const AlignedRead& aligned_read,
+		    CIGAR_LIST* cigar_list);
 
   /* Adjust diff from ref based on cigar */
   int GetSTRAllele(const CIGAR_LIST& cigar_list);

@@ -28,8 +28,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 class ReadContainerTest :
 public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(ReadContainerTest);
-  CPPUNIT_TEST(test_AddReadsFromFile);
-  CPPUNIT_TEST(test_ParseRead);
   CPPUNIT_TEST(test_GetBamTags);
   CPPUNIT_TEST(test_GetReadsAtCoord);
   CPPUNIT_TEST(test_GetSTRAllele);
@@ -39,7 +37,6 @@ public CppUnit::TestFixture {
   void setUp();
   void tearDown();
   void test_AddReadsFromFile();
-  void test_ParseRead();
   void test_GetBamTags();
   void test_GetReadsAtCoord();
   void test_GetSTRAllele();
