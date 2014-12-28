@@ -119,7 +119,6 @@ extern std::string haploid_chroms_string;
 extern std::string strinfofile;
 extern std::string use_chrom;
 extern bool rmdup;
-extern bool include_flank;
 extern bool include_gl;
 extern bool print_reads;
 extern float min_het_freq;
