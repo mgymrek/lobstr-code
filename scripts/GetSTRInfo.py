@@ -11,8 +11,7 @@ Entropy of 50bp up/downstream
 
 import sys
 import math
-from Bio.Seq import Seq
-from Bio import SeqIO
+import pyfasta
 
 FLANKLEN = 50
 
@@ -24,8 +23,8 @@ def loadGenome(genomeFile):
 
 def ExtractFlanks(genome, chrom, start, end):
     """ extract +/- FLANKLEN from STR locus """
-    leftFlank = str(genome[chrom][max([start-FLANKLEN,0]):start].seq).upper()
-    rightFlank = str(genome[chrom][end:min([len(genome[chrom]),end+FLANKLEN])].seq).upper()
+    leftFlank = genome[chrom][max([start-FLANKLEN,0]):start]
+    rightFlank = genome[chrom][end:min([len(genome[chrom]),end+FLANKLEN])]
     return leftFlank+rightFlank
 
 def GetGC(flanks):
@@ -59,13 +58,18 @@ def GetEntropy(flanks):
     entropy = sum([-1.0*item*math.log(item,2) for item in fractions if item != 0])
     return entropy
 
-def ProcessEachLocus(strtablefile,genome):
+def ProcessEachLocus(strtablefile, genome, refkeys):
     """ get entropy, gc, and score for each locus """
     f = open(strtablefile,"r")
     line = f.readline()
     while line != "":
         items = line.strip().split("\t")
         chrom = items[0]
+        try:
+            refchrom = refkeys[chrom]
+        except:
+            sys.stderr.write("ERROR: Chromosome %s not in reference fasta\n"%chrom)
+            sys.exit(1)
         start = int(items[1])
         end = int(items[2])
         period = int(items[3])
@@ -75,7 +79,7 @@ def ProcessEachLocus(strtablefile,genome):
         if maxscore > 0:
             score = float(items[8])/maxscore
             try:
-                flanks = ExtractFlanks(genome,chrom,start,end)
+                flanks = ExtractFlanks(genome,refchrom,start,end)
                 gc = GetGC(flanks)
                 entropy = GetEntropy(flanks)
                 print "\t".join(map(str,[chrom,start,end,score,gc,entropy]))
@@ -93,10 +97,11 @@ def main():
         print __doc__
         sys.exit(1)
     sys.stderr.write("loading genome...\n")
-    genome = loadGenome(genomeFile)
+    genome = pyfasta.Fasta(genomeFile)
+    refkeys = dict([(key.split()[0], key) for key in genome.keys()])
 
     sys.stderr.write("processing each locus...\n")
     print "\t".join(["chrom","start","end","score","GC","entropy"])
-    ProcessEachLocus(strtablefile, genome)
+    ProcessEachLocus(strtablefile, genome, refkeys)
 
 main()
