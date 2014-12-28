@@ -121,12 +121,14 @@ extern std::string use_chrom;
 extern bool rmdup;
 extern bool include_gl;
 extern bool print_reads;
+extern bool filter_reads_with_n;
 extern float min_het_freq;
 extern int min_border;
 extern int min_bp_before_indel;
 extern int min_read_end_match;
 extern int max_matedist;
 extern int maximal_end_match_window;
+
 
 // debug
 extern bool align_debug;

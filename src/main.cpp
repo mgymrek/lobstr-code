@@ -76,104 +76,104 @@ void DestroyReference();
 gap_opt_t *opts;
 
 void show_help() {
-  const char* help =
-    "\nlobSTR [OPTIONS] " \
-    "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n" \
-    "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n" \
-    "    -o <output prefix> --rg-sample <STRING> --rg-lib <STRING>\n" \
-    "Note: parameters are uploaded to Amazon S3 by default. This is for\n" \
-    "us see how people are using the tool and to help us continue to improve\n" \
-    "lobSTR. To turn this function off, specify --noweb.\n\n" \
-    "Parameter descriptions:\n " \
-    "-f,--files     file or comma-separated list of files\n" \
-    "               containing reads in fasta, fastq, or bam format\n" \
-    "               (default: fasta)\n" \
-    "--p1           file or comma-separated list of files containing\n" \
-    "               the first end of paired end reads in fasta or fastq\n" \
-    "               (default: fasta)\n" \
-    "--p2           file or comma-separated list of files containing\n" \
-    "               the second end of paired end reads in fasta or fastq\n" \
-    "               (default: fasta)\n" \
-    "-o,--out       prefix for output files. will output:\n" \
-    "                  <prefix>.aligned.bam: bam file of alignments\n" \
-    "                  <prefix>.aligned.stats: give statistics about alignments\n" \
-    "--index-prefix prefix for lobSTR's bwa reference (must run lobstr_index.py\n" \
-    "               to create index. If the index is downloaded\n" \
-    "               to PATH_TO_INDEX, this argument is\n" \
-    "               PATH_TO_INDEX/lobSTR_)\n" \
-    "--rg-sample <STRING>  Use this in the read group SM tag\n" \
-    "--rg-lib <STRING>     Use this in the read group LB tag\n" \
-    "\n\nOptions:\n" \
-    "-h,--help      display this help screen\n" \
-    "-v,--verbose   print out useful progress messages\n" \
-    "--quiet    don't print anything to stderr or stdout\n" \
-    "--version      print out lobSTR program version\n" \
-    "-q,--fastq     reads are in fastq format (default: fasta)\n" \
-    "--bam          reads are in bam format (default: fasta)\n" \
-    "--gzip         The input files are gzipped\n" \
-    "               (only works for fasta or fastq input)\n" \
-    "--bampair      reads are in bam format and are paired-end\n" \
-    "               NOTE: bam file MUST be sorted by read name\n" \
-    "               (samtools sort -n <file.bam> <prefix>)\n" \
-    "--bwaq         Trim read ends based on quality scores. This\n" \
-    "               has the same effect as the BWA parameter -q:\n" \
-    "               BWA trims a read down to argmax_x{sum_{i=x+1}^l(INT-q_i)} \n" \
-    "               if q_l<INT where l is the original read length (default 10).\n" \
-    "--oldillumina  Specifies that quality score are given in old Phred\n" \
-    "               format (Illumina 1.3+, Illumina 1.5+) where quality\n" \
-    "               scores are given as Phred + 64 rather than Phred + 33\n" \
-    "--multi        Report reads mapping to multiple genomic locations.\n" \
-    "               Alternate alignments given in XA tag\n" \
-    "--noweb        Do not report any user information and paramters to Amazon S3.\n" \
-    "\n\nAdvanced options - general:\n" \
-    "-p,--threads <INT>         number of threads (default: 1)\n" \
-    "--min-read-length <INT>    minimum number of nucleotides for a\n" \
-    "                           read to be processed.\n" \
-    "                           (default: 45)\n" \
-    "--max-read-length <INT>    maximum number of nucleotides for a\n" \
-    "                           read to be processed. (default: 1024)\n" \
-    "\n\nAdvanced options - detection:\n"                               \
-    "--fft-window-size <INT>    size of fft window (default: 16)\n" \
-    "--fft-window-step <INT>    step size of sliding window\n" \
-    "                           (default: 4)\n" \
-    "--entropy-threshold <FLOAT> threshold score to call a window periodic\n"\
-    "                            (defualt: 0.45)\n" \
-    "--minflank <INT>           minimum length of flanking region to\n" \
-    "                           try to align (default: 8)\n" \
-    "--maxflank <INT>           length to trim the ends of flanking\n" \
-    "                           regions to if they exceed that length\n" \
-    "                           (default: 100)\n" \
-    "\n\nAdvanced options - alignment:\n" \
-    "--max-diff-ref <INT>       maximum difference in length from\n" \
-    "                           the reference sequence to report\n" \
-    "                           (default: 50bp)\n" \
-    "--extend <INT>             Number of bp the reference was extended\n" \
-    "                           when building the index.\n" \
-    "                           Must be same as --extend parameter used \n" \
-    "                           to run lobstr_index.py\n" \
-    "                           alignment (default: 1000)\n" \
-    "--mapq <INT>               maximum allowed mapq score (default: 100)\n" \
-    "                           calculated as the sum of qualities at base \n" \
-    "                           mismatches.\n" \
-    "-u                         require length difference to be a\n" \
-    "                           multiple of the repeat unit\n" \
-    "-m,--mismatch <int>        edit distance allowed during alignment\n" \
-    "                           of each flanking region (default: -1)\n" \
-    "-g <int>                   maximum number of gap opens allowed\n" \
-    "                           in each flanking region (default: 1)\n" \
-    "-e <int>                   maximum number of gap extensions\n" \
-    "                           allowed in each flanking region\n" \
-    "                           (default: 1)\n" \
-    "-r <float>                 edit distance allowed during alignment\n" \
-    "                           of each flanking region (ignored if -m\n" \
-    "                           is set) (default: -1)\n" \
-    "--max-hits-quit-aln <int>  Stop alignment search after int hits found.\n" \
-    "                           Default: 1000. Use -1 for no limit.\n" \
-    "--min-flank-allow-mismatch <int>  Mininum length of flanking region to allow\n" \
-    "                           mismatches. Default: 30.\n" \
-    "This program takes in raw reads, detects and aligns reads\n" \
-    "containing microsatellites, and genotypes STR locations.\n\n";
-  cerr << help;
+  std::stringstream help_msg;
+  help_msg << "\nlobSTR [OPTIONS] "
+	   << "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n"
+	   << "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n"
+	   << "    -o <output prefix> --rg-sample <STRING> --rg-lib <STRING>\n"
+	   << "Note: parameters are uploaded to Amazon S3 by default. This is for\n"
+	   << "us to see how people are using the tool and to help us continue to improve\n"
+	   << "lobSTR. To turn this function off, specify --noweb.\n\n"
+	   << "Parameter descriptions:\n "
+	   << "-f,--files    file or comma-separated list of files\n"
+	   << "               containing reads in fasta, fastq, or bam format\n"
+	   << "               (default: fasta)\n"
+	   << "--p1           file or comma-separated list of files containing\n"
+	   << "               the first end of paired end reads in fasta or fastq\n"
+	   << "               (default: fasta)\n"
+	   << "--p2           file or comma-separated list of files containing\n"
+	   << "               the second end of paired end reads in fasta or fastq\n"
+	   << "               (default: fasta)\n"
+	   << "-o,--out       prefix for output files. will output:\n"
+	   << "                  <prefix>.aligned.bam: bam file of alignments\n"
+	   << "                  <prefix>.aligned.stats: give statistics about alignments\n"
+	   << "--index-prefix prefix for lobSTR's bwa reference (must run lobstr_index.py\n"
+	   << "               to create index. If the index is downloaded\n"
+	   << "               to PATH_TO_INDEX, this argument is\n"
+	   << "               PATH_TO_INDEX/lobSTR_)\n"
+	   << "--rg-sample <STRING>  Use this in the read group SM tag\n"
+	   << "--rg-lib <STRING>     Use this in the read group LB tag\n"
+	   << "\n\nOptions:\n"
+	   << "-h,--help      display this help screen\n"
+	   << "-v,--verbose   print out useful progress messages\n"
+	   << "--quiet    don't print anything to stderr or stdout\n"
+	   << "--version      print out lobSTR program version\n"
+	   << "-q,--fastq     reads are in fastq format (default: fasta)\n"
+	   << "--bam          reads are in bam format (default: fasta)\n"
+	   << "--gzip         The input files are gzipped\n"
+	   << "               (only works for fasta or fastq input)\n"
+	   << "--bampair      reads are in bam format and are paired-end\n"
+	   << "               NOTE: bam file MUST be sorted by read name\n"
+	   << "               (samtools sort -n <file.bam> <prefix>)\n"
+	   << "--bwaq         Trim read ends based on quality scores. This\n"
+	   << "               has the same effect as the BWA parameter -q:\n"
+	   << "               BWA trims a read down to argmax_x{sum_{i=x+1}^l(INT-q_i)} \n"
+	   << "               if q_l<INT where l is the original read length (default: " << QUAL_CUTOFF << ").\n"
+	   << "--oldillumina  Specifies that quality score are given in old Phred\n"
+	   << "               format (Illumina 1.3+, Illumina 1.5+) where quality\n"
+	   << "               scores are given as Phred + 64 rather than Phred + 33\n"
+	   << "--multi        Report reads mapping to multiple genomic locations.\n"
+	   << "               Alternate alignments given in XA tag\n"
+	   << "--noweb        Do not report any user information and paramters to Amazon S3.\n"
+	   << "\n\nAdvanced options - general:\n"
+	   << "-p,--threads <INT>         number of threads (default:" << threads << ")\n"
+	   << "--min-read-length <INT>    minimum number of nucleotides for a\n"
+	   << "                           read to be processed.\n"
+	   << "                           (default: " << min_read_length << ")\n"
+	   << "--max-read-length <INT>    maximum number of nucleotides for a\n"
+	   << "                           read to be processed. (default: " << max_read_length << ")\n"
+	   << "\n\nAdvanced options - detection:\n"
+	   << "--fft-window-size <INT>    size of fft window (default: " << fft_window_size << ")\n"
+	   << "--fft-window-step <INT>    step size of sliding window\n"
+	   << "                           (default: " << fft_window_step << ")\n"
+	   << "--entropy-threshold <FLOAT> threshold score to call a window periodic\n"
+	   << "                            (default: " << entropy_threshold << ")\n"
+	   << "--minflank <INT>           minimum length of flanking region to\n"
+	   << "                           try to align (default: " << min_flank_len << ")\n"
+	   << "--maxflank <INT>           length to trim the ends of flanking\n"
+	   << "                           regions to if they exceed that length\n"
+	   << "                           (default: " << max_flank_len << ")\n"
+	   << "\n\nAdvanced options - alignment:\n"
+	   << "--max-diff-ref <INT>       maximum difference in length from\n"
+	   << "                           the reference sequence to report\n"
+	   << "                           (default: " << max_diff_ref << "bp)\n"
+	   << "--extend <INT>             Number of bp the reference was extended\n"
+	   << "                           when building the index.\n"
+	   << "                           Must be same as --extend parameter used \n"
+	   << "                           to run lobstr_index.py\n"
+	   << "                           alignment (default: " << extend << ")\n"
+	   << "--mapq <INT>               maximum allowed mapq score (default: " << max_mapq << ")\n"
+	   << "                           calculated as the sum of qualities at base \n"
+	   << "                           mismatches.\n"
+	   << "-u                         require length difference to be a\n"
+	   << "                           multiple of the repeat unit\n"
+	   << "-m,--mismatch <int>        edit distance allowed during alignment\n"
+	   << "                           of each flanking region (default: " << allowed_mismatches << ")\n"
+	   << "-g <int>                   maximum number of gap opens allowed\n"
+	   << "                           in each flanking region (default: " << gap_open << ")\n"
+	   << "-e <int>                   maximum number of gap extensions\n"
+	   << "                           allowed in each flanking region\n"
+	   << "                           (default: " << gap_extend << ")\n"
+	   << "-r <float>                 edit distance allowed during alignment\n"
+	   << "                           of each flanking region (ignored if -m\n"
+	   << "                           is set) (default: " << fpr << ")\n"
+	   << "--max-hits-quit-aln <int>  Stop alignment search after int hits found.\n"
+	   << "                           Default: " << max_hits_quit_aln << ". Use -1 for no limit.\n"
+	   << "--min-flank-allow-mismatch <int>  Mininum length of flanking region to allow\n"
+	   << "                           mismatches. Default: " << min_length_to_allow_mismatches << ".\n"
+	   << "This program takes in raw reads, detects and aligns reads\n"
+	   << "containing microsatellites, and genotypes STR locations.\n\n";
+  cerr << help_msg.str();
   exit(1);
 }
 
