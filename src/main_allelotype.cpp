@@ -52,84 +52,6 @@ vector<ReferenceSTR> reference_strs;
 void LoadReference();
 
 void show_help() {
-<<<<<<< HEAD
-  const char* help = "\nTo train the genotyping noise model " \
-    "from a set of aligned reads:\n"                            \
-    "allelotype --command train [OPTIONS] --bam <input.bam> "   \
-    "--noise_model <noisemodelprefix> --strinfo <strinfo.tab> " \
-    " --index-prefix $PATH_TO_INDEX/lobSTR_ " \
-    " --haploid chrY\n\n" \
-    "Training outputs model files: \n" \
-    "   <noisemodelprefix>.stepmodel\n" \
-    "   <noisemodelprefix>.stuttermodel\n\n" \
-    "To run str profiling on a set of aligned reads:\n" \
-    "allelotype --command classify [OPTIONS] --bam <input.bam> "  \
-    "--noise_model <noisemodelprefix> [--no-rmdup] --strinfo <strinfo.tab> " \
-    "--out <output_prefix> --index-prefix $PATH_TO_INDEX/lobSTR_\n\n" \
-    "Classifying outputs the files: \n" \
-    "   <output_prefix>.vcf \n" \
-    "   <output_prefix>.allelotype.stats \n\n" \
-    "Note: parameters are uploaded to Amazon S3 by default. This for\n" \
-    "us see how people are using the tool and to help us continue to improve\n" \
-    "lobSTR. To turn this function off, specify --noweb.\n\n" \
-    "Parameter description:\n" \
-    "--command [train|classify]:     (REQUIRED) specify which of the tasks\n" \
-    "                                described above to perform\n" \
-    "--bam <f1.bam,[f2.bam, ...]>:   (REQUIRED) comma-separated list\n" \
-    "                                of bam files to analyze. Each sample should have\n \
-    "                                "a unique read group.\n" \
-    "--out <STRING>:                 Prefix to name output files.\n" \
-    "--strinfo <strinfo.tab>:        (REQUIRED)\n" \
-    "                                File containing statistics for each STR,\n" \
-    "                                available in the data/ directory of the\n" \
-    "                                lobSTR download.\n" \
-    "--noise_model <STRING>:         (REQUIRED)\n" \
-    "                                prefix of files to write (--command train)\n" \
-    "                                or read (--command classify) noise model\n" \
-    "                                parameters to.\n" \
-    "                                An example is $PATH_TO_LOBSTR/models/illumina2\n" \
-    "--index-prefix <STRING>         (REQUIRED) prefix for lobSTR's bwa reference\n" \
-    "                                (must be same as for lobSTR alignment)\n" \
-    "--no-rmdup:                     don't remove pcr duplicates before allelotyping.\n" \
-    "--min-het-freq <FLOAT>:         minimum frequency to make a heterozygous call\n" \
-    "                                (default: NULL)\n" \
-    "--haploid <chrX,[chrY,...]>:    comma-separated list of chromosomes\n" \
-    "                                that should be forced to have homozygous\n" \
-    "                                calls. Specify --haploid all if the organism\n" \
-    "                                is haploid. Will be applied to all samples.\n" \
-    "-h,--help:                      display this message\n" \
-    "-v,--verbose:                   print out helpful progress messages\n" \
-    "--quiet                         don't print anything to stderr or stdout\n" \
-    "--version:                      print out allelotype program version number\n\n" \
-    "Options for calculating and reporting allelotypes:\n" \
-    "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n" \
-    "                                For more than one annotation, use comma-separated list of files\n" \
-    "--include-gl                    Include the GL field in the VCF file (default = false)\n\n" \
-    "Default options for filtering reads:\n"
-    "--min-border   <INT>:           Filter reads that do not extend past both ends of the STR region\n"\
-    "                                by at least <INT> bp. Default: 5. \n"
-    "                                To include partially spanning reads, specify a large negative number.\n\n"
-    "Optional arguments for filtering reads:\n" \
-    "If not specified, no filters applied\n" \
-    "--chrom <STRING>:               only look at reads from this chromosome\n" \
-    "--max-diff-ref <INT>:           filter reads differing from the\n" \
-    "                                reference allele by more than <INT> bp. Default: 50\n" \
-    "--unit:                         filter reads differing by a non-integer\n" \
-    "                                number of repeat copies from reference\n" \
-    "--mapq <INT>:                   filter reads with mapq scores of more than\n" \
-    "                                <INT>. Default: 100\n" \
-    "--max-matedist <INT>:           Filter reads with a mate distance larger than <INT> bp. Default: 100000.\n"
-    "--min-bp-before-indel <INT>:    Filter reads with an indel occurring less than <INT> bases. Default: 7\n"\
-    "                                from either end of the read.\n"
-    "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"\
-    "                                <INT> bp at both ends. Default: 15\n"
-    "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
-    "                                obtained when shifting the read ends by distances within <INT> bp. Default: 5\n"
-    "Additional options\n" \
-    "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n\n" \
-    "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
-  cerr << help;
-=======
   std::stringstream help_msg;
   help_msg << "\n" << "To train the genotyping noise model from a set of aligned reads:\n"
 	   << "allelotype --command train [OPTIONS] --bam <input.bam> "	
@@ -174,8 +96,6 @@ void show_help() {
 	   << "                                that should be forced to have homozygous\n"
 	   << "                                calls. Specify --haploid all if the organism\n"
 	   << "                                is haploid. Will be applied to all samples.\n"
-	   << "--dont-include-flank:           Dont include indels in flanking regions when\n"
-	   << "                                determining length of the STR allele.\n"
 	   << "-h,--help:                      display this message\n"
 	   << "-v,--verbose:                   print out helpful progress messages\n"
 	   << "--quiet                         don't print anything to stderr or stdout\n"
@@ -209,7 +129,6 @@ void show_help() {
 	   << "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n"
 	   << "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
   cerr << help_msg.str();
->>>>>>> a926dd7e8ad6453a85b75e91c0a93008c6ea3eea
   exit(1);
 }
 
@@ -224,11 +143,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHUNKSIZE,
     OPT_COMMAND,
     OPT_DEBUG,
-<<<<<<< HEAD
-=======
-    OPT_DONT_INCLUDE_FLANK,
     OPT_FILTER_READS_WITH_N,
->>>>>>> a926dd7e8ad6453a85b75e91c0a93008c6ea3eea
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_GL,
@@ -265,12 +180,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"debug", 0, 0, OPT_DEBUG},
     {"filter-reads-with-n", 0, 0, OPT_FILTER_READS_WITH_N},
     {"haploid", 1, 0, OPT_HAPLOID},
-<<<<<<< HEAD
-    {"help", 1, 0, OPT_HELP},
-=======
     {"help", 0, 0, OPT_HELP},
-    {"dont-include-flank", 0, 0, OPT_DONT_INCLUDE_FLANK},
->>>>>>> a926dd7e8ad6453a85b75e91c0a93008c6ea3eea
     {"index-prefix", 1, 0, OPT_INDEX},
     {"max-diff-ref", 1, 0, OPT_MAX_DIFF_REF},
     {"mapq", 1, 0, OPT_MAXMAPQ},
