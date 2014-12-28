@@ -13,7 +13,7 @@ GITID=$(./config/git-version-gen .tarball-version) || die "Failed to get GIT ID"
 TARBALL=lobSTR-${GITID}.tar.gz
 rm -f "$TARBALL"
 
-make -j distcheck || die "make distcheck failed"
+make distcheck || die "make distcheck failed"
 [ -e "$TARBALL" ] || die "can't find Tarball file '$TARBALL' after 'make distcheck'"
 
 echo
