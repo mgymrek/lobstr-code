@@ -107,7 +107,7 @@ def reverseComplement(seq):
 def WriteChromSizes(genome, outfile):
     f = open(outfile, "w")
     for chrom in genome.keys():
-        f.write("\t".join(map(str,[chrom, len(genome[chrom])]))+"\n")
+        f.write("\t".join(map(str,[chrom.split()[0], len(genome[chrom])]))+"\n")
     f.close()
 
 def PadFlank(seq, n):
@@ -131,7 +131,7 @@ bedtools groupby -g 1,2,3 -c 4 -o concat > %s"""%(merged_ref, sorted_ref_withfla
     # Clean up
     shutil.rmtree(tmpdir)
 
-def GetRefFasta(merged_str_file, str_ref_fasta, str_map_file):
+def GetRefFasta(genome, refkeys, merged_str_file, str_ref_fasta, str_map_file):
     """ Get reference fasta and map file from the bed file """
     f_merged = open(merged_str_file, "r")
     f_fa = open(str_ref_fasta, "w")
@@ -141,10 +141,14 @@ def GetRefFasta(merged_str_file, str_ref_fasta, str_map_file):
     refnum = 0
     while line != "":
         chrom, start, end, annot = line.strip().split("\t")
+        try:
+            refchrom = refkeys[chrom]
+        except:
+            ERROR("Chromosome %s not in reference fasta\n"%chrom)
         start = int(start)
         end = int(end)
-        if end >= len(genome[chrom]): end = len(genome[chrom])-1
-        refseq = PadFlank(genome[chrom][start:end], PAD).upper()
+        if end >= len(genome[refchrom]): end = len(genome[refchrom])-1
+        refseq = PadFlank(genome[refchrom][start:end], PAD).upper()
         annotations = annot.split(";")[:-1]
         motifs = [GetRepseq(item.split("_")[2]) for item in annotations]
         annotations = [annotations[i] + "_" + motifs[i] for i in range(len(annotations))]
@@ -191,6 +195,7 @@ if __name__ == "__main__":
 
     if VERBOSE: PROGRESS("Loading genome...")
     genome = pyfasta.Fasta(REFFILE)
+    refkeys = dict([(key.split()[0], key) for key in genome.keys()])
     if not DEBUG: WriteChromSizes(genome, os.path.join(OUTDIR, "lobSTR_chromsizes.tab"))
 
     if VERBOSE: PROGRESS("Processing STR table...")
@@ -198,7 +203,7 @@ if __name__ == "__main__":
     str_ref_fasta = os.path.join(OUTDIR, "lobSTR_ref.fasta")
     str_map_file = os.path.join(OUTDIR, "lobSTR_ref_map.tab")
     GenerateMergedReferenceBed(STRREFFILE, merged_str_file)
-    if not DEBUG: GetRefFasta(merged_str_file, str_ref_fasta, str_map_file)
+    if not DEBUG: GetRefFasta(genome, refkeys, merged_str_file, str_ref_fasta, str_map_file)
 
     if VERBOSE: PROGRESS("Building BWA index...")
     bwaIndex(str_ref_fasta)
