@@ -11,3 +11,4 @@
 11. a2.lobstr: allele 2 reported by lobSTR
 12. coverage: number of reads used to make the lobSTR call
 13. score: lobSTR quality score
+14. correction: marker correction factor
