@@ -1,0 +1,122 @@
+---
+---
+<!doctype html>
+<html>
+  {% include header.html %}
+  <body>
+    <div class="wrapper">
+      {% include menu.html %}
+      <section>
+      <h2>Validation sets</h2>
+      <p>
+	<ul>
+	  <li><a href="#overview">Overview</a></li>
+	  <li><a href="#ystr">Y-STRs</a>
+	  	<ul>
+	  	<li><a href="#ystr-callsets">Callsets</a></li>
+	  	<li><a href="#ystr-convert">Conversion</a></li>
+	  	<li><a href="#ystr-compare">Comparison to SGDP</a></li>
+	  	</ul>
+	  </li>
+	  <li><a href="#marshfield">Marshfield</a>
+	  	<ul>
+	  	<li><a href="#marshfield-callsets">Callsets</a></li>
+	  	<li><a href="#marshfield-convert">Conversion</a></li>
+	  	<li><a href="#marshfield-compare">Comparison to SGDP</a></li>
+	  	</ul>
+	</li>
+	</ul>
+	</p>
+	<a name="overview"></a>
+	<h2>Overview</h2>
+	<p>
+	This page describes several STR call sets generated using capillary electrophoresis, the gold standard in STR genotyping. We use these calls as ground truth datasets for comparing to lobSTR genotype results.
+	</p>
+	<p>
+	Comparisons below are to calls from high coverage genomes for 184 samples sequenced in the <a href="https://www.simonsfoundation.org/life-sciences/simons-genome-diversity-project-dataset/">Simons Genome Diversity Project</a>.
+	</p>
+	<a name="ystr"></a>
+	<h2>Y-STRs</h2>
+
+	<a name="ystr-callsets"></a>
+	<h4>Callsets</h4>
+	<ul>
+	<li>The Human Genome Diversity Panel has <a href="ftp://ftp.cephb.fr/hgdp_supp9/">Y-STR calls</a> for 669 samples at 61 Y-STR markers.
+	</ul>
+
+	<a name="ystr-convert"></a>
+	<h4>Conversion</h4>
+	<p>
+	Capillary electrophoresis Y-STR genotypes are reported as the number of repeat units. To convert lobSTR calls to this format, see <a href="best-practices-ystr-codis.html">the tutorial on calling Y-STRs using lobSTR</a>.
+	</p>
+	<p>
+	The lobSTR reference has been carefully designed to follow standard nomenclature at commonly genotyped Y-STRs. Three markers showed annotation discrepancies between lobSTR and HGDP. For markers DYS594 and DYS481, subtract 1 unit from the resulting lobSTR genotypes. Nomenclature for DYS640 could not be resolved between the two callsets and we recommend removing this marker from analysis.
+	</p>
+
+	<a name="ystr-compare"></a>
+	<h4>Comparison to SGDP</h4>
+	<p>
+		We compared lobSTR calls for the SGDP data to the HGDP Y-STR genotypes. 57 samples and 39 markers overlapped between the two datasets. The call sets showed <b>99.3% concordance</b>. The following files contain comparison results:
+		<ul>
+			<li><a href="TODO">ystr_cap_vs_lobstr_calls.tab</a>: Comparison of each call between the two methods.</li>
+			<li><a href="TODO">ystr_cap_vs_lobstr_readme.txt</a>: Contains a description of columns.</li>
+		</ul>
+	</p>
+	<a name="marshfield"></a>
+
+	<h2>Marshfield</h2>
+
+	<a name="marshfield-callsets"></a>
+	<h4>Callsets</h4>
+	The Marshfield Panel consists of several hundred autosomal STR markers. Capillary calls are available from:
+	<ul>
+		<li>
+			The Rosenberg lab has <a href="https://rosenberglab.stanford.edu/data/rosenbergEtAl2005/">Marshfield calls for HGDP samples</a>. Many of these samples were also sequenced by the SGDP Project.
+		</li>
+		<li>
+			The Payseur lab has <a href="http://payseur.genetics.wisc.edu/strpData.htm">Marshfield calls for HapMap samples</a>. Many of these samples were also sequenced by the 1000 Genomes Project.
+		</li>
+	</ul>
+
+	<a name="marshfield-convert"></a>
+	<h4>Conversion</h4>
+	<p>
+	The Marshfield sets are reported as PCR product sizes and must be converted to lobSTR format before comparison. Here we describe the conversion process for the Rosenberg dataset, but it should apply to other Marshfield callsets.
+	</p>
+	<p>
+	<em>Determining the genomic location of each marker</em>
+	<br>The file <a href="https://web.stanford.edu/group/rosenberglab/data/pembertonEtAl2009/Pemberton_AdditionalFile1_11242009.txt">Pemberton_AdditionalFile1_11242009</a> available from the Rosenberg website provides PCR primers for the Marshfield markers. We used these primers as inputs to <a href="https://genome.ucsc.edu/cgi-bin/hgPcr">UCSC's in silico PCR tool</a> to determine the genomic location of each marker and overlapped these with the lobSTR reference set for hg19. Only markers which had a single repeat motif listed that matched the one in the lobSTR reference were used for analysis. Markers where the reference product size in hg19 did not match that reported in the Pemberton file were removed.
+	</p>
+	<p>
+	<em>Converting calls to lobSTR format</em>
+	<br>Calls were converted from PCR product size to number of base pairs difference from reference using the formula: (allele_product_size - ref_product_size) where allele_product_size is the allele listed in the Rosenberg data and ref_product_size is the PCR product size in hg19. All genotypes listed as "-9" (no call) were removed.
+	</p>
+	<p>
+	<b>Many markers showed consistent differences of one or more repeat units between lobSTR and the capillary calls, and need to be corrected before performing comparisons</b>. The file <a href="TODO">marshfield_marker_corrections.tab</a> gives the genomic location, name, and correction that must be applied to lobSTR genotypes before comparison.
+	</p>
+	<a name="marshfield-compare"></a>
+	<h4>Comparison to SGDP</h4>
+
+	<p>
+		We compared lobSTR calls for the SGDP data to the Rosenberg Marshfield genotypes.
+
+		105 samples and 204 markers overlapped between the two datasets after filtering for calls with a minimum coverage of 5x and minimum lobSTR quality score of 0.9. Overall the callsets showed <b>94% genotype concordance</b>. The plot below shows a comparison of genotype calls (r<sup>2</sup>=0.79). Genotypes are reported as the mean length difference in base pairs from the reference for the two alleles at each diploid locus.
+	</p>
+	<p>
+		<center>
+		<img src="marshfield_cap_vs_lobstr_bubbles.png">
+		</center>
+	</p> 
+	<p>
+		The following files contain comparison results:
+		<ul>
+			<li><a href="TODO">marshfield_cap_vs_lobstr_calls.tab</a>: Comparison of each call between the two methods.</li>
+			<li><a href="TODO">marshfield_cap_vs_lobstr_readme.txt</a>: Contains a description of columns.</li>
+		</ul>
+	</p>
+
+      </section>
+    </div>
+    {% include footer.html %}
+  </body>
+</html>
