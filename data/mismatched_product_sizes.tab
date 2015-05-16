@@ -1,4 +1,4 @@
-chr	start	end	nameInGenotypeDataFile	lengthRefSeq.bp.	refSize	repeatStructureInRefSeq	alternateName
+chr	start	end	nameInGenotypeDataFile	product_size.Pemberton	product_size.hg19	repeatStructureInRefSeq	alternateName
 chr18	77851921	77852081	D18S1390	167	161	(TG)18	18QTEL11
 chr5	179879842	179880031	AAAT072_5	194	190	(AAAT)11	AAAT072
 chr8	122394567	122394618	AAAT121P_8	151	0	(AAAT)13	AAAT121

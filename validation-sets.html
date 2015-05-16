@@ -85,14 +85,14 @@
 	</p>
 	<p>
 	<em>Determining the genomic location of each marker</em>
-	<br>The file <a href="https://web.stanford.edu/group/rosenberglab/data/pembertonEtAl2009/Pemberton_AdditionalFile1_11242009.txt">Pemberton_AdditionalFile1_11242009</a> available from the Rosenberg website provides PCR primers for the Marshfield markers. We used these primers as inputs to <a href="https://genome.ucsc.edu/cgi-bin/hgPcr">UCSC's in silico PCR tool</a> to determine the genomic location of each marker and overlapped these with the lobSTR reference set for hg19. Only markers which had a single repeat motif listed that matched the one in the lobSTR reference were used for analysis. Markers where the reference product size in hg19 did not match that reported in the Pemberton file were removed.
+	<br>The file <a href="https://web.stanford.edu/group/rosenberglab/data/pembertonEtAl2009/Pemberton_AdditionalFile1_11242009.txt">Pemberton_AdditionalFile1_11242009</a> available from the Rosenberg website provides PCR primers for the Marshfield markers. We used these primers as inputs to <a href="https://genome.ucsc.edu/cgi-bin/hgPcr">UCSC's in silico PCR tool</a> to determine the genomic location of each marker and overlapped these with the lobSTR reference set for hg19. Only markers which had a single repeat motif listed that matched the one in the lobSTR reference were used for analysis. 
 	</p>
 	<p>
 	<em>Converting calls to lobSTR format</em>
-	<br>Calls were converted from PCR product size to number of base pairs difference from reference using the formula: (allele_product_size - ref_product_size) where allele_product_size is the allele listed in the Rosenberg data and ref_product_size is the PCR product size in hg19. All genotypes listed as "-9" (no call) were removed.
+	<br>Calls were converted from PCR product size to number of base pairs difference from reference using the formula: (allele_product_size - ref_product_size) where allele_product_size is the allele listed in the Rosenberg data and ref_product_size is the PCR product size in hg19. All genotypes listed as "-9" (no call) were removed. In some cases the reference product size did not match that annotated in the Pemberton data, or in silico PCR simply returned no results. In the first case, we used the hg19 product size. In the second case where no product size was available through in silico PCR, we used the product size annotated by Pemberton. <a href="data/mismatched_product_sizes.tab">mismatched_product_sizes.tab</a> gives a list of loci with product size discrepancies.
 	</p>
 	<p>
-	<b>Many markers showed consistent differences of one or more repeat units between lobSTR and the capillary calls, and need to be corrected before performing comparisons</b>. The file <a href="data/marshfield_marker_corrections.tab">marshfield_marker_corrections.tab</a> gives the genomic location, name, and correction that must be applied to lobSTR genotypes before comparison.
+	<b>Many markers showed consistent differences of one or more repeat units between lobSTR and the capillary calls, likely due to annotation differences, and need to be corrected before performing comparisons</b>. The file <a href="data/marshfield_marker_corrections.tab">marshfield_marker_corrections.tab</a> gives the genomic location, name, and correction that must be applied to lobSTR genotypes before comparison.
 	</p>
 	<a name="marshfield-compare"></a>
 	<h4>Comparison to SGDP</h4>
