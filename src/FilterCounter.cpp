@@ -57,6 +57,8 @@ std::string FilterCounter::GetFilterType(const int type){
     return "BP_BEFORE_INDEL";
   case CONTAINS_CLIP:
     return "CONTAINS_CLIP";
+  case MAPQ0:
+    return "MAPQ0";
   case UNFILTERED:
     return "UNFILTERED";
   default:

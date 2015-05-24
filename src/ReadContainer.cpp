@@ -192,6 +192,10 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     filter_counter.increment(FilterCounter::MAPPING_QUALITY);
     return false;
   }
+  if (aln.MapQuality == 0 && filter_mapq0) {
+    filter_counter.increment(FilterCounter::MAPQ0);
+    return false;
+  }
   if (dummy_aligned_read.matedist > max_matedist) {
     filter_counter.increment(FilterCounter::MATE_DIST);
     return false;
