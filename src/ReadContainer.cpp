@@ -163,6 +163,10 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   dummy_aligned_read.read_start = aln.Position;
   // get cigar
   dummy_aligned_read.cigar_ops = aln.CigarData;
+  CIGAR_LIST cigar_list;
+  if (!GetCigarList(dummy_aligned_read, &cigar_list)) {
+    return false;
+  }
   // Ignore pair information
   dummy_aligned_read.mate = 0;
   // get mapq
@@ -192,6 +196,19 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     filter_counter.increment(FilterCounter::MATE_DIST);
     return false;
   }
+  if (dummy_aligned_read.nucleotides.find("N") != std::string::npos) { 
+    if (filter_reads_with_n) {
+      filter_counter.increment(FilterCounter::CONTAINS_N_BASE);
+      return false;
+    }
+  }
+  if (cigar_list.cigar_string.find("S") != std::string::npos ||
+      cigar_list.cigar_string.find("H") != std::string::npos) {
+    if (filter_clipped) {
+      filter_counter.increment(FilterCounter::CONTAINS_CLIP);
+      return false;
+    }
+  }
   // check that both ends of the aligned read have sufficient bases before the first indel
   if (min_bp_before_indel > 0){
     pair<int, int> num_bps = AlignmentFilters::GetEndDistToIndel(&dummy_aligned_read);
@@ -206,10 +223,6 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   }
   // *** Determine region spanned by this read *** //
   int read_start = dummy_aligned_read.read_start;
-  CIGAR_LIST cigar_list;
-  if (!GetCigarList(dummy_aligned_read, &cigar_list)) {
-    return false;
-  }
   int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) - GetSTRAllele(cigar_list);
   // *** Determine which reference STRs overlapped by this read *** //
   vector<ReferenceSTR> spanned_strs;

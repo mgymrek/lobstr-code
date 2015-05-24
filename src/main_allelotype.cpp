@@ -104,27 +104,28 @@ void show_help() {
 	   << "--annotation <vcf file>         VCF file for STR set annotations (e.g. marshfield_hg19.vcf)\n"
 	   << "                                For more than one annotation, use comma-separated list of files\n"
 	   << "--include-gl                    Include the GL field in the VCF file (default = false)\n\n"
-	   << "Default options for filtering reads:\n"
+	   << "Options for filtering reads:\n"
 	   << "--min-border   <INT>:           Filter reads that do not extend past both ends of the STR region\n"
 	   << "                                by at least <INT> bp. Default: " << min_border << "\n"
 	   << "                                To include partially spanning reads, specify a large negative number.\n"
 	   << "--mapq <INT>:                   Filter reads with mapq scores of more than\n"
 	   << "                                <INT>. Default: " << max_mapq << "\n"
 	   << "--max-matedist <INT>:           Filter reads with a mate distance larger than <INT> bp. Default: " << max_matedist << "\n"
+     << "--max-diff-ref <INT>:           Only use reads differing by at most this number of bp from the \n"
+     << "                                reference allele. Default: " << max_diff_ref << "\n"
 	   << "--min-bp-before-indel <INT>:    Filter reads with an indel occurring less than <INT> bases\n"
 	   << "                                from either end of the read.  Default: " << min_bp_before_indel << "\n"  
 	   << "--min-read-end-match <INT>:     Filter reads whose alignments don't exactly match the reference for at least\n"
 	   << "                                <INT> bp at both ends. Default: " << min_read_end_match << "\n"
 	   << "--maximal-end-match <INT>:      Filter reads whose prefix/suffix matches to reference are <= those \n"
 	   << "                                obtained when shifting the read ends by distances within <INT> bp. Default: " << maximal_end_match_window << "\n\n"
-
 	   << "Optional arguments for filtering reads:\n"
 	   << "If not specified, no filters applied\n"
 	   << "--chrom <STRING>:               only look at reads from this chromosome\n"
 	   << "--unit:                         filter reads differing by a non-integer\n"
 	   << "                                number of repeat copies from reference\n"
+	   << "--filter-clipped                Filter reads with hard or soft clipped bases at the ends\n\n"
 	   << "--filter-reads-with-n:          Filter reads that have one or more N bases\n\n"
-
 	   << "Additional options\n"
 	   << "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n"
 	   << "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
@@ -143,6 +144,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHUNKSIZE,
     OPT_COMMAND,
     OPT_DEBUG,
+    OPT_FILTER_CLIPPED,
     OPT_FILTER_READS_WITH_N,
     OPT_HAPLOID,
     OPT_HELP,
@@ -178,6 +180,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
+    {"filter-clipped", 0, 0, OPT_FILTER_CLIPPED},
     {"filter-reads-with-n", 0, 0, OPT_FILTER_READS_WITH_N},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 0, 0, OPT_HELP},
@@ -235,8 +238,13 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_DEBUG:
       debug = true;
       break;
+    case OPT_FILTER_CLIPPED:
+      filter_clipped = true;
+      AddOption("filter-clipped", "", false, &user_defined_arguments_allelotyper);
+      break;
     case OPT_FILTER_READS_WITH_N:
       filter_reads_with_n = true;
+      AddOption("filter-reads-with-n", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);

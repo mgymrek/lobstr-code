@@ -55,6 +55,8 @@ std::string FilterCounter::GetFilterType(const int type){
     return "NOT_MAXIMAL_END";
   case BP_BEFORE_INDEL:
     return "BP_BEFORE_INDEL";
+  case CONTAINS_CLIP:
+    return "CONTAINS_CLIP";
   case UNFILTERED:
     return "UNFILTERED";
   default:

@@ -121,6 +121,7 @@ extern std::string use_chrom;
 extern bool rmdup;
 extern bool include_gl;
 extern bool print_reads;
+extern bool filter_clipped;
 extern bool filter_reads_with_n;
 extern float min_het_freq;
 extern int min_border;

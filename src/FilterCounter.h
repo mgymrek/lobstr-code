@@ -31,7 +31,7 @@ class FilterCounter {
   uint64_t* counts;
   
  public:
-  const static int NUM_FILTERS     = 11;
+  const static int NUM_FILTERS     = 12;
 
   // Various filter types
   const static int NOT_UNIT        = 0;
@@ -44,7 +44,8 @@ class FilterCounter {
   const static int NUM_END_MATCHES = 7;
   const static int NOT_MAXIMAL_END = 8;
   const static int BP_BEFORE_INDEL = 9;
-  const static int UNFILTERED      = 10;
+  const static int CONTAINS_CLIP   = 10;
+  const static int UNFILTERED      = 11;
 
   FilterCounter();
   
