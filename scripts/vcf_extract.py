@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import vcf
 
@@ -11,11 +12,18 @@ except:
     sys.stderr.write("Usage: vcf_extract.py <VCFFILE> <LOCUS> <SAMPLE>\nLocus has format chr:pos.\n")
     sys.exit(1)
 
+if not os.path.exists(VCFFILE):
+    sys.stderr.write("ERROR: %s does not exist\n"%VCFFILE)
+    sys.exit(1)
+if not os.path.exists(VCFFILE + ".tbi"):
+    sys.stderr.write("ERROR: %s does not have an index. Please run tabix -p vcf %s\n"%(VCFFILE, VCFFILE))
+    sys.exit(1)
 
-if VCFFILE == "-":
-    vcfreader = vcf.Reader(sys.stdin)
-else:
+try:
     vcfreader = vcf.Reader(open(VCFFILE, "rb"))
+except:
+    sys.stderr.write("ERROR: Could not open %s. Is this a valid VCF file?\n"%VCFFILE)
+    sys.exit(1)
 
 try:
     chrom, start = LOCUS.split(":")
