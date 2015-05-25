@@ -103,6 +103,7 @@ int maximal_end_match_window = 15;
 int min_border   = 5;
 int min_bp_before_indel = 7;
 int min_read_end_match = 5;
+int max_repeats_in_ends = -1;
 bool filter_mapq0 = false;
 bool filter_clipped = false;
 bool filter_reads_with_n = false;

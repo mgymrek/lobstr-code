@@ -121,6 +121,7 @@ extern std::string use_chrom;
 extern bool rmdup;
 extern bool include_gl;
 extern bool print_reads;
+extern int max_repeats_in_ends;
 extern bool filter_mapq0;
 extern bool filter_clipped;
 extern bool filter_reads_with_n;

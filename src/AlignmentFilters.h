@@ -46,6 +46,9 @@ namespace AlignmentFilters {
      Ignores clipped bases when performing these comparions 
   */
   bool HasLargestEndMatches(AlignedRead* aln, const std::string& ref_seq, int ref_seq_start, int max_upstream, int max_downstream);
+
+  /* Return max number of occurrences of repeat motif in either end of read */
+  int GetMaxRepeatsInEnds(AlignedRead* aln, size_t bp_from_end);
 }
 
 #endif

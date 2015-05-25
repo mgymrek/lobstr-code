@@ -480,6 +480,17 @@ bool ExtractCigar(const CIGAR_LIST& cigar_list, const int& cigar_start,
   return true;
 }
 
+int CountOccurrences(const std::string& str, const std::string& substr) {
+  int n = 0;
+  size_t pos = str.find(substr, 0);
+  while (pos != std::string::npos) {
+    n = n + 1;
+    pos += 1;
+    pos = str.find(substr, pos);
+  }
+  return n;
+}
+
 std::string currentDateTime() {
   time_t now = time(0);
   struct tm tstruct;

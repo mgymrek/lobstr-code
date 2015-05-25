@@ -59,6 +59,8 @@ std::string FilterCounter::GetFilterType(const int type){
     return "CONTAINS_CLIP";
   case MAPQ0:
     return "MAPQ0";
+  case MAX_REPEATS_IN_ENDS:
+    return "MAX_REPEATS_IN_ENDS";
   case UNFILTERED:
     return "UNFILTERED";
   default:

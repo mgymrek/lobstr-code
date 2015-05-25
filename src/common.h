@@ -135,6 +135,9 @@ bool ExtractCigar(const CIGAR_LIST& cigar_list, const int& cigar_start,
 		  const int& region_start, const int& region_end,
 		  CIGAR_LIST* cigar_subset);
 
+// Count occurrences of substring in string
+int CountOccurrences(const std::string& str, const std::string& substr);
+
 // Generate the date in YYMMDD
 std::string currentDateTime();
 

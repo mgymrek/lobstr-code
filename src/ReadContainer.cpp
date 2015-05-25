@@ -277,6 +277,14 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       aligned_reads->push_back(aligned_read);
       str_starts.insert(aligned_read.msStart);
     }
+    // Check that the read ends don't contain too many repeat instances
+    if (max_repeats_in_ends > -1) {
+      if (AlignmentFilters::GetMaxRepeatsInEnds(&aligned_read, aligned_read.repseq.length()*4) > 
+          max_repeats_in_ends) {
+        filter_counter.increment(FilterCounter::MAX_REPEATS_IN_ENDS);
+        return false;
+      }
+    }
   }
   if (aligned_reads->size() == 0) {
     return false;
