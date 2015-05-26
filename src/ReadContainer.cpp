@@ -125,9 +125,11 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
       continue;
     }
     vector<AlignedRead> aligned_reads;
-    ParseRead(aln, &aligned_reads, itree, ref_ext_nucleotides);
+    if (!ParseRead(aln, &aligned_reads, itree, ref_ext_nucleotides)) {
+      continue;
+    }
     for (vector<AlignedRead>::const_iterator it = aligned_reads.begin();
-	 it != aligned_reads.end(); it++) {
+         it != aligned_reads.end(); it++) {
       const AlignedRead& aligned_read = *it;
       // Add to map
       pair<string, int> coord
@@ -156,7 +158,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   // *** First check bam flags *** //
   if (!aln.IsMapped()) {
     if (output_bams) {
-      writer_filtered->WriteAllelotypeRead(aln, "UNMAPPED", "", -1, -1, "");
+      writer_filtered->WriteAllelotypeRead(aln, "UNMAPPED", "", -1, -1, "", 0);
     }
     return false;
   }
@@ -178,7 +180,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   CIGAR_LIST cigar_list;
   if (!GetCigarList(dummy_aligned_read, &cigar_list)) {
     if (output_bams) {
-      writer_filtered->WriteAllelotypeRead(aln, "NO_CIGAR", dummy_aligned_read.chrom, -1, -1, "");
+      writer_filtered->WriteAllelotypeRead(aln, "NO_CIGAR", dummy_aligned_read.chrom, -1, -1, "", 0);
     }
     return false;
   }
@@ -206,21 +208,21 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   if (dummy_aligned_read.mapq > max_mapq) {
     filter_counter.increment(FilterCounter::MAPPING_QUALITY);
     if (output_bams) {
-      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAPPING_QUALITY), dummy_aligned_read.chrom, -1, -1, "");
+      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAPPING_QUALITY), dummy_aligned_read.chrom, -1, -1, "", 0);
     }
     return false;
   }
   if (aln.MapQuality == 0 && filter_mapq0) {
     filter_counter.increment(FilterCounter::MAPQ0);
     if (output_bams) {
-      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAPQ0), dummy_aligned_read.chrom, -1, -1, "");
+      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAPQ0), dummy_aligned_read.chrom, -1, -1, "", 0);
     }
     return false;
   }
   if (dummy_aligned_read.matedist > max_matedist) {
     filter_counter.increment(FilterCounter::MATE_DIST);
     if (output_bams) {
-      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MATE_DIST), dummy_aligned_read.chrom, -1, -1, "");
+      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MATE_DIST), dummy_aligned_read.chrom, -1, -1, "", 0);
     }
     return false;
   }
@@ -228,7 +230,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (filter_reads_with_n) {
       filter_counter.increment(FilterCounter::CONTAINS_N_BASE);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::CONTAINS_N_BASE), dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::CONTAINS_N_BASE), dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
@@ -238,7 +240,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (filter_clipped) {
       filter_counter.increment(FilterCounter::CONTAINS_CLIP);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::CONTAINS_CLIP), dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::CONTAINS_CLIP), dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
@@ -249,14 +251,14 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (num_bps.first != -1 && num_bps.first < min_bp_before_indel){
       filter_counter.increment(FilterCounter::BP_BEFORE_INDEL);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::BP_BEFORE_INDEL), dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::BP_BEFORE_INDEL), dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
     if (num_bps.second != -1 && num_bps.second < min_bp_before_indel){
       filter_counter.increment(FilterCounter::BP_BEFORE_INDEL);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::BP_BEFORE_INDEL), dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::BP_BEFORE_INDEL), dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
@@ -282,7 +284,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     CIGAR_LIST str_cigar_list;
     if (!ExtractCigar(cigar_list, aln.Position+1, ref_str.start-CIGAR_BUFFER, ref_str.stop+CIGAR_BUFFER, &str_cigar_list)) {
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, "ERROR_EXTRACTING_CIGAR", ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif);
+        writer_filtered->WriteAllelotypeRead(aln, "ERROR_EXTRACTING_CIGAR", ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
       }
       continue;
     }
@@ -295,7 +297,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
         filter_counter.increment(FilterCounter::NOT_UNIT);
         if (output_bams) {
           writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NOT_UNIT),
-                                               ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif);
+                                               ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
         }
         continue;
       }
@@ -304,7 +306,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       filter_counter.increment(FilterCounter::DIFF_FROM_REF);
       if (output_bams) {
         writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::DIFF_FROM_REF),
-                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif);
+                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
       }
       continue;
     }
@@ -313,7 +315,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       filter_counter.increment(FilterCounter::ALLELE_SIZE);
       if (output_bams) {
         writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::ALLELE_SIZE),
-                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif);
+                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
       }
       continue;
     }
@@ -324,13 +326,9 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       filter_counter.increment(FilterCounter::SPANNING_AMOUNT);
       if (output_bams) {
         writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::SPANNING_AMOUNT),
-                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif);
+                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
       }
       continue;
-    }
-    if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
-      aligned_reads->push_back(aligned_read);
-      str_starts.insert(aligned_read.msStart);
     }
     // Check that the read ends don't contain too many repeat instances
     if (max_repeats_in_ends > -1) {
@@ -339,15 +337,19 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
         filter_counter.increment(FilterCounter::MAX_REPEATS_IN_ENDS);
         if (output_bams) {
           writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAX_REPEATS_IN_ENDS),
-                                               ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif);
+                                               ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
         }
         continue;
       }
     }
+    if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
+      aligned_reads->push_back(aligned_read);
+      str_starts.insert(aligned_read.msStart);
+    }
   }
   if (aligned_reads->size() == 0) {
     if (output_bams) {
-      writer_filtered->WriteAllelotypeRead(aln, "NO_SPANNED_STRS", dummy_aligned_read.chrom, -1, -1, "");
+      writer_filtered->WriteAllelotypeRead(aln, "NO_SPANNED_STRS", dummy_aligned_read.chrom, -1, -1, "", 0);
     }
     return false;
   }
@@ -363,7 +365,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
           << aligned_reads->at(0).msStart << " read " << dummy_aligned_read.ID;
       PrintMessageDieOnError(msg.str(), WARNING);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, "NO_REF_SEQ", dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, "NO_REF_SEQ", dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
@@ -373,7 +375,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (!maximum_end_matches){
       filter_counter.increment(FilterCounter::NOT_MAXIMAL_END);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NOT_MAXIMAL_END), dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NOT_MAXIMAL_END), dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
@@ -388,7 +390,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
           << aligned_reads->at(0).msStart << " read " << aligned_reads->at(0).ID;
       PrintMessageDieOnError(msg.str(), WARNING);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, "NO_REF_SEQ", dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, "NO_REF_SEQ", dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
@@ -397,7 +399,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match){
       filter_counter.increment(FilterCounter::NUM_END_MATCHES);
       if (output_bams) {
-        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NUM_END_MATCHES), dummy_aligned_read.chrom, -1, -1, "");
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NUM_END_MATCHES), dummy_aligned_read.chrom, -1, -1, "", 0);
       }
       return false;
     }
@@ -405,8 +407,12 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   
   if (aligned_reads->size() > 0) {
     filter_counter.increment(FilterCounter::UNFILTERED);
-    if (output_bams) {
-      writer_reads->WriteAllelotypeRead(aln, "PASS", dummy_aligned_read.chrom, -1, -1, "");
+    for (size_t i = 0; i < aligned_reads->size(); i++) {
+      if (output_bams) {
+        writer_reads->WriteAllelotypeRead(aln, "PASS", aligned_reads->at(i).chrom,
+                                          aligned_reads->at(i).msStart, aligned_reads->at(i).msEnd,
+                                          aligned_reads->at(i).repseq, aligned_reads->at(i).diffFromRef);
+      }
     }
     return true;
   }

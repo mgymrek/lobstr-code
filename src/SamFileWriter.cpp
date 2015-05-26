@@ -313,7 +313,7 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
 
 void SamFileWriter::WriteAllelotypeRead(const BamTools::BamAlignment& aln, const std::string& filter,
                                         const std::string& chrom, const int& str_start, const int& str_end,
-                                        const std::string& repseq) {
+                                        const std::string& repseq, const int& allele) {
   // Make a new BAM aligment
   BamAlignment bam_alignment;
   // Only set basic fields
@@ -342,10 +342,13 @@ void SamFileWriter::WriteAllelotypeRead(const BamTools::BamAlignment& aln, const
   bam_alignment.CigarData = aln.CigarData;
   // Set tags
   bam_alignment.AddTag("XF", "Z", filter);
-  if (chrom != "") {
+  if (str_start != -1) {
     stringstream locus_str;
     locus_str << chrom << ":" << str_start << "-" << str_end << ":" << repseq;
     bam_alignment.AddTag("XL", "Z", locus_str.str());
+    if (filter == "PASS") {
+      bam_alignment.AddTag("XD", "i", allele);
+    }
   }
   writer.SaveAlignment(bam_alignment);
 }
