@@ -311,6 +311,45 @@ void SamFileWriter::WriteRecord(const ReadPair& read_pair) {
   }
 }
 
+void SamFileWriter::WriteAllelotypeRead(const BamTools::BamAlignment& aln, const std::string& filter,
+                                        const std::string& chrom, const int& str_start, const int& str_end,
+                                        const std::string& repseq) {
+  // Make a new BAM aligment
+  BamAlignment bam_alignment;
+  // Only set basic fields
+  bam_alignment.Name = aln.Name;
+  if (chrom == "") {
+    bam_alignment.RefID = 0;
+  } else {
+    int ref_id = -1;
+    size_t i = 0;
+    for (map<string, int>::const_iterator it = chrom_sizes.begin();
+         it != chrom_sizes.end(); ++it) {
+      if (it->first == chrom) {
+        ref_id = i;
+      }
+      ++i;
+    }
+    if (ref_id == -1) {
+      PrintMessageDieOnError("[SamFileWriter.cpp]: problem setting refid", ERROR);
+    }
+    bam_alignment.RefID = ref_id;
+  }
+  bam_alignment.Position = aln.Position;
+  bam_alignment.QueryBases = aln.QueryBases;
+  bam_alignment.Qualities = aln.Qualities;
+  bam_alignment.MapQuality = aln.MapQuality;
+  bam_alignment.CigarData = aln.CigarData;
+  // Set tags
+  bam_alignment.AddTag("XF", "Z", filter);
+  if (chrom != "") {
+    stringstream locus_str;
+    locus_str << chrom << ":" << str_start << "-" << str_end << ":" << repseq;
+    bam_alignment.AddTag("XL", "Z", locus_str.str());
+  }
+  writer.SaveAlignment(bam_alignment);
+}
+
 std::string SamFileWriter::StandardizeReadID(const std::string& readid, bool paired) {
   vector<std::string> strs;
   boost::split(strs, readid, boost::is_any_of("\t "));

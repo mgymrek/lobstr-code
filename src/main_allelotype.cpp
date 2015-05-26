@@ -132,7 +132,11 @@ void show_help() {
 	   << "--filter-clipped:               Filter reads with hard or soft clipped bases at the ends\n\n"
 	   << "--filter-reads-with-n:          Filter reads that have one or more N bases\n\n"
 	   << "Additional options\n"
-	   << "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n"
+     << "--output-bams:                  Output BAM files:\n"
+     << "                                   <out>.reads.bam: contains all reads used for analysis (before collapsing duplicates)\n"
+     << "                                   <out>.filtered.bam: contains all reads removed by filters\n"
+     << "                                where <out> is the argument to --out\n"
+ 	   << "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n"
 	   << "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
   cerr << help_msg.str();
   exit(1);
@@ -169,6 +173,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_NORMDUP,
     OPT_NOWEB,
     OPT_OUTPUT,
+    OPT_OUTPUT_BAMS,
     OPT_PRINT_READS,
     OPT_QUIET,
     OPT_STRINFO,
@@ -206,6 +211,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"no-rmdup", 0, 0, OPT_NORMDUP},
     {"noweb", 0, 0, OPT_NOWEB},
     {"out", 1, 0, OPT_OUTPUT},
+    {"output-bams", 0, 0, OPT_OUTPUT_BAMS},
     {"quiet", 0, 0, OPT_QUIET},
     {"reads", 0, 0, OPT_PRINT_READS},
     {"strinfo", 1, 0, OPT_STRINFO},
@@ -332,6 +338,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_OUTPUT:
       output_prefix = string(optarg);
       AddOption("out", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_OUTPUT_BAMS:
+      output_bams = true;
+      AddOption("output-bams", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_PRINT_READS:
       print_reads = true;

@@ -131,7 +131,7 @@ extern int min_bp_before_indel;
 extern int min_read_end_match;
 extern int max_matedist;
 extern int maximal_end_match_window;
-
+extern bool output_bams;
 
 // debug
 extern bool align_debug;
