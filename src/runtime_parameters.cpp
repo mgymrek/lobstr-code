@@ -107,7 +107,7 @@ int max_repeats_in_ends = -1;
 bool filter_mapq0 = false;
 bool filter_clipped = false;
 bool filter_reads_with_n = false;
-bool output_bams = true;
+bool output_bams = false;
 
 // debugging
 bool align_debug = false;
