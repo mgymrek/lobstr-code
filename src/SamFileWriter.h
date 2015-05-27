@@ -40,7 +40,18 @@ class SamFileWriter {
  public:
   SamFileWriter(const std::string& _filename,
                 const std::map<std::string, int>& _chrom_sizes);
+
+  /* Write alignment from lobSTR */
   void WriteRecord(const ReadPair& read_pair);
+
+  /* Write read from allelotype
+     - filter referes to filter status. PASS if not filtered
+     - chrom, str_start, and str_end refer to specific STRs the read
+           was filtered from. Otherwise set to chrom="", str_start=-1, str_end=-1, repseq="", allele=0
+   */
+  void WriteAllelotypeRead(const BamTools::BamAlignment& aln, const std::string& filter,
+                           const std::string& chrom, const int& str_start, const int& str_end,
+                           const std::string& repseq, const int& allele);
   virtual ~SamFileWriter();
  private:
   std::string StandardizeReadID(const std::string& readid, bool paired);

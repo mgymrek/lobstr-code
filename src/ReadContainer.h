@@ -30,6 +30,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "src/AlignedRead.h"
 #include "src/cigar.h"
+#include "src/SamFileWriter.h"
 #include "src/STRIntervalTree.h"
 #include "src/ReferenceSTR.h"
 #include "src/api/BamReader.h"
@@ -103,6 +104,10 @@ class ReadContainer {
   BamTools::BamMultiReader reader;
   BamTools::RefVector references;
   map<std::string, int> chrom_to_refid;
+
+  /* Bam file writers */
+  SamFileWriter* writer_reads;
+  SamFileWriter* writer_filtered;
 };
 
 #endif  // SRC_READCONTAINER_H_

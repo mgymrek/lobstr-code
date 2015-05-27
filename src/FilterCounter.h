@@ -31,20 +31,23 @@ class FilterCounter {
   uint64_t* counts;
   
  public:
-  const static int NUM_FILTERS     = 11;
+  const static int NUM_FILTERS         = 14;
 
   // Various filter types
-  const static int NOT_UNIT        = 0;
-  const static int DIFF_FROM_REF   = 1;
-  const static int MAPPING_QUALITY = 2;
-  const static int MATE_DIST       = 3;
-  const static int ALLELE_SIZE     = 4;
-  const static int CONTAINS_N_BASE = 5;
-  const static int SPANNING_AMOUNT = 6;
-  const static int NUM_END_MATCHES = 7;
-  const static int NOT_MAXIMAL_END = 8;
-  const static int BP_BEFORE_INDEL = 9;
-  const static int UNFILTERED      = 10;
+  const static int NOT_UNIT            = 0;
+  const static int DIFF_FROM_REF       = 1;
+  const static int MAPPING_QUALITY     = 2;
+  const static int MATE_DIST           = 3;
+  const static int ALLELE_SIZE         = 4;
+  const static int CONTAINS_N_BASE     = 5;
+  const static int SPANNING_AMOUNT     = 6;
+  const static int NUM_END_MATCHES     = 7;
+  const static int NOT_MAXIMAL_END     = 8;
+  const static int BP_BEFORE_INDEL     = 9;
+  const static int CONTAINS_CLIP       = 10;
+  const static int MAPQ0               = 11;
+  const static int MAX_REPEATS_IN_ENDS = 12;
+  const static int UNFILTERED          = 13;
 
   FilterCounter();
   

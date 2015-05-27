@@ -199,6 +199,7 @@ liballelotype_a_SOURCES = \
 	ReadPair.cpp \
 	ReferenceSTR.cpp ReferenceSTR.h \
 	RemoveDuplicates.cpp RemoveDuplicates.h \
+	SamFileWriter.cpp SamFileWriter.h \
 	STRRecord.h \
 	runtime_parameters.cpp runtime_parameters.h \
 	IFileReader.h RunInfo.h \

@@ -62,6 +62,15 @@ ReadContainer::ReadContainer(vector<std::string> filenames) {
   }
   // Get sample info
   GetSampleInfo();
+  // Open writers
+  if (output_bams) {
+    map<string, int> chrom_sizes;
+    for (size_t i = 0; i < references.size(); i++) {
+      chrom_sizes[references.at(i).RefName] = (int)references.at(i).RefLength;
+    }
+    writer_reads = new SamFileWriter(output_prefix + ".reads.bam", chrom_sizes);
+    writer_filtered = new SamFileWriter(output_prefix + ".filtered.bam", chrom_sizes);
+  }
 }
 
 void ReadContainer::GetSampleInfo() {
@@ -116,9 +125,11 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
       continue;
     }
     vector<AlignedRead> aligned_reads;
-    ParseRead(aln, &aligned_reads, itree, ref_ext_nucleotides);
+    if (!ParseRead(aln, &aligned_reads, itree, ref_ext_nucleotides)) {
+      continue;
+    }
     for (vector<AlignedRead>::const_iterator it = aligned_reads.begin();
-	 it != aligned_reads.end(); it++) {
+         it != aligned_reads.end(); it++) {
       const AlignedRead& aligned_read = *it;
       // Add to map
       pair<string, int> coord
@@ -146,6 +157,9 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   set<int> str_starts;
   // *** First check bam flags *** //
   if (!aln.IsMapped()) {
+    if (output_bams) {
+      writer_filtered->WriteAllelotypeRead(aln, "UNMAPPED", "", -1, -1, "", 0);
+    }
     return false;
   }
   // *** Get read properties*** //
@@ -163,6 +177,13 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   dummy_aligned_read.read_start = aln.Position;
   // get cigar
   dummy_aligned_read.cigar_ops = aln.CigarData;
+  CIGAR_LIST cigar_list;
+  if (!GetCigarList(dummy_aligned_read, &cigar_list)) {
+    if (output_bams) {
+      writer_filtered->WriteAllelotypeRead(aln, "NO_CIGAR", dummy_aligned_read.chrom, -1, -1, "", 0);
+    }
+    return false;
+  }
   // Ignore pair information
   dummy_aligned_read.mate = 0;
   // get mapq
@@ -186,30 +207,64 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   // *** Alignment filters (these don't depend on which STR aligned to) *** //
   if (dummy_aligned_read.mapq > max_mapq) {
     filter_counter.increment(FilterCounter::MAPPING_QUALITY);
+    if (output_bams) {
+      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAPPING_QUALITY), dummy_aligned_read.chrom, -1, -1, "", 0);
+    }
+    return false;
+  }
+  if (aln.MapQuality == 0 && filter_mapq0) {
+    filter_counter.increment(FilterCounter::MAPQ0);
+    if (output_bams) {
+      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAPQ0), dummy_aligned_read.chrom, -1, -1, "", 0);
+    }
     return false;
   }
   if (dummy_aligned_read.matedist > max_matedist) {
     filter_counter.increment(FilterCounter::MATE_DIST);
+    if (output_bams) {
+      writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MATE_DIST), dummy_aligned_read.chrom, -1, -1, "", 0);
+    }
     return false;
+  }
+  if (dummy_aligned_read.nucleotides.find("N") != std::string::npos) { 
+    if (filter_reads_with_n) {
+      filter_counter.increment(FilterCounter::CONTAINS_N_BASE);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::CONTAINS_N_BASE), dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
+      return false;
+    }
+  }
+  if (cigar_list.cigar_string.find("S") != std::string::npos ||
+      cigar_list.cigar_string.find("H") != std::string::npos) {
+    if (filter_clipped) {
+      filter_counter.increment(FilterCounter::CONTAINS_CLIP);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::CONTAINS_CLIP), dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
+      return false;
+    }
   }
   // check that both ends of the aligned read have sufficient bases before the first indel
   if (min_bp_before_indel > 0){
     pair<int, int> num_bps = AlignmentFilters::GetEndDistToIndel(&dummy_aligned_read);
     if (num_bps.first != -1 && num_bps.first < min_bp_before_indel){
       filter_counter.increment(FilterCounter::BP_BEFORE_INDEL);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::BP_BEFORE_INDEL), dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
       return false;
     }
     if (num_bps.second != -1 && num_bps.second < min_bp_before_indel){
       filter_counter.increment(FilterCounter::BP_BEFORE_INDEL);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::BP_BEFORE_INDEL), dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
       return false;
     }
   }
   // *** Determine region spanned by this read *** //
   int read_start = dummy_aligned_read.read_start;
-  CIGAR_LIST cigar_list;
-  if (!GetCigarList(dummy_aligned_read, &cigar_list)) {
-    return false;
-  }
   int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) - GetSTRAllele(cigar_list);
   // *** Determine which reference STRs overlapped by this read *** //
   vector<ReferenceSTR> spanned_strs;
@@ -228,6 +283,9 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     // get allele
     CIGAR_LIST str_cigar_list;
     if (!ExtractCigar(cigar_list, aln.Position+1, ref_str.start-CIGAR_BUFFER, ref_str.stop+CIGAR_BUFFER, &str_cigar_list)) {
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, "ERROR_EXTRACTING_CIGAR", ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
+      }
       continue;
     }
     aligned_read.diffFromRef = GetSTRAllele(str_cigar_list);
@@ -237,16 +295,28 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (unit) {
       if (aligned_read.diffFromRef % aligned_read.period != 0){ 
         filter_counter.increment(FilterCounter::NOT_UNIT);
+        if (output_bams) {
+          writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NOT_UNIT),
+                                               ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
+        }
         continue;
       }
     }
     if (abs(aligned_read.diffFromRef) > max_diff_ref) {
       filter_counter.increment(FilterCounter::DIFF_FROM_REF);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::DIFF_FROM_REF),
+                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
+      }
       continue;
     }
     // Check if the allele length is valid
     if (aligned_read.diffFromRef + (aligned_read.refCopyNum*aligned_read.period) < MIN_ALLELE_SIZE) {
       filter_counter.increment(FilterCounter::ALLELE_SIZE);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::ALLELE_SIZE),
+                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
+      }
       continue;
     }
     // check that read sufficiently spans STR
@@ -254,7 +324,23 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     int min_read_stop  = aligned_read.msEnd   + min_border;
     if (aln.Position > max_read_start || aln.GetEndPosition() < min_read_stop){
       filter_counter.increment(FilterCounter::SPANNING_AMOUNT);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::SPANNING_AMOUNT),
+                                             ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
+      }
       continue;
+    }
+    // Check that the read ends don't contain too many repeat instances
+    if (max_repeats_in_ends > -1) {
+      if (AlignmentFilters::GetMaxRepeatsInEnds(&aligned_read, aligned_read.repseq.length()*4) > 
+          max_repeats_in_ends) {
+        filter_counter.increment(FilterCounter::MAX_REPEATS_IN_ENDS);
+        if (output_bams) {
+          writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::MAX_REPEATS_IN_ENDS),
+                                               ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
+        }
+        continue;
+      }
     }
     if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
       aligned_reads->push_back(aligned_read);
@@ -262,6 +348,9 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     }
   }
   if (aligned_reads->size() == 0) {
+    if (output_bams) {
+      writer_filtered->WriteAllelotypeRead(aln, "NO_SPANNED_STRS", dummy_aligned_read.chrom, -1, -1, "", 0);
+    }
     return false;
   }
   // *** Apply rest of read-level filters. Get sequence based on first aligned read location *** //
@@ -273,8 +362,11 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (loc_iter == ref_ext_nucleotides.end()) {
       stringstream msg;
       msg << "No extended reference sequence found for locus " << aligned_reads->at(0).chrom << ":"
-	  << aligned_reads->at(0).msStart << " read " << dummy_aligned_read.ID;
+          << aligned_reads->at(0).msStart << " read " << dummy_aligned_read.ID;
       PrintMessageDieOnError(msg.str(), WARNING);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, "NO_REF_SEQ", dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
       return false;
     }
     string ref_ext_seq = loc_iter->second;
@@ -282,6 +374,9 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
 								      maximal_end_match_window, maximal_end_match_window);
     if (!maximum_end_matches){
       filter_counter.increment(FilterCounter::NOT_MAXIMAL_END);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NOT_MAXIMAL_END), dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
       return false;
     }
   }
@@ -292,22 +387,36 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     if (loc_iter == ref_ext_nucleotides.end()) {
       stringstream msg;
       msg << "No extended reference sequence found for locus " << aligned_reads->at(0).chrom << ":"
-	  << aligned_reads->at(0).msStart << " read " << aligned_reads->at(0).ID;
+          << aligned_reads->at(0).msStart << " read " << aligned_reads->at(0).ID;
       PrintMessageDieOnError(msg.str(), WARNING);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, "NO_REF_SEQ", dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
       return false;
     }
     string ref_ext_seq = loc_iter->second;
     pair<int,int> num_end_matches = AlignmentFilters::GetNumEndMatches(&dummy_aligned_read, ref_ext_seq, aligned_reads->at(0).msStart-extend);
     if (num_end_matches.first < min_read_end_match || num_end_matches.second < min_read_end_match){
       filter_counter.increment(FilterCounter::NUM_END_MATCHES);
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, filter_counter.GetFilterType(FilterCounter::NUM_END_MATCHES), dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
       return false;
     }
   }
   
   if (aligned_reads->size() > 0) {
     filter_counter.increment(FilterCounter::UNFILTERED);
+    for (size_t i = 0; i < aligned_reads->size(); i++) {
+      if (output_bams) {
+        writer_reads->WriteAllelotypeRead(aln, "PASS", aligned_reads->at(i).chrom,
+                                          aligned_reads->at(i).msStart, aligned_reads->at(i).msEnd,
+                                          aligned_reads->at(i).repseq, aligned_reads->at(i).diffFromRef);
+      }
+    }
+    return true;
   }
-  return true;
+  return false;
 }
 
 bool ReadContainer::GetIntBamTag(const BamTools::BamAlignment& aln,
@@ -418,4 +527,9 @@ int ReadContainer::GetSTRAllele(const CIGAR_LIST& cigar_list) {
   return diff_from_ref;
 }
 
-ReadContainer::~ReadContainer() {}
+ReadContainer::~ReadContainer() {
+  if (output_bams) {
+    delete writer_reads;
+    delete writer_filtered;
+  }
+}

@@ -382,7 +382,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   if (str_record.period < 1 || str_record.period > 6) {
     stringstream msg;
     msg <<"Skipping locus " << chrom << ":" << read_list.front().msStart
-	<< ". Invalid period size (" << str_record.period << ")";
+        << ". Invalid period size (" << str_record.period << ")";
     PrintMessageDieOnError(msg.str(), WARNING);
     return;
   }
@@ -406,7 +406,11 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     return;
   }
   if (str_record.repseq.empty()) return;
-
+  if (debug) {
+    stringstream msg;
+    msg << "##### Processing locus " << str_record.chrom << ":" << str_record.start << " #####";
+    PrintMessageDieOnError(msg.str(), DEBUG);
+  }
   // Check if in our list of annotations
   bool is_annotated = false;
   if (annotations.find(pair<string,int>(str_record.chrom, str_record.start)) !=
@@ -414,7 +418,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     is_annotated = true;
     const STRAnnotation annot = annotations[pair<string,int>(str_record.chrom, str_record.start)];
     if (my_verbose) {
-      PrintMessageDieOnError("Processing annotated locus " + annot.name, PROGRESS);
+      PrintMessageDieOnError("Processing annotated locus" + annot.name, PROGRESS);
     }
     str_record.name = annot.name;
     str_record.alleles_to_include = annot.alleles;
@@ -428,6 +432,20 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   vector<list<AlignedRead> > sample_reads;
   if (!GetReadsPerSample(read_list, samples, rg_id_to_sample, &sample_reads)) {return;}
 
+  if (debug)  {
+    PrintMessageDieOnError("Reads before dedup:", DEBUG);
+    for (size_t i=0; i<sample_reads.size(); i++) {
+      list<AlignedRead> rl = sample_reads.at(i);
+      PrintMessageDieOnError(samples.at(i), DEBUG);
+      for (list<AlignedRead>::const_iterator it=rl.begin();
+           it != rl.end(); it++) {
+        stringstream msg;
+        msg << it->ID << " " << it->diffFromRef;
+        PrintMessageDieOnError(msg.str(), DEBUG);
+      }
+    }
+  }
+
   // Process each sample
   for (size_t i = 0; i < samples.size(); i++) {
     if (debug) {
@@ -435,6 +453,17 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
     }
     if (rmdup) {
       RemoveDuplicates::RemovePCRDuplicates(&sample_reads.at(i));
+      if (debug) {
+        stringstream msg;
+        msg << samples.at(i) << " after dedup" ;
+        PrintMessageDieOnError(msg.str(), DEBUG);
+        for (list<AlignedRead>::const_iterator it=sample_reads.at(i).begin();
+             it!=sample_reads.at(i).end(); it++) {
+          stringstream msg1;
+          msg1 << it->ID << " " << it->diffFromRef;
+          PrintMessageDieOnError(msg1.str(), DEBUG);
+        }
+      }
     }
     ProcessLocus(sample_reads.at(i), &str_record, is_haploid);
   }
