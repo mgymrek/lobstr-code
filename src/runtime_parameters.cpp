@@ -94,6 +94,7 @@ std::string noise_model = "";
 std::string haploid_chroms_string = "";
 std::string strinfofile = "";
 std::string use_chrom = "";
+std::string regions_file = "";
 bool rmdup = true;
 bool include_gl = false;
 bool print_reads = false;

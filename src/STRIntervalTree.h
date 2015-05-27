@@ -48,6 +48,9 @@ class STRIntervalTree {
   /* Get intervals spanned by a region */
   bool GetSpannedIntervals(const int& start, const int& end, std::vector<ReferenceSTR>* spanned_intervals);
 
+  /* Get intervals containing a region */
+  bool GetContainingRegions(const int& start, const int& end, std::vector<ReferenceSTR>* containing_intervals);
+
   ~STRIntervalTree();
 
  private:

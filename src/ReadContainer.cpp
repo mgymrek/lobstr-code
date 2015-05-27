@@ -148,9 +148,9 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
 }
 
 bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
-			      vector<AlignedRead>* aligned_reads,
-			      STRIntervalTree& itree,
-			      map<pair<string,int>, string>& ref_ext_nucleotides) {
+                              vector<AlignedRead>* aligned_reads,
+                              STRIntervalTree& itree,
+                              map<pair<string,int>, string>& ref_ext_nucleotides) {
   // Dummy aligned read to set fields common to all
   AlignedRead dummy_aligned_read;
   // Keep track of STRs already covered so don't add twice (for annotated markers with two listings

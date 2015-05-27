@@ -118,6 +118,7 @@ extern std::string noise_model;
 extern std::string haploid_chroms_string;
 extern std::string strinfofile;
 extern std::string use_chrom;
+extern std::string regions_file;
 extern bool rmdup;
 extern bool include_gl;
 extern bool print_reads;

@@ -34,6 +34,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include "src/NoiseModel.h"
 #include "src/ReadContainer.h"
 #include "src/ReferenceSTR.h"
+#include "src/STRIntervalTree.h"
 #include "src/runtime_parameters.h"
 
 using namespace std;
@@ -96,6 +97,8 @@ void show_help() {
 	   << "                                that should be forced to have homozygous\n"
 	   << "                                calls. Specify --haploid all if the organism\n"
 	   << "                                is haploid. Will be applied to all samples.\n"
+     << "--regions <STRING>              Restrict allelotyping to STRs falling in regions\n"
+     << "                                specified by this bed file.\n"
 	   << "-h,--help:                      display this message\n"
 	   << "-v,--verbose:                   print out helpful progress messages\n"
 	   << "--quiet                         don't print anything to stderr or stdout\n"
@@ -176,6 +179,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_OUTPUT_BAMS,
     OPT_PRINT_READS,
     OPT_QUIET,
+    OPT_REGIONS,
     OPT_STRINFO,
     OPT_UNIT,
     OPT_VERBOSE,
@@ -214,6 +218,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"output-bams", 0, 0, OPT_OUTPUT_BAMS},
     {"quiet", 0, 0, OPT_QUIET},
     {"reads", 0, 0, OPT_PRINT_READS},
+    {"regions", 1, 0, OPT_REGIONS},
     {"strinfo", 1, 0, OPT_STRINFO},
     {"unit", 0, 0, OPT_UNIT},
     {"verbose", 0, 0, OPT_VERBOSE},
@@ -350,6 +355,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_QUIET:
       quiet = true;
       break;
+    case OPT_REGIONS:
+      regions_file = string(optarg);
+      AddOption("regions", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
     case OPT_STRINFO:
       strinfofile = string(optarg);
       AddOption("strinfo", string(optarg), true, &user_defined_arguments_allelotyper);
@@ -409,6 +418,42 @@ void parse_commandline_options(int argc, char* argv[]) {
 }
 
 void LoadReference() {
+  map<string, STRIntervalTree> chrom_to_region_trees;
+  if (!regions_file.empty()) {
+    if (my_verbose) {
+      PrintMessageDieOnError("Loading regions file", PROGRESS);
+    }
+    map<string, vector<ReferenceSTR> > chrom_to_regions;
+    TextFileReader tReader(regions_file);
+    string line;
+    while (tReader.GetNextLine(&line)) {
+      vector<string>items(0);
+      split(line, '\t', items);
+      if (items.size() != 3) {
+        PrintMessageDieOnError("Malformed regions file. Should have "
+                               "chrom, start, end and be tab-separated", ERROR);
+      }
+      ReferenceSTR reg;
+      const string chrom = items.at(0);
+      const int start = atoi(items.at(1).c_str());
+      const int stop = atoi(items.at(2).c_str());
+      reg.chrom = chrom;
+      reg.start = start;
+      reg.stop = stop;
+      if (chrom_to_regions.find(chrom) ==
+          chrom_to_regions.end()) {
+        vector<ReferenceSTR> regions;
+        chrom_to_regions[chrom] = regions;
+      }
+      chrom_to_regions[chrom].push_back(reg);
+    }
+    for (map<string, vector<ReferenceSTR> >::const_iterator it = chrom_to_regions.begin();
+         it != chrom_to_regions.end(); it++) {
+      STRIntervalTree itree;
+      itree.LoadIntervals(chrom_to_regions[it->first]);
+      chrom_to_region_trees[it->first] = itree;
+    }
+  }
   if (my_verbose) {
     PrintMessageDieOnError("Loading reference STRs", PROGRESS);
   }
@@ -457,21 +502,34 @@ void LoadReference() {
       int start = atoi(items.at(2).c_str());
       string nucs = ref_record.nucleotides;
       if (use_chrom.empty() || use_chrom == chrom) {
-	// Get nucs for each locus at this refid
-	for (vector<ReferenceSTR>::iterator it = refid_to_refstrs[refid].begin();
-	     it != refid_to_refstrs[refid].end(); it++) {
-	  it->chrom = chrom; // Set chrom, wasn't set above
-	  pair<string, int> locus = it->GetLocus();
-	  int strlen = it->stop-it->start+1;
-	  // Get STR sequence
-	  ref_nucleotides[locus] = nucs.substr(it->start-start+PAD-1, strlen);
-	  // Get extended ref sequence
-	  ref_ext_nucleotides[locus] = nucs.substr(it->start-start+PAD-extend, 2*extend + strlen);
-	  // Add to reference STRs
-	  reference_strs.push_back(*it);
-	  // Get ref repseq
-	  ref_repseq[locus] = it->motif;
-	}
+        // Get nucs for each locus at this refid
+        for (vector<ReferenceSTR>::iterator it = refid_to_refstrs[refid].begin();
+             it != refid_to_refstrs[refid].end(); it++) {
+          it->chrom = chrom; // Set chrom, wasn't set above
+          if (!regions_file.empty()) {
+            if (chrom_to_region_trees.find(chrom) == chrom_to_region_trees.end()) {
+              continue;
+            }
+            vector<ReferenceSTR> containing_regions;
+            if (!chrom_to_region_trees[chrom].GetContainingRegions(it->start, it->stop, &containing_regions)) {
+              continue;
+            }
+            if (containing_regions.size() == 0) {
+              continue;
+            }
+          }
+          cerr << "Found in regions file " << it->chrom << " " << it->start << endl; // TODO
+          pair<string, int> locus = it->GetLocus();
+          int strlen = it->stop-it->start+1;
+          // Get STR sequence
+          ref_nucleotides[locus] = nucs.substr(it->start-start+PAD-1, strlen);
+          // Get extended ref sequence
+          ref_ext_nucleotides[locus] = nucs.substr(it->start-start+PAD-extend, 2*extend + strlen);
+          // Add to reference STRs
+          reference_strs.push_back(*it);
+          // Get ref repseq
+          ref_repseq[locus] = it->motif;
+        }
       }
     }
   }
@@ -520,9 +578,9 @@ int main(int argc, char* argv[]) {
     vector<ReferenceSTR> haploid_str_chunk;
     for (size_t i = 0; i < haploid_chroms.size(); i++) {
       if (!ref_str_container.GetChromChunk(&haploid_str_chunk, haploid_chroms.at(i))) {
-	stringstream msg;
-	msg << "No reference STRs found for haploid chromosome " << haploid_chroms.at(i);
-	PrintMessageDieOnError(msg.str(), WARNING);
+        stringstream msg;
+        msg << "No reference STRs found for haploid chromosome " << haploid_chroms.at(i);
+        PrintMessageDieOnError(msg.str(), WARNING);
       }
     }
     if (haploid_str_chunk.size() == 0) {
@@ -549,7 +607,7 @@ int main(int argc, char* argv[]) {
       vector<string>annotation_files;
       boost::split(annotation_files, annotation_files_string, boost::is_any_of(","));
       if (my_verbose) {
-	PrintMessageDieOnError("Loading annotations", PROGRESS);
+        PrintMessageDieOnError("Loading annotations", PROGRESS);
       }
       genotyper.LoadAnnotations(annotation_files);
     }
@@ -566,31 +624,31 @@ int main(int argc, char* argv[]) {
       ref_region.start = begin;
       ref_region.stop = end;
       if (use_chrom.empty() || (use_chrom == chrom)) {
-	str_container.AddReadsFromFile(ref_region, ref_str_chunk,
-				       ref_ext_nucleotides, vector<string>(0));
-	for (size_t i = 0; i < ref_str_chunk.size(); i++) {
-	  // Check that we don't process the same locus twice
-	  if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {
-	    pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
-	    if (debug) {
-	      stringstream msg;
-	      msg << "Processing " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
-	      PrintMessageDieOnError(msg.str(), DEBUG);
-	    }
-	    list<AlignedRead> aligned_reads;
-	    str_container.GetReadsAtCoord(coord, &aligned_reads);
-	    if (aligned_reads.size() > 0) {
-	      genotyper.Genotype(aligned_reads);
-	    }
-	  } else {
-	    stringstream msg;
-	    msg << "Discarding duplicate of locus " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
-	    PrintMessageDieOnError(msg.str(), WARNING);
-	  }
-	  prev_chrom = ref_str_chunk.at(i).chrom;
-	  prev_begin = ref_str_chunk.at(i).start;
-	}
-	str_container.ClearReads();
+        str_container.AddReadsFromFile(ref_region, ref_str_chunk,
+                                       ref_ext_nucleotides, vector<string>(0));
+        for (size_t i = 0; i < ref_str_chunk.size(); i++) {
+          // Check that we don't process the same locus twice
+          if (!(ref_str_chunk.at(i).chrom==prev_chrom && ref_str_chunk.at(i).start==prev_begin)) {
+            pair<string, int> coord(ref_str_chunk.at(i).chrom, ref_str_chunk.at(i).start);
+            if (debug) {
+              stringstream msg;
+              msg << "Processing " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
+              PrintMessageDieOnError(msg.str(), DEBUG);
+            }
+            list<AlignedRead> aligned_reads;
+            str_container.GetReadsAtCoord(coord, &aligned_reads);
+            if (aligned_reads.size() > 0) {
+              genotyper.Genotype(aligned_reads);
+            }
+          } else {
+            stringstream msg;
+            msg << "Discarding duplicate of locus " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
+            PrintMessageDieOnError(msg.str(), WARNING);
+          }
+          prev_chrom = ref_str_chunk.at(i).chrom;
+          prev_begin = ref_str_chunk.at(i).start;
+        }
+        str_container.ClearReads();
       }
     }
   }
