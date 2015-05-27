@@ -640,10 +640,6 @@ int main(int argc, char* argv[]) {
             if (aligned_reads.size() > 0) {
               genotyper.Genotype(aligned_reads);
             }
-          } else {
-            stringstream msg;
-            msg << "Discarding duplicate of locus " << ref_str_chunk.at(i).chrom << ":" << ref_str_chunk.at(i).start;
-            PrintMessageDieOnError(msg.str(), WARNING);
           }
           prev_chrom = ref_str_chunk.at(i).chrom;
           prev_begin = ref_str_chunk.at(i).start;
