@@ -27,7 +27,10 @@ script_SCRIPTS = \
 	GetSTRInfo.py \
 	lobstr_index.py \
 	lobSTR_test_run.sh \
-	lobSTR_download_ref_hg19.sh
+	lobSTR_download_ref_hg19.sh \
+	allelotype_validation_suite.sh \
+	lobSTR_capillary_comparator.py \
+	lobSTR_vcf_to_tab.py
 
 EXTRA_DIST = $(script_SCRIPTS) \
 	$(bin_SCRIPTS)
