@@ -22,9 +22,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <time.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h> 
 
 #include <algorithm>
 #include <map>
