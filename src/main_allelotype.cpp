@@ -518,7 +518,6 @@ void LoadReference() {
               continue;
             }
           }
-          cerr << "Found in regions file " << it->chrom << " " << it->start << endl; // TODO
           pair<string, int> locus = it->GetLocus();
           int strlen = it->stop-it->start+1;
           // Get STR sequence
