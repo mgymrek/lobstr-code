@@ -69,9 +69,6 @@ void show_help() {
 	   << "Classifying outputs the files: \n"
 	   << "   <output_prefix>.vcf \n"
 	   << "   <output_prefix>.allelotype.stats \n\n"
-	   << "Note: parameters are uploaded to Amazon S3 by default. This for\n"
-	   << "us see how people are using the tool and to help us continue to improve\n"
-	   << "lobSTR. To turn this function off, specify --noweb.\n\n"
 	   << "Parameter description:\n"
 	   << "--command [train|classify]:     (REQUIRED) specify which of the tasks\n"
 	   << "                                described above to perform\n"
@@ -139,8 +136,7 @@ void show_help() {
      << "                                   <out>.reads.bam: contains all reads used for analysis (before collapsing duplicates)\n"
      << "                                   <out>.filtered.bam: contains all reads removed by filters\n"
      << "                                where <out> is the argument to --out\n"
- 	   << "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n"
-	   << "--noweb                         Do not report any user information and parameters to Amazon S3.\n";
+     << "--chunksize                     Number of loci to read into memory at a time (default: 1000)\n";
   cerr << help_msg.str();
   exit(1);
 }
@@ -336,7 +332,7 @@ void parse_commandline_options(int argc, char* argv[]) {
       rmdup = false;
       AddOption("normdup", "", false, &user_defined_arguments_allelotyper);
       break;
-    case OPT_NOWEB:
+    case OPT_NOWEB: // Deprecated, but left in since it is often used. Always set to true
       noweb = true;
       AddOption("noweb", "", false, &user_defined_arguments_allelotyper);
       break;

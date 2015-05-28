@@ -38,7 +38,7 @@ bool my_verbose = false;
 bool debug = false;
 bool fastq = false;
 bool bam = false;
-bool noweb = false;
+bool noweb = true; // Deprecated
 bool quiet = false;
 
 // threading

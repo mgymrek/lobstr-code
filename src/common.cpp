@@ -86,45 +86,6 @@ void OutputRunStatistics() {
   // Output run statistics to stats file
   string stats_string = run_info.PrintToString((program == LOBSTR ? 0: 1), filter_counter);
   sWriter.Write(stats_string);
-  // Upload to AWS S3
-  if (!noweb) {
-    // Set upt POST data
-    int size = stats_string.size();
-    stringstream pd;
-    pd << "POST /test.py HTTP/1.1\r\n";
-    pd << "Host: mgymrek.scripts.mit.edu\r\n";
-    pd << "Connection: Keep-Alive\r\n";
-    pd << "Content-Type: text/plain, name=\"lobSTRstats\"\r\n";
-    pd << "Content-Length: " << size;
-    pd << "\r\n\r\n";
-    string post_header = pd.str();
-    struct hostent *server;
-    server = gethostbyname("mgymrek.scripts.mit.edu");
-    if (server == NULL) {
-      PrintMessageDieOnError("Server not found", ERROR);
-    }
-    struct sockaddr_in serverAddr;
-    memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    memcpy(&serverAddr.sin_addr.s_addr,
-           server->h_addr, 
-           server->h_length);
-    serverAddr.sin_port = htons(80);
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-      PrintMessageDieOnError("Couldn't initialize socket", ERROR);
-    }
-    if (connect(sock, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
-      PrintMessageDieOnError("Failed internet connection", ERROR);
-    }
-    if (send(sock, post_header.c_str(), post_header.size(),0) < 0) {
-      PrintMessageDieOnError("Couldn't send header", ERROR);
-    }
-    if (send(sock, stats_string.c_str(), size, 0) < 0) {
-      PrintMessageDieOnError("Couldn't send data", ERROR);
-    }
-    close(sock);
-  }
 }
 
 void PrintMessageDieOnError(const string& msg, MSGTYPE msgtype) {
