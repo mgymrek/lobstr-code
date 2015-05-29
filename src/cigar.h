@@ -41,6 +41,10 @@ struct CIGAR_LIST {
     }
     cigar_string = new_cigar.str();
   }
+  void Clear() {
+    cigars = std::vector<CIGAR>(0);
+    cigar_string = "";
+  }
 };
 
 

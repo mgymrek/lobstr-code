@@ -30,13 +30,13 @@ Rolf Muertter,  rolf@dslextreme.com
 
 using namespace std;
 const int a =  2;   // Match
-const int b = -2;   // Mismatch
+const int b = -4;   // Mismatch
 const int s[4][4] = {{ a, b, b, b },
                       { b, a, b, b },
                       { b, b, a, b },
                       { b, b, b, a }};
-const int d = 6;  // gap penalty
-const int GAPOPEN = 6;
+const int d = 10;  // gap penalty
+const int GAPOPEN = 10;
 const int GAPEXTEND = 0;
 
 int nw(const string& seq_1,
