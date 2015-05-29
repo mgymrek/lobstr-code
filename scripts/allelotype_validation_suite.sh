@@ -97,7 +97,7 @@ test -e "${CONVERSIONS}" \
     || die "input error: sample conversions file (${CONVERSIONS}) not found"
 
 TMPDIR=$(mktemp -d) || die "failed to create temporary directory"
-trap "rm -r '${TMPDIR}'"
+trap "rm -r '${TMPDIR}'" EXIT
 
 REFPREFIX="$(find ${REFDIR} -maxdepth 1 -mindepth 1 -type d)/lobSTR_"
 STRINFO="$(ls ${REFDIR}/*strinfo*)"
