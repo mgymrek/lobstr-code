@@ -145,7 +145,7 @@ if __name__ == "__main__":
     num_nocalls = resf.shape[0]
     sys.stdout.write("# Samples: %s\n"%num_samples)
     sys.stdout.write("# Markers: %s\n"%num_markers)
-    sys.stdout.write("# Percent of calls remaining: %s\n"%(num_nocalls*1.0/resf.shape[0]))
+    sys.stdout.write("# Percent of calls remaining: %s\n"%(num_nocalls*1.0/res[res["cov"]>0].shape[0]))
 
     # Accuracy
     acc = np.mean(resf["correct"])

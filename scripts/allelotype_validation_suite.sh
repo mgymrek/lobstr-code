@@ -34,10 +34,11 @@ usage()
     BASE=$(basename -- "$0")
     echo "allelotype validation suite
 Usage:
-    $BASE REFDIR SAMPLEDIR
+    $BASE REFDIR SAMPLEDIR [ARGS]
 
 REFDIR gives base directory of lobSTR hg19 reference bundle (e.g. hg19_v3.0.2/)
 SAMPLEDIR gives base directory of validation data (e.g. lobSTR_validation_data_v3.0.2)
+ARGS gives non-default options to pass to allelotype
 
 The reference bundle and validation data can be downloaded from the lobSTR website:
 http://lobstr.teamerlich.org/download.html
@@ -47,8 +48,12 @@ http://lobstr.teamerlich.org/download.html
 
 REFDIR="$1"
 SAMPLEDIR="$2"
-BWAMEM="$3"
+ARGS="$3"
 test -z "${REFDIR}" || test -z "${SAMPLEDIR}" && usage
+
+echo "[INPUT]: REFDIR=${REFDIR}"
+echo "[INPUT]: SAMPLEDIR=${SAMPLEDIR}"
+echo "[INPUT]: ARGS=${ARGS}"
 
 ##
 ## Check that required programs are installed
@@ -115,7 +120,7 @@ echo "[PROGRESS]: Running allelotype on bwa-mem alignments"
   --index-prefix "${REFPREFIX}" \
   --strinfo "${STRINFO}" \
   --out "${TMPDIR}/validation_bwamem" \
-  --noweb >/dev/null 2>&1 \
+  --noweb ${ARGS} >/dev/null 2>&1 \
     || die "allelotype failed (check error messages above)"
 
 vcf-sort "${TMPDIR}/validation_bwamem.vcf" | bgzip -c > "${TMPDIR}/validation_bwamem.vcf.gz"
