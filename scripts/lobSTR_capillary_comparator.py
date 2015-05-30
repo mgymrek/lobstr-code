@@ -83,6 +83,10 @@ def GetAllele(x, allele_num):
     corr_allele = raw_allele - x["correction"]
     return corr_allele
 
+def GetDosage(a1, a2):
+    if a1 == "." or a2 == ".": return "NA"
+    else: return (float(a1)+float(a2))*0.5
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lobSTR", help="Tab file with lobSTR calls created by lobSTR_vcf_to_tab.py", type=str, required=True)
@@ -108,10 +112,10 @@ if __name__ == "__main__":
     res = pd.merge(res, cap, on=["marker", "sample"])
     res["allele1.cap.corr"] = res.apply(lambda x: GetAllele(x, 1), 1)
     res["allele2.cap.corr"] = res.apply(lambda x: GetAllele(x, 2), 1)
-    res["correct"] = res.apply(lambda x: x["allele1"]==x["allele1.cap.corr"] and \
-                               x["allele2"]==x["allele2.cap.corr"], 1)
-    res["dosage_lob"] = res.apply(lambda x: (x["allele1"]+x["allele2"])*0.5, 1)
-    res["dosage_cap"] = res.apply(lambda x: (x["allele1.cap.corr"]+x["allele2.cap.corr"])*0.5, 1)
+    res["correct"] = res.apply(lambda x: str(x["allele1"])==str(x["allele1.cap.corr"]) and \
+                               str(x["allele2"])==str(x["allele2.cap.corr"]), 1)
+    res["dosage_lob"] = res.apply(lambda x: GetDosage(x["allele1"], x["allele2"]), 1)
+    res["dosage_cap"] = res.apply(lambda x: GetDosage(x["allele1.cap.corr"], x["allele2.cap.corr"]), 1)
 
     ##### Results - before filtering #####
     sys.stdout.write("########## Before filtering ########\n")
@@ -128,8 +132,8 @@ if __name__ == "__main__":
     sys.stdout.write("# Accuracy: %s\n"%acc)
 
     # R2
-    dl = list(res[res["cov"]>0]["dosage_lob"])
-    dc = list(res[res["cov"]>0]["dosage_cap"])
+    dl = map(float, list(res[res["cov"]>0]["dosage_lob"]))
+    dc = map(float, list(res[res["cov"]>0]["dosage_cap"]))
     r2 = pearsonr(dl, dc)[0]**2
     sys.stdout.write("# R2: %s\n"%r2)
 
@@ -152,7 +156,7 @@ if __name__ == "__main__":
     sys.stdout.write("# Accuracy: %s\n"%acc)
 
     # R2
-    dl = list(resf["dosage_lob"])
-    dc = list(resf["dosage_cap"])
+    dl = map(float, list(resf["dosage_lob"]))
+    dc = map(float, list(resf["dosage_cap"]))
     r2 = pearsonr(dl, dc)[0]**2
     sys.stdout.write("# R2: %s\n"%r2)
