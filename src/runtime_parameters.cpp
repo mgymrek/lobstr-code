@@ -38,7 +38,7 @@ bool my_verbose = false;
 bool debug = false;
 bool fastq = false;
 bool bam = false;
-bool noweb = false;
+bool noweb = true; // Deprecated
 bool quiet = false;
 
 // threading
@@ -94,6 +94,7 @@ std::string noise_model = "";
 std::string haploid_chroms_string = "";
 std::string strinfofile = "";
 std::string use_chrom = "";
+std::string regions_file = "";
 bool rmdup = true;
 bool include_gl = false;
 bool print_reads = false;
@@ -106,6 +107,7 @@ int min_read_end_match = 5;
 int max_repeats_in_ends = -1;
 bool filter_mapq0 = false;
 bool filter_clipped = false;
+bool realign = false;
 bool filter_reads_with_n = false;
 bool output_bams = false;
 

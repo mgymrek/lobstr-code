@@ -194,6 +194,7 @@ liballelotype_a_SOURCES = \
 	STRIntervalTree.cpp STRIntervalTree.h IntervalTreeCore.h \
 	logistic_regression.cpp logistic_regression.h \
 	NoiseModel.cpp NoiseModel.h \
+	nw.cpp nw.h \
 	ReadContainer.cpp ReadContainer.h \
 	ReadPair.h \
 	ReadPair.cpp \

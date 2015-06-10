@@ -69,7 +69,7 @@ enum MSGTYPE {
   PROGRESS
 };
 
-// Output run statistics to file and to S3
+// Output run statistics to file
 void OutputRunStatistics();
 
 // Print msg, exit if error

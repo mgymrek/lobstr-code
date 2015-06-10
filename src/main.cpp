@@ -81,9 +81,6 @@ void show_help() {
 	   << "    {-f <file1[,file2,...]> | --p1 <file1_1[,file2_1,...]>\n"
 	   << "    --p2 <file1_2[,file2_1,...]>} --index-prefix <index prefix>\n"
 	   << "    -o <output prefix> --rg-sample <STRING> --rg-lib <STRING>\n"
-	   << "Note: parameters are uploaded to Amazon S3 by default. This is for\n"
-	   << "us to see how people are using the tool and to help us continue to improve\n"
-	   << "lobSTR. To turn this function off, specify --noweb.\n\n"
 	   << "Parameter descriptions:\n "
 	   << "-f,--files    file or comma-separated list of files\n"
 	   << "               containing reads in fasta, fastq, or bam format\n"
@@ -124,7 +121,6 @@ void show_help() {
 	   << "               scores are given as Phred + 64 rather than Phred + 33\n"
 	   << "--multi        Report reads mapping to multiple genomic locations.\n"
 	   << "               Alternate alignments given in XA tag\n"
-	   << "--noweb        Do not report any user information and paramters to Amazon S3.\n"
 	   << "\n\nAdvanced options - general:\n"
 	   << "-p,--threads <INT>         number of threads (default:" << threads << ")\n"
 	   << "--min-read-length <INT>    minimum number of nucleotides for a\n"
@@ -321,7 +317,7 @@ void parse_commandline_options(int argc, char* argv[]) {
         PrintMessageDieOnError("Invalid number of threads", ERROR);
       }
       break;
-    case OPT_NOWEB:
+    case OPT_NOWEB: // Deprecated. Always set to true
       noweb = true;
       AddOption("noweb", "", false, &user_defined_arguments);
       break;

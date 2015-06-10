@@ -88,6 +88,12 @@ class Genotyper {
 	       map<int,int> spanning_reads,
                bool haploid, STRRecord* str_record);
 
+  /* Get strand bias */
+  float GetStrandBias(const list<AlignedRead>& aligned_reads, const int& allele1, const int& allele2);
+
+  /* Get mean distance from ends */
+  float GetMeanDistEnds(const list<AlignedRead>& aligned_reads, const int& allele1, const int& allele2);
+
   /* chromosomes to treat as haploid */
   std::vector<std::string> haploid_chroms;
 

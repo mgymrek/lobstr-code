@@ -31,6 +31,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 #include "src/common.h"
+#include "src/nw.h"
 #include "src/ReadContainer.h"
 #include "src/AlignmentFilters.h"
 #include "src/runtime_parameters.h"
@@ -101,12 +102,12 @@ void ReadContainer::GetSampleInfo() {
 }
 
 void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<ReferenceSTR>& ref_str_chunk,
-				     map<pair<string,int>, string>& ref_ext_nucleotides,
-				     const vector<string>& chroms_to_include) {
+                                     map<pair<string,int>, string>& ref_ext_nucleotides,
+                                     const vector<string>& chroms_to_include) {
   if (ref_str.chrom != "NA") {
     int refid = -1;
     if (chrom_to_refid.find(ref_str.chrom) !=
-	chrom_to_refid.end()) {
+        chrom_to_refid.end()) {
       refid = chrom_to_refid.at(ref_str.chrom);
     }
     if (refid == -1) {
@@ -148,9 +149,9 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
 }
 
 bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
-			      vector<AlignedRead>* aligned_reads,
-			      STRIntervalTree& itree,
-			      map<pair<string,int>, string>& ref_ext_nucleotides) {
+                              vector<AlignedRead>* aligned_reads,
+                              STRIntervalTree& itree,
+                              map<pair<string,int>, string>& ref_ext_nucleotides) {
   // Dummy aligned read to set fields common to all
   AlignedRead dummy_aligned_read;
   // Keep track of STRs already covered so don't add twice (for annotated markers with two listings
@@ -269,6 +270,29 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
   // *** Determine which reference STRs overlapped by this read *** //
   vector<ReferenceSTR> spanned_strs;
   itree.GetSpannedIntervals(read_start, read_end, &spanned_strs);
+  if (spanned_strs.size() == 0)  {
+    if (output_bams) {
+      writer_filtered->WriteAllelotypeRead(aln, "NO_SPANNED_STRS", dummy_aligned_read.chrom, -1, -1, "", 0);
+    }
+    return false;
+  }
+  // realign before proceeding if specified. Do here because we need the start coord
+  if (realign) {
+    dummy_aligned_read.msStart = spanned_strs.at(0).start;
+    if (!RedoLocalAlignment(&dummy_aligned_read, ref_ext_nucleotides)) {
+      stringstream msg;
+      msg << "Realignment of " << dummy_aligned_read.ID << " failed";
+      PrintMessageDieOnError(msg.str(), WARNING);
+      return false;
+    }
+    cigar_list.Clear();
+    if (!GetCigarList(dummy_aligned_read, &cigar_list)) {
+      if (output_bams) {
+        writer_filtered->WriteAllelotypeRead(aln, "NO_CIGAR", dummy_aligned_read.chrom, -1, -1, "", 0);
+      }
+      return false;
+    }
+  }
   for (size_t i = 0; i < spanned_strs.size(); i++) {
     const ReferenceSTR ref_str = spanned_strs.at(i);
     AlignedRead aligned_read = dummy_aligned_read; // copy what's in dummy_aligned_read
@@ -282,7 +306,7 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     aligned_read.refCopyNum = static_cast<float>(ref_str.stop - ref_str.start + 1)/static_cast<float>(ref_str.motif.size());
     // get allele
     CIGAR_LIST str_cigar_list;
-    if (!ExtractCigar(cigar_list, aln.Position+1, ref_str.start-CIGAR_BUFFER, ref_str.stop+CIGAR_BUFFER, &str_cigar_list)) {
+    if (!ExtractCigar(cigar_list, aligned_read.read_start+1, ref_str.start-CIGAR_BUFFER, ref_str.stop+CIGAR_BUFFER, &str_cigar_list)) {
       if (output_bams) {
         writer_filtered->WriteAllelotypeRead(aln, "ERROR_EXTRACTING_CIGAR", ref_str.chrom, ref_str.start, ref_str.stop, ref_str.motif, 0);
       }
@@ -342,6 +366,8 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
         continue;
       }
     }
+    // Get distance of STR from read ends
+    AlignmentFilters::GetDistDiffFromEnd(&aligned_read);
     if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
       aligned_reads->push_back(aligned_read);
       str_starts.insert(aligned_read.msStart);
@@ -525,6 +551,73 @@ int ReadContainer::GetSTRAllele(const CIGAR_LIST& cigar_list) {
   }
   // set STR region
   return diff_from_ref;
+}
+
+bool ReadContainer::RedoLocalAlignment(AlignedRead* aligned_read,
+                                       const map<pair<string, int>, string>& ref_ext_nucleotides) {
+  // Check that we have reference sequence
+  if (ref_ext_nucleotides.find(pair<string, int>(aligned_read->chrom, aligned_read->msStart)) ==
+      ref_ext_nucleotides.end()) {
+    stringstream msg;
+    msg << "No extended reference sequence found for locus "<< aligned_read->chrom << ":"
+        << aligned_read->msStart << " read " << aligned_read->ID;
+    PrintMessageDieOnError(msg.str(), WARNING);
+    return false;
+  }
+  // Pull out reference sequence
+  const std::string& ref_ext_seq = ref_ext_nucleotides.at(pair<string,int>(aligned_read->chrom,
+                                                                           aligned_read->msStart));
+  CIGAR_LIST read_cigar_list, cigar_list;
+  if (!GetCigarList(*aligned_read, &read_cigar_list)) {
+    return false;
+  }
+  const int pad=50;
+  const int read_span = int(aligned_read->nucleotides.size()) - GetSTRAllele(read_cigar_list);
+  int ref_seq_start = aligned_read->msStart - extend;
+  int ref_index = aligned_read->read_start - ref_seq_start;
+  const std::string ref_seq = ref_ext_seq.substr(ref_index-pad, read_span+2*pad);
+  // Get aligned sequence
+  const std::string aligned_seq = aligned_read->nucleotides;
+  // Run local realignment
+  string aligned_seq_sw, ref_seq_sw;
+  int sw_score;
+  nw(aligned_seq, ref_seq, aligned_seq_sw, ref_seq_sw,
+     &sw_score, &cigar_list);
+  cigar_list.ResetString();
+  // get rid of end gaps and update coords
+  aligned_read->read_start = aligned_read->read_start - pad;
+  if (cigar_list.cigars.at(0).cigar_type == 'D') {
+    const int& num = cigar_list.cigars.at(0).num;
+    aligned_read->read_start += num;
+    cigar_list.cigars.erase(cigar_list.cigars.begin());
+  }
+  if (cigar_list.cigars.at(cigar_list.cigars.size() - 1).cigar_type == 'D') {
+    cigar_list.cigars.erase(cigar_list.cigars.end() - 1);
+  }
+  if (cigar_list.cigars.at(0).cigar_type == 'I') {
+    cigar_list.cigars.at(0).cigar_type = 'S';
+  }
+  if (cigar_list.cigars.at(cigar_list.cigars.size() - 1).cigar_type == 'D') {
+    cigar_list.cigars.at(cigar_list.cigars.size() - 1).cigar_type = 'S';
+  }
+  cigar_list.ResetString();
+  // make sure CIGAR is valid
+  bool added_s;
+  bool cigar_had_s;
+  GenerateCorrectCigar(&cigar_list, aligned_read->nucleotides, &added_s, &cigar_had_s);
+  vector<BamTools::CigarOp> cigar_data;
+  for (size_t i = 0; i < cigar_list.cigars.size(); i++) {
+    char cigar_type = cigar_list.cigars.at(i).cigar_type;
+    int num = cigar_list.cigars.at(i).num;
+    BamTools::CigarOp cigar_op(cigar_type, num);
+    cigar_data.push_back(cigar_op);
+  }
+  aligned_read->cigar_ops = cigar_data;
+  // Check alignment quality
+  if (sw_score < min_sw_score) {
+    return false;
+  }
+  return true;
 }
 
 ReadContainer::~ReadContainer() {

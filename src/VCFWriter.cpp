@@ -76,6 +76,7 @@ VCFWriter::VCFWriter(const string& filename, const vector<string>& samples)
   output_stream << "##INFO=<ID=RPA,Number=A,Type=Float,Description=\"Repeats per allele\">" << endl;
   output_stream << "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of variant\">" << endl;
   output_stream << "##INFO=<ID=MOTIF,Number=1,Type=String,Description=\"Canonical repeat motif\">" << endl;
+  output_stream << "##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of samples with data\">" << endl;
   output_stream << "##INFO=<ID=REF,Number=1,Type=Float,Description=\"Reference copy number\">" << endl;
   output_stream << "##INFO=<ID=RL,Number=1,Type=Integer,Description=\"Reference STR track length in bp\">" << endl;
   output_stream << "##INFO=<ID=RU,Number=1,Type=String,Description=\"Repeat motif\">" << endl;
@@ -83,13 +84,14 @@ VCFWriter::VCFWriter(const string& filename, const vector<string>& samples)
   // FORMAT fields
   output_stream << "##FORMAT=<ID=ALLREADS,Number=1,Type=String,Description=\"All reads aligned to locus\">" << endl;
   output_stream << "##FORMAT=<ID=AML,Number=1,Type=String,Description=\"Allele marginal likelihood ratio scores\">" << endl;
+  output_stream << "##FORMAT=<ID=DISTENDS,Number=1,Type=Float,Description=\"Average difference between distance of STR to read ends\">" << endl;
   output_stream << "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">" << endl;
   output_stream << "##FORMAT=<ID=GB,Number=1,Type=String,Description=\"Genotype given in bp difference from reference\">" << endl;
   output_stream << "##FORMAT=<ID=PL,Number=G,Type=Integer,Description=\"Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification\">" << endl;
   output_stream << "##FORMAT=<ID=Q,Number=1,Type=Float,Description=\"Likelihood ratio score of allelotype call\">" << endl;
   output_stream << "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" << endl;
+  output_stream << "##FORMAT=<ID=SB,Number=1,Type=Float,Description=\"Strand bias\">" << endl;
   output_stream << "##FORMAT=<ID=STITCH,Number=1,Type=Integer,Description=\"Number of stitched reads\">"<< endl;
-
   if (include_gl)
     output_stream << "##FORMAT=<ID=GL,Number=G,Type=Float,Description=\"Genotype likelihoods for genotypes as defined in the VCF specification\">" << endl;
 
@@ -171,6 +173,7 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   // INFO
   output_stream << "END=" << str_record.stop << ";"
 		<< "MOTIF=" << str_record.repseq << ";"
+    << "NS=" << str_record.numcalls << ";"
 		<< "REF=" << str_record.refcopy << ";"
 		<< "RL=" << str_record.stop - str_record.start + 1 << ";"
 		<< "RU=" << str_record.repseq_in_ref << ";"
@@ -181,9 +184,9 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   output_stream << "\t";
   // FORMAT
   if (include_gl)
-    output_stream << "GT:ALLREADS:AML:DP:GB:GL:PL:Q:STITCH";
+    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:GB:GL:PL:Q:SB:STITCH";
   else
-    output_stream << "GT:ALLREADS:AML:DP:GB:PL:Q:STITCH";
+    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:GB:PL:Q:SB:STITCH";
 
   // Sample info  
   for (size_t i = 0; i < str_record.samples.size(); i++) {
@@ -293,6 +296,7 @@ void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
   output_stream << genotype_string.str() << ":"
                 << str_record.readstring.at(sample_index) << ":"
                 << marginal_lik_score_string.str() << ":"
+                << str_record.mean_dist_ends.at(sample_index) << ":"
                 << str_record.coverage.at(sample_index) << ":"
                 << gbstring.str() << ":";
 
@@ -301,5 +305,6 @@ void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
   
   output_stream << genotype_scaled_likelihoods_string.str() << ":"
                 << str_record.max_lik_score.at(sample_index) << ":"
+                << str_record.strand_bias.at(sample_index) << ":"
                 << str_record.num_stitched.at(sample_index);
 }

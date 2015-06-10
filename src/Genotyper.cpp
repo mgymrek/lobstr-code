@@ -196,7 +196,7 @@ float Genotyper::CalcLogLik(int a, int b,
 }
 
 void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
-			map<int,int> spanning_reads,
+                        map<int,int> spanning_reads,
                         bool haploid, STRRecord* str_record) {
   // Get all likelihoods, keep track of max
   float sum_all_likelihoods = SMALL_CONST; // sum P(R|G)
@@ -216,7 +216,9 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   int coverage = aligned_reads.size();
   int conflicting = 0;
   int agreeing = 0;
-
+  float strand_bias = 0;
+  float mean_dist_ends = 0;
+  
   for (size_t i = 0; i < str_record->alleles_to_include.size(); i++) {
     for (size_t j = i; j < str_record->alleles_to_include.size(); j++) {
       pair<int, int> allelotype(str_record->alleles_to_include.at(i),
@@ -254,11 +256,11 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
 
       // update ML allelotype, must have include_score true
       if (debug) {
-	stringstream msg;
-	msg << "[Genotyper.cpp]: " << currScore << " " << max_log_lik << " "
-	    << allelotype.first << "," << allelotype.second << " include:" << include_score
-	    << " hetfreq:" << hetfreq << " minhetfreq: " << min_het_freq << endl;
-	PrintMessageDieOnError(msg.str(), DEBUG);
+        stringstream msg;
+        msg << "[Genotyper.cpp]: " << currScore << " " << max_log_lik << " "
+            << allelotype.first << "," << allelotype.second << " include:" << include_score
+            << " hetfreq:" << hetfreq << " minhetfreq: " << min_het_freq << endl;
+        PrintMessageDieOnError(msg.str(), DEBUG);
       }
       if (include_score && (currScore > max_log_lik) &&
           (hetfreq >= min_het_freq)) {
@@ -267,7 +269,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
         allele2 = allelotype.second;
       }
       if (allele1 == 0 && allele2 == 0) {
-	ref_log_lik = currScore;
+        ref_log_lik = currScore;
       }
     }
   }
@@ -290,6 +292,10 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   }
   conflicting = coverage - agreeing;
 
+  // Get additional call level quality metrics
+  mean_dist_ends = GetMeanDistEnds(aligned_reads, allele1, allele2);
+  strand_bias = GetStrandBias(aligned_reads, allele1, allele2);
+
   // Add things to STRRecord
   if (coverage != 0) {
     str_record->numcalls++;
@@ -305,7 +311,62 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   str_record->conflicting.push_back(conflicting);
   str_record->agreeing.push_back(agreeing);
   str_record->likelihood_grid.push_back(likelihood_grid);
+  str_record->mean_dist_ends.push_back(mean_dist_ends);
+  str_record->strand_bias.push_back(strand_bias);
   return;
+}
+
+float Genotyper::GetMeanDistEnds(const std::list<AlignedRead>& aligned_reads,
+                                 const int& allele1, const int& allele2) {
+  float denom = 0.0;
+  float mean_dist_ends = 0.0;
+  for (list<AlignedRead>::const_iterator it=aligned_reads.begin();
+       it!=aligned_reads.end(); it++) {
+    if (it->diffFromRef == allele1 || it->diffFromRef == allele2) {
+      mean_dist_ends += it->dist_from_end;
+      denom += 1;
+    }
+  }
+  if (denom == 0) {
+    return 0;
+  }
+  return mean_dist_ends/denom;
+}
+
+/*
+See GATK docs:
+https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_annotator_StrandOddsRatio.php
+
+ */
+float Genotyper::GetStrandBias(const std::list<AlignedRead>& aligned_reads,
+                               const int& allele1, const int& allele2) {
+  // a=allele1,f;b=allele2,f;c=allele1,r;d=allele2,r
+  float a = 1.0, b = 1.0, c = 1.0, d = 1.0; // start with pseudocount
+  for (list<AlignedRead>::const_iterator it=aligned_reads.begin();
+       it!=aligned_reads.end(); it++) {
+    if (it->diffFromRef == allele1) {
+      if (it->strand) {
+        c += 1;
+      } else {
+        a += 1;
+      }
+    } else if (it->diffFromRef == allele2) {
+      if (it->strand) {
+        d += 1;
+      } else {
+        b += 1;
+      }
+    }
+  }
+  if (a == 0 || b == 0 || c == 0 || d == 0) {
+    return -1;
+  }
+  float R, sbu, refratio, altratio;
+  R = (a*d)/(c*b);
+  sbu = R+1/R;
+  refratio = (a>c)?(a/c):(c/a);
+  altratio = (b>d)?(b/d):(d/b);
+  return sbu * refratio/altratio;
 }
 
 bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,

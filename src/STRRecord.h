@@ -57,6 +57,8 @@ struct STRRecord {
   vector<std::map<int,int> > spanning_reads;
   vector<int> alleles_to_include;
   vector<float> prob_ref; // P(R|0)/sum all likelihoods
+  vector<float> strand_bias;
+  vector<float> mean_dist_ends;
   void Reset() {
     chrom = "";
     start = -1;

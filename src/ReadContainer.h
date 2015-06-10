@@ -100,6 +100,10 @@ class ReadContainer {
   /* Adjust diff from ref based on cigar */
   int GetSTRAllele(const CIGAR_LIST& cigar_list);
 
+  /* Redo local realignment */
+  bool RedoLocalAlignment(AlignedRead* aligned_read,
+                          const std::map<std::pair<std::string, int>, std::string>& ref_ext_nucleotides);
+
   /* Bam file reader */
   BamTools::BamMultiReader reader;
   BamTools::RefVector references;

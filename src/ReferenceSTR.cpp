@@ -41,7 +41,7 @@ ReferenceSTRContainer::ReferenceSTRContainer(const vector<ReferenceSTR>& _ref_st
 }
 
 bool ReferenceSTRContainer::GetNextChunk(vector<ReferenceSTR>* ref_str_chunk,
-					 string* chrom, int* begin, int* end) {
+                                         string* chrom, int* begin, int* end) {
   ref_str_chunk->clear();
   int current_chunk_size = 0;
   if (counter == num_refs) {

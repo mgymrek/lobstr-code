@@ -53,4 +53,16 @@ bool STRIntervalTree::GetSpannedIntervals(const int& start, const int& end, vect
   return true;
 }
 
+bool STRIntervalTree::GetContainingRegions(const int& start, const int& end,
+                                           vector<ReferenceSTR>* containing_intervals) {
+  containing_intervals->clear();
+  vector<Interval<ReferenceSTR> > results;
+  itree.findOverlapping(start, end, results);
+  for (vector<Interval<ReferenceSTR> >::iterator it=results.begin();
+       it != results.end(); it++) {
+    containing_intervals->push_back(it->value);
+  }
+  return true;
+}
+
 STRIntervalTree::~STRIntervalTree() {}
