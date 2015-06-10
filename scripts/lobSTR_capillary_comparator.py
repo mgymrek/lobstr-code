@@ -84,7 +84,7 @@ def GetAllele(x, allele_num):
     return corr_allele
 
 def GetDosage(a1, a2):
-    if a1 == "." or a2 == ".": return "NA"
+    if str(a1) == "." or str(a2) == ".": return "NA"
     else: return (float(a1)+float(a2))*0.5
 
 if __name__ == "__main__":
@@ -93,6 +93,7 @@ if __name__ == "__main__":
     parser.add_argument("--cap", help=".stru file with capillary calls", type=str, required=True)
     parser.add_argument("--corrections", help="Tab file with Marshfield marker corrections", type=str, required=True)
     parser.add_argument("--sample-conversions", help="Tab file with conversion between sample ids", type=str, required=True)
+    parser.add_argument("--output-stats", help="Output sample, call, and locus level stats to files with this prefix", type=str, required=False)
     args = parser.parse_args()
 
     LOBFILE = args.lobSTR
@@ -117,46 +118,44 @@ if __name__ == "__main__":
     res["dosage_lob"] = res.apply(lambda x: GetDosage(x["allele1"], x["allele2"]), 1)
     res["dosage_cap"] = res.apply(lambda x: GetDosage(x["allele1.cap.corr"], x["allele2.cap.corr"]), 1)
 
-    ##### Results - before filtering #####
-    sys.stdout.write("########## Before filtering ########\n")
+    ##### Stats #####
+    if args.output_stats:
+        # Call level stats
+        res.to_csv(args.output_stats+".calllevel.tab", index=False, sep="\t")
+        # Sample level stats
+        sample_level = res.groupby("sample", as_index=False).agg({"DP": np.mean,
+                                                                  "Q": np.mean,
+                                                                  "start": len,
+                                                                  "correct": np.mean})
+        sample_level.to_csv(args.output_stats+".samplelevel.tab", index=False, sep="\t")
+        # Locus level stats
+        res["length"] = res["end_x"]-res["start"]+1
+        locus_level = res.groupby(["chrom","start"], as_index=False).agg({"length": np.mean,
+                                                                          "DP": np.mean,
+                                                                          "Q": np.mean,
+                                                                          "GT": len,
+                                                                          "SB": np.mean,
+                                                                          "DISTENDS": np.mean,
+                                                                          "correct": np.mean})
+        locus_level.to_csv(args.output_stats+".locuslevel.tab", index=False, sep="\t")
+
+    ##### Results #####
+    sys.stdout.write("########## Results ########\n")
     # Get stats about calls
-    num_samples = len(set(res[res["cov"]>0]["sample"]))
-    num_markers = len(set(res[res["cov"]>0]["marker"]))
-    num_nocalls = res[res["cov"]==0].shape[0]
+    num_samples = len(set(res[res["allele1"].apply(str)!="."]["sample"]))
+    num_markers = len(set(res[res["allele1"].apply(str)!="."]["marker"]))
+    num_nocalls = res[res["allele1"].apply(str)=="."].shape[0]
     sys.stdout.write("# Samples: %s\n"%num_samples)
     sys.stdout.write("# Markers: %s\n"%num_markers)
     sys.stdout.write("# No call rate: %s\n"%(num_nocalls*1.0/res.shape[0]))
+    sys.stdout.write("# Number of calls compared: %s\n"%res.shape[0])
 
     # Accuracy
-    acc = np.mean(res[res["cov"]>0]["correct"])
+    acc = np.mean(res[res["allele1"].apply(str)!="."]["correct"])
     sys.stdout.write("# Accuracy: %s\n"%acc)
 
     # R2
-    dl = map(float, list(res[res["cov"]>0]["dosage_lob"]))
-    dc = map(float, list(res[res["cov"]>0]["dosage_cap"]))
-    r2 = pearsonr(dl, dc)[0]**2
-    sys.stdout.write("# R2: %s\n"%r2)
-
-    ##### Results - after filtering #####
-    sys.stdout.write("########## After filtering ########\n")
-    MINCOV = 5
-    MINSCORE = 0.9
-    resf = res[(res["cov"]>=MINCOV ) & (res["qual"]>=MINSCORE)]
-
-    # Get stats about calls
-    num_samples = len(set(resf["sample"]))
-    num_markers = len(set(resf["marker"]))
-    num_nocalls = resf.shape[0]
-    sys.stdout.write("# Samples: %s\n"%num_samples)
-    sys.stdout.write("# Markers: %s\n"%num_markers)
-    sys.stdout.write("# Percent of calls remaining: %s\n"%(num_nocalls*1.0/res[res["cov"]>0].shape[0]))
-
-    # Accuracy
-    acc = np.mean(resf["correct"])
-    sys.stdout.write("# Accuracy: %s\n"%acc)
-
-    # R2
-    dl = map(float, list(resf["dosage_lob"]))
-    dc = map(float, list(resf["dosage_cap"]))
+    dl = map(float, list(res[res["allele1"].apply(str)!="."]["dosage_lob"]))
+    dc = map(float, list(res[res["allele1"].apply(str)!="."]["dosage_cap"]))
     r2 = pearsonr(dl, dc)[0]**2
     sys.stdout.write("# R2: %s\n"%r2)

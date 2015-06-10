@@ -366,6 +366,8 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
         continue;
       }
     }
+    // Get distance of STR from read ends
+    AlignmentFilters::GetDistDiffFromEnd(&aligned_read);
     if (str_starts.find(aligned_read.msStart) == str_starts.end()) {
       aligned_reads->push_back(aligned_read);
       str_starts.insert(aligned_read.msStart);

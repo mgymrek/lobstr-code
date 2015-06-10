@@ -49,6 +49,9 @@ namespace AlignmentFilters {
 
   /* Return max number of occurrences of repeat motif in either end of read */
   int GetMaxRepeatsInEnds(AlignedRead* aln, size_t bp_from_end);
+
+  /* Get difference in distance of STR from left vs. right read end */
+  void GetDistDiffFromEnd(AlignedRead* aln);
 }
 
 #endif

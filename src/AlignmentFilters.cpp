@@ -22,6 +22,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <sstream>
 
+#include "src/api/BamAlignment.h"
 #include "src/AlignmentFilters.h"
 #include "src/common.h"
 #include "src/ZAlgorithm.h"
@@ -265,4 +266,20 @@ namespace AlignmentFilters {
     }
     return right_occurrences;
   }
+
+  void GetDistDiffFromEnd(AlignedRead* aln) {
+    // Get span of read
+    int span = 0;
+    for (vector<BamTools::CigarOp>::const_iterator it = aln->cigar_ops.begin();
+         it != aln->cigar_ops.end(); it++) {
+      if (it->Type == 'D' || it->Type == 'M' ||
+          it->Type == '=' || it->Type == 'X') {
+        span += it->Length;
+      }
+    }
+    int left_dist = aln->msStart - aln->read_start;
+    int right_dist = aln->read_start + span - aln->msEnd;
+    aln->dist_from_end = left_dist - right_dist;
+  }
 }
+

@@ -45,5 +45,6 @@ struct AlignedRead {
   int matedist;
   int mapq;
   bool stutter;
+  int dist_from_end;
 };
 #endif  // SRC_ALIGNEDREAD_H_
