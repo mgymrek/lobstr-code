@@ -41,7 +41,7 @@
 	  <li> REF: gives the base in the reference at CHROM:POS.</li>
 	  <li> ALT: contains a comma separated list of "&#60;STRVAR:allele&#62;" where allele is the number of base pairs different from reference. If any STR variations were reported.
 	  <li> QUAL: contains -10log10(P), where P is the probability that all samples are homozygous reference.</li>
-	  <li> FILTER: this field is left blank</li>
+	  <li> FILTER: this field is left blank by <code>allelotype</code>. lobSTR-specific filters can be set using <code>lobSTR_filter_vcf.py</code>.</li>
 	</ul>
 	
 	<h4>INFO fields</h4>
@@ -67,7 +67,7 @@
 	  <li> Q: Likelihood ratio score of the allelotype call. Gives the likelihood of the reported genotype divided by the sum of likelihoods of all considered genotypes.</li>
 	  <li> GT: genotype, given as indices into the list in the ALT field as
 	    in the standard VCF format. Set to "./." if no call.</li>
-	  <li> SB: strand bias (as defined in the <a href="https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_annotator_StrandOddsRatio.php">GATK documentation</a></li>
+	  <li> SB: strand bias (as defined in the <a href="https://www.broadinstitute.org/gatk/guide/tooldocs/org_broadinstitute_gatk_tools_walkers_annotator_StrandOddsRatio.php">GATK documentation</a>)</li>
 	  <li> STITCH: Number of stitched reads</li>
 	  <li> FT: (filled by <code>lobSTR_filter_vcf.py</code>) Call-level filter.</li>
 	</ul>
