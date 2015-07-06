@@ -30,7 +30,8 @@ script_SCRIPTS = \
 	lobSTR_download_ref_hg19.sh \
 	allelotype_validation_suite.sh \
 	lobSTR_capillary_comparator.py \
-	lobSTR_vcf_to_tab.py
+	lobSTR_vcf_to_tab.py \
+	lobSTR_filter_vcf.py
 
 EXTRA_DIST = $(script_SCRIPTS) \
 	$(bin_SCRIPTS)
