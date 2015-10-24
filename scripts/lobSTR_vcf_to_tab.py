@@ -32,7 +32,7 @@ for record in reader:
     end = record.INFO["END"]
     motif = record.INFO["MOTIF"]
     filter_locus = record.FILTER
-    if len(filter_locus) == 0: filter_locus.append("PASS")
+    if filter_locus is None or len(filter_locus) == 0: filter_locus = ["PASS"]
     for sample in record:
         name = sample.sample
         vals = []

@@ -2,7 +2,7 @@
 """
 Filter lobSTR based on locus and call level filters.
 Output VCF has filters listed for filtered loci, and a filter
-  flag set for cals that are to be removed.
+  flag set for calls that are to be removed.
 
 Locus level filters are applied before call level filters
 """
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                 key = samp_fmt._fields[i]
                 if key != "FT":
                     sampdat.append(sample[key])
-                else: sampdat.append(":".join(sample_filters))
+                else: sampdat.append(",".join(sample_filters))
             call = vcf.model._Call(record, sample.sample, samp_fmt(*sampdat))
             new_samples.append(call)
         record.samples = new_samples
