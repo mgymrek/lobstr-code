@@ -45,7 +45,10 @@ def RunCommand(cmd):
                   stderr=STDOUT, close_fds=True)
     ex = p.wait()
     if ex != 0:
-        PROGRESS("ERROR: command '%s' failed"%cmd)
+        stdout, stderr = "", ""
+        if p.stdout is not None: stdout = p.stdout.read()
+        if p.stderr is not None: stderr = p.stderr.read()
+        PROGRESS("ERROR: command '%s' failed.\n\nSTDOUT:%s\nSTDERR:%s"%(cmd, stdout, stderr))
         sys.exit(1)
 
 def IsExec(binname):
@@ -183,7 +186,11 @@ if __name__ == "__main__":
     REFFILE = args.ref
     OUTDIR = args.out_dir
     EXTEND = args.extend
-    if not os.path.exists(OUTDIR): os.mkdir(OUTDIR)
+    if not os.path.exists(OUTDIR):
+        try:
+            os.mkdir(OUTDIR)
+        except OSError:
+            ERROR("Could not create outdirectory %s"%OUTDIR)
     if args.verbose: VERBOSE = True
     if args.debug: DEBUG = True
 
