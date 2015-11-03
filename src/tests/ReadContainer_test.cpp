@@ -79,7 +79,6 @@ void ReadContainerTest::test_GetReadsAtCoord() {
 }
 
 void ReadContainerTest::test_GetBamTags() {
-  // TODO
   BamAlignment aln;
   string str_result;
   float float_result;
