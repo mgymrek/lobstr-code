@@ -15,6 +15,17 @@
 	</ul>
 	<a name="code"></a>
 	<h2>Code Changelog</h2>
+  <h3>New in version 4.0.0</h3>
+  <p>
+  The major change for this version is the ability for <code>allelotype</code>code> to take in BAM files from external aligners, mainly from <code>BWA-MEM</code>. This allows STR genotyping across large panels of samples that already have existing alignments for only a fraction of the computational cost of running the whole lobSTR pipeline.
+
+  We have also added:
+  <ul>
+  <li>A VCF filtering script and more documentation of our <a href="filter-lobstr-vcfs.html">Recommended practices for filtering STR calls</a>.</li>
+  <li>More details about comparing lobSTR calls to capillary electrophoresis calls (see <a href="validation-sets.html">Validation sets</a>).</li>
+  <li>The option <code>--output-bams</code> is a very helpful debugging option that has been added to <code>allelotype</code>. This option outputs two BAM files, one containing all reads that were included for analysis, and another that includes all reads that were filtered with a tag explaining why they were not included.</li>
+  </ul>
+  </p>
   <h3>New in version 3.0.3</h3>
   <p>
     This version had minor changes.

@@ -48,7 +48,7 @@ sudo make install
 	<a name="osx"></a>
 	<h2>Installation on Mac OSX</h2>
 	<p>
-	You can install the latest lobSTR release using <a href="http://brew.sh/">Homebrew</a>. First make sure homebrew is installed, then run:
+	You can install the latest stable lobSTR release using <a href="http://brew.sh/">Homebrew</a>. First make sure homebrew is installed, then run:
 	{% highlight bash %}
 brew tap homebrew/science
 brew install lobstr
@@ -142,13 +142,7 @@ brew install lobstr
 	  	<td class="table_entry">1.8.2</td>
 	  	<td class="table_entry"><a href="http://www.numpy.org/">download</a></td>
 	  	<td class="table_entry">numpy</td>
-	  	<td class="table_entry">Filtering VCFs, Running allelotype validation suite.</td>
-	  	</tr>
-	  	<tr><td class="table_entry">pandas</td>
-	  	<td class="table_entry">0.15.2</td>
-	  	<td class="table_entry"><a href="http://pandas.pydata.org/">download</a></td>
-	  	<td class="table_entry">pandas</td>
-	  	<td class="table_entry">Running allelotype validation suite.</td>
+	  	<td class="table_entry">Filtering VCFs</td>
 	  	</tr>
 	  	<tr>
 	  	<td class="table_entry">pyfasta</td>
@@ -161,15 +155,8 @@ brew install lobstr
 	  	<td class="table_entry">0.6.7</td>
 	  	<td class="table_entry"><a href="http://pyvcf.readthedocs.org/en/latest/index.html">download</a></td>
 	  	<td class="table_entry">pyvcf</td>
-	  	<td class="table_entry">Filtering VCFs, Running allelotype validation suite, vcf-extract, vcf-to-tab</td>
+	  	<td class="table_entry">Filtering VCFs, vcf-extract, vcf-to-tab</td>
 	  	</tr>
-		<tr>
-		<td class="table_entry">scipy</td>
-		<td class="table_entry">0.13.3</td>
-		<td class="table_entry"><a href="http://www.scipy.org/">download</a></td>
-		<td class="table_entry">scipy</td>
-		<td class="table_entry">Running allelotype validation suite.</td>
-		</tr>
 	  	<tr>
 	  	<td class="table_entry">Biopython</td>
 	  	<td class="table_entry">1.5.6</td>
@@ -178,26 +165,6 @@ brew install lobstr
 	  	<td>Building a custom index and building an strinfo file required for allelotyping from a custom index for v2.*.</td>
 	  	</tr>
 	</table>
-	<font color="#660000" size="3"><strong>Other tools</strong></font><br />Some command line tools are required for certain optional steps.
-	<table cellspacing="15">
-	  <tr>
-	  <td class="table_hdr">Program</td>
-	  <td class="table_hdr">Tested on </td>
-	  <td class="table_hdr">Download</td>
-	  <td class="table_hdr">lobSTR steps where required</td>
-	  </tr>
-	  <tr>
-	  <td class="table_entry">VCFtools</td>
-	  <td class="table_entry">v0.1.12b</td>
-	  <td class="table_entry"><a href="http://vcftools.sourceforge.net/perl_module.html">download</a></td>
-	  <td class="table_entry">Running allelotype validation suite.</td>
-	  </tr>
-	  <tr>
-	  <td clsas="table_entry">tabix</td>
-	  <td class="table_entry">0.2.5 (r964)</td>
-	  <td class="table_entry"><a href="http://sourceforge.net/projects/samtools/files/tabix/">download</a></td>
-	  <td class="table_entry">Running allelotype validation suite.</td>
-	  </tr>
       </section>
     </div>
     {% include footer.html %}
