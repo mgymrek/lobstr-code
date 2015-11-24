@@ -42,6 +42,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 const float SMALL_CONST = 1e-10;
+const int GRIDK = 12;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
@@ -112,17 +113,33 @@ void Genotyper::LoadAnnotations(const vector<std::string> annot_files) {
 }
 
 void Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
-			   vector<int>* alleles) {
+                           vector<int>* alleles) {
+  // First get all observed alleles
+  int min_allele = 0;
+  int max_allele = 0;
   alleles->clear();
   if (aligned_reads.size() == 0) return;
   alleles->push_back(0); // always include ref allele as first allele
+  int refcopy = aligned_reads.front().msEnd - aligned_reads.front().msStart + 1;
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
     if (it->mate) continue;
-    int refcopy = it->msEnd - it->msStart + 1;
     if (it->diffFromRef != 0 && std::find(alleles->begin(), alleles->end(), it->diffFromRef) == alleles->end() &&
-	it->diffFromRef+refcopy >= 1) {
+        it->diffFromRef+refcopy >= 1) {
       alleles->push_back(it->diffFromRef);
+      if (it->diffFromRef < min_allele) {
+        min_allele = it->diffFromRef;
+      }
+      if (it->diffFromRef > max_allele) {
+        max_allele = it->diffFromRef;
+      }
+    }
+  }
+  // Add +/- GRIDK alleles to account for stutter
+  for (int i = 0; i < GRIDK; i++) {
+    alleles->push_back(max_allele + (i+1)*GRIDK);
+    if (min_allele - (i+1)*GRIDK + refcopy >= 1) {
+      alleles->push_back(min_allele - (i+1)*GRIDK);
     }
   }
 }
@@ -211,6 +228,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   float prob_ref = 0;
   float max_log_lik = -1000000;
   float max_lik_score = 0;
+  float phred_max_lik_score = 0;
   float allele1_marginal_lik_score = 0;
   float allele2_marginal_lik_score = 0;
   int coverage = aligned_reads.size();
@@ -277,6 +295,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   // Get scores
   max_lik_score =
     pow(10,max_log_lik)/sum_all_likelihoods;
+  phred_max_lik_score = -1*log10(1-max_lik_score);
   allele1_marginal_lik_score =
     marginal_lik_score_numerator[allele1]/
     sum_all_likelihoods;
@@ -305,6 +324,7 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   str_record->coverage.push_back(coverage);
   str_record->prob_ref.push_back(prob_ref);
   str_record->max_log_lik.push_back(max_log_lik);
+  str_record->phred_max_lik_score.push_back(phred_max_lik_score);
   str_record->max_lik_score.push_back(max_lik_score);
   str_record->allele1_marginal_lik_score.push_back(allele1_marginal_lik_score);
   str_record->allele2_marginal_lik_score.push_back(allele2_marginal_lik_score);
@@ -536,19 +556,19 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
       int allele2 = str_record.allele2.at(i);
       // allele 1
       if (allele1 != 0) {
-	if (std::find(str_record.alleles_to_include.begin(),
-		      str_record.alleles_to_include.end(),
-		      allele1) == str_record.alleles_to_include.end()) {
-	  str_record.alleles_to_include.push_back(allele1);
-	}
+        if (std::find(str_record.alleles_to_include.begin(),
+                      str_record.alleles_to_include.end(),
+                      allele1) == str_record.alleles_to_include.end()) {
+          str_record.alleles_to_include.push_back(allele1);
+        }
       }
       // allele 2
       if (allele2 != 0) {
-	if (std::find(str_record.alleles_to_include.begin(),
-		      str_record.alleles_to_include.end(),
-		      allele2) == str_record.alleles_to_include.end()) {
-	  str_record.alleles_to_include.push_back(allele2);
-	}
+        if (std::find(str_record.alleles_to_include.begin(),
+                      str_record.alleles_to_include.end(),
+                      allele2) == str_record.alleles_to_include.end()) {
+          str_record.alleles_to_include.push_back(allele2);
+        }
       }
     }
   }
