@@ -44,6 +44,7 @@ struct STRRecord {
   vector<int> allele2;
   vector<int> coverage;
   vector<float> max_log_lik; // maximum likelihood
+  vector<float> phred_max_lik_score; // -log10(1-max_lik_score)
   vector<float> max_lik_score; // ML/sum of all likelihoods
   vector<float> allele1_marginal_lik_score; // marginal likelihood score
   vector<float> allele2_marginal_lik_score; // marginal likelihood score
