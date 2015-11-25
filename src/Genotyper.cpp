@@ -42,7 +42,6 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 const float SMALL_CONST = 1e-10;
-const int GRIDK = 12;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
@@ -136,10 +135,10 @@ void Genotyper::GetAlleles(const list<AlignedRead>& aligned_reads,
     }
   }
   // Add +/- GRIDK alleles to account for stutter
-  for (int i = 0; i < GRIDK; i++) {
-    alleles->push_back(max_allele + (i+1)*GRIDK);
-    if (min_allele - (i+1)*GRIDK + refcopy >= 1) {
-      alleles->push_back(min_allele - (i+1)*GRIDK);
+  for (int i = 0; i < gridk; i++) {
+    alleles->push_back(max_allele + (i+1)*gridk);
+    if (min_allele - (i+1)*gridk + refcopy >= 1) {
+      alleles->push_back(min_allele - (i+1)*gridk);
     }
   }
 }

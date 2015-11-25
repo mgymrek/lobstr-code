@@ -127,6 +127,7 @@ extern int max_repeats_in_ends;
 extern bool filter_mapq0;
 extern bool filter_clipped;
 extern bool filter_reads_with_n;
+extern int gridk;
 extern bool realign;
 extern float min_het_freq;
 extern int min_border;

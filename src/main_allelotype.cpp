@@ -103,6 +103,7 @@ void show_help() {
 	   << "--quiet                         don't print anything to stderr or stdout\n"
 	   << "--version:                      print out allelotype program version number\n\n"
 	   << "Options for calculating and reporting allelotypes:\n"
+     << "--gridk                         Search genotype grid including all observed alleles +/- kbp (Default: " << gridk <<")\n"
 	   << "--include-gl                    Include the GL field in the VCF file (default = false)\n"
      << "--dont-include-pl               Do not print the PL field in the VCF file (default = false). Makes VCFs smaller.\n\n"
 	   << "Default options for filtering reads:\n"
@@ -156,6 +157,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_FILTER_CLIPPED,
     OPT_FILTER_MAPQ0,
     OPT_FILTER_READS_WITH_N,
+    OPT_GRIDK,
     OPT_HAPLOID,
     OPT_HELP,
     OPT_INCLUDE_GL,
@@ -198,6 +200,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"filter-clipped", 0, 0, OPT_FILTER_CLIPPED},
     {"filter-mapq0", 0, 0, OPT_FILTER_MAPQ0},
     {"filter-reads-with-n", 0, 0, OPT_FILTER_READS_WITH_N},
+    {"gridk", 1, 0, OPT_GRIDK},
     {"haploid", 1, 0, OPT_HAPLOID},
     {"help", 0, 0, OPT_HELP},
     {"index-prefix", 1, 0, OPT_INDEX},
@@ -273,6 +276,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_FILTER_READS_WITH_N:
       filter_reads_with_n = true;
       AddOption("filter-reads-with-n", "", false, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_GRIDK:
+      gridk = atoi(optarg);
+      AddOption("gridk", string(optarg), true, &user_defined_arguments_allelotyper);
       break;
     case OPT_HAPLOID:
       haploid_chroms_string = string(optarg);
