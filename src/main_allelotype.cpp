@@ -104,7 +104,7 @@ void show_help() {
 	   << "--version:                      print out allelotype program version number\n\n"
 	   << "Options for calculating and reporting allelotypes:\n"
 	   << "--include-gl                    Include the GL field in the VCF file (default = false)\n"
-     << "--dont-include-pl               Do not print the (very large) PL field in the VCF file (default = false)\n\n"
+     << "--dont-include-pl               Do not print the PL field in the VCF file (default = false). Makes VCFs smaller.\n\n"
 	   << "Default options for filtering reads:\n"
 	   << "--min-border <INT>:             Filter reads that do not extend past both ends of the STR region\n"
 	   << "                                by at least <INT> bp. Default: " << min_border << "\n"
