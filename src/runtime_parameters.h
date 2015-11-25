@@ -121,6 +121,7 @@ extern std::string use_chrom;
 extern std::string regions_file;
 extern bool rmdup;
 extern bool include_gl;
+extern bool dont_include_pl;
 extern bool print_reads;
 extern int max_repeats_in_ends;
 extern bool filter_mapq0;

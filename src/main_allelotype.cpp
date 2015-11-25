@@ -103,7 +103,8 @@ void show_help() {
 	   << "--quiet                         don't print anything to stderr or stdout\n"
 	   << "--version:                      print out allelotype program version number\n\n"
 	   << "Options for calculating and reporting allelotypes:\n"
-	   << "--include-gl                    Include the GL field in the VCF file (default = false)\n\n"
+	   << "--include-gl                    Include the GL field in the VCF file (default = false)\n"
+     << "--dont-include-pl               Do not print the (very large) PL field in the VCF file (default = false)\n\n"
 	   << "Default options for filtering reads:\n"
 	   << "--min-border <INT>:             Filter reads that do not extend past both ends of the STR region\n"
 	   << "                                by at least <INT> bp. Default: " << min_border << "\n"
@@ -151,6 +152,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_CHUNKSIZE,
     OPT_COMMAND,
     OPT_DEBUG,
+    OPT_DONT_INCLUDE_PL,
     OPT_FILTER_CLIPPED,
     OPT_FILTER_MAPQ0,
     OPT_FILTER_READS_WITH_N,
@@ -192,6 +194,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"chunksize", 1, 0, OPT_CHUNKSIZE},
     {"command", 1, 0, OPT_COMMAND},
     {"debug", 0, 0, OPT_DEBUG},
+    {"dont-include-pl", 0, 0, OPT_DONT_INCLUDE_PL},
     {"filter-clipped", 0, 0, OPT_FILTER_CLIPPED},
     {"filter-mapq0", 0, 0, OPT_FILTER_MAPQ0},
     {"filter-reads-with-n", 0, 0, OPT_FILTER_READS_WITH_N},
@@ -254,6 +257,10 @@ void parse_commandline_options(int argc, char* argv[]) {
       break;
     case OPT_DEBUG:
       debug = true;
+      break;
+    case OPT_DONT_INCLUDE_PL:
+      dont_include_pl = true;
+      AddOption("dont-includ-pl", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_FILTER_CLIPPED:
       filter_clipped = true;
