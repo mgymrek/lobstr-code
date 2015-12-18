@@ -88,8 +88,12 @@ intersectBed -a venter.vcf -b lobSTR_ystr_hg19.bed -wa -wb | \
 	  This is a bit of a long command. Here's what it does:
 	  <ul>
 	    <li>Intersect the lobSTR VCF with the list of Y-STR markers</li>
-	    <li>Pull out the columns containing the genotype and read information for each</li>
-	    <li>Convert each genotype to number of repeats using the simple formula: ref_allele + lobstr_allele/period</li>
+	    <li><code>cut -f 1,2,10,14-</code> pulls out the columns with the chromosome (1), start coordinate (2), and the call information (10) from the VCF and the STR unit length (14), reference genotype (15), and marker name from the BED file (16). <b>Note that this assumes there is only a single sample in your VCF file.</b></li>
+	    <li><code>sed 's/:/\t/g'</code> separates the VCF call informtion by tab rather than comma so we can pull out the relevant columns.</li>
+	    <li><code>cut -f 1,2,4,7,11-</code> pulls out the columns containing the chromosome (1), start coordinate (2), "ALLREADS" field from the VCF (4), "GB" field from the VCF (7), plus the call unit length, reference genotype, and marker name (11-). <b>Note that these instructions were made using lobSTR 3. Depending on the fields present in the VCF, the last two numbers (7 and 11) of this command might be slightly different. For instance for v4+, use <code>cut -f 1,2,4,8,14-</code></b>.</li>
+	    <li><code>sed 's/\//\t/'</code> splits the diploid genotype into two columns. For Y-STRs, we will only look at one allele.</li>
+	    <li><code>cut -f 4 --complement</code> removes the second allele from the diploid call. </li>
+	    <li><code>awk '{print $0 "\t" $6+$4/$5}'</code> converts each genotype to number of repeats using the simple formula: ref_allele + lobstr_allele/period.</li>
 	  </ul>
 
 	  Similarly for the CODIS markers, but looking at both alleles reported:
