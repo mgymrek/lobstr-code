@@ -8,6 +8,9 @@ A file with chromosome sizes
 Table mapping reference regions to which STRs they contain
 
 ***Requires lobSTRIndex and bedtools to be installed in the $PATH.***
+
+Note: this was tested with bedtools v2.22.1-17-gd6547b3. Older versions
+may not be compatible with this script.
 """
 
 import argparse
