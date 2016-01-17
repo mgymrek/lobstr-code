@@ -3,6 +3,28 @@
 python GenerateLobSTRRefBed.py <fastafile> <outfile>
 """
 
+# Copyright (C) 2016 Melissa Gymrek <mgymrek@mit.edu> Thomas Willems <twillems@mit.edu>
+#
+# This file is part of lobSTR.
+#
+# lobSTR is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# lobSTR is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# A validation suite to check concordance with gold standard
+# capillary electrophoresis calls.
+#
+
 import collections
 import glob
 import os
@@ -482,6 +504,9 @@ def reverse_complement(dna_sequence):
     return complement(dna_sequence[::-1])
 
 def calc_alignment_purity(sequence, motif):
+    """
+    returns purity_score, num_errors, trf_score
+    """
     # Traceback constants
     LEFT = -1
     DIAG = 0
@@ -495,6 +520,9 @@ def calc_alignment_purity(sequence, motif):
     # Create a "perfect" sequence consisting of copies of the motif
     perfect_seq  = (int)(len(sequence)*3.0/len(motif) + 1)*motif
         
+    # Init trf score
+    trf_score = 0
+
     # Create scoring and traceback matrices
     score_matrix = []
     trace_matrix = []
@@ -552,22 +580,27 @@ def calc_alignment_purity(sequence, motif):
             pseq_alignment += perfect_seq[j-1]
             qseq_alignment += "-"
             j -= 1
+            trf_score = trf_score - TRF_INDEL_PEN
         elif trace_matrix[i][j] == UP:
             pseq_alignment += "-"
             qseq_alignment += sequence[i-1]
             i -= 1
+            trf_score = trf_score - TRF_INDEL_PEN
         elif trace_matrix[i][j] == DIAG:
             pseq_alignment += perfect_seq[j-1]
             qseq_alignment += sequence[i-1]
             i -= 1
             j -= 1
+            if pseq_alignment[-1] == qseq_alignment[-1]:
+                trf_score = trf_score + TRF_MATCH_WT
+            else: trf_score = trf_score - TRF_MISMATCH_PEN
         else:
             ERROR("Invalid condition encountered in alignment traceback. Exiting...")
     pseq_alignment = pseq_alignment[::-1]
     qseq_alignment = qseq_alignment[::-1]
     num_errors     = min_score
     purity_score   = 1.0 - 1.0*num_errors/(len(sequence))
-    return purity_score, num_errors
+    return purity_score, num_errors, trf_score
 
 def annotate_reference(reffasta, input_file, output_file):
     input_fh = open(input_file, "r")
@@ -582,19 +615,15 @@ def annotate_reference(reffasta, input_file, output_file):
         chrom       = tokens[0]
         start, stop = map(int, tokens[1:3])
         period      = int(tokens[3])
-        seq = fasta[keymap[chrom]][start-1:stop].upper()
-
-        if stop - start > 200:
-            continue
-        
+        seq = fasta[keymap[chrom]][start-1:stop].upper()        
         motif_counts = collections.defaultdict(int)
         for i in xrange(len(seq)-period):
             motif_counts[min_perm(seq[i:i+period])] += 1
         most_common_motif    = sorted(motif_counts.items(), key = lambda x: x[1])[-1][0]
-        edit_dist            = calc_alignment_purity(seq, most_common_motif)[1]
+        trf_score            = calc_alignment_purity(seq, most_common_motif)[2]
         pure_len             = longest_perfect_array(seq, most_common_motif)[0]
         most_common_motif    = min(most_common_motif, min_perm(reverse_complement(most_common_motif)))
-        output_fh.write(line.strip() + "\t" + str(most_common_motif) + "\t" + str(edit_dist) + "\t" + str(pure_len) + "\n")
+        output_fh.write(line.strip() + "\t" + str(most_common_motif) + "\t" + str(trf_score) + "\t" + str(pure_len) + "\n")
     input_fh.close()
     output_fh.close()
 
@@ -676,8 +705,7 @@ def main():
 
     # Generate lobSTR table
     # TODO make score
-    score = -1 # TODO
-    col_cmd = "cat %s | awk '{print $1 \"\t\" $2 \"\t\" $3 \"\t\" $4 \"\t\" $5 \"\tNA\tNA\tNA\t\" \"%s\" \"\tNA\tNA\tNA\tNA\tNA\t\" $6}' > %s"%(os.path.join(tmpdir, "ann_ref.bed"), score, OUTFILE)
+    col_cmd = "cat %s | awk '{print $1 \"\t\" $2 \"\t\" $3 \"\t\" $4 \"\t\" $5 \"\t\" $4 \"\t\" $2 \"\t\" $3 \"\t\" $7 \"\tNA\tNA\tNA\tNA\tNA\t\" $6 \"\t.\"}' > %s"%(os.path.join(tmpdir, "ann_ref.bed"), OUTFILE)
     if RunCommand(col_cmd):
         ERROR("Error running %s"%col_cmd)
 
