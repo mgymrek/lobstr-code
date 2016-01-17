@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-python GenerateLobSTRRefBed.py <fastafile> <outfile>
+python GenerateLobSTRRefBed.py <fastafile> <outfile> [tmpdir]
 """
 
 # Copyright (C) 2016 Melissa Gymrek <mgymrek@mit.edu> Thomas Willems <twillems@mit.edu>
@@ -635,6 +635,14 @@ def main():
     except:
         print __doc__
         sys.exit(1)
+    try:
+        ANDIR = sys.argv[3]
+    except:
+        ANDIR = os.getcwd()
+    if not os.path.exists(ANDIR):
+        ERROR("Tmp directory %s does not exist"%ANDIR)
+    else:
+        PROGRESS("Performing steps in %s"%ANDIR)
 
     # Check for required programs
     if not CheckProgram("trf"):
@@ -645,7 +653,7 @@ def main():
     name = os.path.basename(FASTAFILE)
 
     # Set up temporary directory
-    tmpdir = tempfile.mkdtemp(prefix="lobref.")
+    tmpdir = tempfile.mkdtemp(prefix="lobref.", dir=ANDIR)
     os.chdir(tmpdir)
 
     # Run TRF
@@ -704,10 +712,12 @@ def main():
     annotate_reference(FASTAFILE, os.path.join(tmpdir, "passing_str_reference.bed"), os.path.join(tmpdir, "ann_ref.bed"))
 
     # Generate lobSTR table
-    # TODO make score
     col_cmd = "cat %s | awk '{print $1 \"\t\" $2 \"\t\" $3 \"\t\" $4 \"\t\" $5 \"\t\" $4 \"\t\" $2 \"\t\" $3 \"\t\" $7 \"\tNA\tNA\tNA\tNA\tNA\t\" $6 \"\t.\"}' > %s"%(os.path.join(tmpdir, "ann_ref.bed"), OUTFILE)
     if RunCommand(col_cmd):
         ERROR("Error running %s"%col_cmd)
+
+    # Remove tmpdir
+    os.rmdir(tmpdir)
 
 if __name__ == "__main__":
     main()
