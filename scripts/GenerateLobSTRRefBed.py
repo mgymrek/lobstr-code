@@ -29,6 +29,7 @@ import collections
 import glob
 import os
 import pyfasta
+import shutil
 import sys
 import tempfile
 from subprocess import Popen, PIPE, STDOUT
@@ -72,6 +73,7 @@ def ERROR(msg):
     sys.exit(1)
 
 def RunCommand(cmd):
+    PROGRESS("Running: %s"%cmd)
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, \
                   stderr=STDOUT, close_fds=True)
     ex = p.wait()
@@ -717,7 +719,7 @@ def main():
         ERROR("Error running %s"%col_cmd)
 
     # Remove tmpdir
-    os.rmdir(tmpdir)
+    shutil.rmtree(tmpdir)
 
 if __name__ == "__main__":
     main()
