@@ -228,6 +228,13 @@ string BamMultiReaderPrivate::GetHeaderText(void) const {
     if ( reader == 0 ) return string();
     SamHeader mergedHeader = reader->GetHeader();
 
+    // Add filename to read ID name so we know
+    // which file it came from
+    for (SamReadGroupIterator it = mergedHeader.ReadGroups.Begin();
+         it != mergedHeader.ReadGroups.End(); it++) {
+      it->ID = it->ID + "-" + reader->GetFilename();
+    }
+
     // iterate over any remaining readers (skipping the first)
     for ( size_t i = 1; i < numReaders; ++i ) {
         const MergeItem& item = m_readers.at(i);
@@ -235,7 +242,14 @@ string BamMultiReaderPrivate::GetHeaderText(void) const {
         if ( reader == 0 ) continue;
 
         // retrieve current reader's header
-        const SamHeader currentHeader = reader->GetHeader();
+        SamHeader currentHeader = reader->GetHeader();
+
+        // Add filename to read ID name so we know
+        // which file it came from
+        for (SamReadGroupIterator it = currentHeader.ReadGroups.Begin();
+               it != currentHeader.ReadGroups.End(); it++) {
+          it->ID = it->ID + "-" + reader->GetFilename();
+        }
 
         // append current reader's RG entries to merged header
         // N.B. - SamReadGroupDictionary handles duplicate-checking
