@@ -205,6 +205,8 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     msg << aln.Name << " Could not get read group.";
     PrintMessageDieOnError(msg.str(), ERROR);
   }
+  dummy_aligned_read.read_group += "-" + aln.Filename; // Keep track of read group as <rgid>-<filename>
+
   // *** Alignment filters (these don't depend on which STR aligned to) *** //
   if (dummy_aligned_read.mapq > max_mapq) {
     filter_counter.increment(FilterCounter::MAPPING_QUALITY);
