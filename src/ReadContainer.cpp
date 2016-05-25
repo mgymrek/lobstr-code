@@ -47,7 +47,12 @@ ReadContainer::ReadContainer(vector<std::string> filenames) {
   // Open bam files
   for (size_t i = 0; i < filenames.size(); i++) {
     bamfile = filenames.at(i);
-    index_files.push_back(bamfile + ".bai");
+    string indexfile = bamfile + ".bai";
+    // Try to open index
+    if (!fexists(indexfile.c_str())) {
+      indexfile = bamfile.substr(0, bamfile.size()-4)+".bai";
+    }
+    index_files.push_back(indexfile);
     if (!reader.OpenFile(bamfile)) {
       PrintMessageDieOnError("Could not open " + bamfile, ERROR);
     }
