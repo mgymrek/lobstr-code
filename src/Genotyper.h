@@ -61,7 +61,7 @@ class Genotyper {
   void LoadAnnotations(const vector<std::string> annot_files);
 
   /* determine allelotypes and write to file */
-  void Genotype(const list<AlignedRead>& read_list);
+  void Genotype(const list<AlignedRead>& read_list, const list<AlignedRead>& overlapping_reads);
 
  private:
   /* Process all reads at a single locus */

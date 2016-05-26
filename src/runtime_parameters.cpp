@@ -110,6 +110,7 @@ bool filter_mapq0 = false;
 bool filter_clipped = false;
 int gridk = 0;
 bool realign = false;
+bool report_nocalls = false;
 bool filter_reads_with_n = false;
 bool output_bams = false;
 

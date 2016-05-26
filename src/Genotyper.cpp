@@ -158,7 +158,7 @@ bool Genotyper::GetReadsPerSample(const list<AlignedRead>& aligned_reads,
   for (list<AlignedRead>::const_iterator it = aligned_reads.begin();
        it != aligned_reads.end(); it++) {
     if (rg_id_to_sample.find(it->read_group) !=
-	rg_id_to_sample.end()) {
+        rg_id_to_sample.end()) {
       string sample = rg_id_to_sample.at(it->read_group);
       string readid = it->ID;
       int i = sample_to_index[sample];
@@ -441,13 +441,14 @@ bool Genotyper::ProcessLocus(const std::list<AlignedRead>& aligned_reads,
   return true;
 }
   
-void Genotyper::Genotype(const list<AlignedRead>& read_list) {
+void Genotyper::Genotype(const list<AlignedRead>& read_list,
+                         const list<AlignedRead>& overlapping_reads) {
   STRRecord str_record;
   str_record.Reset();
   // set samples
   str_record.samples = samples;
   // Pull out the chrom and start_coord
-  string chrom = read_list.front().chrom;
+  string chrom = overlapping_reads.front().chrom;
 
   // Deal with haploid
   bool is_haploid = false;
@@ -457,24 +458,24 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   }
 
   // Get STR properties
-  if (read_list.size() == 0) return;
-  str_record.period = read_list.front().period;
+  if (overlapping_reads.size() == 0) return;
+  str_record.period = overlapping_reads.front().period;
   if (str_record.period < 1 || str_record.period > 6) {
     stringstream msg;
-    msg <<"Skipping locus " << chrom << ":" << read_list.front().msStart
+    msg <<"Skipping locus " << chrom << ":" << overlapping_reads.front().msStart
         << ". Invalid period size (" << str_record.period << ")";
     PrintMessageDieOnError(msg.str(), WARNING);
     return;
   }
   str_record.chrom = chrom;
   if (!(use_chrom.empty() ||
-	(!use_chrom.empty() && use_chrom == read_list.front().chrom))) {return;}
-  str_record.start = read_list.front().msStart;
-  str_record.stop = read_list.front().msEnd;
-  str_record.repseq = read_list.front().repseq;
-  str_record.refcopy = static_cast<float>((read_list.front().msEnd-
-					   read_list.front().msStart+1))/
-    static_cast<float>(read_list.front().period);
+	(!use_chrom.empty() && use_chrom == overlapping_reads.front().chrom))) {return;}
+  str_record.start = overlapping_reads.front().msStart;
+  str_record.stop = overlapping_reads.front().msEnd;
+  str_record.repseq = overlapping_reads.front().repseq;
+  str_record.refcopy = static_cast<float>((overlapping_reads.front().msEnd-
+					   overlapping_reads.front().msStart+1))/
+    static_cast<float>(overlapping_reads.front().period);
   if (ref_nucleotides->find
       (pair<string,int>(str_record.chrom, str_record.start))
       != ref_nucleotides->end()) {
@@ -485,6 +486,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   } else {
     return;
   }
+
   if (str_record.repseq.empty()) return;
   if (debug) {
     stringstream msg;
@@ -505,8 +507,12 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   } else {
     // Determine allele range
     GetAlleles(read_list, &str_record.alleles_to_include);
-    if (str_record.alleles_to_include.size() == 0) {return;}
+    if (str_record.alleles_to_include.size() == 0 && !report_nocalls) {return;}
   }
+
+  // Count total reads
+  vector<list<AlignedRead> > overlap_reads_per_sample;
+  if (!GetReadsPerSample(overlapping_reads, samples, rg_id_to_sample, &overlap_reads_per_sample)) {return;}
 
   // Divide reads for each sample
   vector<list<AlignedRead> > sample_reads;
@@ -546,6 +552,11 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
       }
     }
     ProcessLocus(sample_reads.at(i), &str_record, is_haploid);
+    // Keep track of total coverage
+    str_record.totalcov.push_back((int)overlap_reads_per_sample.at(i).size());
+    if (overlap_reads_per_sample.at(i).size() > 0) {
+      str_record.numcovered++;
+    }
   }
   // Reset alleles to include based on what we called
   if (!is_annotated) {
@@ -574,7 +585,7 @@ void Genotyper::Genotype(const list<AlignedRead>& read_list) {
   std::sort(str_record.alleles_to_include.begin(),
 	    str_record.alleles_to_include.end());
   str_record.alleles_to_include.insert(str_record.alleles_to_include.begin(), 0);
-  if (str_record.numcalls > 0) {
+  if (str_record.numcalls > 0 || (report_nocalls&&str_record.numcovered > 0)) {
     vcfWriter->WriteRecord(str_record);
   }
 }

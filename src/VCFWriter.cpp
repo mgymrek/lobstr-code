@@ -86,6 +86,7 @@ VCFWriter::VCFWriter(const string& filename, const vector<string>& samples)
   output_stream << "##FORMAT=<ID=AML,Number=1,Type=String,Description=\"Allele marginal likelihood ratio scores\">" << endl;
   output_stream << "##FORMAT=<ID=DISTENDS,Number=1,Type=Float,Description=\"Average difference between distance of STR to read ends\">" << endl;
   output_stream << "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read Depth\">" << endl;
+  output_stream << "##FORMAT=<ID=DPA,Number=1,Type=Integer,Description=\"Read Depth, including filtered reads\">" << endl;
   output_stream << "##FORMAT=<ID=GB,Number=1,Type=String,Description=\"Genotype given in bp difference from reference\">" << endl;
   if (!dont_include_pl) {
     output_stream << "##FORMAT=<ID=PL,Number=G,Type=Integer,Description=\"Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification\">" << endl;
@@ -187,13 +188,13 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
   output_stream << "\t";
   // FORMAT
   if (include_gl && dont_include_pl) { // GL
-    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:GB:GL:PQ:Q:SB:STITCH";
+    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:DPA:GB:GL:PQ:Q:SB:STITCH";
   } else if (include_gl && !dont_include_pl) { // GL, PL
-    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:GB:GL:PL:PQ:Q:SB:STITCH";
+    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:DPA:GB:GL:PL:PQ:Q:SB:STITCH";
   } else if (!include_gl && dont_include_pl) { // -
-    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:GB:PQ:Q:SB:STITCH";
+    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:DPA:GB:PQ:Q:SB:STITCH";
   } else if (!include_gl && !dont_include_pl) { // PL
-    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:GB:PL:PQ:Q:SB:STITCH";
+    output_stream << "GT:ALLREADS:AML:DISTENDS:DP:DPA:GB:PL:PQ:Q:SB:STITCH";
   }
   // Sample info  
   for (size_t i = 0; i < str_record.samples.size(); i++) {
@@ -206,8 +207,19 @@ void VCFWriter::WriteRecord(const STRRecord& str_record) {
 void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
                             map<int,int> allele_to_index) {
   stringstream genotype_string;
-  if (str_record.coverage.at(sample_index) == 0) {
+  if (str_record.coverage.at(sample_index) == 0 and !report_nocalls) {
     output_stream << "./.";
+    return;
+  } else if (report_nocalls && str_record.coverage.at(sample_index) == 0) {
+    output_stream << "./.:NA:NA:0:0:"
+                  << str_record.totalcov.at(sample_index) << ":./.:";
+    if (include_gl) {
+      output_stream << "0:";
+    }
+    if (!dont_include_pl) {
+      output_stream << "0:";
+    }
+    output_stream << "0:0:0:0";
     return;
   } else {
     run_info.num_calls.at(sample_index)++;
@@ -307,6 +319,7 @@ void VCFWriter::WriteSample(const STRRecord& str_record, size_t sample_index,
                 << marginal_lik_score_string.str() << ":"
                 << str_record.mean_dist_ends.at(sample_index) << ":"
                 << str_record.coverage.at(sample_index) << ":"
+                << str_record.totalcov.at(sample_index) << ":"
                 << gbstring.str() << ":";
 
   if (include_gl) {

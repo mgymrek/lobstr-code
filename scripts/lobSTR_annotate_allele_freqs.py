@@ -88,11 +88,11 @@ if __name__ == "__main__":
         afreqs = GetAfreqs(record.CHROM, record.POS, refreader)
         # Get sample info
         for sample in record:
-            if sample["GT"]:
+            if sample["GT"] and not afreqs == {}:
                 gt1, gt2 = map(float, sample["GT"].split("/"))
-                afreqstring = "%.3f/%.3f"%(afreqs.get(gt1, -1), afreqs.get(gt2, -1))
+                afreqstring = "%.3f/%.3f"%(afreqs.get(gt1, 0), afreqs.get(gt2, 0))
             else: 
-                afreqstring = "-1/-1"
+                afreqstring = "./."
             sampdat = []
             for i in range(len(samp_fmt._fields)):
                 key = samp_fmt._fields[i]

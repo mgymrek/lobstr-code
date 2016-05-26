@@ -39,10 +39,12 @@ struct STRRecord {
   // list of samples
   vector<std::string> samples;
   int numcalls;
+  int numcovered;
   // Data properties. each is a vector, indexed by sample number
   vector<int> allele1;
   vector<int> allele2;
   vector<int> coverage;
+  vector<int> totalcov;
   vector<float> max_log_lik; // maximum likelihood
   vector<float> phred_max_lik_score; // -log10(1-max_lik_score)
   vector<float> max_lik_score; // ML/sum of all likelihoods
@@ -72,9 +74,11 @@ struct STRRecord {
     samples.clear();
     name = "";
     numcalls = 0;
+    numcovered = 0;
     allele1.clear();
     allele2.clear();
     coverage.clear();
+    totalcov.clear();
     prob_ref.clear();
     max_log_lik.clear();
     max_lik_score.clear();

@@ -64,7 +64,7 @@ class ReadContainer {
 
   /* Get reads at an STR coordinate */
   void GetReadsAtCoord(const std::pair<std::string, int>& coord,
-		       std::list<AlignedRead>* reads);
+                       std::list<AlignedRead>* reads, std::list<AlignedRead>* overlapping_reads);
 
   /* Get samples */
   void GetSampleInfo();
@@ -72,6 +72,8 @@ class ReadContainer {
   // genotyper needs access to this to iterate over it
   std::map<std::pair<std::string, int>, std::list<AlignedRead> >
     aligned_str_map_;
+  // Also keep track of total number of reads at each locus
+  std::map<std::pair<std::string, int>, std::list<AlignedRead> > aligned_str_map_all_;
 
   // list of samples
   std::vector<std::string> samples_list;
@@ -80,9 +82,10 @@ class ReadContainer {
  protected:
   /* Parse BamAlignment into AlignedRead */
   bool ParseRead(const BamTools::BamAlignment& aln,
-		 vector<AlignedRead>* aligned_reads,
-		 STRIntervalTree& itree,
-		 map<pair<string,int>, string>& ref_ext_nucleotides);
+                 vector<AlignedRead>* aligned_reads,
+                 vector<AlignedRead>* overlapping_reads,
+                 STRIntervalTree& itree,
+                 map<pair<string,int>, string>& ref_ext_nucleotides);
  private:
 
   /* Parse bam tags into the appropriate types */

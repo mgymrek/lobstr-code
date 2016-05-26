@@ -133,6 +133,7 @@ void show_help() {
 	   << "--filter-clipped:               Filter reads with hard or soft clipped bases at the ends\n"
 	   << "--filter-reads-with-n:          Filter reads that have one or more N bases\n\n"
 	   << "Additional options\n"
+     << "--report-nocalls:               Report all records that were covered by at least 1 read, even if no calls\n"
      << "--output-bams:                  Output BAM files:\n"
      << "                                   <out>.reads.bam: contains all reads used for analysis (before collapsing duplicates)\n"
      << "                                   <out>.filtered.bam: contains all reads removed by filters\n"
@@ -180,6 +181,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     OPT_QUIET,
     OPT_REALIGN,
     OPT_REGIONS,
+    OPT_REPORT_NOCALLS,
     OPT_STRINFO,
     OPT_UNIT,
     OPT_VERBOSE,
@@ -222,6 +224,7 @@ void parse_commandline_options(int argc, char* argv[]) {
     {"reads", 0, 0, OPT_PRINT_READS},
     {"realign", 0, 0, OPT_REALIGN},
     {"regions", 1, 0, OPT_REGIONS},
+    {"report-nocalls", 0, 0, OPT_REPORT_NOCALLS},
     {"strinfo", 1, 0, OPT_STRINFO},
     {"unit", 0, 0, OPT_UNIT},
     {"verbose", 0, 0, OPT_VERBOSE},
@@ -373,6 +376,10 @@ void parse_commandline_options(int argc, char* argv[]) {
     case OPT_REGIONS:
       regions_file = string(optarg);
       AddOption("regions", string(optarg), true, &user_defined_arguments_allelotyper);
+      break;
+    case OPT_REPORT_NOCALLS:
+      report_nocalls = true;
+      AddOption("report-nocalls", "", false, &user_defined_arguments_allelotyper);
       break;
     case OPT_STRINFO:
       strinfofile = string(optarg);
@@ -650,9 +657,10 @@ int main(int argc, char* argv[]) {
               PrintMessageDieOnError(msg.str(), DEBUG);
             }
             list<AlignedRead> aligned_reads;
-            str_container.GetReadsAtCoord(coord, &aligned_reads);
-            if (aligned_reads.size() > 0) {
-              genotyper.Genotype(aligned_reads);
+            list<AlignedRead> overlapping_reads;
+            str_container.GetReadsAtCoord(coord, &aligned_reads, &overlapping_reads);
+            if (overlapping_reads.size() > 0) {
+              genotyper.Genotype(aligned_reads, overlapping_reads);
             }
           }
           prev_chrom = ref_str_chunk.at(i).chrom;

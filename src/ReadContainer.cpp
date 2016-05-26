@@ -130,8 +130,10 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
     if (chroms_to_include.size() > 0 && find(chroms_to_include.begin(), chroms_to_include.end(), references.at(aln.RefID).RefName) == chroms_to_include.end()) {
       continue;
     }
+    // Get spanning reads for analysis
     vector<AlignedRead> aligned_reads;
-    if (!ParseRead(aln, &aligned_reads, itree, ref_ext_nucleotides)) {
+    vector<AlignedRead> overlapping_reads;
+    if (!ParseRead(aln, &aligned_reads, &overlapping_reads, itree, ref_ext_nucleotides)) {
       continue;
     }
     for (vector<AlignedRead>::const_iterator it = aligned_reads.begin();
@@ -149,12 +151,27 @@ void ReadContainer::AddReadsFromFile(const ReferenceSTR& ref_str, const vector<R
         aligned_str_map_.insert(pair< pair<string, int>, list<AlignedRead> >
                                 (coord, aligned_read_list));
       } 
+    }    
+    for (vector<AlignedRead>::const_iterator it = overlapping_reads.begin();
+         it != overlapping_reads.end(); it++) {
+      const AlignedRead& oread = *it;
+      pair<string, int> coord
+        (oread.chrom, oread.msStart);
+      if (aligned_str_map_all_.find(coord) == aligned_str_map_all_.end()) {
+        list<AlignedRead> l;
+        l.push_back(oread);
+        aligned_str_map_all_.insert(pair< pair<string, int>, list<AlignedRead> >
+                                    (coord, l));
+      } else {
+        aligned_str_map_all_.at(coord).push_back(oread);
+      }
     }
   }
 }
 
 bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
                               vector<AlignedRead>* aligned_reads,
+                              vector<AlignedRead>* overlapping_reads,
                               STRIntervalTree& itree,
                               map<pair<string,int>, string>& ref_ext_nucleotides) {
   // Dummy aligned read to set fields common to all
@@ -211,6 +228,22 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
     PrintMessageDieOnError(msg.str(), ERROR);
   }
   dummy_aligned_read.read_group += "-" + aln.Filename; // Keep track of read group as <rgid>-<filename>
+
+  // *** Get all STRs this read touches (before filters) *** //
+  int read_start = dummy_aligned_read.read_start;
+  int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) - GetSTRAllele(cigar_list);
+  vector<ReferenceSTR> overlapped_strs;
+  itree.GetContainingRegions(read_start, read_end, &overlapped_strs);
+  for (size_t i = 0; i < overlapped_strs.size(); i++) {
+    const ReferenceSTR ref_str = overlapped_strs.at(i);
+    AlignedRead aligned_read = dummy_aligned_read;
+    aligned_read.msStart = ref_str.start;
+    aligned_read.msEnd = ref_str.stop;
+    aligned_read.repseq = ref_str.motif;
+    aligned_read.refCopyNum = static_cast<float>(ref_str.stop - ref_str.start + 1)/static_cast<float>(ref_str.motif.size());
+    aligned_read.period = aligned_read.repseq.length();
+    overlapping_reads->push_back(aligned_read);
+  }
 
   // *** Alignment filters (these don't depend on which STR aligned to) *** //
   if (dummy_aligned_read.mapq > max_mapq) {
@@ -271,9 +304,6 @@ bool ReadContainer::ParseRead(const BamTools::BamAlignment& aln,
       return false;
     }
   }
-  // *** Determine region spanned by this read *** //
-  int read_start = dummy_aligned_read.read_start;
-  int read_end = dummy_aligned_read.read_start + (int)(dummy_aligned_read.nucleotides.size()) - GetSTRAllele(cigar_list);
   // *** Determine which reference STRs overlapped by this read *** //
   vector<ReferenceSTR> spanned_strs;
   itree.GetSpannedIntervals(read_start, read_end, &spanned_strs);
@@ -520,13 +550,18 @@ bool ReadContainer::GetFloatBamTag(const BamTools::BamAlignment& aln,
 
 void ReadContainer::ClearReads() {
   aligned_str_map_.clear();
+  aligned_str_map_all_.clear();
 }
 
 void ReadContainer::GetReadsAtCoord(const pair<string,int>& coord,
-				    list<AlignedRead>* reads) {
+                                    list<AlignedRead>* reads, list<AlignedRead>* overlapping_reads) {
   reads->clear();
+  overlapping_reads->clear();
   if (aligned_str_map_.find(coord) != aligned_str_map_.end()) {
     *reads = aligned_str_map_.at(coord);
+  }
+  if (aligned_str_map_all_.find(coord) != aligned_str_map_all_.end()) {
+    *overlapping_reads = aligned_str_map_all_.at(coord);
   }
 }
 

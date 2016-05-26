@@ -43,7 +43,11 @@ for record in reader:
         else:
             vals = [".","."]
             for fk in format_keys:
-                vals.append(0)
+                try:
+                    v = sample[fk]
+                except:
+                    v = 0
+                vals.append(v)
         try:
             filter_call = sample["FT"]
         except: filter_call = "PASS"

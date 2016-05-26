@@ -129,6 +129,7 @@ extern bool filter_clipped;
 extern bool filter_reads_with_n;
 extern int gridk;
 extern bool realign;
+extern bool report_nocalls;
 extern float min_het_freq;
 extern int min_border;
 extern int min_bp_before_indel;
