@@ -89,7 +89,7 @@ if __name__ == "__main__":
         # Get sample info
         for sample in record:
             if sample["GT"] and not afreqs == {}:
-                gt1, gt2 = map(float, sample["GT"].split("/"))
+                gt1, gt2 = map(float, sample["GB"].split("/"))
                 afreqstring = "%.3f/%.3f"%(afreqs.get(gt1, 0), afreqs.get(gt2, 0))
             else: 
                 afreqstring = "./."
