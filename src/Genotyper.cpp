@@ -41,7 +41,7 @@ along with lobSTR.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
-const float SMALL_CONST = 1e-10;
+const float SMALL_CONST = 0;
 
 Genotyper::Genotyper(NoiseModel* _noise_model,
                      const vector<string>& _haploid_chroms,
