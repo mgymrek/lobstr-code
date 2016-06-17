@@ -61,8 +61,9 @@ void ReadContainerTest::tearDown() {
 void ReadContainerTest::test_GetReadsAtCoord() {
   _read_container->ClearReads();
   list<AlignedRead> results;
+  list<AlignedRead> overlap;
   pair<string, int> coord1 ("chr1", 0);
-  _read_container->GetReadsAtCoord(coord1, &results);
+  _read_container->GetReadsAtCoord(coord1, &results, &overlap);
   CPPUNIT_ASSERT_EQUAL(static_cast<int>(results.size()), 0);
   list<AlignedRead> list1;
   AlignedRead r1;
@@ -71,10 +72,10 @@ void ReadContainerTest::test_GetReadsAtCoord() {
   list1.push_back(r2);
   _read_container->aligned_str_map_.insert(pair<pair<string, int>, list<AlignedRead> >
 					   (coord1, list1));
-  _read_container->GetReadsAtCoord(coord1, &results);
+  _read_container->GetReadsAtCoord(coord1, &results, &overlap);
   CPPUNIT_ASSERT_EQUAL(static_cast<int>(results.size()), 2);
   pair<string, int> coord2("chrX", 1);
-  _read_container->GetReadsAtCoord(coord2, &results);
+  _read_container->GetReadsAtCoord(coord2, &results, &overlap);
   CPPUNIT_ASSERT_EQUAL(static_cast<int>(results.size()), 0);
 }
 
