@@ -294,6 +294,16 @@ void Genotyper::FindMLE(const list<AlignedRead>& aligned_reads,
   // Get scores
   max_lik_score =
     pow(10,max_log_lik)/sum_all_likelihoods;
+  if (max_lik_score > 1) {
+    if (debug) {
+      stringstream msg;
+      msg << "Quality score > 1. Score=" << max_lik_score << " max_lik=" 
+          << pow(10, max_log_lik) << " sum_all_likeihoods=" << sum_all_likelihoods
+          << " Setting Q=1";
+      PrintMessageDieOnError(msg.str(), WARNING);
+    }
+    max_lik_score = 1;
+  }
   phred_max_lik_score = -1*log10(1-max_lik_score);
   allele1_marginal_lik_score =
     marginal_lik_score_numerator[allele1]/
