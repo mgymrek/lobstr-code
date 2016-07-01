@@ -128,6 +128,11 @@ if __name__ == "__main__":
     numallcalls = 0
     numpasscalls = 0
 
+    # Test if there are any samples left
+    if len(reader.samples)-len(ignore_samples) == 0:
+        MSG("Exiting, no samples remaining")
+        sys.exit(0)
+
     # Go through each record
     for record in reader:
         # Set up new sample info. only need to do this once per record
@@ -185,7 +190,6 @@ if __name__ == "__main__":
             str_length = record.INFO["END"]-record.POS+1
             if str_length > filters[KEY_LOCMAXREFLEN]["Value"]:
                 record.add_filter(KEY_LOCMAXREFLEN+str(filters[KEY_LOCMAXREFLEN]["Value"]))
-                continue
         if KEY_LOCCALLRATE in filters:
             if len(ignore_samples) > 0:
                 call_rate = len(coverages)*1.0/(len(reader.samples)-len(ignore_samples))
@@ -205,6 +209,13 @@ if __name__ == "__main__":
         allfilters.append(":".join(record.FILTER))
         writer.write_record(record)
         
+    if len(allfilters) == 0:
+        MSG("No loci detected")
+        sys.exit(0)
+    if numallcalls == 0:
+        MSG("No calls detected")
+        sys.exit(0)
+        
     MSG("### Locus Filter counts ###")
     for f in set(allfilters):
         MSG("%s: %s (%s)"%(f, allfilters.count(f), allfilters.count(f)*1.0/len(allfilters)))
@@ -213,6 +224,3 @@ if __name__ == "__main__":
     MSG("  Mean coverage: %s"%np.mean(allcoverages))
     MSG("Number of calls passing filtering: %s (%s)"%(numpasscalls, numpasscalls*1.0/numallcalls))
     MSG("  Mean coverage: %s"%np.mean(passcoverages))
-        
-        
-
