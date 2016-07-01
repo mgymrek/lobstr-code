@@ -15,6 +15,18 @@
 	</ul>
 	<a name="code"></a>
 	<h2>Code Changelog</h2>
+  <h3>New in version 4.0.6</h3>
+  <p>
+  Minor bug fixes and several new features:
+  <ul>
+  <li>Long-awaited fix handling the case when read group IDs are replicated across BAM files input to <code>allelotype</code>.</li>
+  <li><code>allelotype</code> now recognizes either <code>*.bai</code> or <code>*.bam.bai</code> BAM index files.</li>
+  <li>Added option <code>--dont-include-pl</code> to <code>allelotype</code>, which creates VCFs with no PL field, greatly reducing their size.</li>
+  <li>Added option <code>--gridk</code> to <code>allelotype</code>, which controls how many possible alleles are considered when computing genotype likelihoods.</li>
+  <li>Added <a href="file-formats.html">VCF fields</a> PQ and DPA.</li>
+  <li>Bug fix for precision error leading to low quality scores for high coverage heterozygous sites.</li>
+  </ul>
+  </p>
   <h3>New in version 4.0.0</h3>
   <p>
   The major change for this version is the ability for <code>allelotype</code> to take in BAM files from external aligners, mainly from <code>BWA-MEM</code>. This allows STR genotyping across large panels of samples that already have existing alignments for only a fraction of the computational cost of running the whole lobSTR pipeline.

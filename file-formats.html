@@ -62,8 +62,10 @@
 	  <li> AML: allele marginal likelihood ratio scores. The score for each allele gives the sum of all likelihoods of genotypes containing that allele divided by the sum of likelihoods of all genotypes considered.</li>
 	  <li> DISTENDS: Average difference between distance of STR to read ends.</li>
 	  <li> DP: STR coverage</li>
+	  <li> DPA: STR coverage, including filtered reads</li>
 	  <li> GB: reported allelotype given in bp difference from reference. Set to "./." for no call.</li>
 	  <li> PL: Phred-scaled genotype likelihoods. Given for each possible pair of alleles from the ALT field. If j and k are the indices of the alleles in the ALT field, the (F(j/k) = (k*(k+1)/2)+j)th field gives the likelihood of allelotype (allele j, allele k) as in the standard VCF format. Normalized to give likelihoods relative to that of the maximum likelihood genotype, which will have a phred-scaled likelihood of 0.</li>
+	  <li> PQ: -1*log10(1-Q)</li>
 	  <li> Q: Likelihood ratio score of the allelotype call. Gives the likelihood of the reported genotype divided by the sum of likelihoods of all considered genotypes.</li>
 	  <li> GT: genotype, given as indices into the list in the ALT field as
 	    in the standard VCF format. Set to "./." if no call.</li>
