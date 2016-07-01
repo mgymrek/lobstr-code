@@ -91,7 +91,7 @@ void show_help() {
      << "--realign:                      Redo local realignment. Useful if using alignments generated\n"
      << "                                by other tools.\n"
 	   << "--min-het-freq <FLOAT>:         minimum frequency to make a heterozygous call\n"
-	   << "                                (default: NULL)\n"
+	   << "                                (default: 0.1)\n"
 	   << "--haploid <chrX,[chrY,...]>:    comma-separated list of chromosomes\n"
 	   << "                                that should be forced to have homozygous\n"
 	   << "                                calls. Specify --haploid all if the organism\n"
