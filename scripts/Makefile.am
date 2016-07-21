@@ -31,7 +31,8 @@ script_SCRIPTS = \
 	allelotype_validation_suite.sh \
 	lobSTR_capillary_comparator.py \
 	lobSTR_vcf_to_tab.py \
-	lobSTR_filter_vcf.py
+	lobSTR_filter_vcf.py \
+	GenerateLobSTRRefBed.py
 
 EXTRA_DIST = $(script_SCRIPTS) \
 	$(bin_SCRIPTS)
