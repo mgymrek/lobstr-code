@@ -192,7 +192,7 @@ void TrimRead(const string& input_nucs,
 
 bool fexists(const char *filename) {
   ifstream ifile(filename);
-  return ifile;
+  return ifile.good();
 }
 
 bool valid_nucleotides_string(const string &str) {
