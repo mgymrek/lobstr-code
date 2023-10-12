@@ -1,1 +1,1 @@
-For full documentation, see the lobSTR website: http://lobstr.teamerlich.org/
+The lobSTR tool is no longer actively maintained and unfortunately the documentation website has gone down. We recommend using HipSTR (https://github.com/tfwillems/hipstr) as an alternative for genotyping STRs from short reads.
