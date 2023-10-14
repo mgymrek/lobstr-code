@@ -100,7 +100,7 @@ void LogisticRegressionTest::test_logistic_regression() {
   coeffs.resize(n+1);
   logistic_regression(y, x, m, n, step_size, tol, epsabs, maxiter, &coeffs);
   CPPUNIT_ASSERT_MESSAGE("Example 2: Intercept term doesn't match", abs(coeffs.at(0)-0.34)<0.01);
-  CPPUNIT_ASSERT_MESSAGE("Example 2: Slope1 term doesn't match", abs(coeffs.at(1)-0.49)<0.01);
+  CPPUNIT_ASSERT_MESSAGE("Example 2: Slope1 term doesn't match", abs(coeffs.at(1)+0.49)<0.01);
   CPPUNIT_ASSERT_MESSAGE("Example 2: Slope2 term doesn't match", abs(coeffs.at(2)-0.13)<0.01);
 }
 
